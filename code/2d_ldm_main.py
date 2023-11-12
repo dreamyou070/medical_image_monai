@@ -37,7 +37,7 @@ def get_transform(image_size) :
 
 def main(args) :
 
-    print(f'step 1. print version related')
+    print(f'\n step 1. print version related')
     print_config()
 
     print(f' (1.1) set deterministic training for reproducibility')
@@ -51,7 +51,7 @@ def main(args) :
     root_dir = args.root_dir
     os.makedirs(root_dir, exist_ok=True)
 
-    print(f'step 2. dataset and dataloader')
+    print(f'\n step 2. dataset and dataloader')
     print(f' (2.1) train dataset')
     train_data = MedNISTDataset(root_dir=root_dir, section="training", #download=True,
                                 seed=0)
@@ -81,7 +81,7 @@ def main(args) :
     print(f' (2.2.2) validation dataloader')
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
 
-    print(f'step 3. model')
+    print(f'\n step 3. model')
     print(f' (3.0) device')
     device = torch.device("cuda")
     print(f' (3.1) vae(autoencoder)')
@@ -91,6 +91,7 @@ def main(args) :
                                   with_encoder_nonlocal_attn=False,with_decoder_nonlocal_attn=False,).to(device)
 
     print(f' (3.2) discriminator')
+    # what is patchDiscriminator ?
     discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,
                                        in_channels=1, out_channels=1).to(device)
 
@@ -115,7 +116,107 @@ def main(args) :
     n_epochs = 100
     val_interval = 10
     autoencoder_warm_up_n_epochs = 10
+    epoch_recon_losses = []
+    epoch_gen_losses = []
+    epoch_disc_losses = []
+    val_recon_losses = []
+    intermediary_images = []
+    num_example_images = 4
 
+    for epoch in range(n_epochs):
+        autoencoderkl.train()
+        discriminator.train()
+        epoch_loss = 0
+        gen_epoch_loss = 0
+        disc_epoch_loss = 0
+        progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=110)
+        progress_bar.set_description(f"Epoch {epoch}")
+        for step, batch in progress_bar:
+            images = batch["image"].to(device)
+            optimizer_g.zero_grad(set_to_none=True)
+            with autocast(enabled=True):
+                reconstruction, z_mu, z_sigma = autoencoderkl(images)
+
+                # ------------------------------------------------------------------------------------------------------------
+                # (1) reconstruction loss (L1)
+                recons_loss = F.l1_loss(reconstruction.float(),
+                                        images.float())
+
+                # ------------------------------------------------------------------------------------------------------------
+                # (2) preceptual loss
+                p_loss = perceptual_loss(reconstruction.float(),
+                                         images.float())
+
+                # ------------------------------------------------------------------------------------------------------------
+                # (3)
+                kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
+                kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
+
+
+                loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
+
+                if epoch > autoencoder_warm_up_n_epochs:
+                    logits_fake = discriminator(reconstruction.contiguous().float())[-1]
+                    generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
+                    loss_g += adv_weight * generator_loss
+
+            scaler_g.scale(loss_g).backward()
+            scaler_g.step(optimizer_g)
+            scaler_g.update()
+
+            if epoch > autoencoder_warm_up_n_epochs:
+                with autocast(enabled=True):
+                    optimizer_d.zero_grad(set_to_none=True)
+
+                    logits_fake = discriminator(reconstruction.contiguous().detach())[-1]
+                    loss_d_fake = adv_loss(logits_fake, target_is_real=False, for_discriminator=True)
+                    logits_real = discriminator(images.contiguous().detach())[-1]
+                    loss_d_real = adv_loss(logits_real, target_is_real=True, for_discriminator=True)
+                    discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
+
+                    loss_d = adv_weight * discriminator_loss
+
+                scaler_d.scale(loss_d).backward()
+                scaler_d.step(optimizer_d)
+                scaler_d.update()
+
+            epoch_loss += recons_loss.item()
+            if epoch > autoencoder_warm_up_n_epochs:
+                gen_epoch_loss += generator_loss.item()
+                disc_epoch_loss += discriminator_loss.item()
+
+            progress_bar.set_postfix(
+                {
+                    "recons_loss": epoch_loss / (step + 1),
+                    "gen_loss": gen_epoch_loss / (step + 1),
+                    "disc_loss": disc_epoch_loss / (step + 1),
+                }
+            )
+        epoch_recon_losses.append(epoch_loss / (step + 1))
+        epoch_gen_losses.append(gen_epoch_loss / (step + 1))
+        epoch_disc_losses.append(disc_epoch_loss / (step + 1))
+
+        if (epoch + 1) % val_interval == 0:
+            autoencoderkl.eval()
+            val_loss = 0
+            with torch.no_grad():
+                for val_step, batch in enumerate(val_loader, start=1):
+                    images = batch["image"].to(device)
+
+                    with autocast(enabled=True):
+                        reconstruction, z_mu, z_sigma = autoencoderkl(images)
+                        # Get the first reconstruction from the first validation batch for visualisation purposes
+                        if val_step == 1:
+                            intermediary_images.append(reconstruction[:num_example_images, 0])
+
+                        recons_loss = F.l1_loss(images.float(), reconstruction.float())
+
+                    val_loss += recons_loss.item()
+
+            val_loss /= val_step
+            val_recon_losses.append(val_loss)
+            print(f"epoch {epoch + 1} val loss: {val_loss:.4f}")
+    progress_bar.close()
     """
     
     
