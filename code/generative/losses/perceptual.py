@@ -1,14 +1,3 @@
-# Copyright (c) MONAI Consortium
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#     http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from __future__ import annotations
 
 import torch
@@ -19,35 +8,6 @@ from torchvision.models.feature_extraction import create_feature_extractor
 
 
 class PerceptualLoss(nn.Module):
-    """
-    Perceptual loss using features from pretrained deep neural networks trained. The function supports networks
-    pretrained on: ImageNet that use the LPIPS approach from Zhang, et al. "The unreasonable effectiveness of deep
-    features as a perceptual metric." https://arxiv.org/abs/1801.03924 ; RadImagenet from Mei, et al. "RadImageNet: An
-    Open Radiologic Deep Learning Research Dataset for Effective Transfer Learning"
-    https://pubs.rsna.org/doi/full/10.1148/ryai.210315 ; MedicalNet from Chen et al. "Med3D: Transfer Learning for
-    3D Medical Image Analysis" https://arxiv.org/abs/1904.00625 ;
-    and ResNet50 from Torchvision: https://pytorch.org/vision/main/models/generated/torchvision.models.resnet50.html .
-
-    The fake 3D implementation is based on a 2.5D approach where we calculate the 2D perceptual on slices from the
-    three axis.
-
-    Args:
-        spatial_dims: number of spatial dimensions.
-        network_type: {``"alex"``, ``"vgg"``, ``"squeeze"``, ``"radimagenet_resnet50"``,
-        ``"medicalnet_resnet10_23datasets"``, ``"medicalnet_resnet50_23datasets"``, ``"resnet50"``}
-            Specifies the network architecture to use. Defaults to ``"alex"``.
-        is_fake_3d: if True use 2.5D approach for a 3D perceptual loss.
-        fake_3d_ratio: ratio of how many slices per axis are used in the 2.5D approach.
-        cache_dir: path to cache directory to save the pretrained network weights.
-        pretrained: whether to load pretrained weights. This argument only works when using networks from
-            LIPIS or Torchvision. Defaults to ``"True"``.
-        pretrained_path: if `pretrained` is `True`, users can specify a weights file to be loaded
-            via using this argument. This argument only works when ``"network_type"`` is "resnet50".
-            Defaults to `None`.
-        pretrained_state_dict_key: if `pretrained_path` is not `None`, this argument is used to
-            extract the expected state dict. This argument only works when ``"network_type"`` is "resnet50".
-            Defaults to `None`.
-    """
 
     def __init__(
         self,

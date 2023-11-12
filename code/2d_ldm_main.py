@@ -30,7 +30,11 @@ def get_transform(image_size) :
                                                                       spatial_size=[image_size, image_size],
                                                                       padding_mode="zeros",
                                                                       prob=0.5,),])
-    return train_transforms
+    val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
+                                         transforms.EnsureChannelFirstd(keys=["image"]),
+                                         transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),])
+    return train_transforms, val_transforms
+
 def main(args) :
 
     print(f'step 1. print version related')
@@ -48,94 +52,74 @@ def main(args) :
     os.makedirs(root_dir, exist_ok=True)
 
     print(f'step 2. dataset and dataloader')
-    print(f' (2.1) load dataset')
-    train_data = MedNISTDataset(root_dir=root_dir, section="training", download=True, seed=0)
-    train_datalist = [{"image": item["image"]} for item in train_data.data if item["class_name"] == "Hand"]
-    image_size = args.image_size
-    train_transforms = get_transform(image_size)
-    train_ds = Dataset(data=train_datalist,
-                       transform=train_transforms)
-    print(f' (2.2) load dataset')
-    train_loader = DataLoader(train_ds, batch_size=64, shuffle=True, num_workers=4, persistent_workers=True)
+    print(f' (2.1) train dataset')
+    train_data = MedNISTDataset(root_dir=root_dir, section="training", #download=True,
+                                seed=0)
+    train_datalist = []
+    for item in train_data.data :
+        if item["class_name"] == "Hand" :
+            train_datalist.append({"image": item["image"]})
+    train_transforms, val_transforms = get_transform(args.image_size)
+    train_ds = Dataset(data=train_datalist,transform=train_transforms)
+    print(f' (2.1.2) load dataloader')
+    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
 
-    """"# -
-    
-    # ### Visualise examples from the training set
-
-    # Plot 3 examples from the training set
+    print(f' (2.1.3) visualise examples from the training set')
+    print(f' (2.1.3.1) get first datas')
     check_data = first(train_loader)
-    fig, ax = plt.subplots(nrows=1, ncols=3)
-    for image_n in range(3):
+    vis_num_images = args.vis_num_images
+    fig, ax = plt.subplots(nrows=1, ncols=vis_num_images)
+    for image_n in range(vis_num_images):
         ax[image_n].imshow(check_data["image"][image_n, 0, :, :], cmap="gray")
         ax[image_n].axis("off")
+    plt.show()
 
-    # ## Prepare validation set data loader
-
+    print(f' (2.2) validation dataset')
     val_data = MedNISTDataset(root_dir=root_dir, section="validation", download=True, seed=0)
     val_datalist = [{"image": item["image"]} for item in val_data.data if item["class_name"] == "Hand"]
-    val_transforms = transforms.Compose(
-        [
-            transforms.LoadImaged(keys=["image"]),
-            transforms.EnsureChannelFirstd(keys=["image"]),
-            transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
-        ]
-    )
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
-    val_loader = DataLoader(val_ds, batch_size=64, shuffle=True, num_workers=4, persistent_workers=True)
+    print(f' (2.2.2) validation dataloader')
+    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
 
-    # ## Autoencoder KL
-    #
-    # ### Define Autoencoder KL network, losses and optimiser
-    #
-    # In this section, we will define an autoencoder with KL-regularization for the LDM. The autoencoder's primary purpose is to transform input images into a latent representation that the diffusion model will subsequently learn. By doing so, we can decrease the computational resources required to train the diffusion component, making this approach suitable for learning high-resolution medical images. We will also specify the perceptual and adversarial losses, including the involved networks, and the optimizers to use during the training process.
-
-    # +
+    print(f'step 3. model')
+    print(f' (3.0) device')
     device = torch.device("cuda")
+    print(f' (3.1) vae(autoencoder)')
+    autoencoderkl = AutoencoderKL(spatial_dims=2,in_channels=1,out_channels=1,
+                                  num_channels=(128, 128, 256),latent_channels=3,num_res_blocks=2,
+                                  attention_levels=(False, False, False),
+                                  with_encoder_nonlocal_attn=False,with_decoder_nonlocal_attn=False,).to(device)
 
-    autoencoderkl = AutoencoderKL(
-        spatial_dims=2,
-        in_channels=1,
-        out_channels=1,
-        num_channels=(128, 128, 256),
-        latent_channels=3,
-        num_res_blocks=2,
-        attention_levels=(False, False, False),
-        with_encoder_nonlocal_attn=False,
-        with_decoder_nonlocal_attn=False,
-    )
-    autoencoderkl = autoencoderkl.to(device)
-    # -
+    print(f' (3.2) discriminator')
+    discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,
+                                       in_channels=1, out_channels=1).to(device)
 
-    perceptual_loss = PerceptualLoss(spatial_dims=2, network_type="alex")
-    perceptual_loss.to(device)
+    print(f' (3.3) perceptual_loss')
+    perceptual_loss = PerceptualLoss(spatial_dims=2, network_type="alex").to(device)
     perceptual_weight = 0.001
 
-    # +
-    discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64, in_channels=1, out_channels=1)
-    discriminator = discriminator.to(device)
-
+    print(f' (3.4) patch adversarial loss')
     adv_loss = PatchAdversarialLoss(criterion="least_squares")
     adv_weight = 0.01
 
-    # +
+    print(f' (3.5) optimizer (for generator and discriminator)')
     optimizer_g = torch.optim.Adam(autoencoderkl.parameters(), lr=1e-4)
     optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=5e-4)
 
-    # For mixed precision training
+    print(f' (3.6) mixed precision (for generator and discriminator)')
     scaler_g = torch.cuda.amp.GradScaler()
     scaler_d = torch.cuda.amp.GradScaler()
-    # -
 
-    # ### Train model
-
-    # It takes about ~55 min to train the model.
-
-    # +
+    print(f'step 4. training (takes about one hour)')
     kl_weight = 1e-6
     n_epochs = 100
     val_interval = 10
     autoencoder_warm_up_n_epochs = 10
 
+    """
+    
+    
+    
     epoch_recon_losses = []
     epoch_gen_losses = []
     epoch_disc_losses = []
@@ -436,5 +420,8 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--root_dir", type=str, default='../experiment')
     parser.add_argument("--image_size", type=int, default=64)
+    parser.add_argument("--vis_num_images", type=int, default=3)
+    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--device", type=str, default='cuda')
     args = parser.parse_args()
     main(args)
