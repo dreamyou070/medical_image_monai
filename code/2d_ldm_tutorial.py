@@ -434,7 +434,7 @@ def main(args) :
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--root_dir", type=str, default='experiment')
+    parser.add_argument("--root_dir", type=str, default='../experiment')
     parser.add_argument("--image_size", type=int, default=64)
     args = parser.parse_args()
     main(args)
