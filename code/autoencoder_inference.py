@@ -45,6 +45,7 @@ def main(args) :
             # recon_img = [Batch, Channel=1, Width, Height]
             recon_img_list.append(recon_img[:1, 0])
             reconstructions = torch.reshape(recon_img, (width, height)).T
+            print(f'recon_img : {recon_img.shape} | reconstructions : {reconstructions.shape}')
 
 
 if __name__ == '__main__':
