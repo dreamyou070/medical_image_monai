@@ -35,6 +35,8 @@ def get_transform(image_size) :
                                          transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),])
     return train_transforms, val_transforms
 
+
+
 def main(args) :
 
     print(f'\n step 1. print version and set seed')
