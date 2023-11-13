@@ -36,7 +36,8 @@ def main(args) :
     for idx in random_idx :
         # ------------------------------------------------------------------------------------------------
         # org shape is [1615,840]
-        org_img = val_ds[idx]['image'].to(device)
+        org_img = val_ds[idx]['image'].unsqueeze(0).to(device)
+        
         with torch.no_grad():
             recon_img, z_mu, z_sigma = autoencoderkl(org_img)
             print(f'random_idx : {random_idx} | recon_img.shape : {recon_img.shape}')
