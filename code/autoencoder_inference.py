@@ -17,6 +17,7 @@ def main(args) :
                                   num_res_blocks=2,attention_levels=(False, False, False),
                                   with_encoder_nonlocal_attn=False,with_decoder_nonlocal_attn=False,)
     autoencoderkl = autoencoderkl.to(device)
+    autoencoderkl.eval()
 
     print(f' \n step 2. model loading')
     state_dict = torch.load(args.pretrained_dir, map_location='cpu')['model']
@@ -32,12 +33,13 @@ def main(args) :
     print(f' (3.0) random select numbers')
     inference_num = args.inference_num
     random_idx = np.random.randint(0, len(val_ds), size=inference_num)
-    print(f'random_idx : {random_idx}')
     for idx in random_idx :
+        # ------------------------------------------------------------------------------------------------
+        # org shape is [1615,840]
         org_img = val_ds[idx]['image']
-        print(f'idx : {idx} |  org_img.shape : {org_img.shape}')
-
-
+        with torch.no_grad():
+            recon_img, z_mu, z_sigma = autoencoderkl(org_img)
+            print(f'random_idx : {random_idx} | recon_img.shape : {recon_img.shape}')
 
 
 if __name__ == '__main__':
@@ -48,7 +50,7 @@ if __name__ == '__main__':
     # step 1.
     parser.add_argument('--infer_num', type=int, default=5)
     # step 2. model loading
-    parser.add_argument('--pretrained_dir', type=str, default='/data7/sooyeon/medical_image/model/checkpoint_25.pth')
+    parser.add_argument('--pretrained_dir', type=str, default='/data7/sooyeon/medical_image/model/checkpoint_100.pth')
     # step 3. get original image for reconstruct
     parser.add_argument("--data_folder", type=str, default='../experiment/dental/Radiographs_L')
     parser.add_argument("--inference_num", type=int, default=5)
