@@ -28,7 +28,7 @@ def get_transform(image_size) :
                                                                       rotate_range=[(-np.pi / 36, np.pi / 36), (-np.pi / 36, np.pi / 36)],
                                                                       translate_range=[(-1, 1), (-1, 1)],
                                                                       scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-                                                                      spatial_size=[w,h],
+                                                                      spatial_size=[64,64],
                                                                       padding_mode="zeros",
                                                                       prob=0.5,),])
     val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--root_dir", type=str, default='../experiment')
-    parser.add_argument("--image_size", type=str, default='160,84')
+    parser.add_argument("--image_size", type=int, default=64)
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda')
