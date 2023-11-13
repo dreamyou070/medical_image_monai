@@ -130,7 +130,8 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda')
     # step 2. dataset and dataloader
-    parser.add_argument("--data_folder", type=str, default='../experiment/dental/Radiographs_L')
+    #arser.add_argument("--data_folder", type=str, default='../experiment/dental/Radiographs_L')
+    parser.add_argument("--data_folder", type=str, default='../experiment/MedNist/Hand')
 
 
     args = parser.parse_args()
