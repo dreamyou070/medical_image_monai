@@ -1,11 +1,12 @@
 import os
 from PIL import Image
-base_dir = r'C:/Users/hpuser/Desktop/dental/Radiographs_L'
+base_dir = r'experiment/dental/Radiographs_L'
 
 images = os.listdir(base_dir)
 for image in images :
     img_dir = os.path.join(base_dir,image)
     pil_img = Image.open(img_dir)
+    print(pil_img.size)
     #org_w, org_h = pil_img.size
     #new_w, new_h = 160,84
     #a = pil_img.resize((new_w, new_h))
@@ -15,3 +16,4 @@ for image in images :
     # [160,84]
     # [5*323,84*2*5]
     # [323,84*2]
+    # 1615,840
