@@ -48,6 +48,7 @@ def main(args) :
             recon_img_list.append(recon_img[:1, 0])
             reconstructions = torch.reshape(recon_img, (width, height)).T # height, width
 
+            org_img_ = org_img_.squeeze().T
             print(f'org_img_ : {org_img_.T.shape}  | reconstructions : {reconstructions.shape}')
             #ax[0].imshow(org_img_.cpu(), cmap="gray")
             #plt.imshow(reconstructions.cpu(), cmap='gray')
