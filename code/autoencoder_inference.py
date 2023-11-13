@@ -1,8 +1,9 @@
 import numpy as np
 from matplotlib import pyplot as plt
-import torch
+import torch, os
 import argparse
 from generative.networks.nets import AutoencoderKL
+from data_module import get_transform, SYDataset, SYDataLoader
 
 
 def main(args) :
@@ -21,27 +22,14 @@ def main(args) :
     state_dict = torch.load(args.pretrained_dir, map_location='cpu')['model']
     msg = autoencoderkl.load_state_dict(state_dict, strict=False)
 
-    """
-    with autocast(enabled=True):
-        reconstruction, z_mu, z_sigma = autoencoderkl(images)
-    # Plot last 5 evaluations
-    # np.linspace means,
-    n_epochs = 100
-    val_interval = 10
-    spave = int(n_epochs / val_interval)
-    val_samples = np.linspace(n_epochs, val_interval, int(n_epochs / val_interval))
-    print(val_samples)
-    fig, ax = plt.subplots(nrows=args.infer_num, ncols=1, sharey=True)
-    for image_n in range(5):
-        reconstructions = torch.reshape(intermediary_images[image_n], (image_size * num_example_images, image_size)).T
-        ax[image_n].imshow(reconstructions.cpu(), cmap="gray")
-        ax[image_n].set_xticks([])
-        ax[image_n].set_yticks([])
-        ax[image_n].set_ylabel(f"Epoch {val_samples[image_n]:.0f}")
-    
-
-    
-    """
+    print(f' \n step 3. get original image for reconstruct')
+    total_datas = os.listdir(args.data_folder)
+    _, val_transforms = get_transform(args.image_size)
+    train_num = int(0.7 * len(total_datas))
+    train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
+    val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
+    val_ds = SYDataset(data=val_datalist, transform=val_transforms)
+    first_data = val_ds.__getitem__(0)
 
 
 if __name__ == '__main__':
@@ -53,6 +41,7 @@ if __name__ == '__main__':
     parser.add_argument('--infer_num', type=int, default=5)
     # step 2. model loading
     parser.add_argument('--pretrained_dir', type=str, default='/data7/sooyeon/medical_image/model/checkpoint_25.pth')
-
+    # step 3. get original image for reconstruct
+    parser.add_argument("--data_folder", type=str, default='../experiment/dental/Radiographs_L')
     args = parser.parse_args()
     main(args)
