@@ -36,7 +36,7 @@ def main(args) :
     recon_img_list = []
     for idx in random_idx :
 
-        fig, ax = plt.subplots(nrows=2, ncols=1, sharey=True)
+        fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
         # ------------------------------------------------------------------------------------------------
         # org shape is [1615,840]
         org_img_ = val_ds[idx]['image']
@@ -56,7 +56,7 @@ def main(args) :
             ax[1].imshow(reconstructions.cpu(), cmap='gray')
             ax[1].set_title('reconstruction')
             ax[1].axis("off")
-
+            print(f'org_img_.shape : {org_img_.shape} / reconstructions.shape : {reconstructions.shape}')
             plt.savefig(f'./reconstructions_{idx}.png')
             plt.close()
 
