@@ -34,7 +34,7 @@ __all__ = ["SYDataset", "SYDataLoader"]
 
 def get_transform(image_size):
 
-    w,h = image_size.split('.')
+    w,h = image_size.split(',')
     w,h = int(w), int(h)
     img_loader = LoadImaged(keys=["image"])
     channel_orderer = EnsureChannelFirstd(keys=["image"])
