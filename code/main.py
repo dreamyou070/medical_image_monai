@@ -1,6 +1,6 @@
 from monai.config import print_config
 from utils import set_determinism
-from code.data_module import get_transform
+from data_module import get_transform
 import os
 from monai.utils import first, set_determinism
 import argparse
