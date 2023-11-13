@@ -35,20 +35,24 @@ def main(args) :
     random_idx = np.random.randint(0, len(val_ds), size=inference_num)
     recon_img_list = []
     for idx in random_idx :
+
+        fig, ax = plt.subplots(nrows=2, ncols=1, sharey=True)
         # ------------------------------------------------------------------------------------------------
         # org shape is [1615,840]
-        org_img = val_ds[idx]['image'].unsqueeze(0).to(device)
-
+        org_img_ = val_ds[idx]['image']
+        org_img = org_img_.unsqueeze(0).to(device)
         with torch.no_grad():
             recon_img, z_mu, z_sigma = autoencoderkl(org_img)
             batch, channel, width, height = recon_img.shape
             # recon_img = [Batch, Channel=1, Width, Height]
             recon_img_list.append(recon_img[:1, 0])
-            reconstructions = torch.reshape(recon_img, (width, height)).T
-            print(f'recon_img : {recon_img.shape} | reconstructions : {reconstructions.shape}')
-            plt.imshow(reconstructions.cpu(), cmap='gray')
-            plt.savefig(f'./reconstructions_{idx}.png')
-            plt.close()
+            reconstructions = torch.reshape(recon_img, (width, height)).T # height, width
+
+            print(f'org_img_ : {org_img_.shape}  | reconstructions : {reconstructions.shape}')
+            #ax[0].imshow(org_img_.cpu(), cmap="gray")
+            #plt.imshow(reconstructions.cpu(), cmap='gray')
+            #plt.savefig(f'./reconstructions_{idx}.png')
+            #plt.close()
 
 
 if __name__ == '__main__':
