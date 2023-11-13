@@ -5,12 +5,13 @@ from typing import IO, TYPE_CHECKING, Any
 import numpy as np
 from torch.utils.data import Dataset as _TorchDataset
 from torch.utils.data import Subset
-from transforms import apply_transform
+from data_module.transforms import apply_transform
+from data_module.load_image import LoadImaged
+from data_module.ensure_channel_first import EnsureChannelFirstd
+from data_module.scaling import ScaleIntensityRanged
+from data_module.affine_transferling import RandAffined
+
 from monai.utils import min_version, optional_import
-from load_image import LoadImaged
-from ensure_channel_first import EnsureChannelFirstd
-from scaling import ScaleIntensityRanged
-from affine_transferling import RandAffined
 from monai import transforms
 import warnings
 import torch
