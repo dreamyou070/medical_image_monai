@@ -196,17 +196,16 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+
     # step 1. print version and set seed
     parser.add_argument("--seed", type=int, default=42)
+
     # step 2. dataset and dataloader
-    parser.add_argument("--data_folder", type=str, default='../experiment/MedNIST/Hand')
-    parser.add_argument("--image_size", type=str, default='164,84')
+    parser.add_argument("--data_folder", type=str, default='../experiment/dental/Radiographs_L')
+    parser.add_argument("--image_size", type=str, default='160,84')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda')
-    # step 2. dataset and dataloader
-    #arser.add_argument("--data_folder", type=str, default='../experiment/dental/Radiographs_L')
-
 
 
     args = parser.parse_args()
