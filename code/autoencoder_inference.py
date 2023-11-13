@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 import torch, os
 import argparse
 from generative.networks.nets import AutoencoderKL
-from data_module import get_transform, SYDataset, SYDataLoader
+from data_module import val_transform, SYDataset, SYDataLoader
 
 
 def main(args) :
@@ -24,7 +24,7 @@ def main(args) :
 
     print(f' \n step 3. get original image for reconstruct')
     total_datas = os.listdir(args.data_folder)
-    _, val_transforms = get_transform(args.image_size)
+    val_transforms = val_transform()
     train_num = int(0.7 * len(total_datas))
     train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
     val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]

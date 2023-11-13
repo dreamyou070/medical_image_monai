@@ -64,7 +64,13 @@ def get_transform(image_size):
                                                                          b_min=0.0, b_max=1.0, clip=True), ])
     return train_transforms, val_transforms
 
+def val_transform():
 
+    val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
+                                         transforms.EnsureChannelFirstd(keys=["image"]),
+                                         transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0,
+                                                                         b_min=0.0, b_max=1.0, clip=True), ])
+    return val_transforms
 class SYDataset(_TorchDataset):
 
     def __init__(self,
