@@ -27,7 +27,7 @@ def get_transform(image_size) :
                                                                       rotate_range=[(-np.pi / 36, np.pi / 36), (-np.pi / 36, np.pi / 36)],
                                                                       translate_range=[(-1, 1), (-1, 1)],
                                                                       scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-                                                                      spatial_size=[image_size, image_size],
+                                                                      spatial_size=[160,84],
                                                                       padding_mode="zeros",
                                                                       prob=0.5,),])
     val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
