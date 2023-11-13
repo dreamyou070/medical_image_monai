@@ -124,6 +124,7 @@ def main(args) :
     num_example_images = 4
 
     for epoch in range(n_epochs):
+        print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
         discriminator.train()
         epoch_loss = 0
