@@ -118,6 +118,7 @@ def main(args):
 
         for step, batch in progress_bar:
             print(batch.__dict__)    
+            
     """
 
 
