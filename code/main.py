@@ -49,7 +49,6 @@ def main(args):
     print(f' (2.2.2) valid load dataloader')
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
 
-    """
     print(f' (2.1.3) visualise examples from the training set')
     print(f' (2.1.3.1) get first datas')
     check_data = first(train_loader)
@@ -119,7 +118,7 @@ def main(args):
         for step, batch in progress_bar:
             print(batch.__dict__)    
             
-    """
+
 
 
 if __name__ == "__main__":
