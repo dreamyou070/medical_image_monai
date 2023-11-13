@@ -1,10 +1,9 @@
 from monai.config import print_config
 from utils import set_determinism
-from data_module import get_transform
+from data_module import get_transform, SYDataset, SYDataLoader
 import os
 from monai.utils import first, set_determinism
 import argparse
-from monai.data import DataLoader, Dataset
 
 #from data_module import get_transform, SYDataset, SYDataLoader
 
@@ -23,12 +22,13 @@ def main(args):
     train_num = int(0.7 * len(total_datas))
     train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
     train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas]
-    train_ds = Dataset(data=train_datalist, transform=train_transforms)
+    train_ds = SYDataset(data=train_datalist, transform=train_transforms)
     print(f' (2.1.2) train dataloader')
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4,
+    train_loader = SYDataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4,
                               persistent_workers=True)
     check_data = first(train_loader)
-    print(f' (2.2) val dataset')
+
+    print(f' (2.2.1) val dataset')
     val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
 
     """
