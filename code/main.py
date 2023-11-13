@@ -37,7 +37,7 @@ def main(args):
     train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas ]
     train_transforms, val_transforms = get_transform(args.image_size)
 
-    train_ds = SYDataset(data=train_datalist, transform=train_transforms)
+    train_ds = Dataset(data=train_datalist, transform=train_transforms)
     first = train_ds.__getitem__(0)
     print(f'first data: {first}')
     print(f' (2.1.2) train load dataloader')
@@ -45,7 +45,7 @@ def main(args):
 
     print(f' (2.2.1) valid dataset')
     val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
-    val_ds = SYDataset(data=val_datalist, transform=val_transforms)
+    val_ds = Dataset(data=val_datalist, transform=val_transforms)
     print(f' (2.2.2) valid load dataloader')
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
 
