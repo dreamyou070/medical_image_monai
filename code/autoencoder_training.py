@@ -90,7 +90,7 @@ def main(args):
     val_recon_losses = []
     intermediary_images = []
     num_example_images = 4
-    """
+
     for epoch in range(n_epochs):
         print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
@@ -166,19 +166,18 @@ def main(args):
             val_loss /= val_step
             val_recon_losses.append(val_loss)
             print(f"epoch {epoch + 1} val loss: {val_loss:.4f}")
+
+        # ------------------------------------------------------------------------------------------------------------
+        print(f' model saving ... ')
+        model_save_dir = os.path.join(args.model_save_baic_dir, 'model')
+        os.makedirs(model_save_dir, exist_ok=True)
+        save_obj = {'model': autoencoderkl.state_dict(),}
+        torch.save(save_obj, os.path.join(model_save_dir, f'checkpoint_{epoch+1}.pth'))
+
     progress_bar.close()
     del discriminator
     del perceptual_loss
     torch.cuda.empty_cache()
-    """
-    # ------------------------------------------------------------------------------------------------------------
-    print(f'step 5. saving autoencoder model')
-    model_save_dir = os.path.join(args.model_save_baic_dir, 'model')
-    os.makedirs(model_save_dir, exist_ok=True)
-    save_obj = {'model': autoencoderkl.state_dict(),}
-    torch.save(save_obj, os.path.join(model_save_dir, 'checkpoint_best.pth'))
-
-
 
 
 
