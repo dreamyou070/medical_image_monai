@@ -124,25 +124,29 @@ def main(args) :
     num_example_images = 4
 
     for epoch in range(n_epochs):
+
         print(f' epoch {epoch + 1}/{n_epochs}')
+
         autoencoderkl.train()
         discriminator.train()
+
         epoch_loss = 0
         gen_epoch_loss = 0
         disc_epoch_loss = 0
+
         progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=110)
         progress_bar.set_description(f"Epoch {epoch}")
+        
         for step, batch in progress_bar:
             images = batch["image"].to(device)
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
-                reconstruction, z_mu, z_sigma = autoencoderkl(images)
 
+                reconstruction, z_mu, z_sigma = autoencoderkl(images)
                 # ------------------------------------------------------------------------------------------------------------
                 # (1) reconstruction loss (L1)
                 recons_loss = F.l1_loss(reconstruction.float(),
                                         images.float())
-
                 # ------------------------------------------------------------------------------------------------------------
                 # (2) preceptual loss
                 p_loss = perceptual_loss(reconstruction.float(),
