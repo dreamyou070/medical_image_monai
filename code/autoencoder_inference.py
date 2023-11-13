@@ -46,6 +46,9 @@ def main(args) :
             recon_img_list.append(recon_img[:1, 0])
             reconstructions = torch.reshape(recon_img, (width, height)).T
             print(f'recon_img : {recon_img.shape} | reconstructions : {reconstructions.shape}')
+            plt.imshow(reconstructions.cpu(), cmap='gray')
+            plt.savefig(f'./reconstructions_{idx}.png')
+            plt.close()
 
 
 if __name__ == '__main__':
