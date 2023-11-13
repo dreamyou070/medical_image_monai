@@ -1,19 +1,10 @@
 from monai.config import print_config
 from utils import set_determinism
-from monai.utils import first
+from data import get_transform
 import os
-import matplotlib.pyplot as plt
-import torch
-from monai.data import DataLoader, Dataset
 from monai.utils import first, set_determinism
-from torch.cuda.amp import GradScaler, autocast
-from tqdm import tqdm
-from generative.inferers import LatentDiffusionInferer
-from generative.losses.adversarial_loss import PatchAdversarialLoss
-from generative.losses.perceptual import PerceptualLoss
-from generative.networks.nets import AutoencoderKL, DiffusionModelUNet, PatchDiscriminator
-from generative.networks.schedulers import DDPMScheduler
 import argparse
+from monai.data import DataLoader, Dataset
 
 #from data import get_transform, SYDataset, SYDataLoader
 
@@ -24,15 +15,29 @@ def main(args):
     print_config()
     set_determinism(args.seed)
 
-    """
+
     print(f'\n step 2. dataset and dataloader')
-    print(f' (2.1.1) train dataset')
     total_datas = os.listdir(args.data_folder)
-    total_num = len(total_datas)
-    train_num = int(0.7 * total_num)
-    train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
-    train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas ]
+    print(f' (2.0) data transform')
     train_transforms, val_transforms = get_transform(args.image_size)
+    print(f' (2.1.1) train dataset')
+    train_num = int(0.7 * len(total_datas))
+    train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
+    train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas]
+    train_ds = Dataset(data=train_datalist, transform=train_transforms)
+    print(f' (2.1.2) train dataloader')
+    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4,
+                              persistent_workers=True)
+    check_data = first(train_loader)
+    print(f' (2.2) val dataset')
+    val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
+
+    """
+    
+    
+    
+    
+    
 
     #train_ds = Dataset(data=train_datalist,
     #                   transform=train_transforms)
@@ -43,7 +48,7 @@ def main(args):
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,num_workers=4, persistent_workers=True)
 
     print(f' (2.2.1) valid dataset')
-    val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
+    
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
     print(f' (2.2.2) valid load dataloader')
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
@@ -123,15 +128,18 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    # step 1. print version and set seed
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--root_dir", type=str, default='../experiment')
+    # step 2. dataset and dataloader
+    parser.add_argument("--data_folder", type=str, default='../experiment/MedNIST/Hand')
+
     parser.add_argument("--image_size", type=int, default=64)
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda')
     # step 2. dataset and dataloader
     #arser.add_argument("--data_folder", type=str, default='../experiment/dental/Radiographs_L')
-    parser.add_argument("--data_folder", type=str, default='../experiment/MedNIST/Hand')
+
 
 
     args = parser.parse_args()
