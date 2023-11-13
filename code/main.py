@@ -32,7 +32,7 @@ def main(args):
 
     print(f' (2.2.1) val dataset')
     val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
-    val_ds = SYDataset(data_module=val_datalist, transform=val_transforms)
+    val_ds = SYDataset(data=val_datalist, transform=val_transforms)
     print(f' (2.2.2) val dataloader')
     val_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
 
