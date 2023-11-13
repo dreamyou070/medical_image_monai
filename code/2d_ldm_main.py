@@ -53,12 +53,12 @@ def main(args) :
 
     print(f'\n step 2. dataset and dataloader')
     print(f' (2.1) train dataset')
-    train_data = MedNISTDataset(root_dir=root_dir, section="training", #download=True,
-                                seed=0)
-    train_datalist = []
-    for item in train_data.data :
-        if item["class_name"] == "Hand" :
-            train_datalist.append({"image": item["image"]})
+    total_datas = os.listdir(args.data_folder)
+    total_num = len(total_datas)
+    train_num = int(0.7 * total_num)
+    train_datas, val_datalist = total_datas[:train_num], total_datas[train_num:]
+    train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas]
+
     train_transforms, val_transforms = get_transform(args.image_size)
     train_ds = Dataset(data=train_datalist,transform=train_transforms)
     print(f' (2.1.2) load dataloader')
@@ -76,7 +76,6 @@ def main(args) :
 
     print(f' (2.2) validation dataset')
     val_data = MedNISTDataset(root_dir=root_dir, section="validation", download=True, seed=0)
-    val_datalist = [{"image": item["image"]} for item in val_data.data if item["class_name"] == "Hand"]
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
     print(f' (2.2.2) validation dataloader')
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
@@ -525,6 +524,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--root_dir", type=str, default='../experiment')
+    parser.add_argument("--data_folder", type=str, default='../experiment/MedNIST/Hand' )
     parser.add_argument("--image_size", type=int, default=64)
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)

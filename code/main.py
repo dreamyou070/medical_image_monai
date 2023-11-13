@@ -53,8 +53,9 @@ def main(args):
     train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas ]
     train_transforms, val_transforms = get_transform(args.image_size)
 
-    train_ds = Dataset(data=train_datalist,
-                       transform=train_transforms)
+    #train_ds = Dataset(data=train_datalist,
+    #                   transform=train_transforms)
+    train_ds = Dataset(data=train_datalist, transform=train_transforms)
     first = train_ds.__getitem__(0)
     print(f'first data: {first}')
     print(f' (2.1.2) train load dataloader')
