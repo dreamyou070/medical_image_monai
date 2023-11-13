@@ -126,7 +126,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--root_dir", type=str, default='../experiment')
-    parser.add_argument("--image_size", type=int, default='160,84')
+    parser.add_argument("--image_size", type=str, default='160,84')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda')
