@@ -1,17 +1,16 @@
 from __future__ import annotations
-
 import collections.abc
 from collections.abc import Callable, Sequence
 from typing import IO, TYPE_CHECKING, Any
 import numpy as np
 from torch.utils.data import Dataset as _TorchDataset
 from torch.utils.data import Subset
-from data.transforms import apply_transform
+from transforms import apply_transform
 from monai.utils import min_version, optional_import
-from data.load_image import LoadImaged
-from data.ensure_channel_first import EnsureChannelFirstd
-from data.scaling import ScaleIntensityRanged
-from data.affine_transferling import RandAffined
+from load_image import LoadImaged
+from ensure_channel_first import EnsureChannelFirstd
+from scaling import ScaleIntensityRanged
+from affine_transferling import RandAffined
 from monai import transforms
 import warnings
 import torch
