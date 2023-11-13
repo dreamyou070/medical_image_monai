@@ -4,8 +4,11 @@ from data_module import get_transform, SYDataset, SYDataLoader
 import os
 from monai.utils import first, set_determinism
 import argparse
-
-#from data_module import get_transform, SYDataset, SYDataLoader
+import torch
+from generative.losses.adversarial_loss import PatchAdversarialLoss
+from generative.losses.perceptual import PerceptualLoss
+from generative.networks.nets import AutoencoderKL, DiffusionModelUNet, PatchDiscriminator
+from tqdm import tqdm
 
 
 def main(args):
@@ -24,34 +27,16 @@ def main(args):
     train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas]
     train_ds = SYDataset(data=train_datalist, transform=train_transforms)
     print(f' (2.1.2) train dataloader')
-    train_loader = SYDataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4,
-                              persistent_workers=True)
+    train_loader = SYDataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
     check_data = first(train_loader)
 
     print(f' (2.2.1) val dataset')
     val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
+    val_ds = SYDataset(data_module=val_datalist, transform=val_transforms)
+    print(f' (2.2.2) val dataloader')
+    val_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
 
     """
-    
-    
-    
-    
-    
-
-    #train_ds = Dataset(data_module=train_datalist,
-    #                   transform=train_transforms)
-    train_ds = Dataset(data_module=train_datalist, transform=train_transforms)
-    first = train_ds.__getitem__(0)
-    print(f'first data_module: {first}')
-    print(f' (2.1.2) train load dataloader')
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,num_workers=4, persistent_workers=True)
-
-    print(f' (2.2.1) valid dataset')
-    
-    val_ds = Dataset(data_module=val_datalist, transform=val_transforms)
-    print(f' (2.2.2) valid load dataloader')
-    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
-
     print(f' (2.1.3) visualise examples from the training set')
     print(f' (2.1.3.1) get first datas')
     check_data = first(train_loader)
@@ -61,7 +46,7 @@ def main(args):
         ax[image_n].imshow(check_data["image"][image_n, 0, :, :], cmap="gray")
         ax[image_n].axis("off")
     plt.show()
-    
+    """
 
     print(f'\n step 3. model')
     print(f' (3.0) device')
@@ -120,7 +105,7 @@ def main(args):
 
         for step, batch in progress_bar:
             print(batch.__dict__)    
-    """
+
             
 
 
