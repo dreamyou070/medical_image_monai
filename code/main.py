@@ -1,13 +1,9 @@
-import os
-import shutil
-import tempfile
-import matplotlib.pyplot as plt
-import numpy as np
-import torch
-import torch.nn.functional as F
-from monai import transforms
-from monai.apps import MedNISTDataset
 from monai.config import print_config
+from utils import set_determinism
+from monai.utils import first
+import os
+import matplotlib.pyplot as plt
+import torch
 from monai.data import DataLoader, Dataset
 from monai.utils import first, set_determinism
 from torch.cuda.amp import GradScaler, autocast
@@ -18,32 +14,17 @@ from generative.losses.perceptual import PerceptualLoss
 from generative.networks.nets import AutoencoderKL, DiffusionModelUNet, PatchDiscriminator
 from generative.networks.schedulers import DDPMScheduler
 import argparse
+
 #from data import get_transform, SYDataset, SYDataLoader
-def get_transform(image_size) :
-    #w,h = image_size.split(',')
-    train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
-                                               transforms.EnsureChannelFirstd(keys=["image"]),
-                                               transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
-                                               transforms.RandAffined(keys=["image"],
-                                                                      rotate_range=[(-np.pi / 36, np.pi / 36), (-np.pi / 36, np.pi / 36)],
-                                                                      translate_range=[(-1, 1), (-1, 1)],
-                                                                      scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-                                                                      spatial_size=[64,64],
-                                                                      padding_mode="zeros",
-                                                                      prob=0.5,),])
-    val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
-                                         transforms.EnsureChannelFirstd(keys=["image"]),
-                                         transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),])
-    return train_transforms, val_transforms
+
 
 def main(args):
 
-    print(f'\n step 1. print version related')
+    print(f'\n step 1. print version and set seed')
     print_config()
-
-    print(f' (1.1) set deterministic training for reproducibility')
     set_determinism(args.seed)
 
+    """
     print(f'\n step 2. dataset and dataloader')
     print(f' (2.1.1) train dataset')
     total_datas = os.listdir(args.data_folder)
@@ -135,6 +116,7 @@ def main(args):
 
         for step, batch in progress_bar:
             print(batch.__dict__)    
+    """
             
 
 
