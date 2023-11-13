@@ -18,59 +18,36 @@ from generative.losses.perceptual import PerceptualLoss
 from generative.networks.nets import AutoencoderKL, DiffusionModelUNet, PatchDiscriminator
 from generative.networks.schedulers import DDPMScheduler
 import argparse
-
-
-def get_transform(image_size):
-    train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
-                                           transforms.EnsureChannelFirstd(keys=["image"]),
-                                           transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0,
-                                                                           b_min=0.0, b_max=1.0, clip=True),
-                                           transforms.RandAffined(keys=["image"],
-                                                                  rotate_range=[(-np.pi / 36, np.pi / 36),
-                                                                                (-np.pi / 36, np.pi / 36)],
-                                                                  translate_range=[(-1, 1), (-1, 1)],
-                                                                  scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-                                                                  spatial_size=[image_size, image_size],
-                                                                  padding_mode="zeros",
-                                                                  prob=0.5, ), ])
-    val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
-                                         transforms.EnsureChannelFirstd(keys=["image"]),
-                                         transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0,
-                                                                         b_min=0.0, b_max=1.0, clip=True), ])
-    return train_transforms, val_transforms
-
+from data import get_transform, SYDataset, SYDataLoader
 
 def main(args):
+
     print(f'\n step 1. print version related')
     print_config()
 
     print(f' (1.1) set deterministic training for reproducibility')
     set_determinism(args.seed)
 
-    print(f' (1.2) data directory and download dataset')
-    # there is no datadirectory ...
-    environment_argument = os.environ
-    directory = environment_argument.get("MONAI_DATA_DIRECTORY")
-    # make temp directory
-    root_dir = args.root_dir
-    os.makedirs(root_dir, exist_ok=True)
-
     print(f'\n step 2. dataset and dataloader')
-    print(f' (2.1) train dataset')
-    train_data = MedNISTDataset(root_dir=root_dir, section="training",  # download=True,
-                                seed=0)
-    train_datalist = []
-    for item in train_data.data:
-        if item["class_name"] == "Hand":
-            train_datalist.append({"image": item["image"]})
+    print(f' (2.1.1) train dataset')
+    total_datas = os.listdir(args.data_folder)
+    total_num = len(total_datas)
+    train_num = int(0.7 * total_num)
+    train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
+    train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas ]
     train_transforms, val_transforms = get_transform(args.image_size)
-    train_ds = Dataset(data=train_datalist, transform=train_transforms)
+    train_ds = SYDataset(data=train_datalist, transform=train_transforms)
+
+    print(f' (2.1.2) train load dataloader')
+    train_loader = SYDataLoader(train_ds, batch_size=args.batch_size, shuffle=True,num_workers=4, persistent_workers=True)
+
+    print(f' (2.2.1) valid dataset')
+    val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
+    val_ds = SYDataset(data=val_datalist, transform=val_transforms)
+    print(f' (2.2.2) valid load dataloader')
+    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
 
     """
-    print(f' (2.1.2) load dataloader')
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4,
-                              persistent_workers=True)
-
     print(f' (2.1.3) visualise examples from the training set')
     print(f' (2.1.3.1) get first datas')
     check_data = first(train_loader)
@@ -80,14 +57,9 @@ def main(args):
         ax[image_n].imshow(check_data["image"][image_n, 0, :, :], cmap="gray")
         ax[image_n].axis("off")
     plt.show()
+    """
 
-    print(f' (2.2) validation dataset')
-    val_data = MedNISTDataset(root_dir=root_dir, section="validation", download=True, seed=0)
-    val_datalist = [{"image": item["image"]} for item in val_data.data if item["class_name"] == "Hand"]
-    val_ds = Dataset(data=val_datalist, transform=val_transforms)
-    print(f' (2.2.2) validation dataloader')
-    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
-
+    """    
     print(f'\n step 3. model')
     print(f' (3.0) device')
     device = torch.device("cuda")
@@ -159,5 +131,9 @@ if __name__ == "__main__":
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda')
+    # step 2. dataset and dataloader
+    parser.add_argument("--data_folder", type=str, default='../experiment/MedNIST/Hand')
+
+
     args = parser.parse_args()
     main(args)
