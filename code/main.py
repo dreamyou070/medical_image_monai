@@ -18,7 +18,22 @@ from generative.losses.perceptual import PerceptualLoss
 from generative.networks.nets import AutoencoderKL, DiffusionModelUNet, PatchDiscriminator
 from generative.networks.schedulers import DDPMScheduler
 import argparse
-from data import get_transform, SYDataset, SYDataLoader
+#from data import get_transform, SYDataset, SYDataLoader
+def get_transform(image_size) :
+    train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
+                                               transforms.EnsureChannelFirstd(keys=["image"]),
+                                               transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
+                                               transforms.RandAffined(keys=["image"],
+                                                                      rotate_range=[(-np.pi / 36, np.pi / 36), (-np.pi / 36, np.pi / 36)],
+                                                                      translate_range=[(-1, 1), (-1, 1)],
+                                                                      scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
+                                                                      spatial_size=[image_size, image_size],
+                                                                      padding_mode="zeros",
+                                                                      prob=0.5,),])
+    val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
+                                         transforms.EnsureChannelFirstd(keys=["image"]),
+                                         transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),])
+    return train_transforms, val_transforms
 
 def main(args):
 
@@ -37,7 +52,8 @@ def main(args):
     train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas ]
     train_transforms, val_transforms = get_transform(args.image_size)
 
-    train_ds = Dataset(data=train_datalist, transform=train_transforms)
+    train_ds = Dataset(data=train_datalist,
+                       transform=train_transforms)
     first = train_ds.__getitem__(0)
     print(f'first data: {first}')
     print(f' (2.1.2) train load dataloader')
