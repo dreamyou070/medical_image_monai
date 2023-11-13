@@ -29,8 +29,15 @@ def main(args) :
     train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
     val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
     val_ds = SYDataset(data=val_datalist, transform=val_transforms)
-    first_data = val_ds.__getitem__(0)['image']
-    print(f'first_data : {first_data}')
+    print(f' (3.0) random select numbers')
+    inference_num = args.inference_num
+    random_idx = np.random.randint(0, len(val_ds), size=inference_num)
+    print(f'random_idx : {random_idx}')
+    for idx in random_idx :
+        org_img = val_ds[idx]['image']
+        print(f'idx : {idx} |  org_img.shape : {org_img.shape}')
+
+
 
 
 if __name__ == '__main__':
@@ -44,5 +51,6 @@ if __name__ == '__main__':
     parser.add_argument('--pretrained_dir', type=str, default='/data7/sooyeon/medical_image/model/checkpoint_25.pth')
     # step 3. get original image for reconstruct
     parser.add_argument("--data_folder", type=str, default='../experiment/dental/Radiographs_L')
+    parser.add_argument("--inference_num", type=int, default=5)
     args = parser.parse_args()
     main(args)
