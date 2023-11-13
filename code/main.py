@@ -176,7 +176,7 @@ def main(args):
     model_save_dir = os.path.join(args.model_save_baic_dir, 'model')
     os.makedirs(model_save_dir, exist_ok=True)
     save_obj = {'model': autoencoderkl.state_dict(),}
-    torch.save(save_obj, os.path.join(args.output_dir, 'checkpoint_best.pth'))
+    torch.save(save_obj, os.path.join(model_save_dir, 'checkpoint_best.pth'))
 
 
 
