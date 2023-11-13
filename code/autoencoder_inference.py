@@ -48,7 +48,7 @@ def main(args) :
             recon_img_list.append(recon_img[:1, 0])
             reconstructions = torch.reshape(recon_img, (width, height)).T # height, width
 
-            org_img_ = org_img_.squeeze()
+            org_img_ = org_img_.squeeze().T
             ax[0].imshow(org_img_.cpu(), cmap="gray")
             ax[0].set_title('original')
             ax[0].axis("off")
