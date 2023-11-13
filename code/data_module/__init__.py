@@ -36,7 +36,7 @@ __all__ = ["SYDataset", "SYDataLoader"]
 
 
 def get_transform(image_size):
-
+    w,h = image_size.split(',')
     img_loader = LoadImaged(keys=["image"])
     channel_orderer = EnsureChannelFirstd(keys=["image"])
     image_range_changer = ScaleIntensityRanged(keys=["image"],
@@ -47,19 +47,12 @@ def get_transform(image_size):
     #                if `spatial_size` and `self.spatial_size` are not defined, or smaller than 1, the transform will use the spatial size of `img`.
     # 2) prob
     affine_transformer = RandAffined(keys=["image"],
-                                     spatial_size=[64,64],
+                                     spatial_size=[int(w.strip()), int(h.strip())],
                                      prob=0.5,
                                      rotate_range=[(-np.pi / 36, np.pi / 36),(-np.pi / 36, np.pi / 36)],
                                      translate_range=[(-1, 1), (-1, 1)],
                                      scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
                                      padding_mode="zeros",)
-    #affine_transformer = transforms.RandAffined(keys=["image"],
-    #                                            rotate_range=[(-np.pi / 36, np.pi / 36),(-np.pi / 36, np.pi / 36)],
-    #                                            translate_range=[(-1, 1), (-1, 1)],
-    #                                            scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-    #                                            spatial_size=[image_size, image_size],
-    #                                            padding_mode="zeros",
-    #                                            prob=0.5, )
     train_transforms = transforms.Compose([img_loader,
                                            channel_orderer,
                                            image_range_changer,

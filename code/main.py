@@ -15,7 +15,6 @@ def main(args):
     print_config()
     set_determinism(args.seed)
 
-
     print(f'\n step 2. dataset and dataloader')
     total_datas = os.listdir(args.data_folder)
     print(f' (2.0) data_module transform')
@@ -132,8 +131,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
     # step 2. dataset and dataloader
     parser.add_argument("--data_folder", type=str, default='../experiment/MedNIST/Hand')
-
-    parser.add_argument("--image_size", type=int, default=64)
+    parser.add_argument("--image_size", type=str, default='164,84')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda')
