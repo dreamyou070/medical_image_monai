@@ -37,19 +37,9 @@ def get_transform(image_size) :
 
 def main(args) :
 
-    print(f'\n step 1. print version related')
+    print(f'\n step 1. print version and set seed')
     print_config()
-
-    print(f' (1.1) set deterministic training for reproducibility')
     set_determinism(args.seed)
-
-    print(f' (1.2) data directory and download dataset')
-    # there is no datadirectory ...
-    environment_argument = os.environ
-    directory = environment_argument.get("MONAI_DATA_DIRECTORY")
-    # make temp directory
-    root_dir = args.root_dir
-    os.makedirs(root_dir, exist_ok=True)
 
     print(f'\n step 2. dataset and dataloader')
     print(f' (2.1) train dataset')
