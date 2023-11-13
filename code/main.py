@@ -131,7 +131,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default='cuda')
     # step 2. dataset and dataloader
     #arser.add_argument("--data_folder", type=str, default='../experiment/dental/Radiographs_L')
-    parser.add_argument("--data_folder", type=str, default='../experiment/MedNist/Hand')
+    parser.add_argument("--data_folder", type=str, default='../experiment/MedNIST/Hand')
 
 
     args = parser.parse_args()
