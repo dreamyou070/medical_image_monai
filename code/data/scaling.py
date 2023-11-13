@@ -4,7 +4,6 @@ from monai.config import KeysCollection
 from monai.transforms.intensity.array import ScaleIntensityRange
 from monai.transforms.transform import MapTransform
 from monai.utils.enums import PostFix
-from __future__ import annotations
 from warnings import warn
 import numpy as np
 from monai.config import DtypeLike
