@@ -20,6 +20,7 @@ from generative.networks.schedulers import DDPMScheduler
 import argparse
 #from data import get_transform, SYDataset, SYDataLoader
 def get_transform(image_size) :
+    w,h = image_size.split(',')
     train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                                transforms.EnsureChannelFirstd(keys=["image"]),
                                                transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
@@ -27,7 +28,7 @@ def get_transform(image_size) :
                                                                       rotate_range=[(-np.pi / 36, np.pi / 36), (-np.pi / 36, np.pi / 36)],
                                                                       translate_range=[(-1, 1), (-1, 1)],
                                                                       scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-                                                                      spatial_size=[image_size, image_size],
+                                                                      spatial_size=[w,h],
                                                                       padding_mode="zeros",
                                                                       prob=0.5,),])
     val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
