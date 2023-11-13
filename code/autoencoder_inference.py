@@ -29,7 +29,8 @@ def main(args) :
     train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
     val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
     val_ds = SYDataset(data=val_datalist, transform=val_transforms)
-    first_data = val_ds.__getitem__(0)
+    first_data = val_ds.__getitem__(0)['image']
+    print(f'first_data : {first_data}')
 
 
 if __name__ == '__main__':
