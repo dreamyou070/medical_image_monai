@@ -33,14 +33,18 @@ def main(args) :
     print(f' (3.0) random select numbers')
     inference_num = args.inference_num
     random_idx = np.random.randint(0, len(val_ds), size=inference_num)
+    recon_img_list = []
     for idx in random_idx :
         # ------------------------------------------------------------------------------------------------
         # org shape is [1615,840]
         org_img = val_ds[idx]['image'].unsqueeze(0).to(device)
-        
+
         with torch.no_grad():
             recon_img, z_mu, z_sigma = autoencoderkl(org_img)
-            print(f'random_idx : {random_idx} | recon_img.shape : {recon_img.shape}')
+            batch, channel, width, height = recon_img.shape
+            # recon_img = [Batch, Channel=1, Width, Height]
+            recon_img_list.append(recon_img[:1, 0])
+            reconstructions = torch.reshape(recon_img, (width, height)).T
 
 
 if __name__ == '__main__':
