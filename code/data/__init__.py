@@ -5,8 +5,12 @@ from typing import IO, TYPE_CHECKING, Any
 import numpy as np
 from torch.utils.data import Dataset as _TorchDataset
 from torch.utils.data import Subset
-from monai.transforms import Compose ,Randomizable ,RandomizableTrait ,Transform ,apply_transform
-from monai.utils import MAX_SEED, convert_to_tensor, get_seed, look_up_option, min_version, optional_import
+from data.transforms import apply_transform
+from monai.utils import min_version, optional_import
+from data.load_image import LoadImaged
+from data.ensure_channel_first import EnsureChannelFirstd
+from data.scaling import ScaleIntensityRanged
+from data.affine_transferling import RandAffined
 from monai import transforms
 import warnings
 import torch
@@ -14,6 +18,7 @@ from torch.utils.data import DataLoader as _TorchDataLoader
 from torch.utils.data import Dataset
 from monai.data.meta_obj import get_track_meta
 from monai.data.utils import list_data_collate, set_rnd, worker_init_fn
+
 if TYPE_CHECKING:
     has_tqdm = True
 else:
@@ -28,18 +33,37 @@ kvikio_numpy, _ = optional_import("kvikio.numpy")
 __all__ = ["SYDataset", "SYDataLoader"]
 
 def get_transform(image_size):
-    train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
-                                           transforms.EnsureChannelFirstd(keys=["image"]),
-                                           transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0,
-                                                                           b_min=0.0, b_max=1.0, clip=True),
-                                           transforms.RandAffined(keys=["image"],
-                                                                  rotate_range=[(-np.pi / 36, np.pi / 36),
-                                                                                (-np.pi / 36, np.pi / 36)],
-                                                                  translate_range=[(-1, 1), (-1, 1)],
-                                                                  scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-                                                                  spatial_size=[image_size, image_size],
-                                                                  padding_mode="zeros",
-                                                                  prob=0.5, ), ])
+
+    w,h = image_size.split('.')
+    w,h = int(w), int(h)
+    img_loader = LoadImaged(keys=["image"])
+    channel_orderer = EnsureChannelFirstd(keys=["image"])
+    image_range_changer = ScaleIntensityRanged(keys=["image"],
+                                  a_min=0.0, a_max=255.0, # original pixel range
+                                  b_min=0.0, b_max=1.0,   # target pixel range
+                                  clip=True)
+    # spatial_size = output image spatial size.
+    #                if `spatial_size` and `self.spatial_size` are not defined, or smaller than 1, the transform will use the spatial size of `img`.
+    # 2) prob
+    affine_transformer = RandAffined(keys=["image"],
+                                     spatial_size=[w,h],
+                                     prob=0.5,
+                                     rotate_range=[(-np.pi / 36, np.pi / 36),(-np.pi / 36, np.pi / 36)],
+                                     translate_range=[(-1, 1), (-1, 1)],
+                                     scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
+                                     padding_mode="zeros",)
+    #affine_transformer = transforms.RandAffined(keys=["image"],
+    #                                            rotate_range=[(-np.pi / 36, np.pi / 36),(-np.pi / 36, np.pi / 36)],
+    #                                            translate_range=[(-1, 1), (-1, 1)],
+    #                                            scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
+    #                                            spatial_size=[image_size, image_size],
+    #                                            padding_mode="zeros",
+    #                                            prob=0.5, )
+    train_transforms = transforms.Compose([img_loader,
+                                           channel_orderer,
+                                           image_range_changer,
+                                           affine_transformer])
+
     val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                          transforms.EnsureChannelFirstd(keys=["image"]),
                                          transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0,
@@ -62,10 +86,10 @@ class SYDataset(_TorchDataset):
     def __len__(self) -> int:
         return len(self.data)
 
-    def _transform(self, index: int):
-        """read and transforming the data. """
+    def data_transform(self, index: int):
+
         data_i = self.data[index]
-        preprocessed_data = apply_transform(self.transform, data_i) if self.transform is not None else data_i
+        preprocessed_data = apply_transform(self.transform, data_i)
         return preprocessed_data
 
     def __getitem__(self, index: int | slice | Sequence[int]):
@@ -78,7 +102,7 @@ class SYDataset(_TorchDataset):
         if isinstance(index, collections.abc.Sequence):
             return Subset(dataset=self, indices=index)
 
-        return self._transform(index)
+        return self.data_transform(index)
 
 
 

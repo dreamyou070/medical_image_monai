@@ -36,8 +36,10 @@ def main(args):
     train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
     train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas ]
     train_transforms, val_transforms = get_transform(args.image_size)
-    train_ds = SYDataset(data=train_datalist, transform=train_transforms)
 
+    train_ds = SYDataset(data=train_datalist, transform=train_transforms)
+    first = train_ds.__getitem__(0)
+    print(f'first data: {first}')
     print(f' (2.1.2) train load dataloader')
     train_loader = SYDataLoader(train_ds, batch_size=args.batch_size, shuffle=True,num_workers=4, persistent_workers=True)
 
@@ -57,9 +59,8 @@ def main(args):
         ax[image_n].imshow(check_data["image"][image_n, 0, :, :], cmap="gray")
         ax[image_n].axis("off")
     plt.show()
-    """
+    
 
-    """    
     print(f'\n step 3. model')
     print(f' (3.0) device')
     device = torch.device("cuda")
@@ -70,7 +71,6 @@ def main(args):
                                   with_encoder_nonlocal_attn=False, with_decoder_nonlocal_attn=False, ).to(device)
 
     print(f' (3.2) discriminator')
-    # what is patchDiscriminator ?
     discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,
                                        in_channels=1, out_channels=1).to(device)
 
@@ -117,9 +117,7 @@ def main(args):
         progress_bar.set_description(f"Epoch {epoch}")
 
         for step, batch in progress_bar:
-            print(batch.__dict__)
-
-    
+            print(batch.__dict__)    
     """
 
 
@@ -127,12 +125,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--root_dir", type=str, default='../experiment')
-    parser.add_argument("--image_size", type=int, default=64)
+    parser.add_argument("--image_size", type=int, default='160,84')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda')
     # step 2. dataset and dataloader
-    parser.add_argument("--data_folder", type=str, default='../experiment/MedNIST/Hand')
+    parser.add_argument("--data_folder", type=str, default='../experiment/dental/Radiographs_L')
 
 
     args = parser.parse_args()
