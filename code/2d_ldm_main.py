@@ -65,7 +65,6 @@ def main(args) :
     plt.show()
 
     print(f' (2.2) validation dataset')
-    val_data = MedNISTDataset(root_dir=root_dir, section="validation", download=True, seed=0)
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
     print(f' (2.2.2) validation dataloader')
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
