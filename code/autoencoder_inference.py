@@ -48,12 +48,17 @@ def main(args) :
             recon_img_list.append(recon_img[:1, 0])
             reconstructions = torch.reshape(recon_img, (width, height)).T # height, width
 
-            org_img_ = org_img_.squeeze().T
-            print(f'org_img_ : {org_img_.T.shape}  | reconstructions : {reconstructions.shape}')
-            #ax[0].imshow(org_img_.cpu(), cmap="gray")
-            #plt.imshow(reconstructions.cpu(), cmap='gray')
-            #plt.savefig(f'./reconstructions_{idx}.png')
-            #plt.close()
+            org_img_ = org_img_.squeeze()
+            ax[0].imshow(org_img_.cpu(), cmap="gray")
+            ax[0].set_title('original')
+            ax[0].axis("off")
+
+            ax[1].imshow(reconstructions.cpu(), cmap='gray')
+            ax[1].set_title('reconstruction')
+            ax[1].axis("off")
+
+            plt.savefig(f'./reconstructions_{idx}.png')
+            plt.close()
 
 
 if __name__ == '__main__':
