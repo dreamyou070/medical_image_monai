@@ -2,7 +2,7 @@
 
 # choose a new directory for every run
 output_dir: $datetime.datetime.now().strftime('./results/output_%y%m%d_%H%M%S')
-dataset_dir: ./data
+dataset_dir: ./data_module
 
 train_data:
   _target_ : MedNISTDataset
@@ -20,8 +20,8 @@ val_data:
   progress: false
   seed: 0
 
-train_datalist: '$[{"image": item["image"]} for item in @train_data.data if item["class_name"] == "Hand"]'
-val_datalist: '$[{"image": item["image"]} for item in @val_data.data if item["class_name"] == "Hand"]'
+train_datalist: '$[{"image": item["image"]} for item in @train_data.data_module if item["class_name"] == "Hand"]'
+val_datalist: '$[{"image": item["image"]} for item in @val_data.data_module if item["class_name"] == "Hand"]'
 
 batch_size: 8
 num_substeps: 1

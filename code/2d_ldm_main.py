@@ -328,7 +328,7 @@ def main(args) :
     #
     # ### Define diffusion model and scheduler
     #
-    # In this section, we will define the diffusion model that will learn data distribution of the latent representation of the autoencoder. Together with the diffusion model, we define a beta scheduler responsible for defining the amount of noise tahat is added across the diffusion's model Markov chain.
+    # In this section, we will define the diffusion model that will learn data_module distribution of the latent representation of the autoencoder. Together with the diffusion model, we define a beta scheduler responsible for defining the amount of noise tahat is added across the diffusion's model Markov chain.
 
     # +
     unet = DiffusionModelUNet(
@@ -505,7 +505,7 @@ def main(args) :
     plt.tight_layout()
     plt.axis("off")
 
-    # ### Clean-up data directory
+    # ### Clean-up data_module directory
 
     if directory is None:
         shutil.rmtree(root_dir)

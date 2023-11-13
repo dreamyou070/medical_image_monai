@@ -185,7 +185,7 @@ def compute_ssim_and_cs(
         y_pred: batch of predicted images with shape (batch_size, channels, spatial_dim1, spatial_dim2[, spatial_dim3])
         y: batch of target images with shape (batch_size, channels, spatial_dim1, spatial_dim2[, spatial_dim3])
         spatial_dims: number of spatial dimensions of the images (2, 3)
-        data_range: the data range of the images.
+        data_range: the data_module range of the images.
         kernel_type: the type of kernel to use for the SSIM computation. Can be either "gaussian" or "uniform".
         kernel_size: the size of the kernel to use for the SSIM computation.
         kernel_sigma: the standard deviation of the kernel to use for the SSIM computation.

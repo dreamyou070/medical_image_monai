@@ -121,7 +121,7 @@ class PNDMScheduler(Scheduler):
 
         Args:
             num_inference_steps: number of diffusion steps used when generating samples with a pre-trained model.
-            device: target device to put the data.
+            device: target device to put the data_module.
         """
         if num_inference_steps > self.num_train_timesteps:
             raise ValueError(

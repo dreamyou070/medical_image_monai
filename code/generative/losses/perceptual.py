@@ -198,7 +198,7 @@ class RadImageNetPerceptualSimilarity(nn.Module):
         """
         We expect that the input is normalised between [0, 1]. Given the preprocessing performed during the training at
         https://github.com/BMEII-AI/RadImageNet, we make sure that the input and target have 3 channels, reorder it from
-         'RGB' to 'BGR', and then remove the mean components of each input data channel. The outputs are normalised
+         'RGB' to 'BGR', and then remove the mean components of each input data_module channel. The outputs are normalised
         across the channels, and we obtain the mean from the spatial dimensions (similar approach to the lpips package).
         """
         # If input has just 1 channel, repeat channel to have 3 channels

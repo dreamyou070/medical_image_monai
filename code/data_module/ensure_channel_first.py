@@ -14,7 +14,7 @@ DEFAULT_POST_FIX = PostFix.meta()
 class EnsureChannelFirstd(MapTransform):
 
     backend = EnsureChannelFirst.backend
-    """ dictionary type of data (not sure what it does) ... """
+    """ dictionary type of data_module (not sure what it does) ... """
     def __init__(self, keys: KeysCollection,
                  strict_check: bool = True,
                  allow_missing_keys: bool = False,

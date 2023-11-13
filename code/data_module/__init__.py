@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import collections.abc
 from collections.abc import Callable, Sequence
 from typing import IO, TYPE_CHECKING, Any
@@ -32,10 +33,10 @@ kvikio_numpy, _ = optional_import("kvikio.numpy")
 
 __all__ = ["SYDataset", "SYDataLoader"]
 
+
+
 def get_transform(image_size):
 
-    w,h = image_size.split(',')
-    w,h = int(w), int(h)
     img_loader = LoadImaged(keys=["image"])
     channel_orderer = EnsureChannelFirstd(keys=["image"])
     image_range_changer = ScaleIntensityRanged(keys=["image"],
@@ -46,7 +47,7 @@ def get_transform(image_size):
     #                if `spatial_size` and `self.spatial_size` are not defined, or smaller than 1, the transform will use the spatial size of `img`.
     # 2) prob
     affine_transformer = RandAffined(keys=["image"],
-                                     spatial_size=[w,h],
+                                     spatial_size=[64,64],
                                      prob=0.5,
                                      rotate_range=[(-np.pi / 36, np.pi / 36),(-np.pi / 36, np.pi / 36)],
                                      translate_range=[(-1, 1), (-1, 1)],

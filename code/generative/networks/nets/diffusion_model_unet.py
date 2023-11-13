@@ -236,7 +236,7 @@ class BasicTransformerBlock(nn.Module):
 
 class SpatialTransformer(nn.Module):
     """
-    Transformer block for image-like data. First, project the input (aka embedding) and reshape to b, t, d. Then apply
+    Transformer block for image-like data_module. First, project the input (aka embedding) and reshape to b, t, d. Then apply
     standard transformer action. Finally, reshape to image.
 
     Args:

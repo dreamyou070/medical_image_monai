@@ -28,7 +28,7 @@ class ScaleIntensityRange(Transform):
         a : intensity original range.
         b : intensity target range.
         clip: whether to perform clip after scaling.
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
     """
     backend = [TransformBackends.TORCH, TransformBackends.NUMPY]
     def __init__(self,a_min: float,a_max: float,

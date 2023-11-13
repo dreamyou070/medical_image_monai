@@ -32,7 +32,7 @@ class VQVAEResidualUnit(nn.Module):
     https://github.com/AmigoLab/SynthAnatomy/blob/main/src/networks/vqvae/baseline.py#L150.
 
     Args:
-        spatial_dims: number of spatial spatial_dims of the input data.
+        spatial_dims: number of spatial spatial_dims of the input data_module.
         num_channels: number of input channels.
         num_res_channels: number of channels in the residual layers.
         act: activation type and arguments. Defaults to RELU.

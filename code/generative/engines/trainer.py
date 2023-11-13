@@ -60,7 +60,7 @@ class AdversarialTrainer(Trainer):
             parameters. if not provided, use `self._iteration()` instead.
         g_inferer: inference method to execute G model forward. Defaults to ``SimpleInferer()``.
         d_inferer: inference method to execute D model forward. Defaults to ``SimpleInferer()``.
-        postprocessing: execute additional transformation for the model output data. Typically, several Tensor based
+        postprocessing: execute additional transformation for the model output data_module. Typically, several Tensor based
             transforms composed by `Compose`. Defaults to None
         key_train_metric: compute metric when every iteration completed, and save average value to engine.state.metrics
             when epoch completed. key_train_metric is the main metric to compare and save the checkpoint into files.
@@ -76,11 +76,11 @@ class AdversarialTrainer(Trainer):
         event_to_attr: a dictionary to map an event to a state attribute, then add to `engine.state`.
             for more details, check: https://pytorch.org/ignite/generated/ignite.engine.engine.Engine.html
             #ignite.engine.engine.Engine.register_events.
-        decollate: whether to decollate the batch-first data to a list of data after model computation, recommend
+        decollate: whether to decollate the batch-first data_module to a list of data_module after model computation, recommend
             `decollate=True` when `postprocessing` uses components from `monai.transforms`. default to `True`.
         optim_set_to_none: when calling `optimizer.zero_grad()`, instead of setting to zero, set the grads to None.
             more details: https://pytorch.org/docs/stable/generated/torch.optim.Optimizer.zero_grad.html.
-        to_kwargs: dict of other args for `prepare_batch` API when converting the input data, except for
+        to_kwargs: dict of other args for `prepare_batch` API when converting the input data_module, except for
             `device`, `non_blocking`.
         amp_kwargs: dict of the args for `torch.cuda.amp.autocast()` API, for more details:
             https://pytorch.org/docs/stable/amp.html#torch.cuda.amp.autocast.
@@ -188,8 +188,8 @@ class AdversarialTrainer(Trainer):
         """
         Callback function for the Adversarial Training processing logic of 1 iteration in Ignite Engine.
         Return below items in a dictionary:
-            - IMAGE: image Tensor data for model input, already moved to device.
-            - LABEL: label Tensor data corresponding to the image, already moved to device. In case of Unsupervised
+            - IMAGE: image Tensor data_module for model input, already moved to device.
+            - LABEL: label Tensor data_module corresponding to the image, already moved to device. In case of Unsupervised
                 Learning this is equal to IMAGE.
             - PRED: prediction result of model.
             - LOSS: loss value computed by loss functions of the generator (reconstruction and adversarial summed up).
@@ -206,15 +206,15 @@ class AdversarialTrainer(Trainer):
 
         Args:
             engine: `AdversarialTrainer` to execute operation for an iteration.
-            batchdata: input data for this iteration, usually can be dictionary or tuple of Tensor data.
+            batchdata: input data_module for this iteration, usually can be dictionary or tuple of Tensor data_module.
 
         Raises:
-            ValueError: must provide batch data for current iteration.
+            ValueError: must provide batch data_module for current iteration.
 
         """
 
         if batchdata is None:
-            raise ValueError("Must provide batch data for current iteration.")
+            raise ValueError("Must provide batch data_module for current iteration.")
         batch = engine.prepare_batch(batchdata, engine.state.device, engine.non_blocking, **engine.to_kwargs)
 
         if len(batch) == 2:

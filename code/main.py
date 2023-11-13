@@ -1,12 +1,12 @@
 from monai.config import print_config
 from utils import set_determinism
-from data import get_transform
+from code.data_module import get_transform
 import os
 from monai.utils import first, set_determinism
 import argparse
 from monai.data import DataLoader, Dataset
 
-#from data import get_transform, SYDataset, SYDataLoader
+#from data_module import get_transform, SYDataset, SYDataLoader
 
 
 def main(args):
@@ -18,7 +18,7 @@ def main(args):
 
     print(f'\n step 2. dataset and dataloader')
     total_datas = os.listdir(args.data_folder)
-    print(f' (2.0) data transform')
+    print(f' (2.0) data_module transform')
     train_transforms, val_transforms = get_transform(args.image_size)
     print(f' (2.1.1) train dataset')
     train_num = int(0.7 * len(total_datas))
@@ -39,17 +39,17 @@ def main(args):
     
     
 
-    #train_ds = Dataset(data=train_datalist,
+    #train_ds = Dataset(data_module=train_datalist,
     #                   transform=train_transforms)
-    train_ds = Dataset(data=train_datalist, transform=train_transforms)
+    train_ds = Dataset(data_module=train_datalist, transform=train_transforms)
     first = train_ds.__getitem__(0)
-    print(f'first data: {first}')
+    print(f'first data_module: {first}')
     print(f' (2.1.2) train load dataloader')
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,num_workers=4, persistent_workers=True)
 
     print(f' (2.2.1) valid dataset')
     
-    val_ds = Dataset(data=val_datalist, transform=val_transforms)
+    val_ds = Dataset(data_module=val_datalist, transform=val_transforms)
     print(f' (2.2.2) valid load dataloader')
     val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
 

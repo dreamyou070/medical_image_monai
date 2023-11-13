@@ -135,7 +135,7 @@ class RandAffined(RandomizableTransform, MapTransform, InvertibleTransform, Lazy
     ) -> dict[Hashable, NdarrayOrTensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -143,7 +143,7 @@ class RandAffined(RandomizableTransform, MapTransform, InvertibleTransform, Lazy
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         first_key: Hashable = self.first_key(d)

@@ -146,8 +146,8 @@ class DiffusionInferer(Inferer):
             save_intermediates: save the intermediate spatial KL maps
             conditioning: Conditioning for network input.
             mode: Conditioning mode for the network.
-            original_input_range: the [min,max] intensity range of the input data before any scaling was applied.
-            scaled_input_range: the [min,max] intensity range of the input data after scaling.
+            original_input_range: the [min,max] intensity range of the input data_module before any scaling was applied.
+            scaled_input_range: the [min,max] intensity range of the input data_module after scaling.
             verbose: if true, prints the progression bar of the sampling process.
         """
 
@@ -269,8 +269,8 @@ class DiffusionInferer(Inferer):
                       rescaled to the range [-1, 1].
             means: the Gaussian mean Tensor.
             log_scales: the Gaussian log stddev Tensor.
-            original_input_range: the [min,max] intensity range of the input data before any scaling was applied.
-            scaled_input_range: the [min,max] intensity range of the input data after scaling.
+            original_input_range: the [min,max] intensity range of the input data_module before any scaling was applied.
+            scaled_input_range: the [min,max] intensity range of the input data_module after scaling.
         """
         assert inputs.shape == means.shape
         bin_width = (scaled_input_range[1] - scaled_input_range[0]) / (
@@ -443,8 +443,8 @@ class LatentDiffusionInferer(DiffusionInferer):
             save_intermediates: save the intermediate spatial KL maps
             conditioning: Conditioning for network input.
             mode: Conditioning mode for the network.
-            original_input_range: the [min,max] intensity range of the input data before any scaling was applied.
-            scaled_input_range: the [min,max] intensity range of the input data after scaling.
+            original_input_range: the [min,max] intensity range of the input data_module before any scaling was applied.
+            scaled_input_range: the [min,max] intensity range of the input data_module after scaling.
             verbose: if true, prints the progression bar of the sampling process.
             resample_latent_likelihoods: if true, resamples the intermediate likelihood maps to have the same spatial
                 dimension as the input images.
