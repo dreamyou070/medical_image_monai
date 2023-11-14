@@ -50,7 +50,7 @@ def main(args):
     num_res_blocks = encoder.num_res_blocks
     print(f'num_res_blocks : {num_res_blocks}')
     decoder = autoencoderkl.decoder
-    """
+
 
     print(f' (3.2) discriminator')
     discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,
@@ -167,14 +167,11 @@ def main(args):
         model_save_dir = os.path.join(args.model_save_baic_dir, 'model')
         os.makedirs(model_save_dir, exist_ok=True)
         save_obj = {'model': autoencoderkl.state_dict(),}
-        torch.save(save_obj, os.path.join(model_save_dir, f'checkpoint_{epoch+1}.pth'))
-
+        torch.save(save_obj, os.path.join(model_save_dir, f'vae_checkpoint_{epoch+1}.pth'))
     progress_bar.close()
     del discriminator
     del perceptual_loss
     torch.cuda.empty_cache()
-    """
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -184,13 +181,13 @@ if __name__ == "__main__":
 
     # step 2. dataset and dataloader
     parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L')
-    parser.add_argument("--image_size", type=str, default='160,84')
+    parser.add_argument("--image_size", type=str, default='160,80')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--device", type=str, default='cuda')
+    parser.add_argument("--device", type=str, default='cuda:0')
 
     # step 5. saving autoencoder model
-    parser.add_argument("--model_save_baic_dir", type=str, default='/data7/sooyeon/medical_image')
+    parser.add_argument("--model_save_baic_dir", type=str, default='/data7/sooyeon/medical_image/experiment_result/vae_model')
 
     args = parser.parse_args()
     main(args)
