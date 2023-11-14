@@ -236,6 +236,7 @@ def main(args):
         if (epoch + 1) % val_interval == 0:
             unet.eval()
             autoencoderkl.eval()
+            """
             val_loss = 0
             with torch.no_grad():
                 for val_step, batch in enumerate(val_loader, start=1):
@@ -255,8 +256,9 @@ def main(args):
                         loss = F.mse_loss(noise_pred.float(), noise.float())
                     val_loss += loss.item()
             val_loss /= val_step
+            """
             #val_losses.append(val_loss)
-            print(f"Epoch {epoch} val loss: {val_loss:.4f}")
+            #print(f"Epoch {epoch} val loss: {val_loss:.4f}")
             # Sampling image during training
             z = torch.randn((1, 3, 40, 20))
             z = z.to(device)
