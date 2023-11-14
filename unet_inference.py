@@ -55,8 +55,17 @@ def main(args) :
                                               intermediate_steps=100,
                                               autoencoder_model=autoencoderkl,)
     print(f' (2.3) save')
-    print(f'  - type(image) : {type(image)}')
-    print(f'  - image shape : {image.shape}')
+    from matplotlib import pyplot as plt
+    decoded_images = []
+    for image in intermediates:
+        with torch.no_grad():
+            decoded_images.append(image)
+    plt.figure(figsize=(10, 12))
+    chain = torch.cat(decoded_images, dim=-1)
+    plt.style.use("default")
+    plt.imshow(chain[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
+    plt.tight_layout()
+    plt.savefig("test.jpg")
 
 if __name__ == '__main__' :
     parser = argparse.ArgumentParser()
