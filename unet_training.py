@@ -86,10 +86,12 @@ def main(args) :
             with autocast(enabled=True):
                 z_mu, z_sigma = autoencoderkl.encode(images)
                 z = autoencoderkl.sampling(z_mu, z_sigma)
+                print(f'autoencoder output : {z.shape}')
                 noise = torch.randn_like(z).to(device)
                 timesteps = torch.randint(0, inferer.scheduler.num_train_timesteps, (z.shape[0],),
                                           device=z.device).long()
-                noise_pred = inferer(inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps,
+                noise_pred = inferer(inputs=images,
+                                     diffusion_model=unet, noise=noise, timesteps=timesteps,
                                      autoencoder_model=autoencoderkl)
                 loss = F.mse_loss(noise_pred.float(), noise.float())
             scaler.scale(loss).backward()
