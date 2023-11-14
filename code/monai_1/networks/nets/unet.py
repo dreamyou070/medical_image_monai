@@ -41,9 +41,9 @@ class UNet(nn.Module):
 
     To further explain this consider the first example network given below. This network has 3 layers with strides
     of 2 for each of the middle layers (the last layer is the bottom connection which does not down/up sample). Input
-    data to this network is immediately reduced in the spatial dimensions by a factor of 2 by the first convolution of
+    data_module to this network is immediately reduced in the spatial dimensions by a factor of 2 by the first convolution of
     the residual unit defining the first layer of the encode part. The last layer of the decode part will upsample its
-    input (data from the previous layer concatenated with data from the skip connection) in the first convolution. this
+    input (data_module from the previous layer concatenated with data_module from the skip connection) in the first convolution. this
     ensures the final output of the network has the same shape as the input.
 
     Padding values for the convolutions are chosen to ensure output sizes are even divisors/multiples of the input
@@ -96,13 +96,13 @@ class UNet(nn.Module):
             strides=(2, 2, 2, 2),
         )
 
-    Note: The acceptable spatial size of input data depends on the parameters of the network,
+    Note: The acceptable spatial size of input data_module depends on the parameters of the network,
         to set appropriate spatial size, please check the tutorial for more details:
         https://github.com/Project-MONAI/tutorials/blob/master/modules/UNet_input_size_constrains.ipynb.
         Typically, when using a stride of 2 in down / up sampling, the output dimensions are either half of the
         input when downsampling, or twice when upsampling. In this case with N numbers of layers in the network,
         the inputs must have spatial dimensions that are all multiples of 2^N.
-        Usually, applying `resize`, `pad` or `crop` transforms can help adjust the spatial size of input data.
+        Usually, applying `resize`, `pad` or `crop` transforms can help adjust the spatial size of input data_module.
 
     """
 
@@ -199,7 +199,7 @@ class UNet(nn.Module):
 
     def _get_down_layer(self, in_channels: int, out_channels: int, strides: int, is_top: bool) -> nn.Module:
         """
-        Returns the encoding (down) part of a layer of the network. This typically will downsample data at some point
+        Returns the encoding (down) part of a layer of the network. This typically will downsample data_module at some point
         in its structure. Its output is used as input to the next layer down and is concatenated with output from the
         next layer to form the input for the decode (up) part of the layer.
 
@@ -251,7 +251,7 @@ class UNet(nn.Module):
 
     def _get_up_layer(self, in_channels: int, out_channels: int, strides: int, is_top: bool) -> nn.Module:
         """
-        Returns the decoding (up) part of a layer of the network. This typically will upsample data at some point
+        Returns the decoding (up) part of a layer of the network. This typically will upsample data_module at some point
         in its structure. Its output is used as input to the next layer up.
 
         Args:

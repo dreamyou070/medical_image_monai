@@ -34,7 +34,7 @@ __all__ = ["get_dist_device", "evenly_divisible_all_gather", "string_list_all_ga
 
 def get_dist_device():
     """
-    Get the expected target device in the native PyTorch distributed data parallel.
+    Get the expected target device in the native PyTorch distributed data_module parallel.
     For NCCL backend, return GPU device of current process.
     For GLOO backend, return CPU.
     For any other backends, return None as the default, tensor.to(None) will not change the device.
@@ -66,30 +66,30 @@ def evenly_divisible_all_gather(data: torch.Tensor, concat: bool) -> torch.Tenso
 
 def evenly_divisible_all_gather(data: torch.Tensor, concat: bool = True) -> torch.Tensor | list[torch.Tensor]:
     """
-    Utility function for distributed data parallel to pad at first dim to make it evenly divisible and all_gather.
-    The input data of every rank should have the same number of dimensions, only the first dim can be different.
+    Utility function for distributed data_module parallel to pad at first dim to make it evenly divisible and all_gather.
+    The input data_module of every rank should have the same number of dimensions, only the first dim can be different.
 
     Note: If has ignite installed, will execute based on ignite distributed APIs, otherwise, if the native
     PyTorch distributed group initialized, will execute based on native PyTorch distributed APIs.
 
     Args:
-        data: source tensor to pad and execute all_gather in distributed data parallel.
+        data: source tensor to pad and execute all_gather in distributed data_module parallel.
         concat: whether to concat the gathered list to be a Tensor, if False, return a list
             of Tensors, similar behavior as torch.distributed.all_gather(). default to True.
 
     Note:
-        The input data on different ranks must have exactly same `dtype`.
+        The input data_module on different ranks must have exactly same `dtype`.
 
     """
     if not isinstance(data, torch.Tensor):
-        raise ValueError("input data must be PyTorch Tensor.")
-    # data of all the ranks must have same number of dimensions
+        raise ValueError("input data_module must be PyTorch Tensor.")
+    # data_module of all the ranks must have same number of dimensions
     ndims = data.ndimension()
     length: int = data.shape[0] if ndims > 0 else 1
 
     def _torch_all_gather(data: torch.Tensor) -> list[torch.Tensor]:
         """
-        Implementation based on native PyTorch distributed data parallel APIs.
+        Implementation based on native PyTorch distributed data_module parallel APIs.
 
         """
         device = get_dist_device()
@@ -97,7 +97,7 @@ def evenly_divisible_all_gather(data: torch.Tensor, concat: bool = True) -> torc
         data = data.to(device)
         data = data.unsqueeze(0) if ndims == 0 else data
 
-        # make sure the data is evenly-divisible on multi-GPUs
+        # make sure the data_module is evenly-divisible on multi-GPUs
         length_tensor = torch.as_tensor([length], device=device)
         all_lens = [torch.zeros_like(length_tensor) for _ in range(dist.get_world_size())]
         dist.all_gather(all_lens, length_tensor)
@@ -110,7 +110,7 @@ def evenly_divisible_all_gather(data: torch.Tensor, concat: bool = True) -> torc
         # all gather across all processes
         output = [torch.zeros_like(data) for _ in range(dist.get_world_size())]
         dist.all_gather(output, data)
-        # remove the padding items, if all the input data doesn't have batch dim, squeeze the first dim
+        # remove the padding items, if all the input data_module doesn't have batch dim, squeeze the first dim
         return [(o.squeeze(0) if ndims == 0 else o[:l, ...]).to(orig_device) for o, l in zip(output, all_lens_)]
 
     def _ignite_all_gather(data: torch.Tensor) -> list[torch.Tensor]:
@@ -119,7 +119,7 @@ def evenly_divisible_all_gather(data: torch.Tensor, concat: bool = True) -> torc
 
         """
         data = data.unsqueeze(0) if ndims == 0 else data
-        # make sure the data is evenly-divisible on multi-GPUs
+        # make sure the data_module is evenly-divisible on multi-GPUs
         all_lens: list[int] = idist.all_gather(length)
         max_len: int = max(all_lens)
         if length < max_len:
@@ -129,7 +129,7 @@ def evenly_divisible_all_gather(data: torch.Tensor, concat: bool = True) -> torc
         output = idist.all_gather(data)
         # delete the padding NaN items
         if ndims == 0:
-            # if all the input data doesn't have batch dim, unbind to a list of 0-dim Tensors
+            # if all the input data_module doesn't have batch dim, unbind to a list of 0-dim Tensors
             return list(torch.unbind(output, dim=0))
         return [output[i * max_len : i * max_len + l, ...] for i, l in enumerate(all_lens)]
 
@@ -150,7 +150,7 @@ def evenly_divisible_all_gather(data: torch.Tensor, concat: bool = True) -> torc
 
 def string_list_all_gather(strings: list[str], delimiter: str = "\t") -> list[str]:
     """
-    Utility function for distributed data parallel to all gather a list of strings.
+    Utility function for distributed data_module parallel to all gather a list of strings.
     Refer to the idea of ignite `all_gather(string)`:
     https://pytorch.org/ignite/v0.4.5/distributed.html#ignite.distributed.utils.all_gather.
 

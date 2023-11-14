@@ -90,7 +90,7 @@ class RandGaussianNoise(RandomizableTransform):
         prob: Probability to add Gaussian noise.
         mean: Mean or “centre” of the distribution.
         std: Standard deviation (spread) of distribution.
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
 
     """
 
@@ -134,10 +134,10 @@ class RandRicianNoise(RandomizableTransform):
     """
     Add Rician noise to image.
     Rician noise in MRI is the result of performing a magnitude operation on complex
-    data with Gaussian noise of the same variance in both channels, as described in
+    data_module with Gaussian noise of the same variance in both channels, as described in
     `Noise in Magnitude Magnetic Resonance Images <https://doi.org/10.1002/cmr.a.20124>`_.
     This transform is adapted from `DIPY <https://github.com/dipy/dipy>`_.
-    See also: `The rician distribution of noisy mri data <https://doi.org/10.1002/mrm.1910340618>`_.
+    See also: `The rician distribution of noisy mri data_module <https://doi.org/10.1002/mrm.1910340618>`_.
 
     Args:
         prob: Probability to add Rician noise.
@@ -151,7 +151,7 @@ class RandRicianNoise(RandomizableTransform):
             histogram.
         sample_std: If True, sample the spread of the Gaussian distributions
             uniformly from 0 to std.
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
 
     """
 
@@ -329,7 +329,7 @@ class StdShiftIntensity(Transform):
         nonzero: whether only count non-zero values.
         channel_wise: if True, calculate on each channel separately. Please ensure
             that the first dimension represents the channel of the image if True.
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
     """
 
     backend = [TransformBackends.TORCH, TransformBackends.NUMPY]
@@ -394,7 +394,7 @@ class RandStdShiftIntensity(RandomizableTransform):
             prob: probability of std shift.
             nonzero: whether only count non-zero values.
             channel_wise: if True, calculate on each channel separately.
-            dtype: output data type, if None, same as input image. defaults to float32.
+            dtype: output data_module type, if None, same as input image. defaults to float32.
 
         """
         RandomizableTransform.__init__(self, prob)
@@ -450,13 +450,13 @@ class ScaleIntensity(Transform):
     ) -> None:
         """
         Args:
-            minv: minimum value of output data.
-            maxv: maximum value of output data.
+            minv: minimum value of output data_module.
+            maxv: maximum value of output data_module.
             factor: factor scale by ``v = v * (1 + factor)``. In order to use
                 this parameter, please set both `minv` and `maxv` into None.
             channel_wise: if True, scale on each channel separately. Please ensure
                 that the first dimension represents the channel of the image if True.
-            dtype: output data type, if None, same as input image. defaults to float32.
+            dtype: output data_module type, if None, same as input image. defaults to float32.
         """
         self.minv = minv
         self.maxv = maxv
@@ -512,7 +512,7 @@ class ScaleIntensityFixedMean(Transform):
             channel_wise: if True, scale on each channel separately. `preserve_range` and `fixed_mean` are also applied
                 on each channel separately if `channel_wise` is True. Please ensure that the first dimension represents the
                 channel of the image if True.
-            dtype: output data type, if None, same as input image. defaults to float32.
+            dtype: output data_module type, if None, same as input image. defaults to float32.
         """
         self.factor = factor
         self.preserve_range = preserve_range
@@ -603,7 +603,7 @@ class RandScaleIntensityFixedMean(RandomizableTransform):
             channel_wise: if True, scale on each channel separately. `preserve_range` and `fixed_mean` are also applied
             on each channel separately if `channel_wise` is True. Please ensure that the first dimension represents the
             channel of the image if True.
-            dtype: output data type, if None, same as input image. defaults to float32.
+            dtype: output data_module type, if None, same as input image. defaults to float32.
 
         """
         RandomizableTransform.__init__(self, prob)
@@ -664,7 +664,7 @@ class RandScaleIntensity(RandomizableTransform):
             prob: probability of scale.
             channel_wise: if True, scale on each channel separately. Please ensure
                 that the first dimension represents the channel of the image if True.
-            dtype: output data type, if None, same as input image. defaults to float32.
+            dtype: output data_module type, if None, same as input image. defaults to float32.
 
         """
         RandomizableTransform.__init__(self, prob)
@@ -725,7 +725,7 @@ class RandBiasField(RandomizableTransform):
         degree: degree of freedom of the polynomials. The value should be no less than 1.
             Defaults to 3.
         coeff_range: range of the random coefficients. Defaults to (0.0, 0.1).
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
         prob: probability to do random bias field.
 
     """
@@ -818,7 +818,7 @@ class NormalizeIntensity(Transform):
         nonzero: whether only normalize non-zero values.
         channel_wise: if True, calculate on each channel separately, otherwise, calculate on
             the entire image directly. default to False.
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
     """
 
     backend = [TransformBackends.TORCH, TransformBackends.NUMPY]
@@ -955,7 +955,7 @@ class ScaleIntensityRange(Transform):
         b_min: intensity target range min.
         b_max: intensity target range max.
         clip: whether to perform clip after scaling.
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
     """
 
     backend = [TransformBackends.TORCH, TransformBackends.NUMPY]
@@ -1197,7 +1197,7 @@ class ScaleIntensityRangePercentiles(Transform):
         relative: whether to scale to the corresponding percentiles of [b_min, b_max].
         channel_wise: if True, compute intensity percentile and normalize every channel separately.
             default to False.
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
     """
 
     backend = ScaleIntensityRange.backend
@@ -1261,16 +1261,16 @@ class ScaleIntensityRangePercentiles(Transform):
 
 class MaskIntensity(Transform):
     """
-    Mask the intensity values of input image with the specified mask data.
-    Mask data must have the same spatial size as the input image, and all
+    Mask the intensity values of input image with the specified mask data_module.
+    Mask data_module must have the same spatial size as the input image, and all
     the intensity values of input image corresponding to the selected values
-    in the mask data will keep the original value, others will be set to `0`.
+    in the mask data_module will keep the original value, others will be set to `0`.
 
     Args:
         mask_data: if `mask_data` is single channel, apply to every channel
             of input image. if multiple channels, the number of channels must
-            match the input data. the intensity values of input image corresponding
-            to the selected values in the mask data will keep the original value,
+            match the input data_module. the intensity values of input image corresponding
+            to the selected values in the mask data_module will keep the original value,
             others will be set to `0`. if None, must specify the `mask_data` at runtime.
         select_fn: function to select valid values of the `mask_data`, default is
             to select `values > 0`.
@@ -1286,9 +1286,9 @@ class MaskIntensity(Transform):
     def __call__(self, img: NdarrayOrTensor, mask_data: NdarrayOrTensor | None = None) -> NdarrayOrTensor:
         """
         Args:
-            mask_data: if mask data is single channel, apply to every channel
+            mask_data: if mask data_module is single channel, apply to every channel
                 of input image. if multiple channels, the channel number must
-                match input data. mask_data will be converted to `bool` values
+                match input data_module. mask_data will be converted to `bool` values
                 by `mask_data > 0` before applying transform to input image.
 
         Raises:
@@ -1315,7 +1315,7 @@ class MaskIntensity(Transform):
 
 class SavitzkyGolaySmooth(Transform):
     """
-    Smooth the input data along the given axis using a Savitzky-Golay filter.
+    Smooth the input data_module along the given axis using a Savitzky-Golay filter.
 
     Args:
         window_length: Length of the filter window, must be a positive odd integer.
@@ -1340,7 +1340,7 @@ class SavitzkyGolaySmooth(Transform):
     def __call__(self, img: NdarrayOrTensor) -> NdarrayOrTensor:
         """
         Args:
-            img: array containing input data. Must be real and in shape [channels, spatial1, spatial2, ...].
+            img: array containing input data_module. Must be real and in shape [channels, spatial1, spatial2, ...].
 
         Returns:
             array containing smoothed result.
@@ -1360,7 +1360,7 @@ class SavitzkyGolaySmooth(Transform):
 
 class DetectEnvelope(Transform):
     """
-    Find the envelope of the input data along the requested axis using a Hilbert transform.
+    Find the envelope of the input data_module along the requested axis using a Hilbert transform.
 
     Args:
         axis: Axis along which to detect the envelope. Default 1, i.e. the first spatial dimension.
@@ -1382,10 +1382,10 @@ class DetectEnvelope(Transform):
         """
 
         Args:
-            img: numpy.ndarray containing input data. Must be real and in shape [channels, spatial1, spatial2, ...].
+            img: numpy.ndarray containing input data_module. Must be real and in shape [channels, spatial1, spatial2, ...].
 
         Returns:
-            np.ndarray containing envelope of data in img along the specified axis.
+            np.ndarray containing envelope of data_module in img along the specified axis.
 
         """
         img = convert_to_tensor(img, track_meta=get_track_meta())
@@ -1401,13 +1401,13 @@ class DetectEnvelope(Transform):
 
 class MedianSmooth(Transform):
     """
-    Apply median filter to the input data based on specified `radius` parameter.
+    Apply median filter to the input data_module based on specified `radius` parameter.
     A default value `radius=1` is provided for reference.
 
     See also: :py:func:`monai.networks.layers.median_filter`
 
     Args:
-        radius: if a list of values, must match the count of spatial dimensions of input data,
+        radius: if a list of values, must match the count of spatial dimensions of input data_module,
             and apply every value in the list to 1 spatial dimension. if only 1 value provided,
             use it for all spatial dimensions.
     """
@@ -1430,11 +1430,11 @@ class MedianSmooth(Transform):
 
 class GaussianSmooth(Transform):
     """
-    Apply Gaussian smooth to the input data based on specified `sigma` parameter.
+    Apply Gaussian smooth to the input data_module based on specified `sigma` parameter.
     A default value `sigma=1.0` is provided for reference.
 
     Args:
-        sigma: if a list of values, must match the count of spatial dimensions of input data,
+        sigma: if a list of values, must match the count of spatial dimensions of input data_module,
             and apply every value in the list to 1 spatial dimension. if only 1 value provided,
             use it for all spatial dimensions.
         approx: discrete Gaussian kernel type, available options are "erf", "sampled", and "scalespace".
@@ -1465,7 +1465,7 @@ class GaussianSmooth(Transform):
 
 class RandGaussianSmooth(RandomizableTransform):
     """
-    Apply Gaussian smooth to the input data based on randomly selected `sigma` parameters.
+    Apply Gaussian smooth to the input data_module based on randomly selected `sigma` parameters.
 
     Args:
         sigma_x: randomly select sigma value for the first spatial dimension.
@@ -1533,10 +1533,10 @@ class GaussianSharpen(Transform):
 
     Args:
         sigma1: sigma parameter for the first gaussian kernel. if a list of values, must match the count
-            of spatial dimensions of input data, and apply every value in the list to 1 spatial dimension.
+            of spatial dimensions of input data_module, and apply every value in the list to 1 spatial dimension.
             if only 1 value provided, use it for all spatial dimensions.
         sigma2: sigma parameter for the second gaussian kernel. if a list of values, must match the count
-            of spatial dimensions of input data, and apply every value in the list to 1 spatial dimension.
+            of spatial dimensions of input data_module, and apply every value in the list to 1 spatial dimension.
             if only 1 value provided, use it for all spatial dimensions.
         alpha: weight parameter to compute the final result.
         approx: discrete Gaussian kernel type, available options are "erf", "sampled", and "scalespace".
@@ -1745,7 +1745,7 @@ class GibbsNoise(Transform, Fourier):
     The transform applies Gibbs noise to 2D/3D MRI images. Gibbs artifacts
     are one of the common type of type artifacts appearing in MRI scans.
 
-    The transform is applied to all the channels in the data.
+    The transform is applied to all the channels in the data_module.
 
     For general information on Gibbs artifacts, please refer to:
 
@@ -1822,7 +1822,7 @@ class RandGibbsNoise(RandomizableTransform):
     randomly applies Gibbs noise to 2D/3D MRI images. Gibbs artifacts
     are one of the common type of type artifacts appearing in MRI scans.
 
-    The transform is applied to all the channels in the data.
+    The transform is applied to all the channels in the data_module.
 
     For general information on Gibbs artifacts, please refer to:
     https://pubs.rsna.org/doi/full/10.1148/rg.313105115
@@ -1877,7 +1877,7 @@ class RandGibbsNoise(RandomizableTransform):
 class KSpaceSpikeNoise(Transform, Fourier):
     """
     Apply localized spikes in `k`-space at the given locations and intensities.
-    Spike (Herringbone) artifact is a type of data acquisition artifact which
+    Spike (Herringbone) artifact is a type of data_module acquisition artifact which
     may occur during MRI scans.
 
     For general information on spike artifacts, please refer to:
@@ -1899,11 +1899,11 @@ class KSpaceSpikeNoise(Transform, Fourier):
             channel is not specified, then this argument should receive a float. If
             ``loc`` is given a sequence of locations, then this argument should
             receive a sequence of intensities. This value should be tested as it is
-            data-dependent. The default values are the 2.5 the mean of the
+            data_module-dependent. The default values are the 2.5 the mean of the
             log-intensity for each channel.
 
     Example:
-        When working with 4D data, ``KSpaceSpikeNoise(loc = ((3,60,64,32), (64,60,32)), k_intensity = (13,14))``
+        When working with 4D data_module, ``KSpaceSpikeNoise(loc = ((3,60,64,32), (64,60,32)), k_intensity = (13,14))``
         will place a spike at `[3, 60, 64, 32]` with `log-intensity = 13`, and
         one spike per channel located respectively at `[: , 64, 60, 32]`
         with `log-intensity = 14`.
@@ -2004,11 +2004,11 @@ class KSpaceSpikeNoise(Transform, Fourier):
 
 class RandKSpaceSpikeNoise(RandomizableTransform, Fourier):
     """
-    Naturalistic data augmentation via spike artifacts. The transform applies
+    Naturalistic data_module augmentation via spike artifacts. The transform applies
     localized spikes in `k`-space, and it is the random version of
     :py:class:`monai.transforms.KSpaceSpikeNoise`.
 
-    Spike (Herringbone) artifact is a type of data acquisition artifact which
+    Spike (Herringbone) artifact is a type of data_module acquisition artifact which
     may occur during MRI scans. For general information on spike artifacts,
     please refer to:
 
@@ -2057,7 +2057,7 @@ class RandKSpaceSpikeNoise(RandomizableTransform, Fourier):
 
     def __call__(self, img: NdarrayOrTensor, randomize: bool = True):
         """
-        Apply transform to `img`. Assumes data is in channel-first form.
+        Apply transform to `img`. Assumes data_module is in channel-first form.
 
         Args:
             img: image with dimensions (C, H, W) or (C, H, W, D)
@@ -2347,7 +2347,7 @@ class HistogramNormalize(Transform):
         mask: if provided, must be ndarray of bools or 0s and 1s, and same shape as `image`.
             only points at which `mask==True` are used for the equalization.
             can also provide the mask along with img at runtime.
-        dtype: data type of the output, if None, same as input image. default to `float32`.
+        dtype: data_module type of the output, if None, same as input image. default to `float32`.
 
     """
 
@@ -2391,7 +2391,7 @@ class IntensityRemap(RandomizableTransform):
     possible intensities for the input image and then adding a linear
     component. The curve is the rescaled to the input image intensity range.
 
-    Intended to be used as a means to data augmentation via:
+    Intended to be used as a means to data_module augmentation via:
     :py:class:`monai.transforms.RandIntensityRemap`.
 
     Implementation is described in the work:
@@ -2586,10 +2586,10 @@ class ForegroundMask(Transform):
 class ComputeHoVerMaps(Transform):
     """Compute horizontal and vertical maps from an instance mask
     It generates normalized horizontal and vertical distances to the center of mass of each region.
-    Input data with the size of [1xHxW[xD]], which channel dim will temporarily removed for calculating coordinates.
+    Input data_module with the size of [1xHxW[xD]], which channel dim will temporarily removed for calculating coordinates.
 
     Args:
-        dtype: the data type of output Tensor. Defaults to `"float32"`.
+        dtype: the data_module type of output Tensor. Defaults to `"float32"`.
 
     Return:
         A torch.Tensor with the size of [2xHxW[xD]], which is stack horizontal and vertical maps
@@ -2634,7 +2634,7 @@ class UltrasoundConfidenceMapTransform(Transform):
         alpha (float, optional): Alpha parameter. Defaults to 2.0.
         beta (float, optional): Beta parameter. Defaults to 90.0.
         gamma (float, optional): Gamma parameter. Defaults to 0.05.
-        mode (str, optional): 'RF' or 'B' mode data. Defaults to 'B'.
+        mode (str, optional): 'RF' or 'B' mode data_module. Defaults to 'B'.
         sink_mode (str, optional): Sink mode. Defaults to 'all'. If 'mask' is selected, a mask must be when
             calling the transform. Can be one of 'all', 'mid', 'min', 'mask'.
     """

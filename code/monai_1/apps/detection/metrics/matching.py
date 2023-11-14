@@ -122,7 +122,7 @@ def matching_batch(
 
         .. code-block:: python
 
-            from monai.data.box_utils import box_iou
+            from monai.data_module.box_utils import box_iou
             from monai.apps.detection.metrics.coco import COCOMetric
             from monai.apps.detection.metrics.matching import matching_batch
             # 3D example outputs of one image from detector

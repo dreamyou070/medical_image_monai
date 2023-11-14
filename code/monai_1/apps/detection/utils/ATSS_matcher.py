@@ -123,7 +123,7 @@ class Matcher(ABC):
                 and if it should be ignored `BETWEEN_THRESHOLDS` is used) [M]
 
         Note:
-            ``StandardMode`` = :class:`~monai.data.box_utils.CornerCornerModeTypeA`,
+            ``StandardMode`` = :class:`~monai.data_module.box_utils.CornerCornerModeTypeA`,
             also represented as "xyxy" ([xmin, ymin, xmax, ymax]) for 2D
             and "xyzxyz" ([xmin, ymin, zmin, xmax, ymax, zmax]) for 3D.
         """
@@ -216,7 +216,7 @@ class ATSSMatcher(Matcher):
               and if it should be ignored `BETWEEN_THRESHOLDS` is used) [M]
 
         Note:
-            ``StandardMode`` = :class:`~monai.data.box_utils.CornerCornerModeTypeA`,
+            ``StandardMode`` = :class:`~monai.data_module.box_utils.CornerCornerModeTypeA`,
             also represented as "xyxy" ([xmin, ymin, xmax, ymax]) for 2D
             and "xyzxyz" ([xmin, ymin, zmin, xmax, ymax, zmax]) for 3D.
         """

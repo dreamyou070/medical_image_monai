@@ -14,7 +14,7 @@ different parameterizations and methods for converting between them. It
 provides reliable access to the spatial coordinates of the box vertices in the
 "canonical ordering":
 [xmin, ymin, xmax, ymax] for 2D and [xmin, ymin, zmin, xmax, ymax, zmax] for 3D.
-We currently define this ordering as `monai.data.box_utils.StandardMode` and
+We currently define this ordering as `monai.data_module.box_utils.StandardMode` and
 the rest of the detection pipelines mainly assumes boxes in `StandardMode`.
 """
 
@@ -56,25 +56,25 @@ class BoxMode(ABC):
     A ``BoxMode`` is callable that converts box mode of ``boxes``, which are Nx4 (2D) or Nx6 (3D) torch tensor or ndarray.
     ``BoxMode`` has several subclasses that represents different box modes, including
 
-    - :class:`~monai.data.box_utils.CornerCornerModeTypeA`:
+    - :class:`~monai.data_module.box_utils.CornerCornerModeTypeA`:
       represents [xmin, ymin, xmax, ymax] for 2D and [xmin, ymin, zmin, xmax, ymax, zmax] for 3D
-    - :class:`~monai.data.box_utils.CornerCornerModeTypeB`:
+    - :class:`~monai.data_module.box_utils.CornerCornerModeTypeB`:
       represents [xmin, xmax, ymin, ymax] for 2D and [xmin, xmax, ymin, ymax, zmin, zmax] for 3D
-    - :class:`~monai.data.box_utils.CornerCornerModeTypeC`:
+    - :class:`~monai.data_module.box_utils.CornerCornerModeTypeC`:
       represents [xmin, ymin, xmax, ymax] for 2D and [xmin, ymin, xmax, ymax, zmin, zmax] for 3D
-    - :class:`~monai.data.box_utils.CornerSizeMode`:
+    - :class:`~monai.data_module.box_utils.CornerSizeMode`:
       represents [xmin, ymin, xsize, ysize] for 2D and [xmin, ymin, zmin, xsize, ysize, zsize] for 3D
-    - :class:`~monai.data.box_utils.CenterSizeMode`:
+    - :class:`~monai.data_module.box_utils.CenterSizeMode`:
       represents [xcenter, ycenter, xsize, ysize] for 2D and [xcenter, ycenter, zcenter, xsize, ysize, zsize] for 3D
 
-    We currently define ``StandardMode`` = :class:`~monai.data.box_utils.CornerCornerModeTypeA`,
+    We currently define ``StandardMode`` = :class:`~monai.data_module.box_utils.CornerCornerModeTypeA`,
     and monai detection pipelines mainly assume ``boxes`` are in ``StandardMode``.
 
     The implementation should be aware of:
 
     - remember to define class variable ``name``,
       a dictionary that maps ``spatial_dims`` to :class:`~monai.utils.enums.BoxModeName`.
-    - :func:`~monai.data.box_utils.BoxMode.boxes_to_corners` and :func:`~monai.data.box_utils.BoxMode.corners_to_boxes`
+    - :func:`~monai.data_module.box_utils.BoxMode.boxes_to_corners` and :func:`~monai.data_module.box_utils.BoxMode.corners_to_boxes`
       should not modify inputs in place.
     """
 
@@ -456,13 +456,13 @@ def get_spatial_dims(
 
 def get_boxmode(mode: str | BoxMode | type[BoxMode] | None = None, *args, **kwargs) -> BoxMode:
     """
-    This function that return a :class:`~monai.data.box_utils.BoxMode` object giving a representation of box mode
+    This function that return a :class:`~monai.data_module.box_utils.BoxMode` object giving a representation of box mode
 
     Args:
         mode: a representation of box mode. If it is not given, this func will assume it is ``StandardMode()``.
 
     Note:
-        ``StandardMode`` = :class:`~monai.data.box_utils.CornerCornerModeTypeA`,
+        ``StandardMode`` = :class:`~monai.data_module.box_utils.CornerCornerModeTypeA`,
         also represented as "xyxy" for 2D and "xyzxyz" for 3D.
 
         mode can be:
@@ -476,13 +476,13 @@ def get_boxmode(mode: str | BoxMode | type[BoxMode] | None = None, *args, **kwar
                 - "xyzwhd": boxes has format [xmin, ymin, zmin, xsize, ysize, zsize]
                 - "ccwh": boxes has format [xcenter, ycenter, xsize, ysize]
                 - "cccwhd": boxes has format [xcenter, ycenter, zcenter, xsize, ysize, zsize]
-            #. BoxMode class: choose from the subclasses of :class:`~monai.data.box_utils.BoxMode`, for example,
+            #. BoxMode class: choose from the subclasses of :class:`~monai.data_module.box_utils.BoxMode`, for example,
                 - CornerCornerModeTypeA: equivalent to "xyxy" or "xyzxyz"
                 - CornerCornerModeTypeB: equivalent to "xxyy" or "xxyyzz"
                 - CornerCornerModeTypeC: equivalent to "xyxy" or "xyxyzz"
                 - CornerSizeMode: equivalent to "xywh" or "xyzwhd"
                 - CenterSizeMode: equivalent to "ccwh" or "cccwhd"
-            #. BoxMode object: choose from the subclasses of :class:`~monai.data.box_utils.BoxMode`, for example,
+            #. BoxMode object: choose from the subclasses of :class:`~monai.data_module.box_utils.BoxMode`, for example,
                 - CornerCornerModeTypeA(): equivalent to "xyxy" or "xyzxyz"
                 - CornerCornerModeTypeB(): equivalent to "xxyy" or "xxyyzz"
                 - CornerCornerModeTypeC(): equivalent to "xyxy" or "xyxyzz"
@@ -554,12 +554,12 @@ def convert_box_mode(
     Args:
         boxes: source bounding boxes, Nx4 or Nx6 torch tensor or ndarray.
         src_mode: source box mode. If it is not given, this func will assume it is ``StandardMode()``.
-            It follows the same format with ``mode`` in :func:`~monai.data.box_utils.get_boxmode`.
+            It follows the same format with ``mode`` in :func:`~monai.data_module.box_utils.get_boxmode`.
         dst_mode: target box mode. If it is not given, this func will assume it is ``StandardMode()``.
-            It follows the same format with ``mode`` in :func:`~monai.data.box_utils.get_boxmode`.
+            It follows the same format with ``mode`` in :func:`~monai.data_module.box_utils.get_boxmode`.
 
     Returns:
-        bounding boxes with target mode, with same data type as ``boxes``, does not share memory with ``boxes``
+        bounding boxes with target mode, with same data_module type as ``boxes``, does not share memory with ``boxes``
 
     Example:
         .. code-block:: python
@@ -568,8 +568,8 @@ def convert_box_mode(
             # The following three lines are equivalent
             # They convert boxes with format [xmin, ymin, xmax, ymax] to [xcenter, ycenter, xsize, ysize].
             convert_box_mode(boxes=boxes, src_mode="xyxy", dst_mode="ccwh")
-            convert_box_mode(boxes=boxes, src_mode="xyxy", dst_mode=monai.data.box_utils.CenterSizeMode)
-            convert_box_mode(boxes=boxes, src_mode="xyxy", dst_mode=monai.data.box_utils.CenterSizeMode())
+            convert_box_mode(boxes=boxes, src_mode="xyxy", dst_mode=monai.data_module.box_utils.CenterSizeMode)
+            convert_box_mode(boxes=boxes, src_mode="xyxy", dst_mode=monai.data_module.box_utils.CenterSizeMode())
     """
     # handle empty box
     if boxes.shape[0] == 0:
@@ -614,10 +614,10 @@ def convert_box_to_standard_mode(
     Args:
         boxes: source bounding boxes, Nx4 or Nx6 torch tensor or ndarray.
         mode: source box mode. If it is not given, this func will assume it is ``StandardMode()``.
-            It follows the same format with ``mode`` in :func:`~monai.data.box_utils.get_boxmode`.
+            It follows the same format with ``mode`` in :func:`~monai.data_module.box_utils.get_boxmode`.
 
     Returns:
-        bounding boxes with standard mode, with same data type as ``boxes``, does not share memory with ``boxes``
+        bounding boxes with standard mode, with same data_module type as ``boxes``, does not share memory with ``boxes``
 
     Example:
         .. code-block:: python
@@ -690,9 +690,9 @@ def boxes_center_distance(
 
     Returns:
         - The pairwise distances for every element in boxes1 and boxes2,
-          with size of (N,M) and same data type as ``boxes1``.
-        - Center points of boxes1, with size of (N,spatial_dims) and same data type as ``boxes1``.
-        - Center points of boxes2, with size of (M,spatial_dims) and same data type as ``boxes1``.
+          with size of (N,M) and same data_module type as ``boxes1``.
+        - Center points of boxes1, with size of (N,spatial_dims) and same data_module type as ``boxes1``.
+        - Center points of boxes2, with size of (M,spatial_dims) and same data_module type as ``boxes1``.
 
     Reference:
         https://github.com/MIC-DKFZ/nnDetection/blob/main/nndet/core/boxes/ops.py
@@ -826,7 +826,7 @@ def box_iou(boxes1: NdarrayOrTensor, boxes2: NdarrayOrTensor) -> NdarrayOrTensor
         boxes2: bounding boxes, Mx4 or Mx6 torch tensor or ndarray. The box mode is assumed to be ``StandardMode``
 
     Returns:
-        IoU, with size of (N,M) and same data type as ``boxes1``
+        IoU, with size of (N,M) and same data_module type as ``boxes1``
 
     """
 
@@ -859,7 +859,7 @@ def box_giou(boxes1: NdarrayOrTensor, boxes2: NdarrayOrTensor) -> NdarrayOrTenso
     """
     Compute the generalized intersection over union (GIoU) of two sets of boxes.
     The two inputs can have different shapes and the func return an NxM matrix,
-    (in contrary to :func:`~monai.data.box_utils.box_pair_giou` , which requires the inputs to have the same
+    (in contrary to :func:`~monai.data_module.box_utils.box_pair_giou` , which requires the inputs to have the same
     shape and returns ``N`` values).
 
     Args:
@@ -867,7 +867,7 @@ def box_giou(boxes1: NdarrayOrTensor, boxes2: NdarrayOrTensor) -> NdarrayOrTenso
         boxes2: bounding boxes, Mx4 or Mx6 torch tensor or ndarray. The box mode is assumed to be ``StandardMode``
 
     Returns:
-        GIoU, with size of (N,M) and same data type as ``boxes1``
+        GIoU, with size of (N,M) and same data_module type as ``boxes1``
 
     Reference:
         https://giou.stanford.edu/GIoU.pdf
@@ -917,7 +917,7 @@ def box_pair_giou(boxes1: NdarrayOrTensor, boxes2: NdarrayOrTensor) -> NdarrayOr
     """
     Compute the generalized intersection over union (GIoU) of a pair of boxes.
     The two inputs should have the same shape and the func return an (N,) array,
-    (in contrary to :func:`~monai.data.box_utils.box_giou` , which does not require the inputs to have the same
+    (in contrary to :func:`~monai.data_module.box_utils.box_giou` , which does not require the inputs to have the same
     shape and returns ``NxM`` matrix).
 
     Args:
@@ -925,7 +925,7 @@ def box_pair_giou(boxes1: NdarrayOrTensor, boxes2: NdarrayOrTensor) -> NdarrayOr
         boxes2: bounding boxes, same shape with boxes1. The box mode is assumed to be ``StandardMode``
 
     Returns:
-        paired GIoU, with size of (N,) and same data type as ``boxes1``
+        paired GIoU, with size of (N,) and same data_module type as ``boxes1``
 
     Reference:
         https://giou.stanford.edu/GIoU.pdf
@@ -1134,7 +1134,7 @@ def non_max_suppression(
         to_keep_idx[0] = False  # always remove idxs[0]
         idxs = idxs[to_keep_idx]
 
-    # return only the bounding boxes that were picked using the integer data type
+    # return only the bounding boxes that were picked using the integer data_module type
     pick_idx = sort_idxs[pick]
 
     # convert tensor back to numpy if needed

@@ -64,7 +64,7 @@ class Watershed(Transform):
         connectivity: an array with the same number of dimensions as image whose non-zero elements indicate
             neighbors for connection. Following the scipy convention, default is a one-connected array of
             the dimension of the image.
-        dtype: target data content type to convert, default is np.int64.
+        dtype: target data_module content type to convert, default is np.int64.
 
     """
 
@@ -106,7 +106,7 @@ class GenerateWatershedMask(Transform):
         threshold: an optional float value to threshold to binarize probability map.
             If not provided, defaults to 0.5 when activation is not "softmax", otherwise None.
         min_object_size: objects smaller than this size (in pixel) are removed. Defaults to 10.
-        dtype: target data content type to convert, default is np.uint8.
+        dtype: target data_module content type to convert, default is np.uint8.
 
     """
 
@@ -174,7 +174,7 @@ class GenerateInstanceBorder(Transform):
 
     Args:
         kernel_size: the size of the Sobel kernel. Defaults to 5.
-        dtype: target data type to convert to. Defaults to np.float32.
+        dtype: target data_module type to convert to. Defaults to np.float32.
 
 
     Raises:
@@ -246,7 +246,7 @@ class GenerateDistanceMap(Transform):
     Args:
         smooth_fn: smoothing function for distance map, which can be any callable object.
             If not provided :py:class:`monai.transforms.GaussianSmooth()` is used.
-        dtype: target data type to convert to. Defaults to np.float32.
+        dtype: target data_module type to convert to. Defaults to np.float32.
     """
 
     backend = [TransformBackends.NUMPY]
@@ -294,7 +294,7 @@ class GenerateWatershedMarkers(Transform):
         min_object_size: objects smaller than this size (in pixel) are removed. Defaults to 10.
         postprocess_fn: additional post-process function on the markers.
             If not provided, :py:class:`monai.transforms.post.FillHoles()` will be used.
-        dtype: target data type to convert to. Defaults to np.int64.
+        dtype: target data_module type to convert to. Defaults to np.int64.
 
     """
 
@@ -582,7 +582,7 @@ class GenerateInstanceCentroid(Transform):
     Generate instance centroid using `skimage.measure.centroid`.
 
     Args:
-        dtype: the data type of output centroid.
+        dtype: the data_module type of output centroid.
 
     """
 
@@ -671,7 +671,7 @@ class HoVerNetInstanceMapPostProcessing(Transform):
         min_num_points: minimum number of points to be considered as a contour. Defaults to 3.
         contour_level: an optional value for `skimage.measure.find_contours` to find contours in the array.
             If not provided, the level is set to `(max(image) + min(image)) / 2`.
-        device: target device to put the output Tensor data.
+        device: target device to put the output Tensor data_module.
     """
 
     def __init__(
@@ -760,7 +760,7 @@ class HoVerNetNuclearTypePostProcessing(Transform):
         threshold: an optional float value to threshold to binarize probability map.
             If not provided, defaults to 0.5 when activation is not "softmax", otherwise None.
         return_type_map: whether to calculate and return pixel-level type map.
-        device: target device to put the output Tensor data.
+        device: target device to put the output Tensor data_module.
 
     """
 
@@ -825,7 +825,7 @@ class HoVerNetNuclearTypePostProcessing(Transform):
                 bbox=instance_info[inst_id]["bounding_box"],
                 instance_id=inst_id,
             )
-            # update instance info dict with type data
+            # update instance info dict with type data_module
             instance_info[inst_id]["type_prob"] = instance_type_prob
             instance_info[inst_id]["type"] = instance_type
 

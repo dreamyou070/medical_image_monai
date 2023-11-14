@@ -62,7 +62,7 @@ class MetricsReloadedWrapper(CumulativeIterationMetric):
     ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         data = self.get_buffer()
         if not isinstance(data, torch.Tensor):
-            raise ValueError("the data to aggregate must be PyTorch Tensor.")
+            raise ValueError("the data_module to aggregate must be PyTorch Tensor.")
         # do metric reduction
         f, not_nans = do_metric_reduction(data, reduction or self.reduction)
         return (f, not_nans) if self.get_not_nans else f

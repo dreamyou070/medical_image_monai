@@ -181,7 +181,7 @@ class Padd(MapTransform, InvertibleTransform, LazyTransform):
 class SpatialPadd(Padd):
     """
     Dictionary-based wrapper of :py:class:`monai.transforms.SpatialPad`.
-    Performs padding to the data, symmetric for all sides or all on one side for each dimension.
+    Performs padding to the data_module, symmetric for all sides or all on one side for each dimension.
 
     This transform is capable of lazy execution. See the :ref:`Lazy Resampling topic<lazy_resampling>`
     for more information.
@@ -201,11 +201,11 @@ class SpatialPadd(Padd):
         Args:
             keys: keys of the corresponding items to be transformed.
                 See also: :py:class:`monai.transforms.compose.MapTransform`
-            spatial_size: the spatial size of output data after padding, if a dimension of the input
-                data size is larger than the pad size, will not pad that dimension.
+            spatial_size: the spatial size of output data_module after padding, if a dimension of the input
+                data_module size is larger than the pad size, will not pad that dimension.
                 If its components have non-positive values, the corresponding size of input image will be used.
-                for example: if the spatial size of input data is [30, 30, 30] and `spatial_size=[32, 25, -1]`,
-                the spatial size of output data will be [32, 30, 30].
+                for example: if the spatial size of input data_module is [30, 30, 30] and `spatial_size=[32, 25, -1]`,
+                the spatial size of output data_module will be [32, 30, 30].
             method: {``"symmetric"``, ``"end"``}
                 Pad image symmetrically on every side or only pad at the end sides. Defaults to ``"symmetric"``.
             mode: available modes for numpy array:{``"constant"``, ``"edge"``, ``"linear_ramp"``, ``"maximum"``,
@@ -228,7 +228,7 @@ class SpatialPadd(Padd):
 
 class BorderPadd(Padd):
     """
-    Pad the input data by adding specified borders to every dimension.
+    Pad the input data_module by adding specified borders to every dimension.
     Dictionary-based wrapper of :py:class:`monai.transforms.BorderPad`.
 
     This transform is capable of lazy execution. See the :ref:`Lazy Resampling topic<lazy_resampling>`
@@ -281,7 +281,7 @@ class BorderPadd(Padd):
 
 class DivisiblePadd(Padd):
     """
-    Pad the input data, so that the spatial sizes are divisible by `k`.
+    Pad the input data_module, so that the spatial sizes are divisible by `k`.
     Dictionary-based wrapper of :py:class:`monai.transforms.DivisiblePad`.
 
     This transform is capable of lazy execution. See the :ref:`Lazy Resampling topic<lazy_resampling>`
@@ -427,7 +427,7 @@ class SpatialCropd(Cropd):
     If a dimension of the expected ROI size is larger than the input image size, will not crop that dimension.
     So the cropped result may be smaller than the expected ROI, and the cropped results of several images may
     not have exactly the same shape.
-    It can support to crop ND spatial (channel-first) data.
+    It can support to crop ND spatial (channel-first) data_module.
 
     The cropped region can be parameterised in various ways:
         - a list of slices for each spatial dimension (allows for use of -ve indexing and `None`)
@@ -483,8 +483,8 @@ class CenterSpatialCropd(Cropd):
         roi_size: the size of the crop region e.g. [224,224,128]
             if a dimension of ROI size is larger than image size, will not crop that dimension of the image.
             If its components have non-positive values, the corresponding size of input image will be used.
-            for example: if the spatial size of input data is [40, 40, 40] and `roi_size=[32, 64, -1]`,
-            the spatial size of output data will be [32, 40, 40].
+            for example: if the spatial size of input data_module is [40, 40, 40] and `roi_size=[32, 64, -1]`,
+            the spatial size of output data_module will be [32, 40, 40].
         allow_missing_keys: don't raise exception if key is missing.
         lazy: a flag to indicate whether this transform should execute lazily or not. Defaults to False.
     """
@@ -499,7 +499,7 @@ class CenterSpatialCropd(Cropd):
 class CenterScaleCropd(Cropd):
     """
     Dictionary-based wrapper of :py:class:`monai.transforms.CenterScaleCrop`.
-    Note: as using the same scaled ROI to crop, all the input data specified by `keys` should have
+    Note: as using the same scaled ROI to crop, all the input data_module specified by `keys` should have
     the same spatial shape.
 
     This transform is capable of lazy execution. See the :ref:`Lazy Resampling topic<lazy_resampling>`
@@ -546,8 +546,8 @@ class RandSpatialCropd(RandCropd):
             if `random_size` is False, it specifies the expected ROI size to crop. e.g. [224, 224, 128]
             if a dimension of ROI size is larger than image size, will not crop that dimension of the image.
             If its components have non-positive values, the corresponding size of input image will be used.
-            for example: if the spatial size of input data is [40, 40, 40] and `roi_size=[32, 64, -1]`,
-            the spatial size of output data will be [32, 40, 40].
+            for example: if the spatial size of input data_module is [40, 40, 40] and `roi_size=[32, 64, -1]`,
+            the spatial size of output data_module will be [32, 40, 40].
         max_roi_size: if `random_size` is True and `roi_size` specifies the min crop region size, `max_roi_size`
             can specify the max crop region size. if None, defaults to the input image size.
             if its components have non-positive values, the corresponding size of input image will be used.
@@ -639,8 +639,8 @@ class RandSpatialCropSamplesd(Randomizable, MapTransform, LazyTransform, MultiSa
             if `random_size` is False, it specifies the expected ROI size to crop. e.g. [224, 224, 128]
             if a dimension of ROI size is larger than image size, will not crop that dimension of the image.
             If its components have non-positive values, the corresponding size of input image will be used.
-            for example: if the spatial size of input data is [40, 40, 40] and `roi_size=[32, 64, -1]`,
-            the spatial size of output data will be [32, 40, 40].
+            for example: if the spatial size of input data_module is [40, 40, 40] and `roi_size=[32, 64, -1]`,
+            the spatial size of output data_module will be [32, 40, 40].
         num_samples: number of samples (crop regions) to take in the returned list.
         max_roi_size: if `random_size` is True and `roi_size` specifies the min crop region size, `max_roi_size`
             can specify the max crop region size. if None, defaults to the input image size.
@@ -687,7 +687,7 @@ class RandSpatialCropSamplesd(Randomizable, MapTransform, LazyTransform, MultiSa
         self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None
     ) -> list[dict[Hashable, torch.Tensor]]:
         ret: list[dict[Hashable, torch.Tensor]] = [dict(data) for _ in range(self.cropper.num_samples)]
-        # deep copy all the unmodified data
+        # deep copy all the unmodified data_module
         for i in range(self.cropper.num_samples):
             for key in set(data.keys()).difference(set(self.keys)):
                 ret[i][key] = deepcopy(data[key])
@@ -708,7 +708,7 @@ class CropForegroundd(Cropd):
     Dictionary-based version :py:class:`monai.transforms.CropForeground`.
     Crop only the foreground object of the expected images.
     The typical usage is to help training and evaluation if the valid part is small in the whole medical image.
-    The valid part can be determined by any field in the data with `source_key`, for example:
+    The valid part can be determined by any field in the data_module with `source_key`, for example:
     - Select values > 0 in image field as the foreground and crop on all fields specified by `keys`.
     - Select label = 3 in label field as the foreground to crop on all fields specified by `keys`.
     - Select label > 0 in the third channel of a One-Hot label field as the foreground to crop all `keys` fields.
@@ -740,7 +740,7 @@ class CropForegroundd(Cropd):
         Args:
             keys: keys of the corresponding items to be transformed.
                 See also: :py:class:`monai.transforms.compose.MapTransform`
-            source_key: data source to generate the bounding box of foreground, can be image or label, etc.
+            source_key: data_module source to generate the bounding box of foreground, can be image or label, etc.
             select_fn: function to select expected foreground, default is to select values > 0.
             channel_indices: if defined, select foreground only on the specified channels
                 of image. if None, select foreground on the whole image.
@@ -862,7 +862,7 @@ class RandWeightedCropd(Randomizable, MapTransform, LazyTransform, MultiSampleTr
     ) -> list[dict[Hashable, torch.Tensor]]:
         # output starts as empty list of dictionaries
         ret: list = [dict(data) for _ in range(self.cropper.num_samples)]
-        # deep copy all the unmodified data
+        # deep copy all the unmodified data_module
         for i in range(self.cropper.num_samples):
             for key in set(data.keys()).difference(set(self.keys)):
                 ret[i][key] = deepcopy(data[key])
@@ -899,9 +899,9 @@ class RandCropByPosNegLabeld(Randomizable, MapTransform, LazyTransform, MultiSam
         label_key: name of key for label image, this will be used for finding foreground/background.
         spatial_size: the spatial size of the crop region e.g. [224, 224, 128].
             if a dimension of ROI size is larger than image size, will not crop that dimension of the image.
-            if its components have non-positive values, the corresponding size of `data[label_key]` will be used.
-            for example: if the spatial size of input data is [40, 40, 40] and `spatial_size=[32, 64, -1]`,
-            the spatial size of output data will be [32, 40, 40].
+            if its components have non-positive values, the corresponding size of `data_module[label_key]` will be used.
+            for example: if the spatial size of input data_module is [40, 40, 40] and `spatial_size=[32, 64, -1]`,
+            the spatial size of output data_module will be [32, 40, 40].
         pos: used with `neg` together to calculate the ratio ``pos / (pos + neg)`` for the probability
             to pick a foreground voxel as a center rather than a background voxel.
         neg: used with `pos` together to calculate the ratio ``pos / (pos + neg)`` for the probability
@@ -1001,7 +1001,7 @@ class RandCropByPosNegLabeld(Randomizable, MapTransform, LazyTransform, MultiSam
 
         # initialize returned list with shallow copy to preserve key ordering
         ret: list = [dict(d) for _ in range(self.cropper.num_samples)]
-        # deep copy all the unmodified data
+        # deep copy all the unmodified data_module
         for i in range(self.cropper.num_samples):
             for key in set(d.keys()).difference(set(self.keys)):
                 ret[i][key] = deepcopy(d[key])
@@ -1017,7 +1017,7 @@ class RandCropByLabelClassesd(Randomizable, MapTransform, LazyTransform, MultiSa
     """
     Dictionary-based version :py:class:`monai.transforms.RandCropByLabelClasses`.
     Crop random fixed sized regions with the center being a class based on the specified ratios of every class.
-    The label data can be One-Hot format array or Argmax data. And will return a list of arrays for all the
+    The label data_module can be One-Hot format array or Argmax data_module. And will return a list of arrays for all the
     cropped images. For example, crop two (3 x 3) arrays from (5 x 5) array with `ratios=[1, 2, 3, 1]`::
 
         cropper = RandCropByLabelClassesd(
@@ -1028,7 +1028,7 @@ class RandCropByLabelClassesd(Randomizable, MapTransform, LazyTransform, MultiSa
             num_classes=4,
             num_samples=2,
         )
-        data = {
+        data_module = {
             "image": np.array([
                 [[0.0, 0.3, 0.4, 0.2, 0.0],
                 [0.0, 0.1, 0.2, 0.1, 0.4],
@@ -1044,7 +1044,7 @@ class RandCropByLabelClassesd(Randomizable, MapTransform, LazyTransform, MultiSa
                 [0, 0, 0, 0, 0]]
             ]),
         }
-        result = cropper(data)
+        result = cropper(data_module)
 
         The 2 randomly cropped samples of `label` can be:
         [[0, 1, 2],     [[0, 0, 0],
@@ -1067,8 +1067,8 @@ class RandCropByLabelClassesd(Randomizable, MapTransform, LazyTransform, MultiSa
         spatial_size: the spatial size of the crop region e.g. [224, 224, 128].
             if a dimension of ROI size is larger than image size, will not crop that dimension of the image.
             if its components have non-positive values, the corresponding size of `label` will be used.
-            for example: if the spatial size of input data is [40, 40, 40] and `spatial_size=[32, 64, -1]`,
-            the spatial size of output data will be [32, 40, 40].
+            for example: if the spatial size of input data_module is [40, 40, 40] and `spatial_size=[32, 64, -1]`,
+            the spatial size of output data_module will be [32, 40, 40].
         ratios: specified ratios of every class in the label to generate crop centers, including background class.
             if None, every class will have the same ratio to generate crop centers.
         num_classes: number of classes for argmax label, not necessary for One-Hot label.
@@ -1154,7 +1154,7 @@ class RandCropByLabelClassesd(Randomizable, MapTransform, LazyTransform, MultiSa
 
         # initialize returned list with shallow copy to preserve key ordering
         ret: list = [dict(d) for _ in range(self.cropper.num_samples)]
-        # deep copy all the unmodified data
+        # deep copy all the unmodified data_module
         for i in range(self.cropper.num_samples):
             for key in set(d.keys()).difference(set(self.keys)):
                 ret[i][key] = deepcopy(d[key])
@@ -1176,7 +1176,7 @@ class ResizeWithPadOrCropd(Padd):
     Args:
         keys: keys of the corresponding items to be transformed.
             See also: monai.transforms.MapTransform
-        spatial_size: the spatial size of output data after padding or crop.
+        spatial_size: the spatial size of output data_module after padding or crop.
             If has non-positive values, the corresponding size of input image will be used (no padding).
         mode: available modes for numpy array:{``"constant"``, ``"edge"``, ``"linear_ramp"``, ``"maximum"``,
             ``"mean"``, ``"median"``, ``"minimum"``, ``"reflect"``, ``"symmetric"``, ``"wrap"``, ``"empty"``}
@@ -1245,7 +1245,7 @@ class BoundingRectd(MapTransform):
             bbox = self.bbox(d[key])
             key_to_add = f"{key}_{self.bbox_key_postfix}"
             if key_to_add in d:
-                raise KeyError(f"Bounding box data with key {key_to_add} already exists.")
+                raise KeyError(f"Bounding box data_module with key {key_to_add} already exists.")
             d[key_to_add] = bbox
         return d
 

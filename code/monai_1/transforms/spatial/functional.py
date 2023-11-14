@@ -73,7 +73,7 @@ def spatial_resample(
     ``lazy`` (default ``False``).
 
     Args:
-        img: data to be resampled, assuming `img` is channel-first.
+        img: data_module to be resampled, assuming `img` is channel-first.
         dst_affine: target affine matrix, if None, use the input affine matrix, effectively no resampling.
         spatial_size: output spatial size, if the component is ``-1``, use the corresponding input spatial size.
         mode: {``"bilinear"``, ``"nearest"``} or spline interpolation order 0-5 (integers).
@@ -90,7 +90,7 @@ def spatial_resample(
             See also: https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.map_coordinates.html
         align_corners: Geometrically, we consider the pixels of the input as squares rather than points.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
-        dtype_pt: data `dtype` for resampling computation.
+        dtype_pt: data_module `dtype` for resampling computation.
         lazy: a flag that indicates whether the operation should be performed lazily or not
         transform_info: a dictionary with the relevant information pertaining to an applied transform.
     """
@@ -190,7 +190,7 @@ def orientation(img, original_affine, spatial_ornt, lazy, transform_info) -> tor
     ``lazy`` (default ``False``).
 
     Args:
-        img: data to be changed, assuming `img` is channel-first.
+        img: data_module to be changed, assuming `img` is channel-first.
         original_affine: original affine of the input image.
         spatial_ornt: orientations of the spatial axes,
             see also https://nipy.org/nibabel/reference/nibabel.orientations.html
@@ -236,7 +236,7 @@ def flip(img, sp_axes, lazy, transform_info):
     ``lazy`` (default ``False``).
 
     Args:
-        img: data to be changed, assuming `img` is channel-first.
+        img: data_module to be changed, assuming `img` is channel-first.
         sp_axes: spatial axes along which to flip over.
             If None, will flip over all of the axes of the input array.
             If axis is negative it counts from the last to the first axis.
@@ -274,7 +274,7 @@ def resize(
     ``lazy`` (default ``False``).
 
     Args:
-        img: data to be changed, assuming `img` is channel-first.
+        img: data_module to be changed, assuming `img` is channel-first.
         out_size: expected shape of spatial dimensions after resize operation.
         mode: {``"nearest"``, ``"nearest-exact"``, ``"linear"``,
             ``"bilinear"``, ``"bicubic"``, ``"trilinear"``, ``"area"``}
@@ -282,7 +282,7 @@ def resize(
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
         align_corners: This only has an effect when mode is
             'linear', 'bilinear', 'bicubic' or 'trilinear'.
-        dtype: data type for resampling computation. If None, use the data type of input data.
+        dtype: data_module type for resampling computation. If None, use the data_module type of input data_module.
         input_ndim: number of spatial dimensions.
         anti_aliasing: whether to apply a Gaussian filter to smooth the image prior
             to downsampling. It is crucial to filter when downsampling
@@ -346,9 +346,9 @@ def rotate(img, angle, output_shape, mode, padding_mode, align_corners, dtype, l
     ``lazy`` (default ``False``).
 
     Args:
-        img: data to be changed, assuming `img` is channel-first.
+        img: data_module to be changed, assuming `img` is channel-first.
         angle: Rotation angle(s) in radians. should a float for 2D, three floats for 3D.
-        output_shape: output shape of the rotated data.
+        output_shape: output shape of the rotated data_module.
         mode: {``"bilinear"``, ``"nearest"``}
             Interpolation mode to calculate output values.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
@@ -356,9 +356,9 @@ def rotate(img, angle, output_shape, mode, padding_mode, align_corners, dtype, l
             Padding mode for outside grid values.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
         align_corners: See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
-        dtype: data type for resampling computation.
-            If None, use the data type of input data. To be compatible with other modules,
-            the output data type is always ``float32``.
+        dtype: data_module type for resampling computation.
+            If None, use the data_module type of input data_module. To be compatible with other modules,
+            the output data_module type is always ``float32``.
         lazy: a flag that indicates whether the operation should be performed lazily or not
         transform_info: a dictionary with the relevant information pertaining to an applied transform.
 
@@ -417,7 +417,7 @@ def zoom(img, scale_factor, keep_size, mode, padding_mode, align_corners, dtype,
     ``lazy`` (default ``False``).
 
     Args:
-        img: data to be changed, assuming `img` is channel-first.
+        img: data_module to be changed, assuming `img` is channel-first.
         scale_factor: The zoom factor along the spatial axes.
             If a float, zoom is the same for each spatial axis.
             If a sequence, zoom should contain one value for each spatial axis.
@@ -429,9 +429,9 @@ def zoom(img, scale_factor, keep_size, mode, padding_mode, align_corners, dtype,
             Padding mode for outside grid values.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
         align_corners: See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
-        dtype: data type for resampling computation.
-            If None, use the data type of input data. To be compatible with other modules,
-            the output data type is always ``float32``.
+        dtype: data_module type for resampling computation.
+            If None, use the data_module type of input data_module. To be compatible with other modules,
+            the output data_module type is always ``float32``.
         lazy: a flag that indicates whether the operation should be performed lazily or not
         transform_info: a dictionary with the relevant information pertaining to an applied transform.
 
@@ -501,7 +501,7 @@ def rotate90(img, axes, k, lazy, transform_info):
     ``lazy`` (default ``False``).
 
     Args:
-        img: data to be changed, assuming `img` is channel-first.
+        img: data_module to be changed, assuming `img` is channel-first.
         axes: 2 int numbers, defines the plane to rotate with 2 spatial axes.
             If axis is negative it counts from the last to the first axis.
         k: number of times to rotate by 90 degrees.
@@ -553,7 +553,7 @@ def affine_func(
     ``lazy`` (default ``False``).
 
     Args:
-        img: data to be changed, assuming `img` is channel-first.
+        img: data_module to be changed, assuming `img` is channel-first.
         affine: the affine transformation to be applied, it can be a 3x3 or 4x4 matrix. This should be defined
             for the voxel space spatial centers (``float(size - 1)/2``).
         grid: used in non-lazy mode to pre-compute the grid to do the resampling.

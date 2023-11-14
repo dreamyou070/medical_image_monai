@@ -54,8 +54,8 @@ class SENet(nn.Module):
     <https://github.com/Cadene/pretrained-models.pytorch/blob/master/pretrainedmodels/models/senet.py>`_.
 
     Args:
-        spatial_dims: spatial dimension of the input data.
-        in_channels: channel number of the input data.
+        spatial_dims: spatial dimension of the input data_module.
+        in_channels: channel number of the input data_module.
         block: SEBlock class or str.
             for SENet154: SEBottleneck or 'se_bottleneck'
             for SE-ResNet models: SEResNetBottleneck or 'se_resnet_bottleneck'

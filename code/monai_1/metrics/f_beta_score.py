@@ -46,7 +46,7 @@ class FBetaScore(CumulativeIterationMetric):
     ) -> Sequence[torch.Tensor | tuple[torch.Tensor, torch.Tensor]]:
         data = self.get_buffer()
         if not isinstance(data, torch.Tensor):
-            raise ValueError("the data to aggregate must be PyTorch Tensor.")
+            raise ValueError("the data_module to aggregate must be PyTorch Tensor.")
 
         results: list[torch.Tensor | tuple[torch.Tensor, torch.Tensor]] = []
         f, not_nans = do_metric_reduction(data, reduction or self.reduction)

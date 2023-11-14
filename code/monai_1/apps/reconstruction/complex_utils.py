@@ -32,35 +32,35 @@ def convert_to_tensor_complex(
     track_meta: bool = False,
 ) -> Tensor:
     """
-    Convert complex-valued data to a 2-channel PyTorch tensor.
+    Convert complex-valued data_module to a 2-channel PyTorch tensor.
     The real and imaginary parts are stacked along the last dimension.
     This function relies on 'monai.utils.type_conversion.convert_to_tensor'
 
     Args:
-        data: input data can be PyTorch Tensor, numpy array, list, int, and float.
+        data: input data_module can be PyTorch Tensor, numpy array, list, int, and float.
             will convert Tensor, Numpy array, float, int, bool to Tensor, strings and objects keep the original.
             for list, convert every item to a Tensor if applicable.
-        dtype: target data type to when converting to Tensor.
-        device: target device to put the converted Tensor data.
+        dtype: target data_module type to when converting to Tensor.
+        device: target device to put the converted Tensor data_module.
         wrap_sequence: if `False`, then lists will recursively call this function.
             E.g., `[1, 2]` -> `[tensor(1), tensor(2)]`. If `True`, then `[1, 2]` -> `tensor([1, 2])`.
         track_meta: whether to track the meta information, if `True`, will convert to `MetaTensor`.
             default to `False`.
 
     Returns:
-        PyTorch version of the data
+        PyTorch version of the data_module
 
     Example:
         .. code-block:: python
 
             import numpy as np
-            data = np.array([ [1+1j, 1-1j], [2+2j, 2-2j] ])
+            data_module = np.array([ [1+1j, 1-1j], [2+2j, 2-2j] ])
             # the following line prints (2,2)
-            print(data.shape)
+            print(data_module.shape)
             # the following line prints torch.Size([2, 2, 2])
-            print(convert_to_tensor_complex(data).shape)
+            print(convert_to_tensor_complex(data_module).shape)
     """
-    # if data is not complex, just turn it into a tensor
+    # if data_module is not complex, just turn it into a tensor
     if isinstance(data, Tensor):
         if not torch.is_complex(data):
             converted_data: Tensor = convert_to_tensor(
@@ -74,14 +74,14 @@ def convert_to_tensor_complex(
             )
             return converted_data
 
-    # if data is complex, turn its stacked version into a tensor
+    # if data_module is complex, turn its stacked version into a tensor
     if isinstance(data, torch.Tensor):
         data = torch.stack([data.real, data.imag], dim=-1)
 
     elif isinstance(data, np.ndarray):
         if re.search(r"[SaUO]", data.dtype.str) is None:
             # numpy array with 0 dims is also sequence iterable,
-            # `ascontiguousarray` will add 1 dim if img has no dim, so we only apply on data with dims
+            # `ascontiguousarray` will add 1 dim if img has no dim, so we only apply on data_module with dims
             if data.ndim > 0:
                 data = np.ascontiguousarray(data)
             data = np.stack((data.real, data.imag), axis=-1)

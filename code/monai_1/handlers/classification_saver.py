@@ -34,7 +34,7 @@ else:
 class ClassificationSaver:
     """
     Event handler triggered on completing every iteration to save the classification predictions as CSV file.
-    If running in distributed data parallel, only saves CSV file in the specified rank.
+    If running in distributed data_module parallel, only saves CSV file in the specified rank.
 
     """
 
@@ -64,7 +64,7 @@ class ClassificationSaver:
                 `engine.state` and `batch_transform` inherit from the ignite concept:
                 https://pytorch.org/ignite/concepts.html#state, explanation and usage example are in the tutorial:
                 https://github.com/Project-MONAI/tutorials/blob/master/modules/batch_output_transform.ipynb.
-            output_transform: a callable that is used to extract the model prediction data from
+            output_transform: a callable that is used to extract the model prediction data_module from
                 `ignite.engine.state.output`. the first dimension of its output will be treated as
                 the batch dimension. each item in the batch will be saved individually.
                 `engine.state` and `output_transform` inherit from the ignite concept:

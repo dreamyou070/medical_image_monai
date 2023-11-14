@@ -33,10 +33,10 @@ __all__ = ["SegSummarizer"]
 
 class SegSummarizer(Compose):
     """
-    SegSummarizer serializes the operations for data analysis in Auto3Dseg pipeline. It loads
+    SegSummarizer serializes the operations for data_module analysis in Auto3Dseg pipeline. It loads
     two types of analyzer functions and execute differently. The first type of analyzer is
     CaseAnalyzer which is similar to traditional monai transforms. It can be composed with other
-    transforms to process the data dict which has image/label keys. The second type of analyzer
+    transforms to process the data_module dict which has image/label keys. The second type of analyzer
     is SummaryAnalyzer which works only on a list of dictionary. Each dictionary is the output
     of the case analyzers on a single dataset.
 
@@ -70,8 +70,8 @@ class SegSummarizer(Compose):
                 summarizer,
             ]
             ...
-            # skip some steps to set up data loader
-            dataset = data.DataLoader(ds, batch_size=1, shuffle=False, num_workers=n_workers, collate_fn=no_collation)
+            # skip some steps to set up data_module loader
+            dataset = data_module.DataLoader(ds, batch_size=1, shuffle=False, num_workers=n_workers, collate_fn=no_collation)
             transform = Compose(transform_list)
             stats = []
             for batch_data in dataset:
@@ -126,7 +126,7 @@ class SegSummarizer(Compose):
         utilize the new analyzers for stats computations.
 
         Args:
-            case_analyzer: analyzer that works on each data.
+            case_analyzer: analyzer that works on each data_module.
             summary_analyzer: analyzer that works on list of stats dict (output from case_analyzers).
 
         Examples:
@@ -143,8 +143,8 @@ class SegSummarizer(Compose):
                         report_format = {"ndims": None}
                         super().__init__(stats_name, report_format)
 
-                    def __call__(self, data):
-                        d = dict(data)
+                    def __call__(self, data_module):
+                        d = dict(data_module)
                         report = deepcopy(self.get_report_format())
                         report["ndims"] = d[self.image_key].ndim
                         d[self.stats_name] = report
@@ -156,9 +156,9 @@ class SegSummarizer(Compose):
                         super().__init__(stats_name, report_format)
                         self.update_ops("ndims", SampleOperations())
 
-                    def __call__(self, data):
+                    def __call__(self, data_module):
                         report = deepcopy(self.get_report_format())
-                        v_np = concat_val_to_np(data, [self.stats_name, "ndims"])
+                        v_np = concat_val_to_np(data_module, [self.stats_name, "ndims"])
                         report["ndims"] = self.ops["ndims"].evaluate(v_np)
                         return report
 
@@ -172,13 +172,13 @@ class SegSummarizer(Compose):
 
     def summarize(self, data: list[dict]) -> dict[str, dict]:
         """
-        Summarize the input list of data and generates a report ready for json/yaml export.
+        Summarize the input list of data_module and generates a report ready for json/yaml export.
 
         Args:
-            data: a list of data dicts.
+            data: a list of data_module dicts.
 
         Returns:
-            a dict that summarizes the stats across data samples.
+            a dict that summarizes the stats across data_module samples.
 
         Examples:
             stats_summary:

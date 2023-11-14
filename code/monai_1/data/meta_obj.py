@@ -29,10 +29,10 @@ __all__ = ["get_track_meta", "set_track_meta", "MetaObj"]
 def set_track_meta(val: bool) -> None:
     """
     Boolean to set whether metadata is tracked. If `True`, metadata will be associated
-    its data by using subclasses of `MetaObj`. If `False`, then data will be returned
+    its data_module by using subclasses of `MetaObj`. If `False`, then data_module will be returned
     with empty metadata.
 
-    If `set_track_meta` is `False`, then standard data objects will be returned (e.g.,
+    If `set_track_meta` is `False`, then standard data_module objects will be returned (e.g.,
     `torch.Tensor` and `np.ndarray`) as opposed to MONAI's enhanced objects.
 
     By default, this is `True`, and most users will want to leave it this way. However,
@@ -46,10 +46,10 @@ def set_track_meta(val: bool) -> None:
 def get_track_meta() -> bool:
     """
     Return the boolean as to whether metadata is tracked. If `True`, metadata will be
-    associated its data by using subclasses of `MetaObj`. If `False`, then data will be
+    associated its data_module by using subclasses of `MetaObj`. If `False`, then data_module will be
     returned with empty metadata.
 
-    If `set_track_meta` is `False`, then standard data objects will be returned (e.g.,
+    If `set_track_meta` is `False`, then standard data_module objects will be returned (e.g.,
     `torch.Tensor` and `np.ndarray`) as opposed to MONAI's enhanced objects.
 
     By default, this is `True`, and most users will want to leave it this way. However,
@@ -61,7 +61,7 @@ def get_track_meta() -> bool:
 
 class MetaObj:
     """
-    Abstract base class that stores data as well as any extra metadata.
+    Abstract base class that stores data_module as well as any extra metadata.
 
     This allows for subclassing `torch.Tensor` and `np.ndarray` through multiple inheritance.
 
@@ -72,9 +72,9 @@ class MetaObj:
 
     Copying of information:
 
-        * For `c = a + b`, then auxiliary data (e.g., metadata) will be copied from the
+        * For `c = a + b`, then auxiliary data_module (e.g., metadata) will be copied from the
           first instance of `MetaObj` if `a.is_batch` is False
-          (For batched data, the metadata will be shallow copied for efficiency purposes).
+          (For batched data_module, the metadata will be shallow copied for efficiency purposes).
 
     """
 
@@ -105,7 +105,7 @@ class MetaObj:
 
     @staticmethod
     def copy_items(data):
-        """returns a copy of the data. list and dict are shallow copied for efficiency purposes."""
+        """returns a copy of the data_module. list and dict are shallow copied for efficiency purposes."""
         if is_immutable(data):
             return data
         if isinstance(data, (list, dict, np.ndarray)):
@@ -119,7 +119,7 @@ class MetaObj:
         Copy metadata from a `MetaObj` or an iterable of `MetaObj` instances.
 
         Args:
-            input_objs: list of `MetaObj` to copy data from.
+            input_objs: list of `MetaObj` to copy data_module from.
             copy_attr: whether to copy each attribute with `MetaObj.copy_item`.
                 note that if the attribute is a nested list or dict, only a shallow copy will be done.
             keys: the keys of attributes to copy from the ``input_objs``.

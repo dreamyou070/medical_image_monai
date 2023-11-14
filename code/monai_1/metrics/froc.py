@@ -125,7 +125,7 @@ def compute_froc_curve_data(
     """
     This function is modified from the official evaluation code of
     `CAMELYON 16 Challenge <https://camelyon16.grand-challenge.org/>`_, and used to compute
-    the required data for plotting the Free Response Operating Characteristic (FROC) curve.
+    the required data_module for plotting the Free Response Operating Characteristic (FROC) curve.
 
     Args:
         fp_probs: an array that contains the probabilities of the false positive detections for all

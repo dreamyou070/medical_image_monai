@@ -33,7 +33,7 @@ else:
 
 class CheckpointSaver:
     """
-    CheckpointSaver acts as an Ignite handler to save checkpoint data into files.
+    CheckpointSaver acts as an Ignite handler to save checkpoint data_module into files.
     It supports to save according to metrics result, epoch number, iteration number
     and last model or exception.
 
@@ -281,7 +281,7 @@ class CheckpointSaver:
 
     def exception_raised(self, engine: Engine, e: Exception) -> None:
         """Callback for train or validation/evaluation exception raised Event.
-        Save current data as final checkpoint if configure save_final is True. This callback may be skipped
+        Save current data_module as final checkpoint if configure save_final is True. This callback may be skipped
         because the logic with Ignite can only trigger the first attached handler for `EXCEPTION_RAISED` event.
 
         Args:

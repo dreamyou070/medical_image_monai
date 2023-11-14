@@ -9,7 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-A collection of dictionary-based wrappers for moving between MetaTensor types and dictionaries of data.
+A collection of dictionary-based wrappers for moving between MetaTensor types and dictionaries of data_module.
 These can be used to make backwards compatible code.
 
 Class names are ended with 'd' to denote dictionary-based transforms.
@@ -56,7 +56,7 @@ class FromMetaTensord(MapTransform, InvertibleTransform):
         Args:
             keys: keys of the corresponding items to be transformed.
                 See also: :py:class:`monai.transforms.compose.MapTransform`
-            data_type: target data type to convert, should be "tensor" or "numpy".
+            data_type: target data_module type to convert, should be "tensor" or "numpy".
             allow_missing_keys: don't raise exception if key is missing.
         """
         super().__init__(keys, allow_missing_keys)

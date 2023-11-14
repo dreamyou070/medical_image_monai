@@ -48,14 +48,14 @@ class Evaluator(Workflow):
         epoch_length: number of iterations for one epoch, default to `len(val_data_loader)`.
         non_blocking: if True and this copy is between CPU and GPU, the copy may occur asynchronously
             with respect to the host. For other cases, this argument has no effect.
-        prepare_batch: function to parse expected data (usually `image`, `label` and other network args)
+        prepare_batch: function to parse expected data_module (usually `image`, `label` and other network args)
             from `engine.state.batch` for every iteration, for more details please refer to:
             https://pytorch.org/ignite/generated/ignite.engine.create_supervised_trainer.html.
         iteration_update: the callable function for every iteration, expect to accept `engine`
-            and `engine.state.batch` as inputs, return data will be stored in `engine.state.output`.
+            and `engine.state.batch` as inputs, return data_module will be stored in `engine.state.output`.
             if not provided, use `self._iteration()` instead. for more details please refer to:
             https://pytorch.org/ignite/generated/ignite.engine.engine.Engine.html.
-        postprocessing: execute additional transformation for the model output data.
+        postprocessing: execute additional transformation for the model output data_module.
             Typically, several Tensor based transforms composed by `Compose`.
         key_val_metric: compute metric when every iteration completed, and save average value to
             engine.state.metrics when epoch completed. key_val_metric is the main metric to compare and save the
@@ -74,10 +74,10 @@ class Evaluator(Workflow):
         event_to_attr: a dictionary to map an event to a state attribute, then add to `engine.state`.
             for more details, check: https://pytorch.org/ignite/generated/ignite.engine.engine.Engine.html
             #ignite.engine.engine.Engine.register_events.
-        decollate: whether to decollate the batch-first data to a list of data after model computation,
+        decollate: whether to decollate the batch-first data_module to a list of data_module after model computation,
             recommend `decollate=True` when `postprocessing` uses components from `monai.transforms`.
             default to `True`.
-        to_kwargs: dict of other args for `prepare_batch` API when converting the input data, except for
+        to_kwargs: dict of other args for `prepare_batch` API when converting the input data_module, except for
             `device`, `non_blocking`.
         amp_kwargs: dict of the args for `torch.cuda.amp.autocast()` API, for more details:
             https://pytorch.org/docs/stable/amp.html#torch.cuda.amp.autocast.
@@ -179,15 +179,15 @@ class SupervisedEvaluator(Evaluator):
         epoch_length: number of iterations for one epoch, default to `len(val_data_loader)`.
         non_blocking: if True and this copy is between CPU and GPU, the copy may occur asynchronously
             with respect to the host. For other cases, this argument has no effect.
-        prepare_batch: function to parse expected data (usually `image`, `label` and other network args)
+        prepare_batch: function to parse expected data_module (usually `image`, `label` and other network args)
             from `engine.state.batch` for every iteration, for more details please refer to:
             https://pytorch.org/ignite/generated/ignite.engine.create_supervised_trainer.html.
         iteration_update: the callable function for every iteration, expect to accept `engine`
-            and `engine.state.batch` as inputs, return data will be stored in `engine.state.output`.
+            and `engine.state.batch` as inputs, return data_module will be stored in `engine.state.output`.
             if not provided, use `self._iteration()` instead. for more details please refer to:
             https://pytorch.org/ignite/generated/ignite.engine.engine.Engine.html.
-        inferer: inference method that execute model forward on input data, like: SlidingWindow, etc.
-        postprocessing: execute additional transformation for the model output data.
+        inferer: inference method that execute model forward on input data_module, like: SlidingWindow, etc.
+        postprocessing: execute additional transformation for the model output data_module.
             Typically, several Tensor based transforms composed by `Compose`.
         key_val_metric: compute metric when every iteration completed, and save average value to
             engine.state.metrics when epoch completed. key_val_metric is the main metric to compare and save the
@@ -206,10 +206,10 @@ class SupervisedEvaluator(Evaluator):
         event_to_attr: a dictionary to map an event to a state attribute, then add to `engine.state`.
             for more details, check: https://pytorch.org/ignite/generated/ignite.engine.engine.Engine.html
             #ignite.engine.engine.Engine.register_events.
-        decollate: whether to decollate the batch-first data to a list of data after model computation,
+        decollate: whether to decollate the batch-first data_module to a list of data_module after model computation,
             recommend `decollate=True` when `postprocessing` uses components from `monai.transforms`.
             default to `True`.
-        to_kwargs: dict of other args for `prepare_batch` API when converting the input data, except for
+        to_kwargs: dict of other args for `prepare_batch` API when converting the input data_module, except for
             `device`, `non_blocking`.
         amp_kwargs: dict of the args for `torch.cuda.amp.autocast()` API, for more details:
             https://pytorch.org/docs/stable/amp.html#torch.cuda.amp.autocast.
@@ -267,20 +267,20 @@ class SupervisedEvaluator(Evaluator):
         """
         callback function for the Supervised Evaluation processing logic of 1 iteration in Ignite Engine.
         Return below items in a dictionary:
-            - IMAGE: image Tensor data for model input, already moved to device.
-            - LABEL: label Tensor data corresponding to the image, already moved to device.
+            - IMAGE: image Tensor data_module for model input, already moved to device.
+            - LABEL: label Tensor data_module corresponding to the image, already moved to device.
             - PRED: prediction result of model.
 
         Args:
             engine: `SupervisedEvaluator` to execute operation for an iteration.
-            batchdata: input data for this iteration, usually can be dictionary or tuple of Tensor data.
+            batchdata: input data_module for this iteration, usually can be dictionary or tuple of Tensor data_module.
 
         Raises:
             ValueError: When ``batchdata`` is None.
 
         """
         if batchdata is None:
-            raise ValueError("Must provide batch data for current iteration.")
+            raise ValueError("Must provide batch data_module for current iteration.")
         batch = engine.prepare_batch(batchdata, engine.state.device, engine.non_blocking, **engine.to_kwargs)
         if len(batch) == 2:
             inputs, targets = batch
@@ -314,20 +314,20 @@ class EnsembleEvaluator(Evaluator):
         val_data_loader: Ignite engine use data_loader to run, must be Iterable, typically be torch.DataLoader.
         epoch_length: number of iterations for one epoch, default to `len(val_data_loader)`.
         networks: networks to evaluate in order in the evaluator, should be regular PyTorch `torch.nn.Module`.
-        pred_keys: the keys to store every prediction data.
+        pred_keys: the keys to store every prediction data_module.
             the length must exactly match the number of networks.
             if None, use "pred_{index}" as key corresponding to N networks, index from `0` to `N-1`.
         non_blocking: if True and this copy is between CPU and GPU, the copy may occur asynchronously
             with respect to the host. For other cases, this argument has no effect.
-        prepare_batch: function to parse expected data (usually `image`, `label` and other network args)
+        prepare_batch: function to parse expected data_module (usually `image`, `label` and other network args)
             from `engine.state.batch` for every iteration, for more details please refer to:
             https://pytorch.org/ignite/generated/ignite.engine.create_supervised_trainer.html.
         iteration_update: the callable function for every iteration, expect to accept `engine`
-            and `engine.state.batch` as inputs, return data will be stored in `engine.state.output`.
+            and `engine.state.batch` as inputs, return data_module will be stored in `engine.state.output`.
             if not provided, use `self._iteration()` instead. for more details please refer to:
             https://pytorch.org/ignite/generated/ignite.engine.engine.Engine.html.
-        inferer: inference method that execute model forward on input data, like: SlidingWindow, etc.
-        postprocessing: execute additional transformation for the model output data.
+        inferer: inference method that execute model forward on input data_module, like: SlidingWindow, etc.
+        postprocessing: execute additional transformation for the model output data_module.
             Typically, several Tensor based transforms composed by `Compose`.
         key_val_metric: compute metric when every iteration completed, and save average value to
             engine.state.metrics when epoch completed. key_val_metric is the main metric to compare and save the
@@ -346,10 +346,10 @@ class EnsembleEvaluator(Evaluator):
         event_to_attr: a dictionary to map an event to a state attribute, then add to `engine.state`.
             for more details, check: https://pytorch.org/ignite/generated/ignite.engine.engine.Engine.html
             #ignite.engine.engine.Engine.register_events.
-        decollate: whether to decollate the batch-first data to a list of data after model computation,
+        decollate: whether to decollate the batch-first data_module to a list of data_module after model computation,
             recommend `decollate=True` when `postprocessing` uses components from `monai.transforms`.
             default to `True`.
-        to_kwargs: dict of other args for `prepare_batch` API when converting the input data, except for
+        to_kwargs: dict of other args for `prepare_batch` API when converting the input data_module, except for
             `device`, `non_blocking`.
         amp_kwargs: dict of the args for `torch.cuda.amp.autocast()` API, for more details:
             https://pytorch.org/docs/stable/amp.html#torch.cuda.amp.autocast.
@@ -413,8 +413,8 @@ class EnsembleEvaluator(Evaluator):
         """
         callback function for the Supervised Evaluation processing logic of 1 iteration in Ignite Engine.
         Return below items in a dictionary:
-            - IMAGE: image Tensor data for model input, already moved to device.
-            - LABEL: label Tensor data corresponding to the image, already moved to device.
+            - IMAGE: image Tensor data_module for model input, already moved to device.
+            - LABEL: label Tensor data_module corresponding to the image, already moved to device.
             - pred_keys[0]: prediction result of network 0.
             - pred_keys[1]: prediction result of network 1.
             - ... ...
@@ -422,14 +422,14 @@ class EnsembleEvaluator(Evaluator):
 
         Args:
             engine: `EnsembleEvaluator` to execute operation for an iteration.
-            batchdata: input data for this iteration, usually can be dictionary or tuple of Tensor data.
+            batchdata: input data_module for this iteration, usually can be dictionary or tuple of Tensor data_module.
 
         Raises:
             ValueError: When ``batchdata`` is None.
 
         """
         if batchdata is None:
-            raise ValueError("Must provide batch data for current iteration.")
+            raise ValueError("Must provide batch data_module for current iteration.")
         batch = engine.prepare_batch(batchdata, engine.state.device, engine.non_blocking, **engine.to_kwargs)
         if len(batch) == 2:
             inputs, targets = batch

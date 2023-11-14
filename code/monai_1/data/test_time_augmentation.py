@@ -70,26 +70,26 @@ class TestTimeAugmentation:
         `RandomizableTrait` (i.e. `Randomizable`, `RandomizableTransform`, or `RandomizableTrait`).
             . All random transforms must be of type `InvertibleTransform`.
         batch_size: number of realizations to infer at once.
-        num_workers: how many subprocesses to use for data.
+        num_workers: how many subprocesses to use for data_module.
         inferrer_fn: function to use to perform inference.
         device: device on which to perform inference.
         image_key: key used to extract image from input dictionary.
-        orig_key: the key of the original input data in the dict. will get the applied transform information
-            for this input data, then invert them for the expected data with `image_key`.
-        orig_meta_keys: the key of the metadata of original input data, will get the `affine`, `data_shape`, etc.
+        orig_key: the key of the original input data_module in the dict. will get the applied transform information
+            for this input data_module, then invert them for the expected data_module with `image_key`.
+        orig_meta_keys: the key of the metadata of original input data_module, will get the `affine`, `data_shape`, etc.
             the metadata is a dictionary object which contains: filename, original_shape, etc.
             if None, will try to construct meta_keys by `{orig_key}_{meta_key_postfix}`.
-        meta_key_postfix: use `key_{postfix}` to fetch the metadata according to the key data,
+        meta_key_postfix: use `key_{postfix}` to fetch the metadata according to the key data_module,
             default is `meta_dict`, the metadata is a dictionary object.
             For example, to handle key `image`,  read/write affine matrices from the
             metadata `image_meta_dict` dictionary's `affine` field.
             this arg only works when `meta_keys=None`.
-        to_tensor: whether to convert the inverted data into PyTorch Tensor first, default to `True`.
-        output_device: if converted the inverted data to Tensor, move the inverted results to target device
+        to_tensor: whether to convert the inverted data_module into PyTorch Tensor first, default to `True`.
+        output_device: if converted the inverted data_module to Tensor, move the inverted results to target device
             before `post_func`, default to "cpu".
-        post_func: post processing for the inverted data, should be a callable function.
+        post_func: post processing for the inverted data_module, should be a callable function.
         return_full_data: normally, metrics are returned (mode, mean, std, vvc). Setting this flag to `True`
-            will return the full data. Dimensions will be same size as when passing a single image through
+            will return the full data_module. Dimensions will be same size as when passing a single image through
             `inferrer_fn`, with a dimension appended equal in size to `num_examples` (N), i.e., `[N,C,H,W,[D]]`.
         progress: whether to display a progress bar.
 
@@ -170,14 +170,14 @@ class TestTimeAugmentation:
     ) -> tuple[NdarrayOrTensor, NdarrayOrTensor, NdarrayOrTensor, float] | NdarrayOrTensor:
         """
         Args:
-            data: dictionary data to be processed.
+            data: dictionary data_module to be processed.
             num_examples: number of realizations to be processed and results combined.
 
         Returns:
             - if `return_full_data==False`: mode, mean, std, vvc. The mode, mean and standard deviation are
                 calculated across `num_examples` outputs at each voxel. The volume variation coefficient (VVC)
                 is `std/mean` across the whole output, including `num_examples`. See original paper for clarification.
-            - if `return_full_data==False`: data is returned as-is after applying the `inferrer_fn` and then
+            - if `return_full_data==False`: data_module is returned as-is after applying the `inferrer_fn` and then
                 concatenating across the first dimension containing `num_examples`. This allows the user to perform
                 their own analysis if desired.
         """
@@ -187,7 +187,7 @@ class TestTimeAugmentation:
         if num_examples % self.batch_size != 0:
             raise ValueError("num_examples should be multiple of batch size.")
 
-        # generate batch of data of size == batch_size, dataset and dataloader
+        # generate batch of data_module of size == batch_size, dataset and dataloader
         data_in = [deepcopy(d) for _ in range(num_examples)]
         ds = Dataset(data_in, self.transform)
         dl = DataLoader(ds, num_workers=self.num_workers, batch_size=self.batch_size, collate_fn=pad_list_data_collate)

@@ -35,7 +35,7 @@ class Affine:
 
     @staticmethod
     def is_affine_shaped(data):
-        """Check if the data is an affine matrix."""
+        """Check if the data_module is an affine matrix."""
         if isinstance(data, Affine):
             return True
         if isinstance(data, DisplacementField):
@@ -55,7 +55,7 @@ class DisplacementField:
 
     @staticmethod
     def is_ddf_shaped(data):
-        """Check if the data is a DDF."""
+        """Check if the data_module is a DDF."""
         if isinstance(data, DisplacementField):
             return True
         if isinstance(data, Affine):
@@ -147,10 +147,10 @@ __override_lazy_keywords = {*list(LazyAttr), "atol"}
 
 def resample(data: torch.Tensor, matrix: NdarrayOrTensor, kwargs: dict | None = None):
     """
-    Resample `data` using the affine transformation defined by ``matrix``.
+    Resample `data_module` using the affine transformation defined by ``matrix``.
 
     Args:
-        data: input data to be resampled.
+        data: input data_module to be resampled.
         matrix: affine transformation matrix.
         kwargs: currently supports (see also: ``monai.utils.enums.LazyAttr``)
 
@@ -169,7 +169,7 @@ def resample(data: torch.Tensor, matrix: NdarrayOrTensor, kwargs: dict | None = 
     if not Affine.is_affine_shaped(matrix):
         raise NotImplementedError(f"Calling the dense grid resample API directly not implemented, {matrix.shape}.")
     if isinstance(data, monai.data.MetaTensor) and data.pending_operations:
-        warnings.warn("data.pending_operations is not empty, the resampling output may be incorrect.")
+        warnings.warn("data_module.pending_operations is not empty, the resampling output may be incorrect.")
     kwargs = kwargs or {}
     for k in kwargs:
         look_up_option(k, __override_lazy_keywords)

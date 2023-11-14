@@ -49,7 +49,7 @@ class LazyTrait:
     @property
     def requires_current_data(self):
         """
-        Get whether the transform requires the input data to be up to date before the transform executes.
+        Get whether the transform requires the input data_module to be up to date before the transform executes.
         Such transforms can still execute lazily by adding pending operations to the output tensors.
         Returns:
             True if the transform requires its inputs to be up to date and False if it does not
@@ -69,7 +69,7 @@ class InvertibleTrait:
 class RandomizableTrait:
     """
     An interface to indicate that the transform has the capability to perform
-    randomized transforms to the data that it is called upon. This interface
+    randomized transforms to the data_module that it is called upon. This interface
     can be extended from by people adapting transforms to the MONAI framework as well as by
     implementors of MONAI transforms.
     """
@@ -94,7 +94,7 @@ class ThreadUnsafe:
     when being applied. Transforms inheriting this class should be used
     cautiously in a multi-thread context.
 
-    This type is typically used by :py:class:`monai.data.CacheDataset` and
+    This type is typically used by :py:class:`monai.data_module.CacheDataset` and
     its extensions, where the transform cache is built with multiple threads.
     """
 

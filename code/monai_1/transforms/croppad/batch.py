@@ -9,7 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-A collection of "vanilla" transforms for crop and pad operations acting on batches of data.
+A collection of "vanilla" transforms for crop and pad operations acting on batches of data_module.
 """
 
 from __future__ import annotations
@@ -44,15 +44,15 @@ def replace_element(to_replace, batch, idx, key_or_idx):
 class PadListDataCollate(InvertibleTransform):
     """
     Same as MONAI's ``list_data_collate``, except any tensors are centrally padded to match the shape of the biggest
-    tensor in each dimension. This transform is useful if some of the applied transforms generate batch data of
+    tensor in each dimension. This transform is useful if some of the applied transforms generate batch data_module of
     different sizes.
 
-    This can be used on both list and dictionary data.
-    Note that in the case of the dictionary data, it may add the transform information to the list of invertible transforms
+    This can be used on both list and dictionary data_module.
+    Note that in the case of the dictionary data_module, it may add the transform information to the list of invertible transforms
     if input batch have different spatial shape, so need to call static method: `inverse` before inverting other transforms.
 
     Note that normally, a user won't explicitly use the `__call__` method. Rather this would be passed to the `DataLoader`.
-    This means that `__call__` handles data as it comes out of a `DataLoader`, containing batch dimension. However, the
+    This means that `__call__` handles data_module as it comes out of a `DataLoader`, containing batch dimension. However, the
     `inverse` operates on dictionaries containing images of shape `C,H,W,[D]`. This asymmetry is necessary so that we can
     pass the inverse through multiprocessing.
 
@@ -72,9 +72,9 @@ class PadListDataCollate(InvertibleTransform):
     def __call__(self, batch: Any):
         """
         Args:
-            batch: batch of data to pad-collate
+            batch: batch of data_module to pad-collate
         """
-        # data is either list of dicts or list of lists
+        # data_module is either list of dicts or list of lists
         is_list_of_dicts = isinstance(batch[0], dict)
         # loop over items inside of each element in a batch
         batch_item = tuple(batch[0].keys()) if is_list_of_dicts else range(len(batch[0]))
@@ -100,7 +100,7 @@ class PadListDataCollate(InvertibleTransform):
                 padded = padder(batch_i[key_or_idx])
                 batch = replace_element(padded, batch, idx, key_or_idx)
 
-                # If we have a dictionary of data, append to list
+                # If we have a dictionary of data_module, append to list
                 # padder transform info is re-added with self.push_transform to ensure one info dict per transform.
                 if is_list_of_dicts:
                     self.push_transform(

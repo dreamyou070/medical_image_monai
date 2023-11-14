@@ -104,7 +104,7 @@ class CumulativeAverage:
 
     def append(self, val: Any, count: Any | None = 1) -> None:
         """
-        Append with a new value, and an optional count. Any data type is supported that is convertable
+        Append with a new value, and an optional count. Any data_module type is supported that is convertable
             with torch.as_tensor() e.g. number, list, numpy array, or Tensor.
 
         Args:

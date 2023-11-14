@@ -55,7 +55,7 @@ def itk_image_to_metatensor(
         dtype: output dtype, defaults to the Python built-in `float`.
 
     Returns:
-        A MetaTensor object containing the array data and metadata in ChannelFirst format.
+        A MetaTensor object containing the array data_module and metadata in ChannelFirst format.
     """
     reader = ITKReader(affine_lps_to_ras=False, channel_dim=channel_dim)
     image_array, meta_data = reader.get_data(image)
@@ -74,9 +74,9 @@ def metatensor_to_itk_image(
 
     Args:
         meta_tensor: The MetaTensor to be converted.
-        channel_dim: channel dimension of the data array, defaults to ``0`` (Channel-first).
+        channel_dim: channel dimension of the data_module array, defaults to ``0`` (Channel-first).
             ``None`` indicates no channel dimension. This is used to create a Vector Image if it is not ``None``.
-        dtype: output data type, defaults to `np.float32`.
+        dtype: output data_module type, defaults to `np.float32`.
         kwargs: additional keyword arguments. Currently `itk.GetImageFromArray` will get ``ttype`` from this dictionary.
 
     Returns:

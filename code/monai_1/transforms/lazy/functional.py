@@ -91,7 +91,7 @@ def apply_pending_transforms(
     tensors.
 
     When operating on a dictionary of tensors, the 'keys' parameter determines what tensors should be checked.
-    If 'keys' is not set, all keys of 'data' are considered.
+    If 'keys' is not set, all keys of 'data_module' are considered.
 
     This method optionally takes a set of overrides that can be used to change specific parameters on the
     transform pipeline. See ``Compose`` for more details. This method takes a logger_name that can be used
@@ -103,14 +103,14 @@ def apply_pending_transforms(
 
     Args:
         data: a ``torch.Tensor`` or ``MetaTensor``, or dictionary of tensors.
-        keys: an optional tuple of keys that filters the keys on 'data' if it is a dict
+        keys: an optional tuple of keys that filters the keys on 'data_module' if it is a dict
         overrides: An optional dictionary that specifies parameters that can be used to override transform
-            arguments when they are called. When 'data' is a dict, this dictionary should contain a dictionary
+            arguments when they are called. When 'data_module' is a dict, this dictionary should contain a dictionary
             of overrides for each key that needs them
         logger_name: An optional name for a logger to be used when applying pending transforms. If None,
             logging is suppressed.
     Returns:
-        an object of the same type as data if pending transforms were applied, or 'data' if they were not
+        an object of the same type as data_module if pending transforms were applied, or 'data_module' if they were not
     """
     if isinstance(data, list):
         return [apply_pending_transforms(d, keys, overrides, logger_name) for d in data]
@@ -118,8 +118,8 @@ def apply_pending_transforms(
         return tuple(apply_pending_transforms(d, keys, overrides, logger_name) for d in data)
 
     if isinstance(data, dict):
-        # get the keys from 'data' for metatensors with pending operations. If 'keys' is set, select
-        # only data keys that are in 'keys'
+        # get the keys from 'data_module' for metatensors with pending operations. If 'keys' is set, select
+        # only data_module keys that are in 'keys'
         active_keys = [k for k in data.keys() if keys is None or k in keys]
         keys_to_update = [k for k in active_keys if isinstance(data[k], MetaTensor) and data[k].has_pending_operations]
 
@@ -154,7 +154,7 @@ def apply_pending_transforms_in_order(
 
     Evaluation of pending transforms is performed under the following circumstances:
     * If the transform is a lazy transform and:
-      * The transform checks data as part of its execution, or
+      * The transform checks data_module as part of its execution, or
       * the transform is not executing lazily
     * If the transform is an ApplyPending[d] transform
     * If the transform is not a lazy transform
@@ -169,12 +169,12 @@ def apply_pending_transforms_in_order(
             need to be applied
         lazy: The lazy mode that is being applied (this can be False, True or None)
         overrides: An optional dictionary containing overrides to be applied to the pending transforms when they
-            are lazily executed. If data is a dict, it should contain a dictionary of overrides for each key that
+            are lazily executed. If data_module is a dict, it should contain a dictionary of overrides for each key that
             needs them
         logger_name: An optional name for a logger to be used when applying pending transforms. If None,
             logging is suppressed.
     Returns:
-        an object of the same type as data if pending transforms were applied, or 'data' if they were not
+        an object of the same type as data_module if pending transforms were applied, or 'data_module' if they were not
 
     """
     from monai.transforms.lazy.dictionary import ApplyPendingd
@@ -194,7 +194,7 @@ def apply_pending_transforms_in_order(
 
 def apply_pending(data: torch.Tensor | MetaTensor, pending: list | None = None, overrides: dict | None = None):
     """
-    This method applies pending transforms to `data` tensors.
+    This method applies pending transforms to `data_module` tensors.
     Currently, only 2d and 3d inputs are supported.
 
     This method is designed to be called by ``apply_pending_transforms`` and other methods / classes
@@ -219,7 +219,7 @@ def apply_pending(data: torch.Tensor | MetaTensor, pending: list | None = None, 
 
     Args:
         data: A torch Tensor or a monai MetaTensor.
-        pending: pending transforms. This must be set if data is a Tensor, but is optional if data is a MetaTensor.
+        pending: pending transforms. This must be set if data_module is a Tensor, but is optional if data_module is a MetaTensor.
         overrides: a dictionary of overrides for the transform arguments. The keys must be one of:
 
             - mode: {``"bilinear"``, ``"nearest"``} or spline interpolation order ``0-5`` (integers).
@@ -234,8 +234,8 @@ def apply_pending(data: torch.Tensor | MetaTensor, pending: list | None = None, 
                 When `mode` is an integer, using numpy/cupy backends, this argument accepts
                 {'reflect', 'grid-mirror', 'constant', 'grid-constant', 'nearest', 'mirror', 'grid-wrap', 'wrap'}.
                 See also: https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.map_coordinates.html
-            - dtype: data type for resampling computation. Defaults to ``float64``.
-                If ``None``, use the data type of input data, this option may not be compatible the resampling backend.
+            - dtype: data_module type for resampling computation. Defaults to ``float64``.
+                If ``None``, use the data_module type of input data_module, this option may not be compatible the resampling backend.
             - align_corners: Geometrically, we consider the pixels of the input as squares rather than points, when using
                 the PyTorch resampling backend. Defaults to ``False``.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html

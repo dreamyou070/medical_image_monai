@@ -25,12 +25,12 @@ from monai.utils import ImageMetaKey as Key
 
 class CSVSaver:
     """
-    Save the data in a dictionary format cache, and write to a CSV file finally.
-    Typically, the data can be classification predictions, call `save` for single data
-    or call `save_batch` to save a batch of data together, and call `finalize` to write
-    the cached data into CSV file. If no metadata provided, use index from 0 to save data.
+    Save the data_module in a dictionary format cache, and write to a CSV file finally.
+    Typically, the data_module can be classification predictions, call `save` for single data_module
+    or call `save_batch` to save a batch of data_module together, and call `finalize` to write
+    the cached data_module into CSV file. If no metadata provided, use index from 0 to save data_module.
     Note that this saver can't support multi-processing because it reads / writes single
-    CSV file and can't guarantee the data order in multi-processing situation.
+    CSV file and can't guarantee the data_module order in multi-processing situation.
 
     """
 
@@ -48,7 +48,7 @@ class CSVSaver:
             filename: name of the saved CSV file name.
             overwrite: whether to overwriting existing CSV file content, if True, will clear the file before saving.
                 otherwise, will append new content to the CSV file.
-            flush: whether to write the cache data to CSV file immediately when `save_batch` and clear the cache.
+            flush: whether to write the cache data_module to CSV file immediately when `save_batch` and clear the cache.
                 default to False.
             delimiter: the delimiter character in the saved file, default to "," as the default output type is `csv`.
                 to be consistent with: https://docs.python.org/3/library/csv.html#csv.Dialect.delimiter.
@@ -83,13 +83,13 @@ class CSVSaver:
         self.reset_cache()
 
     def save(self, data: torch.Tensor | np.ndarray, meta_data: dict | None = None) -> None:
-        """Save data into the cache dictionary. The metadata should have the following key:
-            - ``'filename_or_obj'`` -- save the data corresponding to file name or object.
-        If meta_data is None, use the default index from 0 to save data instead.
+        """Save data_module into the cache dictionary. The metadata should have the following key:
+            - ``'filename_or_obj'`` -- save the data_module corresponding to file name or object.
+        If meta_data is None, use the default index from 0 to save data_module instead.
 
         Args:
-            data: target data content that save into cache.
-            meta_data: the metadata information corresponding to the data.
+            data: target data_module content that save into cache.
+            meta_data: the metadata information corresponding to the data_module.
 
         """
         save_key = meta_data[Key.FILENAME_OR_OBJ] if meta_data else str(self._data_index)
@@ -99,11 +99,11 @@ class CSVSaver:
         self._cache_dict[save_key] = np.asarray(data, dtype=float)
 
     def save_batch(self, batch_data: torch.Tensor | np.ndarray, meta_data: dict | None = None) -> None:
-        """Save a batch of data into the cache dictionary.
+        """Save a batch of data_module into the cache dictionary.
 
         Args:
-            batch_data: target batch data content that save into cache.
-            meta_data: every key-value in the meta_data is corresponding to 1 batch of data.
+            batch_data: target batch data_module content that save into cache.
+            meta_data: every key-value in the meta_data is corresponding to 1 batch of data_module.
 
         """
         for i, data in enumerate(batch_data):  # save a batch of files
@@ -113,7 +113,7 @@ class CSVSaver:
             self.finalize()
 
     def get_cache(self) -> OrderedDict:
-        """Get the cache dictionary, key is filename and value is the corresponding data"""
+        """Get the cache dictionary, key is filename and value is the corresponding data_module"""
 
         return self._cache_dict
 

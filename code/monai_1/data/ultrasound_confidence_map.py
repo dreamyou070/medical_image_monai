@@ -34,7 +34,7 @@ class UltrasoundConfidenceMap:
         alpha (float, optional): Alpha parameter. Defaults to 2.0.
         beta (float, optional): Beta parameter. Defaults to 90.0.
         gamma (float, optional): Gamma parameter. Defaults to 0.05.
-        mode (str, optional): 'RF' or 'B' mode data. Defaults to 'B'.
+        mode (str, optional): 'RF' or 'B' mode data_module. Defaults to 'B'.
         sink_mode (str, optional): Sink mode. Defaults to 'all'. If 'mask' is selected, a mask must be when calling
             the transform. Can be 'all', 'mid', 'min', or 'mask'.
     """
@@ -322,13 +322,13 @@ class UltrasoundConfidenceMap:
         """Compute the confidence map
 
         Args:
-            data (NDArray): RF ultrasound data (one scanline per column) [H x W] 2D array
+            data (NDArray): RF ultrasound data_module (one scanline per column) [H x W] 2D array
 
         Returns:
             map (NDArray): Confidence map [H x W] 2D array
         """
 
-        # Normalize data
+        # Normalize data_module
         data = data.astype("float64")
         data = self.normalize(data)
 

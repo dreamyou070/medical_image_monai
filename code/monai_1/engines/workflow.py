@@ -50,7 +50,7 @@ class Workflow(Engine):
     Workflow defines the core work process inheriting from Ignite engine.
     All trainer, validator and evaluator share this same workflow as base class,
     because they all can be treated as same Ignite engine loops.
-    It initializes all the sharable data in Ignite engine.state.
+    It initializes all the sharable data_module in Ignite engine.state.
     And attach additional processing logics to Ignite engine based on Event-Handler mechanism.
 
     Users should consider inheriting from `trainer` or `evaluator` to develop more trainers or evaluators.
@@ -62,14 +62,14 @@ class Workflow(Engine):
         epoch_length: number of iterations for one epoch, default to `len(data_loader)`.
         non_blocking: if True and this copy is between CPU and GPU, the copy may occur asynchronously
             with respect to the host. For other cases, this argument has no effect.
-        prepare_batch: function to parse expected data (usually `image`, `label` and other network args)
+        prepare_batch: function to parse expected data_module (usually `image`, `label` and other network args)
             from `engine.state.batch` for every iteration, for more details please refer to:
             https://pytorch.org/ignite/generated/ignite.engine.create_supervised_trainer.html.
         iteration_update: the callable function for every iteration, expect to accept `engine`
-            and `engine.state.batch` as inputs, return data will be stored in `engine.state.output`.
+            and `engine.state.batch` as inputs, return data_module will be stored in `engine.state.output`.
             if not provided, use `self._iteration()` instead. for more details please refer to:
             https://pytorch.org/ignite/generated/ignite.engine.engine.Engine.html.
-        postprocessing: execute additional transformation for the model output data.
+        postprocessing: execute additional transformation for the model output data_module.
             Typically, several Tensor based transforms composed by `Compose`.
         key_metric: compute metric when every iteration completed, and save average value to
             engine.state.metrics when epoch completed. key_metric is the main metric to compare and save the
@@ -86,16 +86,16 @@ class Workflow(Engine):
         event_to_attr: a dictionary to map an event to a state attribute, then add to `engine.state`.
             for more details, check: https://pytorch.org/ignite/generated/ignite.engine.engine.Engine.html
             #ignite.engine.engine.Engine.register_events.
-        decollate: whether to decollate the batch-first data to a list of data after model computation,
+        decollate: whether to decollate the batch-first data_module to a list of data_module after model computation,
             recommend `decollate=True` when `postprocessing` uses components from `monai.transforms`.
             default to `True`.
-        to_kwargs: dict of other args for `prepare_batch` API when converting the input data, except for
+        to_kwargs: dict of other args for `prepare_batch` API when converting the input data_module, except for
             `device`, `non_blocking`.
         amp_kwargs: dict of the args for `torch.cuda.amp.autocast()` API, for more details:
             https://pytorch.org/docs/stable/amp.html#torch.cuda.amp.autocast.
 
     Raises:
-        TypeError: When ``data_loader`` is not a ``torch.utils.data.DataLoader``.
+        TypeError: When ``data_loader`` is not a ``torch.utils.data_module.DataLoader``.
         TypeError: When ``key_metric`` is not a ``Optional[dict]``.
         TypeError: When ``additional_metrics`` is not a ``Optional[dict]``.
 
@@ -141,7 +141,7 @@ class Workflow(Engine):
             if epoch_length is None:
                 raise ValueError("If data_loader is not PyTorch DataLoader, must specify the epoch_length.")
 
-        # set all sharable data for the workflow based on Ignite engine.state
+        # set all sharable data_module for the workflow based on Ignite engine.state
         self.state: Any = State(
             rank=dist.get_rank() if dist.is_available() and dist.is_initialized() else 0,
             seed=0,
@@ -187,7 +187,7 @@ class Workflow(Engine):
 
         if postprocessing is not None:
             # tips: if `decollate=False` and `postprocessing` is MONAI transforms, it may not work well
-            # because all the MONAI transforms expect `channel-first` data
+            # because all the MONAI transforms expect `channel-first` data_module
             self._register_postprocessing(postprocessing)
         if key_metric is not None:
             self._register_metrics(key_metric, additional_metrics)
@@ -196,7 +196,7 @@ class Workflow(Engine):
 
     def _register_decollate(self):
         """
-        Register the decollate operation for batch data, will execute after model forward and loss forward.
+        Register the decollate operation for batch data_module, will execute after model forward and loss forward.
 
         """
 
@@ -289,7 +289,7 @@ class Workflow(Engine):
 
         Args:
             engine: Ignite Engine, it can be a trainer, validator or evaluator.
-            batchdata: input data for this iteration, usually can be dictionary or tuple of Tensor data.
+            batchdata: input data_module for this iteration, usually can be dictionary or tuple of Tensor data_module.
 
         Raises:
             NotImplementedError: When the subclass does not override this method.

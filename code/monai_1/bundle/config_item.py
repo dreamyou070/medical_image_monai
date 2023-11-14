@@ -116,7 +116,7 @@ class ComponentLocator:
 
 class ConfigItem:
     """
-    Basic data structure to represent a configuration item.
+    Basic data_module structure to represent a configuration item.
 
     A `ConfigItem` instance can optionally have a string id, so that other items can refer to it.
     It has a build-in `config` property to store the configuration object.

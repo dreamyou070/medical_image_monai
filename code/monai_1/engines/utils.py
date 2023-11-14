@@ -102,9 +102,9 @@ def default_prepare_batch(
     **kwargs: Any,
 ) -> tuple[torch.Tensor, torch.Tensor | None] | torch.Tensor:
     """
-    Default function to prepare the data for current iteration.
+    Default function to prepare the data_module for current iteration.
 
-    The input `batchdata` is either a single tensor, a pair of tensors, or a dictionary of data. In the first case the
+    The input `batchdata` is either a single tensor, a pair of tensors, or a dictionary of data_module. In the first case the
     return value is the tensor and None, in the second case the return value is the two tensors, and in the dictionary
     case the return value depends on what keys are present. if `CommonKeys.IMAGE` and `CommonKeys.LABEL` are present
     then the tensors they key to are returned, if only `CommonKeys.IMAGE` is present that tensor and None is returned.
@@ -115,7 +115,7 @@ def default_prepare_batch(
     https://pytorch.org/ignite/v0.4.8/generated/ignite.engine.create_supervised_trainer.html
 
     Args:
-        batchdata: input batch data which is either a single tensor, a pair, or a dictionary
+        batchdata: input batch data_module which is either a single tensor, a pair, or a dictionary
         device: device to move every returned tensor to
         non_blocking: equivalent argument for `Tensor.to`
         kwargs: further arguments for `Tensor.to`
@@ -133,7 +133,7 @@ def default_prepare_batch(
                 label.to(device=device, non_blocking=non_blocking, **kwargs),
             )
 
-        raise AssertionError("Default prepare_batch expects a single tensor, a tensor pair, or dictionary input data.")
+        raise AssertionError("Default prepare_batch expects a single tensor, a tensor pair, or dictionary input data_module.")
 
     if isinstance(batchdata.get(CommonKeys.LABEL), torch.Tensor):
         return (
@@ -150,7 +150,7 @@ def default_prepare_batch(
 class PrepareBatch(ABC):
     """
     Interface of customized prepare_batch in the trainer or evaluator workflows.
-    It takes the data of current batch, target device and non_blocking flag as input.
+    It takes the data_module of current batch, target device and non_blocking flag as input.
     Args `batchdata`, `device`, `non_blocking` refer to the ignite API:
     https://pytorch.org/ignite/v0.4.8/generated/ignite.engine.create_supervised_trainer.html.
     `kwargs` supports other args for `Tensor.to()` API.
@@ -190,7 +190,7 @@ class PrepareBatchDefault(PrepareBatch):
 
 class PrepareBatchExtraInput(PrepareBatch):
     """
-    Customized prepare batch callable for trainers or evaluators which support extra input data for the network.
+    Customized prepare batch callable for trainers or evaluators which support extra input data_module for the network.
     Extra items are specified by the `extra_keys` parameter and are extracted from the input dictionary (ie. the batch).
     This uses `default_prepare_batch` but requires dictionary inputs.
 
@@ -252,7 +252,7 @@ def engine_apply_transform(batch: Any, output: Any, transform: Callable[..., dic
     """
     Apply transform on `batch` and `output`.
     If `batch` and `output` are dictionaries, temporarily combine them for the transform,
-    otherwise, apply the transform for `output` data only.
+    otherwise, apply the transform for `output` data_module only.
 
     """
     if isinstance(batch, dict) and isinstance(output, dict):
@@ -264,7 +264,7 @@ def engine_apply_transform(batch: Any, output: Any, transform: Callable[..., dic
             raise AssertionError("With a dict supplied to apply_transform a single dict return is expected.")
 
         for k, v in transformed_data.items():
-            # split the output data of post transforms into `output` and `batch`,
+            # split the output data_module of post transforms into `output` and `batch`,
             # `batch` should be read-only, so save the generated key-value into `output`
             if k in output or k not in batch:
                 output[k] = v

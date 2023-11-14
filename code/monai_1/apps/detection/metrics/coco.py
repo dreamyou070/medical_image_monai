@@ -100,7 +100,7 @@ class COCOMetric:
 
             .. code-block:: python
 
-                from monai.data.box_utils import box_iou
+                from monai.data_module.box_utils import box_iou
                 from monai.apps.detection.metrics.coco import COCOMetric
                 from monai.apps.detection.metrics.matching import matching_batch
                 # 3D example outputs of one image from detector
@@ -346,7 +346,7 @@ class COCOMetric:
                   [num_iou_th, num_recall_th, num_classes, num_max_detections]
             iou_idx: index of IoU values to select for evaluation(if None, all values are used)
             cls_idx: class indices to select, if None all classes will be selected
-            max_det_idx (int): index to select max detection threshold from data
+            max_det_idx (int): index to select max detection threshold from data_module
 
         Returns:
             np.ndarray: AP value
@@ -381,7 +381,7 @@ class COCOMetric:
                   [num_iou_th, num_recall_th, num_classes, num_max_detections]
             iou_idx: index of IoU values to select for evaluation(if None, all values are used)
             cls_idx: class indices to select, if None all classes will be selected
-            max_det_idx (int): index to select max detection threshold from data
+            max_det_idx (int): index to select max detection threshold from data_module
 
         Returns:
             np.ndarray: recall value

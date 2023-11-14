@@ -29,12 +29,12 @@ from monai.networks.nets.basic_unet import BasicUNet
 class ComplexUnet(nn.Module):
     """
     This variant of U-Net handles complex-value input/output. It can be
-    used as a model to learn sensitivity maps in multi-coil MRI data. It is
+    used as a model to learn sensitivity maps in multi-coil MRI data_module. It is
     built based on :py:class:`monai.networks.nets.BasicUNet` by default but the user
     can input their convolutional model as well.
     ComplexUnet also applies default normalization to the input which makes it more stable to train.
 
-    The data being a (complex) 2-channel tensor is a requirement for using this model.
+    The data_module being a (complex) 2-channel tensor is a requirement for using this model.
 
     Modified and adopted from: https://github.com/facebookresearch/fastMRI
 
@@ -93,10 +93,10 @@ class ComplexUnet(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         """
         Args:
-            x: input of shape (B,C,H,W,2) for 2D data or (B,C,H,W,D,2) for 3D data
+            x: input of shape (B,C,H,W,2) for 2D data_module or (B,C,H,W,D,2) for 3D data_module
 
         Returns:
-            output of shape (B,C,H,W,2) for 2D data or (B,C,H,W,D,2) for 3D data
+            output of shape (B,C,H,W,2) for 2D data_module or (B,C,H,W,D,2) for 3D data_module
         """
         # suppose the input is 2D, the comment in front of each operator below shows the shape after that operator
         x = reshape_complex_to_channel_dim(x)  # x will be of shape (B,C*2,H,W)

@@ -54,18 +54,18 @@ class DatasetSummary:
     ):
         """
         Args:
-            dataset: dataset from which to load the data.
+            dataset: dataset from which to load the data_module.
             image_key: key name of images (default: ``image``).
             label_key: key name of labels (default: ``label``).
             meta_key: explicitly indicate the key of the corresponding metadata dictionary.
-                for example, for data with key `image`, the metadata by default is in `image_meta_dict`.
+                for example, for data_module with key `image`, the metadata by default is in `image_meta_dict`.
                 the metadata is a dictionary object which contains: filename, affine, original_shape, etc.
                 if None, will try to construct meta_keys by `{image_key}_{meta_key_postfix}`.
-                This is not required if `data[image_key]` is a MetaTensor.
+                This is not required if `data_module[image_key]` is a MetaTensor.
             meta_key_postfix: use `{image_key}_{meta_key_postfix}` to fetch the metadata from dict,
                 the metadata is a dictionary object (default: ``meta_dict``).
-            num_workers: how many subprocesses to use for data loading.
-                ``0`` means that the data will be loaded in the main process (default: ``0``).
+            num_workers: how many subprocesses to use for data_module loading.
+                ``0`` means that the data_module will be loaded in the main process (default: ``0``).
             kwargs: other parameters (except `batch_size` and `num_workers`) for DataLoader,
                 this class forces to use ``batch_size=1``.
 
@@ -89,7 +89,7 @@ class DatasetSummary:
             elif self.meta_key in data:
                 meta_dict = data[self.meta_key]
             else:
-                warnings.warn(f"To collect metadata for the dataset, `{self.meta_key}` or `data.meta` must exist.")
+                warnings.warn(f"To collect metadata for the dataset, `{self.meta_key}` or `data_module.meta` must exist.")
             self.all_meta_data.append(meta_dict)
 
     def get_target_spacing(self, spacing_key: str = "affine", anisotropic_threshold: int = 3, percentile: float = 10.0):
@@ -97,8 +97,8 @@ class DatasetSummary:
         Calculate the target spacing according to all spacings.
         If the target spacing is very anisotropic,
         decrease the spacing value of the maximum axis according to percentile.
-        The spacing is computed from `affine_to_spacing(data[spacing_key][0], 3)` if `data[spacing_key]` is a matrix,
-        otherwise, the `data[spacing_key]` must be a vector of pixdim values.
+        The spacing is computed from `affine_to_spacing(data_module[spacing_key][0], 3)` if `data_module[spacing_key]` is a matrix,
+        otherwise, the `data_module[spacing_key]` must be a vector of pixdim values.
 
         Args:
             spacing_key: key of the affine used to compute spacing in metadata (default: ``affine``).
@@ -119,7 +119,7 @@ class DatasetSummary:
             elif spacing_vals.ndim == 2:  # matrix
                 spacings.append(affine_to_spacing(spacing_vals, 3)[None])
             else:
-                raise ValueError("data[spacing_key] must be a vector or a matrix.")
+                raise ValueError("data_module[spacing_key] must be a vector or a matrix.")
         all_spacings = concatenate(to_cat=spacings, axis=0)
         all_spacings, *_ = convert_data_type(data=all_spacings, output_type=np.ndarray, wrap_sequence=True)
 

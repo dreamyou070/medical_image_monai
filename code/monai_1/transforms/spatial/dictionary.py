@@ -151,10 +151,10 @@ class SpatialResampled(MapTransform, InvertibleTransform, LazyTransform):
     """
     Dictionary-based wrapper of :py:class:`monai.transforms.SpatialResample`.
 
-    This transform assumes the ``data`` dictionary has a key for the input
-    data's metadata and contains ``src_affine`` and ``dst_affine`` required by
+    This transform assumes the ``data_module`` dictionary has a key for the input
+    data_module's metadata and contains ``src_affine`` and ``dst_affine`` required by
     `SpatialResample`. The key is formed by ``key_{meta_key_postfix}``.  The
-    transform will swap ``src_affine`` and ``dst_affine`` affine (with potential data type
+    transform will swap ``src_affine`` and ``dst_affine`` affine (with potential data_module type
     changes) in the dictionary so that ``src_affine`` always refers to the current
     status of affine.
 
@@ -198,9 +198,9 @@ class SpatialResampled(MapTransform, InvertibleTransform, LazyTransform):
             align_corners: Geometrically, we consider the pixels of the input as squares rather than points.
                 See also: https://pytorch.org/docs/stable/nn.functional.html#grid-sample
                 It also can be a sequence of bool, each element corresponds to a key in ``keys``.
-            dtype: data type for resampling computation. Defaults to ``float64`` for best precision.
-                If None, use the data type of input data. To be compatible with other modules,
-                the output data type is always ``float32``.
+            dtype: data_module type for resampling computation. Defaults to ``float64`` for best precision.
+                If None, use the data_module type of input data_module. To be compatible with other modules,
+                the output data_module type is always ``float32``.
                 It also can be a sequence of dtypes, each element corresponds to a key in ``keys``.
             dst_keys: the key of the corresponding ``dst_affine`` in the metadata dictionary.
             allow_missing_keys: don't raise exception if key is missing.
@@ -224,7 +224,7 @@ class SpatialResampled(MapTransform, InvertibleTransform, LazyTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -232,7 +232,7 @@ class SpatialResampled(MapTransform, InvertibleTransform, LazyTransform):
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         lazy_ = self.lazy if lazy is None else lazy
         d: dict = dict(data)
@@ -301,9 +301,9 @@ class ResampleToMatchd(MapTransform, InvertibleTransform, LazyTransform):
             align_corners: Geometrically, we consider the pixels of the input as squares rather than points.
                 See also: https://pytorch.org/docs/stable/nn.functional.html#grid-sample
                 It also can be a sequence of bool, each element corresponds to a key in ``keys``.
-            dtype: data type for resampling computation. Defaults to ``float64`` for best precision.
-                If None, use the data type of input data. To be compatible with other modules,
-                the output data type is always ``float32``.
+            dtype: data_module type for resampling computation. Defaults to ``float64`` for best precision.
+                If None, use the data_module type of input data_module. To be compatible with other modules,
+                the output data_module type is always ``float32``.
                 It also can be a sequence of dtypes, each element corresponds to a key in ``keys``.
             allow_missing_keys: don't raise exception if key is missing.
             lazy: a flag to indicate whether this transform should execute lazily or not.
@@ -326,7 +326,7 @@ class ResampleToMatchd(MapTransform, InvertibleTransform, LazyTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -334,7 +334,7 @@ class ResampleToMatchd(MapTransform, InvertibleTransform, LazyTransform):
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         lazy_ = self.lazy if lazy is None else lazy
         d = dict(data)
@@ -363,8 +363,8 @@ class Spacingd(MapTransform, InvertibleTransform, LazyTransform):
     """
     Dictionary-based wrapper of :py:class:`monai.transforms.Spacing`.
 
-    This transform assumes the ``data`` dictionary has a key for the input
-    data's metadata and contains `affine` field.  The key is formed by ``key_{meta_key_postfix}``.
+    This transform assumes the ``data_module`` dictionary has a key for the input
+    data_module's metadata and contains `affine` field.  The key is formed by ``key_{meta_key_postfix}``.
 
     After resampling the input array, this transform will write the new affine
     to the `affine` field of metadata which is formed by ``key_{meta_key_postfix}``.
@@ -405,7 +405,7 @@ class Spacingd(MapTransform, InvertibleTransform, LazyTransform):
                 corresponding components of the original pixdim, which is computed from the `affine`
                 matrix of input image.
             diagonal: whether to resample the input to have a diagonal affine matrix.
-                If True, the input data is resampled to the following affine::
+                If True, the input data_module is resampled to the following affine::
 
                     np.diag((pixdim_0, pixdim_1, pixdim_2, 1))
 
@@ -433,13 +433,13 @@ class Spacingd(MapTransform, InvertibleTransform, LazyTransform):
             align_corners: Geometrically, we consider the pixels of the input as squares rather than points.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
                 It also can be a sequence of bool, each element corresponds to a key in ``keys``.
-            dtype: data type for resampling computation. Defaults to ``float64`` for best precision.
-                If None, use the data type of input data. To be compatible with other modules,
-                the output data type is always ``float32``.
+            dtype: data_module type for resampling computation. Defaults to ``float64`` for best precision.
+                If None, use the data_module type of input data_module. To be compatible with other modules,
+                the output data_module type is always ``float32``.
                 It also can be a sequence of dtypes, each element corresponds to a key in ``keys``.
             scale_extent: whether the scale is computed based on the spacing or the full extent of voxels,
                 default False. The option is ignored if output spatial size is specified when calling this transform.
-                See also: :py:func:`monai.data.utils.compute_shape_offset`. When this is True, `align_corners`
+                See also: :py:func:`monai.data_module.utils.compute_shape_offset`. When this is True, `align_corners`
                 should be `True` because `compute_shape_offset` already provides the corner alignment shift/scaling.
             recompute_affine: whether to recompute affine based on the output shape. The affine computed
                 analytically does not reflect the potential quantization errors in terms of the output shape.
@@ -481,7 +481,7 @@ class Spacingd(MapTransform, InvertibleTransform, LazyTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -489,7 +489,7 @@ class Spacingd(MapTransform, InvertibleTransform, LazyTransform):
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d: dict = dict(data)
 
@@ -584,7 +584,7 @@ class Orientationd(MapTransform, InvertibleTransform, LazyTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -592,7 +592,7 @@ class Orientationd(MapTransform, InvertibleTransform, LazyTransform):
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d: dict = dict(data)
         lazy_ = self.lazy if lazy is None else lazy
@@ -646,7 +646,7 @@ class Rotate90d(MapTransform, InvertibleTransform, LazyTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -654,7 +654,7 @@ class Rotate90d(MapTransform, InvertibleTransform, LazyTransform):
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         lazy_ = self.lazy if lazy is None else lazy
@@ -722,7 +722,7 @@ class RandRotate90d(RandomizableTransform, MapTransform, InvertibleTransform, La
     ) -> Mapping[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -730,7 +730,7 @@ class RandRotate90d(RandomizableTransform, MapTransform, InvertibleTransform, La
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         self.randomize()
         d = dict(data)
@@ -791,8 +791,8 @@ class Resized(MapTransform, InvertibleTransform, LazyTransform):
             By default, this value is chosen as (s - 1) / 2 where s is the
             downsampling factor, where s > 1. For the up-size case, s < 1, no
             anti-aliasing is performed prior to rescaling.
-        dtype: data type for resampling computation. Defaults to ``float32``.
-            If None, use the data type of input data.
+        dtype: data_module type for resampling computation. Defaults to ``float32``.
+            If None, use the data_module type of input data_module.
         allow_missing_keys: don't raise exception if key is missing.
         lazy: a flag to indicate whether this transform should execute lazily or not.
             Defaults to False
@@ -830,7 +830,7 @@ class Resized(MapTransform, InvertibleTransform, LazyTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -838,7 +838,7 @@ class Resized(MapTransform, InvertibleTransform, LazyTransform):
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         lazy_ = self.lazy if lazy is None else lazy
@@ -933,9 +933,9 @@ class Affined(MapTransform, InvertibleTransform, LazyTransform):
                 See also: https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.map_coordinates.html
                 It also can be a sequence, each element corresponds to a key in ``keys``.
             device: device on which the tensor will be allocated.
-            dtype: data type for resampling computation. Defaults to ``float32``.
-                If ``None``, use the data type of input data. To be compatible with other modules,
-                the output data type is always `float32`.
+            dtype: data_module type for resampling computation. Defaults to ``float32``.
+                If ``None``, use the data_module type of input data_module. To be compatible with other modules,
+                the output data_module type is always `float32`.
             align_corners: Defaults to False.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
             allow_missing_keys: don't raise exception if key is missing.
@@ -972,7 +972,7 @@ class Affined(MapTransform, InvertibleTransform, LazyTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -980,7 +980,7 @@ class Affined(MapTransform, InvertibleTransform, LazyTransform):
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         lazy_ = self.lazy if lazy is None else lazy
         d = dict(data)
@@ -1113,7 +1113,7 @@ class RandAffined(RandomizableTransform, MapTransform, InvertibleTransform, Lazy
     ) -> dict[Hashable, NdarrayOrTensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -1121,7 +1121,7 @@ class RandAffined(RandomizableTransform, MapTransform, InvertibleTransform, Lazy
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         first_key: Hashable = self.first_key(d)
@@ -1276,12 +1276,12 @@ class Rand2DElasticd(RandomizableTransform, MapTransform):
     def __call__(self, data: Mapping[Hashable, NdarrayOrTensor]) -> dict[Hashable, NdarrayOrTensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         first_key: Hashable = self.first_key(d)
@@ -1296,7 +1296,7 @@ class Rand2DElasticd(RandomizableTransform, MapTransform):
             device = d[first_key].device  # type: ignore
             self.rand_2d_elastic.set_device(device)
         if isinstance(d[first_key], MetaTensor) and d[first_key].pending_operations:  # type: ignore
-            warnings.warn(f"data['{first_key}'] has pending operations, transform may return incorrect results.")
+            warnings.warn(f"data_module['{first_key}'] has pending operations, transform may return incorrect results.")
         sp_size = fall_back_tuple(self.rand_2d_elastic.spatial_size, d[first_key].shape[1:])
 
         # all the keys share the same random elastic factor
@@ -1427,12 +1427,12 @@ class Rand3DElasticd(RandomizableTransform, MapTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor]) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         first_key: Hashable = self.first_key(d)
@@ -1443,7 +1443,7 @@ class Rand3DElasticd(RandomizableTransform, MapTransform):
 
         self.randomize(None)
         if isinstance(d[first_key], MetaTensor) and d[first_key].pending_operations:  # type: ignore
-            warnings.warn(f"data['{first_key}'] has pending operations, transform may return incorrect results.")
+            warnings.warn(f"data_module['{first_key}'] has pending operations, transform may return incorrect results.")
         sp_size = fall_back_tuple(self.rand_3d_elastic.spatial_size, d[first_key].shape[1:])
 
         # all the keys share the same random elastic factor
@@ -1476,7 +1476,7 @@ class Flipd(MapTransform, InvertibleTransform, LazyTransform):
     for more information.
 
     Args:
-        keys: Keys to pick data for transformation.
+        keys: Keys to pick data_module for transformation.
         spatial_axis: Spatial axes along which to flip over. Default is None.
         allow_missing_keys: don't raise exception if key is missing.
         lazy: a flag to indicate whether this transform should execute lazily or not.
@@ -1504,7 +1504,7 @@ class Flipd(MapTransform, InvertibleTransform, LazyTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -1512,7 +1512,7 @@ class Flipd(MapTransform, InvertibleTransform, LazyTransform):
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         lazy_ = self.lazy if lazy is None else lazy
@@ -1538,7 +1538,7 @@ class RandFlipd(RandomizableTransform, MapTransform, InvertibleTransform, LazyTr
     for more information.
 
     Args:
-        keys: Keys to pick data for transformation.
+        keys: Keys to pick data_module for transformation.
         prob: Probability of flipping.
         spatial_axis: Spatial axes along which to flip over. Default is None.
         allow_missing_keys: don't raise exception if key is missing.
@@ -1573,7 +1573,7 @@ class RandFlipd(RandomizableTransform, MapTransform, InvertibleTransform, LazyTr
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -1581,7 +1581,7 @@ class RandFlipd(RandomizableTransform, MapTransform, InvertibleTransform, LazyTr
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         self.randomize(None)
@@ -1617,7 +1617,7 @@ class RandAxisFlipd(RandomizableTransform, MapTransform, InvertibleTransform, La
     for more information.
 
     Args:
-        keys: Keys to pick data for transformation.
+        keys: Keys to pick data_module for transformation.
         prob: Probability of flipping.
         allow_missing_keys: don't raise exception if key is missing.
         lazy: a flag to indicate whether this transform should execute lazily or not.
@@ -1647,7 +1647,7 @@ class RandAxisFlipd(RandomizableTransform, MapTransform, InvertibleTransform, La
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -1655,7 +1655,7 @@ class RandAxisFlipd(RandomizableTransform, MapTransform, InvertibleTransform, La
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         first_key: Hashable = self.first_key(d)
@@ -1694,7 +1694,7 @@ class Rotated(MapTransform, InvertibleTransform, LazyTransform):
     for more information.
 
     Args:
-        keys: Keys to pick data for transformation.
+        keys: Keys to pick data_module for transformation.
         angle: Rotation angle(s) in radians.
         keep_size: If it is False, the output shape is adapted so that the
             input array is contained completely in the output.
@@ -1710,9 +1710,9 @@ class Rotated(MapTransform, InvertibleTransform, LazyTransform):
         align_corners: Defaults to False.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
             It also can be a sequence of bool, each element corresponds to a key in ``keys``.
-        dtype: data type for resampling computation. Defaults to ``float32``.
-            If None, use the data type of input data. To be compatible with other modules,
-            the output data type is always ``float32``.
+        dtype: data_module type for resampling computation. Defaults to ``float32``.
+            If None, use the data_module type of input data_module. To be compatible with other modules,
+            the output data_module type is always ``float32``.
             It also can be a sequence of dtype or None, each element corresponds to a key in ``keys``.
         allow_missing_keys: don't raise exception if key is missing.
         lazy: a flag to indicate whether this transform should execute lazily or not.
@@ -1750,7 +1750,7 @@ class Rotated(MapTransform, InvertibleTransform, LazyTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -1758,7 +1758,7 @@ class Rotated(MapTransform, InvertibleTransform, LazyTransform):
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         lazy_ = self.lazy if lazy is None else lazy
@@ -1786,13 +1786,13 @@ class RandRotated(RandomizableTransform, MapTransform, InvertibleTransform, Lazy
     for more information.
 
     Args:
-        keys: Keys to pick data for transformation.
+        keys: Keys to pick data_module for transformation.
         range_x: Range of rotation angle in radians in the plane defined by the first and second axes.
             If single number, angle is uniformly sampled from (-range_x, range_x).
         range_y: Range of rotation angle in radians in the plane defined by the first and third axes.
-            If single number, angle is uniformly sampled from (-range_y, range_y). only work for 3D data.
+            If single number, angle is uniformly sampled from (-range_y, range_y). only work for 3D data_module.
         range_z: Range of rotation angle in radians in the plane defined by the second and third axes.
-            If single number, angle is uniformly sampled from (-range_z, range_z). only work for 3D data.
+            If single number, angle is uniformly sampled from (-range_z, range_z). only work for 3D data_module.
         prob: Probability of rotation.
         keep_size: If it is False, the output shape is adapted so that the
             input array is contained completely in the output.
@@ -1808,9 +1808,9 @@ class RandRotated(RandomizableTransform, MapTransform, InvertibleTransform, Lazy
         align_corners: Defaults to False.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
             It also can be a sequence of bool, each element corresponds to a key in ``keys``.
-        dtype: data type for resampling computation. Defaults to ``float64`` for best precision.
-            If None, use the data type of input data. To be compatible with other modules,
-            the output data type is always ``float32``.
+        dtype: data_module type for resampling computation. Defaults to ``float64`` for best precision.
+            If None, use the data_module type of input data_module. To be compatible with other modules,
+            the output data_module type is always ``float32``.
             It also can be a sequence of dtype or None, each element corresponds to a key in ``keys``.
         allow_missing_keys: don't raise exception if key is missing.
         lazy: a flag to indicate whether this transform should execute lazily or not.
@@ -1858,7 +1858,7 @@ class RandRotated(RandomizableTransform, MapTransform, InvertibleTransform, Lazy
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -1866,7 +1866,7 @@ class RandRotated(RandomizableTransform, MapTransform, InvertibleTransform, Lazy
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         self.randomize(None)
@@ -1911,7 +1911,7 @@ class Zoomd(MapTransform, InvertibleTransform, LazyTransform):
     for more information.
 
     Args:
-        keys: Keys to pick data for transformation.
+        keys: Keys to pick data_module for transformation.
         zoom: The zoom factor along the spatial axes.
             If a float, zoom is the same for each spatial axis.
             If a sequence, zoom should contain one value for each spatial axis.
@@ -1923,15 +1923,15 @@ class Zoomd(MapTransform, InvertibleTransform, LazyTransform):
             ``"mean"``, ``"median"``, ``"minimum"``, ``"reflect"``, ``"symmetric"``, ``"wrap"``, ``"empty"``}
             available modes for PyTorch Tensor: {``"constant"``, ``"reflect"``, ``"replicate"``, ``"circular"``}.
             One of the listed string values or a user supplied function. Defaults to ``"edge"``.
-            The mode to pad data after zooming.
+            The mode to pad data_module after zooming.
             See also: https://numpy.org/doc/1.18/reference/generated/numpy.pad.html
             https://pytorch.org/docs/stable/generated/torch.nn.functional.pad.html
         align_corners: This only has an effect when mode is
             'linear', 'bilinear', 'bicubic' or 'trilinear'. Default: None.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
             It also can be a sequence of bool or None, each element corresponds to a key in ``keys``.
-        dtype: data type for resampling computation. Defaults to ``float32``.
-            If None, use the data type of input data.
+        dtype: data_module type for resampling computation. Defaults to ``float32``.
+            If None, use the data_module type of input data_module.
         keep_size: Should keep original size (pad if needed), default is True.
         allow_missing_keys: don't raise exception if key is missing.
         lazy: a flag to indicate whether this transform should execute lazily or not.
@@ -1973,7 +1973,7 @@ class Zoomd(MapTransform, InvertibleTransform, LazyTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -1981,7 +1981,7 @@ class Zoomd(MapTransform, InvertibleTransform, LazyTransform):
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         lazy_ = self.lazy if lazy is None else lazy
@@ -2008,18 +2008,18 @@ class RandZoomd(RandomizableTransform, MapTransform, InvertibleTransform, LazyTr
     for more information.
 
     Args:
-        keys: Keys to pick data for transformation.
+        keys: Keys to pick data_module for transformation.
         prob: Probability of zooming.
         min_zoom: Min zoom factor. Can be float or sequence same size as image.
             If a float, select a random factor from `[min_zoom, max_zoom]` then apply to all spatial dims
             to keep the original spatial shape ratio.
             If a sequence, min_zoom should contain one value for each spatial axis.
-            If 2 values provided for 3D data, use the first value for both H & W dims to keep the same zoom ratio.
+            If 2 values provided for 3D data_module, use the first value for both H & W dims to keep the same zoom ratio.
         max_zoom: Max zoom factor. Can be float or sequence same size as image.
             If a float, select a random factor from `[min_zoom, max_zoom]` then apply to all spatial dims
             to keep the original spatial shape ratio.
             If a sequence, max_zoom should contain one value for each spatial axis.
-            If 2 values provided for 3D data, use the first value for both H & W dims to keep the same zoom ratio.
+            If 2 values provided for 3D data_module, use the first value for both H & W dims to keep the same zoom ratio.
         mode: {``"nearest"``, ``"nearest-exact"``, ``"linear"``, ``"bilinear"``, ``"bicubic"``, ``"trilinear"``, ``"area"``}
             The interpolation mode. Defaults to ``"area"``.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
@@ -2028,15 +2028,15 @@ class RandZoomd(RandomizableTransform, MapTransform, InvertibleTransform, LazyTr
             ``"mean"``, ``"median"``, ``"minimum"``, ``"reflect"``, ``"symmetric"``, ``"wrap"``, ``"empty"``}
             available modes for PyTorch Tensor: {``"constant"``, ``"reflect"``, ``"replicate"``, ``"circular"``}.
             One of the listed string values or a user supplied function. Defaults to ``"edge"``.
-            The mode to pad data after zooming.
+            The mode to pad data_module after zooming.
             See also: https://numpy.org/doc/1.18/reference/generated/numpy.pad.html
             https://pytorch.org/docs/stable/generated/torch.nn.functional.pad.html
         align_corners: This only has an effect when mode is
             'linear', 'bilinear', 'bicubic' or 'trilinear'. Default: None.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
             It also can be a sequence of bool or None, each element corresponds to a key in ``keys``.
-        dtype: data type for resampling computation. Defaults to ``float32``.
-            If None, use the data type of input data.
+        dtype: data_module type for resampling computation. Defaults to ``float32``.
+            If None, use the data_module type of input data_module.
         keep_size: Should keep original size (pad if needed), default is True.
         allow_missing_keys: don't raise exception if key is missing.
         lazy: a flag to indicate whether this transform should execute lazily or not.
@@ -2086,7 +2086,7 @@ class RandZoomd(RandomizableTransform, MapTransform, InvertibleTransform, LazyTr
     def __call__(self, data: Mapping[Hashable, torch.Tensor], lazy: bool | None = None) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
             lazy: a flag to indicate whether this transform should execute lazily or not
@@ -2094,7 +2094,7 @@ class RandZoomd(RandomizableTransform, MapTransform, InvertibleTransform, LazyTr
                 during initialization for this call. Defaults to None.
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         first_key: Hashable = self.first_key(d)
@@ -2185,12 +2185,12 @@ class GridDistortiond(MapTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor]) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         for key, mode, padding_mode in self.key_iterator(d, self.mode, self.padding_mode):
@@ -2260,12 +2260,12 @@ class RandGridDistortiond(RandomizableTransform, MapTransform):
     def __call__(self, data: Mapping[Hashable, torch.Tensor]) -> dict[Hashable, torch.Tensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         self.randomize(None)
@@ -2278,7 +2278,7 @@ class RandGridDistortiond(RandomizableTransform, MapTransform):
             out = convert_to_tensor(d, track_meta=get_track_meta())
             return out
         if isinstance(d[first_key], MetaTensor) and d[first_key].pending_operations:  # type: ignore
-            warnings.warn(f"data['{first_key}'] has pending operations, transform may return incorrect results.")
+            warnings.warn(f"data_module['{first_key}'] has pending operations, transform may return incorrect results.")
         self.rand_grid_distortion.randomize(d[first_key].shape[1:])
 
         for key, mode, padding_mode in self.key_iterator(d, self.mode, self.padding_mode):
@@ -2319,12 +2319,12 @@ class GridSplitd(MapTransform, MultiSampleTrait):
     def __call__(self, data: Mapping[Hashable, NdarrayOrTensor]) -> list[dict[Hashable, NdarrayOrTensor]]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         n_outputs = np.prod(self.grid)
@@ -2409,12 +2409,12 @@ class GridPatchd(MapTransform, MultiSampleTrait):
     def __call__(self, data: Mapping[Hashable, NdarrayOrTensor]) -> dict[Hashable, NdarrayOrTensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         for key in self.key_iterator(d):
@@ -2506,12 +2506,12 @@ class RandGridPatchd(RandomizableTransform, MapTransform, MultiSampleTrait):
     def __call__(self, data: Mapping[Hashable, NdarrayOrTensor]) -> dict[Hashable, NdarrayOrTensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be processed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be processed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
 
         Returns:
-            a dictionary containing the transformed data, as well as any other data present in the dictionary
+            a dictionary containing the transformed data_module, as well as any other data_module present in the dictionary
         """
         d = dict(data)
         # All the keys share the same random noise
@@ -2590,7 +2590,7 @@ class RandSimulateLowResolutiond(RandomizableTransform, MapTransform):
     def __call__(self, data: Mapping[Hashable, NdarrayOrTensor]) -> dict[Hashable, NdarrayOrTensor]:
         """
         Args:
-            data: a dictionary containing the tensor-like data to be transformed. The ``keys`` specified
+            data: a dictionary containing the tensor-like data_module to be transformed. The ``keys`` specified
                 in this dictionary must be tensor like arrays that are channel first and have at most
                 three spatial dimensions
         """

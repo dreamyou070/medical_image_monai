@@ -42,7 +42,7 @@ class FolderLayoutBase(ABC):
 
     .. code-block:: python
 
-        from monai.data import FolderLayoutBase
+        from monai.data_module import FolderLayoutBase
 
         class MyFolderLayout(FolderLayoutBase):
             def __init__(
@@ -92,7 +92,7 @@ class FolderLayout(FolderLayoutBase):
 
     .. code-block:: python
 
-        from monai.data import FolderLayout
+        from monai.data_module import FolderLayout
 
         layout = FolderLayout(
             output_dir="/test_run_1/",
@@ -104,7 +104,7 @@ class FolderLayout(FolderLayoutBase):
 
     The output filename is a string starting with a ``subject`` ID, and
     includes additional information about a customized index and image
-    modality.  This utility class doesn't alter the underlying image data, but
+    modality.  This utility class doesn't alter the underlying image data_module, but
     provides a convenient way to create filenames.
     """
 
@@ -125,7 +125,7 @@ class FolderLayout(FolderLayoutBase):
             parent: whether to add a level of parent folder to contain each image to the output filename.
             makedirs: whether to create the output parent directories if they do not exist.
             data_root_dir: an optional `PathLike` object to preserve the folder structure of the input `subject`.
-                Please see :py:func:`monai.data.utils.create_file_basename` for more details.
+                Please see :py:func:`monai.data_module.utils.create_file_basename` for more details.
         """
         self.output_dir = output_dir
         self.postfix = postfix

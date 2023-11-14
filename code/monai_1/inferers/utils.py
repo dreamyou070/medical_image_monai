@@ -108,7 +108,7 @@ def sliding_window_inference(
             Padding mode for ``inputs``, when ``roi_size`` is larger than inputs. Defaults to ``"constant"``
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.pad.html
         cval: fill value for 'constant' padding mode. Default: 0
-        sw_device: device for the window data.
+        sw_device: device for the window data_module.
             By default the device (and accordingly the memory) of the `inputs` is used.
             Normally `sw_device` should be consistent with the device where `predictor` is defined.
         device: device for the stitched output prediction.

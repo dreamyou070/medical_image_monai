@@ -52,7 +52,7 @@ class SlidingWindowHoVerNetInferer(SlidingWindowInferer):
             Padding mode when ``roi_size`` is larger than inputs. Defaults to ``"constant"``
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.pad.html
         cval: fill value for 'constant' padding mode. Default: 0
-        sw_device: device for the window data.
+        sw_device: device for the window data_module.
             By default the device (and accordingly the memory) of the `inputs` is used.
             Normally `sw_device` should be consistent with the device where `predictor` is defined.
         device: device for the stitched output prediction.
@@ -139,7 +139,7 @@ class SlidingWindowHoVerNetInferer(SlidingWindowInferer):
         """
 
         Args:
-            inputs: model input data for inference.
+            inputs: model input data_module for inference.
             network: target model to execute inference.
                 supports callables such as ``lambda x: my_torch_model(x, additional_config)``
             args: optional args to be passed to ``network``.

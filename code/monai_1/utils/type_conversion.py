@@ -111,16 +111,16 @@ def convert_to_tensor(
     safe: bool = False,
 ) -> Any:
     """
-    Utility to convert the input data to a PyTorch Tensor, if `track_meta` is True, the output will be a `MetaTensor`,
+    Utility to convert the input data_module to a PyTorch Tensor, if `track_meta` is True, the output will be a `MetaTensor`,
     otherwise, the output will be a regular torch Tensor.
     If passing a dictionary, list or tuple, recursively check every item and convert it to PyTorch Tensor.
 
     Args:
-        data: input data can be PyTorch Tensor, numpy array, list, dictionary, int, float, bool, str, etc.
+        data: input data_module can be PyTorch Tensor, numpy array, list, dictionary, int, float, bool, str, etc.
             will convert Tensor, Numpy array, float, int, bool to Tensor, strings and objects keep the original.
             for dictionary, list or tuple, convert every item to a Tensor if applicable.
-        dtype: target data type to when converting to Tensor.
-        device: target device to put the converted Tensor data.
+        dtype: target data_module type to when converting to Tensor.
+        device: target device to put the converted Tensor data_module.
         wrap_sequence: if `False`, then lists will recursively call this function.
             E.g., `[1, 2]` -> `[tensor(1), tensor(2)]`. If `True`, then `[1, 2]` -> `tensor([1, 2])`.
         track_meta: whether to track the meta information, if `True`, will convert to `MetaTensor`.
@@ -137,7 +137,7 @@ def convert_to_tensor(
             if isinstance(tensor, np.ndarray) and tensor.dtype in UNSUPPORTED_TYPES:
                 tensor = tensor.astype(UNSUPPORTED_TYPES[tensor.dtype])
 
-            # if input data is not Tensor, convert it to Tensor first
+            # if input data_module is not Tensor, convert it to Tensor first
             tensor = torch.as_tensor(tensor, **kwargs)
         if track_meta and not isinstance(tensor, monai.data.MetaTensor):
             return monai.data.MetaTensor(tensor)
@@ -155,7 +155,7 @@ def convert_to_tensor(
         # https://github.com/pytorch/pytorch/blob/v1.9.0/torch/utils/data/_utils/collate.py#L13
         if re.search(r"[SaUO]", data.dtype.str) is None:
             # numpy array with 0 dims is also sequence iterable,
-            # `ascontiguousarray` will add 1 dim if img has no dim, so we only apply on data with dims
+            # `ascontiguousarray` will add 1 dim if img has no dim, so we only apply on data_module with dims
             if data.ndim > 0:
                 data = np.ascontiguousarray(data)
             return _convert_tensor(data, dtype=dtype, device=device)
@@ -175,14 +175,14 @@ def convert_to_tensor(
 
 def convert_to_numpy(data: Any, dtype: DtypeLike = None, wrap_sequence: bool = False, safe: bool = False) -> Any:
     """
-    Utility to convert the input data to a numpy array. If passing a dictionary, list or tuple,
+    Utility to convert the input data_module to a numpy array. If passing a dictionary, list or tuple,
     recursively check every item and convert it to numpy array.
 
     Args:
-        data: input data can be PyTorch Tensor, numpy array, list, dictionary, int, float, bool, str, etc.
+        data: input data_module can be PyTorch Tensor, numpy array, list, dictionary, int, float, bool, str, etc.
             will convert Tensor, Numpy array, float, int, bool to numpy arrays, strings and objects keep the original.
             for dictionary, list or tuple, convert every item to a numpy array if applicable.
-        dtype: target data type when converting to numpy array.
+        dtype: target data_module type when converting to numpy array.
         wrap_sequence: if `False`, then lists will recursively call this function.
             E.g., `[1, 2]` -> `[array(1), array(2)]`. If `True`, then `[1, 2]` -> `array([1, 2])`.
         safe: if `True`, then do safe dtype convert when intensity overflow. default to `False`.
@@ -220,14 +220,14 @@ def convert_to_numpy(data: Any, dtype: DtypeLike = None, wrap_sequence: bool = F
 
 def convert_to_cupy(data: Any, dtype: np.dtype | None = None, wrap_sequence: bool = False, safe: bool = False) -> Any:
     """
-    Utility to convert the input data to a cupy array. If passing a dictionary, list or tuple,
+    Utility to convert the input data_module to a cupy array. If passing a dictionary, list or tuple,
     recursively check every item and convert it to cupy array.
 
     Args:
-        data: input data can be PyTorch Tensor, numpy array, cupy array, list, dictionary, int, float, bool, str, etc.
+        data: input data_module can be PyTorch Tensor, numpy array, cupy array, list, dictionary, int, float, bool, str, etc.
             Tensor, numpy array, cupy array, float, int, bool are converted to cupy arrays,
             for dictionary, list or tuple, convert every item to a numpy array if applicable.
-        dtype: target data type when converting to Cupy array, tt must be an argument of `numpy.dtype`,
+        dtype: target data_module type when converting to Cupy array, tt must be an argument of `numpy.dtype`,
             for more details: https://docs.cupy.dev/en/stable/reference/generated/cupy.array.html.
         wrap_sequence: if `False`, then lists will recursively call this function.
             E.g., `[1, 2]` -> `[array(1), array(2)]`. If `True`, then `[1, 2]` -> `array([1, 2])`.
@@ -256,7 +256,7 @@ def convert_to_cupy(data: Any, dtype: np.dtype | None = None, wrap_sequence: boo
         return {k: convert_to_cupy(v, dtype) for k, v in data.items()}
     # make it contiguous
     if not isinstance(data, cp.ndarray):
-        raise ValueError(f"The input data type [{type(data)}] cannot be converted into cupy arrays!")
+        raise ValueError(f"The input data_module type [{type(data)}] cannot be converted into cupy arrays!")
 
     if data.ndim > 0:
         data = cp.ascontiguousarray(data)
@@ -276,10 +276,10 @@ def convert_data_type(
     `np.ndarray`, `float`, `int`, etc.
 
     Args:
-        data: data to be converted
-        output_type: `monai.data.MetaTensor`, `torch.Tensor`, or `np.ndarray` (if `None`, unchanged)
+        data: data_module to be converted
+        output_type: `monai.data_module.MetaTensor`, `torch.Tensor`, or `np.ndarray` (if `None`, unchanged)
         device: if output is `MetaTensor` or `torch.Tensor`, select device (if `None`, unchanged)
-        dtype: dtype of output data. Converted to correct library type (e.g.,
+        dtype: dtype of output data_module. Converted to correct library type (e.g.,
             `np.float32` is converted to `torch.float32` if output type is `torch.Tensor`).
             If left blank, it remains unchanged.
         wrap_sequence: if `False`, then lists will recursively call this function.
@@ -288,7 +288,7 @@ def convert_data_type(
             E.g., `[256, -12]` -> `[array(0), array(244)]`. If `True`, then `[256, -12]` -> `[array(255), array(0)]`.
 
     Returns:
-        modified data, orig_type, orig_device
+        modified data_module, orig_type, orig_device
 
     Note:
         When both `output_type` and `dtype` are specified with different backend
@@ -341,18 +341,18 @@ def convert_to_dst_type(
     safe: bool = False,
 ) -> tuple[NdarrayTensor, type, torch.device | None]:
     """
-    Convert source data to the same data type and device as the destination data.
-    If `dst` is an instance of `torch.Tensor` or its subclass, convert `src` to `torch.Tensor` with the same data type as `dst`,
-    if `dst` is an instance of `numpy.ndarray` or its subclass, convert to `numpy.ndarray` with the same data type as `dst`,
+    Convert source data_module to the same data_module type and device as the destination data_module.
+    If `dst` is an instance of `torch.Tensor` or its subclass, convert `src` to `torch.Tensor` with the same data_module type as `dst`,
+    if `dst` is an instance of `numpy.ndarray` or its subclass, convert to `numpy.ndarray` with the same data_module type as `dst`,
     otherwise, convert to the type of `dst` directly.
 
     Args:
-        src: source data to convert type.
-        dst: destination data that convert to the same data type as it.
-        dtype: an optional argument if the target `dtype` is different from the original `dst`'s data type.
+        src: source data_module to convert type.
+        dst: destination data_module that convert to the same data_module type as it.
+        dtype: an optional argument if the target `dtype` is different from the original `dst`'s data_module type.
         wrap_sequence: if `False`, then lists will recursively call this function. E.g., `[1, 2]` -> `[array(1), array(2)]`.
             If `True`, then `[1, 2]` -> `array([1, 2])`.
-        device: target device to put the converted Tensor data. If unspecified, `dst.device` will be used if possible.
+        device: target device to put the converted Tensor data_module. If unspecified, `dst.device` will be used if possible.
         safe: if `True`, then do safe dtype convert when intensity overflow. default to `False`.
             E.g., `[256, -12]` -> `[array(0), array(244)]`. If `True`, then `[256, -12]` -> `[array(255), array(0)]`.
 
@@ -389,7 +389,7 @@ def convert_to_list(data: Sequence | torch.Tensor | np.ndarray) -> list:
     """
     Convert to list from `torch.Tensor`/`np.ndarray`/`list`/`tuple` etc.
     Args:
-        data: data to be converted
+        data: data_module to be converted
     Returns:
         a list
 
@@ -418,13 +418,13 @@ def get_dtype_bound_value(dtype: DtypeLike | torch.dtype) -> tuple[float, float]
 
 def safe_dtype_range(data: Any, dtype: DtypeLike | torch.dtype = None) -> Any:
     """
-    Utility to safely convert the input data to target dtype.
+    Utility to safely convert the input data_module to target dtype.
 
     Args:
-        data: input data can be PyTorch Tensor, numpy array, list, dictionary, int, float, bool, str, etc.
+        data: input data_module can be PyTorch Tensor, numpy array, list, dictionary, int, float, bool, str, etc.
             will convert to target dtype and keep the original type.
             for dictionary, list or tuple, convert every item.
-        dtype: target data type to convert.
+        dtype: target data_module type to convert.
     """
 
     def _safe_dtype_range(data, dtype):

@@ -51,11 +51,11 @@ class KspaceMask(RandomizableTransform):
             accelerations: Amount of under-sampling. This should have the
                 same length as center_fractions. If multiple values are
                 provided, then one of these is chosen uniformly each time.
-            spatial_dims: Number of spatial dims (e.g., it's 2 for a 2D data;
+            spatial_dims: Number of spatial dims (e.g., it's 2 for a 2D data_module;
                 it's also 2 for pseudo-3D datasets like the fastMRI dataset).
                 The last spatial dim is selected for sampling. For the fastMRI
                 dataset, k-space has the form (...,num_slices,num_coils,H,W)
-                and sampling is done along W. For a general 3D data with the
+                and sampling is done along W. For a general 3D data_module with the
                 shape (...,num_coils,H,W,D), sampling is done along D.
             is_complex: if True, then the last dimension will be reserved for
                 real/imaginary parts.
@@ -80,9 +80,9 @@ class KspaceMask(RandomizableTransform):
         :py:class:`monai.apps.reconstruction.transforms.array.RandomKspacemask`.
 
         Args:
-            kspace: The input k-space data. The shape is (...,num_coils,H,W,2)
+            kspace: The input k-space data_module. The shape is (...,num_coils,H,W,2)
                 for complex 2D inputs and (...,num_coils,H,W,D) for real 3D
-                data.
+                data_module.
         """
         raise NotImplementedError
 
@@ -108,7 +108,7 @@ class RandomKspaceMask(KspaceMask):
     """
     This k-space mask transform under-samples the k-space according to a
     random sampling pattern. Precisely, it uniformly selects a subset of
-    columns from the input k-space data. If the k-space data has N columns,
+    columns from the input k-space data_module. If the k-space data_module has N columns,
     the mask picks out:
 
     1. N_low_freqs = (N * center_fraction) columns in the center
@@ -139,12 +139,12 @@ class RandomKspaceMask(KspaceMask):
     def __call__(self, kspace: NdarrayOrTensor) -> Sequence[Tensor]:
         """
         Args:
-            kspace: The input k-space data. The shape is (...,num_coils,H,W,2)
+            kspace: The input k-space data_module. The shape is (...,num_coils,H,W,2)
                 for complex 2D inputs and (...,num_coils,H,W,D) for real 3D
-                data. The last spatial dim is selected for sampling. For the
+                data_module. The last spatial dim is selected for sampling. For the
                 fastMRI dataset, k-space has the form
                 (...,num_slices,num_coils,H,W) and sampling is done along W.
-                For a general 3D data with the shape (...,num_coils,H,W,D),
+                For a general 3D data_module with the shape (...,num_coils,H,W,D),
                 sampling is done along D.
 
         Returns:
@@ -155,7 +155,7 @@ class RandomKspaceMask(KspaceMask):
         kspace_t = convert_to_tensor_complex(kspace)
         spatial_size = kspace_t.shape
         num_cols = spatial_size[-1]
-        if self.is_complex:  # for complex data
+        if self.is_complex:  # for complex data_module
             num_cols = spatial_size[-2]
 
         center_fraction, acceleration = self.randomize_choose_acceleration()
@@ -197,7 +197,7 @@ class EquispacedKspaceMask(KspaceMask):
     """
     This k-space mask transform under-samples the k-space according to an
     equi-distant sampling pattern. Precisely, it selects an equi-distant
-    subset of columns from the input k-space data. If the k-space data has N
+    subset of columns from the input k-space data_module. If the k-space data_module has N
     columns, the mask picks out:
 
     1. N_low_freqs = (N * center_fraction) columns in the center corresponding
@@ -227,12 +227,12 @@ class EquispacedKspaceMask(KspaceMask):
     def __call__(self, kspace: NdarrayOrTensor) -> Sequence[Tensor]:
         """
         Args:
-            kspace: The input k-space data. The shape is (...,num_coils,H,W,2)
+            kspace: The input k-space data_module. The shape is (...,num_coils,H,W,2)
                 for complex 2D inputs and (...,num_coils,H,W,D) for real 3D
-                data. The last spatial dim is selected for sampling. For the
+                data_module. The last spatial dim is selected for sampling. For the
                 fastMRI multi-coil dataset, k-space has the form
                 (...,num_slices,num_coils,H,W) and sampling is done along W.
-                For a general 3D data with the shape (...,num_coils,H,W,D),
+                For a general 3D data_module with the shape (...,num_coils,H,W,D),
                 sampling is done along D.
 
         Returns:
@@ -243,7 +243,7 @@ class EquispacedKspaceMask(KspaceMask):
         kspace_t = convert_to_tensor_complex(kspace)
         spatial_size = kspace_t.shape
         num_cols = spatial_size[-1]
-        if self.is_complex:  # for complex data
+        if self.is_complex:  # for complex data_module
             num_cols = spatial_size[-2]
 
         center_fraction, acceleration = self.randomize_choose_acceleration()

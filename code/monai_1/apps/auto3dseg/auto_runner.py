@@ -50,7 +50,7 @@ class AutoRunner:
 
     The output of the interface is a directory that contains
 
-        - data statistics analysis report
+        - data_module statistics analysis report
         - algorithm definition files (scripts, configs, pickle objects) and training results (checkpoints, accuracies)
         - the predictions on the testing datasets from the final algorithm ensemble
         - a copy of the input arguments in form of YAML
@@ -66,7 +66,7 @@ class AutoRunner:
             ['segresnet', 'dints'] out of the full set of algorithm templates provided by templates_path_or_url.
             Defaults to None, to use all available algorithms.
         analyze: on/off switch to run DataAnalyzer and generate a datastats report. Defaults to None, to automatically
-            decide based on cache, and run data analysis only if we have not completed this step yet.
+            decide based on cache, and run data_module analysis only if we have not completed this step yet.
         algo_gen: on/off switch to run AlgoGen and generate templated BundleAlgos. Defaults to None, to automatically
             decide based on cache, and run algorithm folders generation only if we have not completed this step yet.
         train: on/off switch to run training and generate algorithm checkpoints. Defaults to None, to automatically
@@ -77,7 +77,7 @@ class AutoRunner:
             is supported
         ensemble: on/off switch to run model ensemble and use the ensemble to predict outputs in testing
             datasets.
-        not_use_cache: if the value is True, it will ignore all cached results in data analysis,
+        not_use_cache: if the value is True, it will ignore all cached results in data_module analysis,
             algorithm generation, or training, and start the pipeline from scratch.
         templates_path_or_url: the folder with the algorithm templates or a url. If None provided, the default template
             zip url will be downloaded and extracted into the work_dir.
@@ -101,7 +101,7 @@ class AutoRunner:
 
             python -m monai.apps.auto3dseg AutoRunner run --input=./input.yaml
 
-        - User can specify work_dir and data source config input and run AutoRunner:
+        - User can specify work_dir and data_module source config input and run AutoRunner:
 
         .. code-block:: python
 
@@ -186,7 +186,7 @@ class AutoRunner:
             ├── datastats.yaml      # datastats of the dataset
             ├── dints_0             # network scripts/configs/checkpoints and pickle object of the algo
             ├── ensemble_output     # the prediction of testing datasets from the ensemble of the algos
-            ├── input.yaml          # copy of the input data source configs
+            ├── input.yaml          # copy of the input data_module source configs
             ├── segresnet_0         # network scripts/configs/checkpoints and pickle object of the algo
             ├── segresnet2d_0       # network scripts/configs/checkpoints and pickle object of the algo
             └── swinunetr_0         # network scripts/configs/checkpoints and pickle object of the algo
@@ -485,7 +485,7 @@ class AutoRunner:
         Set the device related info
 
         Args:
-            cuda_visible_devices: define GPU ids for data analyzer, training, and ensembling.
+            cuda_visible_devices: define GPU ids for data_module analyzer, training, and ensembling.
                 List of GPU ids [0,1,2,3] or a string "0,1,2,3".
                 Default using env "CUDA_VISIBLE_DEVICES" or all devices available.
             num_nodes: number of nodes for training and ensembling.
@@ -583,7 +583,7 @@ class AutoRunner:
 
     def set_analyze_params(self, params: dict[str, Any] | None = None) -> None:
         """
-        Set the data analysis extra params.
+        Set the data_module analysis extra params.
 
         Args:
             params: a dict that defines the overriding key-value pairs during training. The overriding method
@@ -734,9 +734,9 @@ class AutoRunner:
         """
         Run the AutoRunner pipeline
         """
-        # step 1: data analysis
+        # step 1: data_module analysis
         if self.analyze and self.analyze_params is not None:
-            logger.info("Running data analysis...")
+            logger.info("Running data_module analysis...")
             da = DataAnalyzer(
                 self.datalist_filename, self.dataroot, output_path=self.datastats_filename, **self.analyze_params
             )
@@ -747,14 +747,14 @@ class AutoRunner:
 
             self.export_cache(analyze=True, datastats=self.datastats_filename)
         else:
-            logger.info("Skipping data analysis...")
+            logger.info("Skipping data_module analysis...")
 
         # step 2: algorithm generation
         if self.algo_gen:
             if not os.path.isfile(self.datastats_filename):
                 raise ValueError(
                     f"Could not find the datastats file {self.datastats_filename}. "
-                    "Possibly the required data analysis step was not completed."
+                    "Possibly the required data_module analysis step was not completed."
                 )
 
             bundle_generator = BundleGen(

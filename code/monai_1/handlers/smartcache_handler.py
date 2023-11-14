@@ -37,11 +37,11 @@ class SmartCacheHandler:
             smartcacher: predefined SmartCacheDataset, will attach it to the engine.
 
         Raises:
-            TypeError: When ``smartcacher`` is not a ``monai.data.SmartCacheDataset``.
+            TypeError: When ``smartcacher`` is not a ``monai.data_module.SmartCacheDataset``.
 
         """
         if not isinstance(smartcacher, SmartCacheDataset):
-            raise TypeError("smartcacher must be a monai.data.SmartCacheDataset.")
+            raise TypeError("smartcacher must be a monai.data_module.SmartCacheDataset.")
         self.smartcacher = smartcacher
 
     def attach(self, engine: Engine) -> None:
@@ -64,7 +64,7 @@ class SmartCacheHandler:
 
     def epoch_completed(self, engine: Engine) -> None:
         """Callback for train or validation/evaluation epoch completed Event.
-        Update cache content with replacement data.
+        Update cache content with replacement data_module.
 
         Args:
             engine: Ignite Engine, it can be a trainer, validator or evaluator.

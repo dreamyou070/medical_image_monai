@@ -195,14 +195,14 @@ class ConvConcatDenseBlock(ConvDenseBlock):
 class Encoder(ConvConcatDenseBlock):
     """
     Returns a convolution dense block for the encoding (down) part of a layer of the network.
-    This Encoder block downpools the data with max_pool.
+    This Encoder block downpools the data_module with max_pool.
     Its output is used as input to the next layer down.
     New feature: it returns the indices of the max_pool to the decoder (up) path
     at the same layer to upsample the input.
 
     Args:
         in_channels: number of input channels.
-        max_pool: predefined max_pool layer to downsample the data.
+        max_pool: predefined max_pool layer to downsample the data_module.
         se_layer: Squeeze and Excite block to be included, defaults to None.
         dropout: Dropout block to be included, defaults to None.
         kernel_size : kernel size of the convolutional layers. Defaults to 5*5
@@ -224,7 +224,7 @@ class Encoder(ConvConcatDenseBlock):
 class Decoder(ConvConcatDenseBlock):
     """
     Returns a convolution dense block for the decoding (up) part of a layer of the network.
-    This will upsample data with an unpool block before the forward.
+    This will upsample data_module with an unpool block before the forward.
     It uses the indices from corresponding encoder on it's level.
     Its output is used as input to the next layer up.
 
@@ -305,9 +305,9 @@ class Quicknat(nn.Module):
 
     To further explain this consider the first example network given below. This network has 3 layers with strides
     of 2 for each of the middle layers (the last layer is the bottom connection which does not down/up sample). Input
-    data to this network is immediately reduced in the spatial dimensions by a factor of 2 by the first convolution of
+    data_module to this network is immediately reduced in the spatial dimensions by a factor of 2 by the first convolution of
     the residual unit defining the first layer of the encode part. The last layer of the decode part will upsample its
-    input (data from the previous layer concatenated with data from the skip connection) in the first convolution. this
+    input (data_module from the previous layer concatenated with data_module from the skip connection) in the first convolution. this
     ensures the final output of the network has the same shape as the input.
 
     The original QuickNAT implementation included a `enable_test_dropout()` mechanism for uncertainty estimation during

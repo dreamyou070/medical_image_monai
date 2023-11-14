@@ -16,7 +16,7 @@ from monai.fl.utils.exchange_object import ExchangeObject
 
 class BaseClient:
     """
-    Provide an abstract base class to allow the client to return summary statistics of the data.
+    Provide an abstract base class to allow the client to return summary statistics of the data_module.
 
     To define a new stats script, subclass this class and implement the
     following abstract methods::
@@ -59,7 +59,7 @@ class BaseClient:
 class ClientAlgoStats(BaseClient):
     def get_data_stats(self, extra: dict | None = None) -> ExchangeObject:
         """
-        Get summary statistics about the local data.
+        Get summary statistics about the local data_module.
 
         Args:
             extra: Dict with additional information that can be provided by the FL system.
@@ -104,7 +104,7 @@ class ClientAlgo(ClientAlgoStats):
 
     def train(self, data: ExchangeObject, extra: dict | None = None) -> None:
         """
-        Train network and produce new network from train data.
+        Train network and produce new network from train data_module.
 
         Args:
             data: ExchangeObject containing current network weights to base training on.
@@ -140,7 +140,7 @@ class ClientAlgo(ClientAlgoStats):
 
     def evaluate(self, data: ExchangeObject, extra: dict | None = None) -> ExchangeObject:
         """
-        Get evaluation metrics on test data.
+        Get evaluation metrics on test data_module.
 
         Args:
             data: ExchangeObject with network weights to use for evaluation.

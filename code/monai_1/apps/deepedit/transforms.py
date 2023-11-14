@@ -46,7 +46,7 @@ class DiscardAddGuidanced(MapTransform):
         Discard positive and negative points according to discard probability
 
         Args:
-            keys: The ``keys`` parameter will be used to get and set the actual data item to transform
+            keys: The ``keys`` parameter will be used to get and set the actual data_module item to transform
             number_intensity_ch: number of intensity channels
             probability: probability of discarding clicks
         """
@@ -91,7 +91,7 @@ class NormalizeLabelsInDatasetd(MapTransform):
         Normalize label values according to label names dictionary
 
         Args:
-            keys: The ``keys`` parameter will be used to get and set the actual data item to transform
+            keys: The ``keys`` parameter will be used to get and set the actual data_module item to transform
             label_names: all label names
         """
         super().__init__(keys, allow_missing_keys)
@@ -128,7 +128,7 @@ class SingleLabelSelectiond(MapTransform):
         Selects one label at a time to train the DeepEdit
 
         Args:
-            keys: The ``keys`` parameter will be used to get and set the actual data item to transform
+            keys: The ``keys`` parameter will be used to get and set the actual data_module item to transform
             label_names: all label names
         """
         super().__init__(keys, allow_missing_keys)
@@ -627,11 +627,11 @@ class AddGuidanceFromPointsDeepEditd(Transform):
         ref_image: key to reference image to fetch current and original image details.
         guidance: output key to store guidance.
         meta_keys: explicitly indicate the key of the metadata dictionary of `ref_image`.
-            for example, for data with key `image`, the metadata by default is in `image_meta_dict`.
+            for example, for data_module with key `image`, the metadata by default is in `image_meta_dict`.
             the metadata is a dictionary object which contains: filename, original_shape, etc.
             if None, will try to construct meta_keys by `{ref_image}_{meta_key_postfix}`.
         meta_key_postfix: if meta_key is None, use `{ref_image}_{meta_key_postfix}` to fetch the metadata according
-            to the key data, default is `meta_dict`, the metadata is a dictionary object.
+            to the key data_module, default is `meta_dict`, the metadata is a dictionary object.
             For example, to handle key `image`,  read/write affine matrices from the
             metadata `image_meta_dict` dictionary's `affine` field.
 

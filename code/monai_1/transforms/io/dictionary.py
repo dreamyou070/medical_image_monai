@@ -39,7 +39,7 @@ DEFAULT_POST_FIX = PostFix.meta()
 class LoadImaged(MapTransform):
     """
     Dictionary-based wrapper of :py:class:`monai.transforms.LoadImage`,
-    It can load both image data and metadata. When loading a list of files in one key,
+    It can load both image data_module and metadata. When loading a list of files in one key,
     the arrays will be stacked and a new dimension will be added as the first dimension
     In this case, the metadata of the first image will be used to represent the stacked result.
     The affine transform of all the stacked images should be same.
@@ -96,11 +96,11 @@ class LoadImaged(MapTransform):
             reader: reader to load image file and metadata
                 - if `reader` is None, a default set of `SUPPORTED_READERS` will be used.
                 - if `reader` is a string, it's treated as a class name or dotted path
-                (such as ``"monai.data.ITKReader"``), the supported built-in reader classes are
+                (such as ``"monai.data_module.ITKReader"``), the supported built-in reader classes are
                 ``"ITKReader"``, ``"NibabelReader"``, ``"NumpyReader"``.
                 a reader instance will be constructed with the `*args` and `**kwargs` parameters.
                 - if `reader` is a reader class/instance, it will be registered to this loader accordingly.
-            dtype: if not None, convert the loaded image data to this data type.
+            dtype: if not None, convert the loaded image data_module to this data_module type.
             meta_keys: explicitly indicate the key to store the corresponding metadata dictionary.
                 the metadata is a dictionary object which contains: filename, original_shape, etc.
                 it can be a sequence of string, map to the `keys`.
@@ -111,7 +111,7 @@ class LoadImaged(MapTransform):
             overwriting: whether allow overwriting existing metadata of same key.
                 default is False, which will raise exception if encountering existing key.
             image_only: if True return dictionary containing just only the image volumes, otherwise return
-                dictionary containing image data array and header dict per input key.
+                dictionary containing image data_module array and header dict per input key.
             ensure_channel_first: if `True` and loaded both image array and metadata, automatically convert
                 the image array shape to `channel first`. default to `False`.
             simple_keys: whether to remove redundant metadata keys, default to False for backward compatibility.
@@ -154,7 +154,7 @@ class LoadImaged(MapTransform):
     def __call__(self, data, reader: ImageReader | None = None):
         """
         Raises:
-            KeyError: When not ``self.overwriting`` and key already exists in ``data``.
+            KeyError: When not ``self.overwriting`` and key already exists in ``data_module``.
 
         """
         d = dict(data)
@@ -183,13 +183,13 @@ class SaveImaged(MapTransform):
 
     Note:
         Image should be channel-first shape: [C,H,W,[D]].
-        If the data is a patch of an image, the patch index will be appended to the filename.
+        If the data_module is a patch of an image, the patch index will be appended to the filename.
 
     Args:
         keys: keys of the corresponding items to be transformed.
             See also: :py:class:`monai.transforms.compose.MapTransform`
         meta_keys: explicitly indicate the key of the corresponding metadata dictionary.
-            For example, for data with key ``image``, the metadata by default is in ``image_meta_dict``.
+            For example, for data_module with key ``image``, the metadata by default is in ``image_meta_dict``.
             The metadata is a dictionary contains values such as ``filename``, ``original_shape``.
             This argument can be a sequence of strings, mapped to the ``keys``.
             If ``None``, will try to construct ``meta_keys`` by ``key_{meta_key_postfix}``.
@@ -200,7 +200,7 @@ class SaveImaged(MapTransform):
                         Handled by ``folder_layout`` instead, if ``folder_layout`` is not ``None``.
         output_ext: output file extension name, available extensions: ``.nii.gz``, ``.nii``, ``.png``, ``.dcm``.
                     Handled by ``folder_layout`` instead, if ``folder_layout`` not ``None``.
-        resample: whether to resample image (if needed) before saving the data array,
+        resample: whether to resample image (if needed) before saving the data_module array,
             based on the ``spatial_shape`` (and ``original_affine``) from metadata.
         mode: This option is used when ``resample=True``. Defaults to ``"nearest"``.
             Depending on the writers, the possible options are:
@@ -213,11 +213,11 @@ class SaveImaged(MapTransform):
         padding_mode: This option is used when ``resample = True``. Defaults to ``"border"``.
             Possible options are {``"zeros"``, ``"border"``, ``"reflection"``}
             See also: https://pytorch.org/docs/stable/nn.functional.html#grid-sample
-        scale: {``255``, ``65535``} postprocess data by clipping to [0, 1] and scaling
+        scale: {``255``, ``65535``} postprocess data_module by clipping to [0, 1] and scaling
             [0, 255] (``uint8``) or [0, 65535] (``uint16``). Default is ``None`` (no scaling).
-        dtype: data type during resampling computation. Defaults to ``np.float64`` for best precision.
-            if None, use the data type of input data. To set the output data type, use ``output_dtype``.
-        output_dtype: data type for saving data. Defaults to ``np.float32``.
+        dtype: data_module type during resampling computation. Defaults to ``np.float64`` for best precision.
+            if None, use the data_module type of input data_module. To set the output data_module type, use ``output_dtype``.
+        output_dtype: data_module type for saving data_module. Defaults to ``np.float32``.
         allow_missing_keys: don't raise exception if key is missing.
         squeeze_end_dims: if True, any trailing singleton dimensions will be removed (after the channel
             has been moved to the end). So if input is (C,H,W,D), this will be altered to (H,W,D,C), and
@@ -243,15 +243,15 @@ class SaveImaged(MapTransform):
             Handled by ``folder_layout`` instead, if ``folder_layout`` is not ``None``.
         print_log: whether to print logs when saving. Default to ``True``.
         output_format: an optional string to specify the output image writer.
-            see also: ``monai.data.image_writer.SUPPORTED_WRITERS``.
-        writer: a customised ``monai.data.ImageWriter`` subclass to save data arrays.
-            if ``None``, use the default writer from ``monai.data.image_writer`` according to ``output_ext``.
+            see also: ``monai.data_module.image_writer.SUPPORTED_WRITERS``.
+        writer: a customised ``monai.data_module.ImageWriter`` subclass to save data_module arrays.
+            if ``None``, use the default writer from ``monai.data_module.image_writer`` according to ``output_ext``.
             if it's a string, it's treated as a class name or dotted path;
             the supported built-in writer classes are ``"NibabelWriter"``, ``"ITKWriter"``, ``"PILWriter"``.
         output_name_formatter: a callable function (returning a kwargs dict) to format the output file name.
-            see also: :py:func:`monai.data.folder_layout.default_name_formatter`.
+            see also: :py:func:`monai.data_module.folder_layout.default_name_formatter`.
             If using a custom ``folder_layout``, consider providing your own formatter.
-        folder_layout: A customized ``monai.data.FolderLayoutBase`` subclass to define file naming schemes.
+        folder_layout: A customized ``monai.data_module.FolderLayoutBase`` subclass to define file naming schemes.
             if ``None``, uses the default ``FolderLayout``.
         savepath_in_metadict: if ``True``, adds a key ``saved_to`` to the metadata, which contains the path
             to where the input image has been saved.

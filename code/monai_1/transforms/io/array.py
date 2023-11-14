@@ -65,7 +65,7 @@ SUPPORTED_READERS = {
 
 def switch_endianness(data, new="<"):
     """
-    Convert the input `data` endianness to `new`.
+    Convert the input `data_module` endianness to `new`.
 
     Args:
         data: input to be converted.
@@ -138,12 +138,12 @@ class LoadImage(Transform):
             reader: reader to load image file and metadata
                 - if `reader` is None, a default set of `SUPPORTED_READERS` will be used.
                 - if `reader` is a string, it's treated as a class name or dotted path
-                (such as ``"monai.data.ITKReader"``), the supported built-in reader classes are
+                (such as ``"monai.data_module.ITKReader"``), the supported built-in reader classes are
                 ``"ITKReader"``, ``"NibabelReader"``, ``"NumpyReader"``, ``"PydicomReader"``.
                 a reader instance will be constructed with the `*args` and `**kwargs` parameters.
                 - if `reader` is a reader class/instance, it will be registered to this loader accordingly.
             image_only: if True return only the image MetaTensor, otherwise return image and header dict.
-            dtype: if not None convert the loaded image to this data type.
+            dtype: if not None convert the loaded image to this data_module type.
             ensure_channel_first: if `True` and loaded both image array and metadata, automatically convert
                 the image array shape to `channel first`. default to `False`.
             simple_keys: whether to remove redundant metadata keys, default to False for backward compatibility.
@@ -194,7 +194,7 @@ class LoadImage(Transform):
 
         for _r in ensure_tuple(reader):
             if isinstance(_r, str):
-                the_reader, has_built_in = optional_import("monai.data", name=f"{_r}")  # search built-in
+                the_reader, has_built_in = optional_import("monai.data_module", name=f"{_r}")  # search built-in
                 if not has_built_in:
                     the_reader = locate(f"{_r}")  # search dotted path
                 if the_reader is None:
@@ -236,7 +236,7 @@ class LoadImage(Transform):
             filename: path file or file-like object or a list of files.
                 will save the filename to meta_data with key `filename_or_obj`.
                 if provided a list of files, use the filename of first file to save,
-                and will stack them together as multi-channels data.
+                and will stack them together as multi-channels data_module.
                 if provided directory path instead of file path, will treat it as
                 DICOM images series and read.
             reader: runtime reader to load image file and metadata.
@@ -286,7 +286,7 @@ class LoadImage(Transform):
         # make sure all elements in metadata are little endian
         meta_data = switch_endianness(meta_data, "<")
 
-        meta_data[Key.FILENAME_OR_OBJ] = f"{ensure_tuple(filename)[0]}"  # Path obj should be strings for data loader
+        meta_data[Key.FILENAME_OR_OBJ] = f"{ensure_tuple(filename)[0]}"  # Path obj should be strings for data_module loader
         img = MetaTensor.ensure_torch_and_prune_meta(
             img_array, meta_data, self.simple_keys, pattern=self.pattern, sep=self.sep
         )
@@ -312,8 +312,8 @@ class SaveImage(Transform):
         Handled by ``folder_layout`` instead, if ``folder_layout`` is not ``None``.
         output_ext: output file extension name.
         Handled by ``folder_layout`` instead, if ``folder_layout`` is not ``None``.
-        output_dtype: data type (if not None) for saving data. Defaults to ``np.float32``.
-        resample: whether to resample image (if needed) before saving the data array,
+        output_dtype: data_module type (if not None) for saving data_module. Defaults to ``np.float32``.
+        resample: whether to resample image (if needed) before saving the data_module array,
             based on the ``"spatial_shape"`` (and ``"original_affine"``) from metadata.
         mode: This option is used when ``resample=True``. Defaults to ``"nearest"``.
             Depending on the writers, the possible options are
@@ -326,10 +326,10 @@ class SaveImage(Transform):
         padding_mode: This option is used when ``resample = True``. Defaults to ``"border"``.
             Possible options are {``"zeros"``, ``"border"``, ``"reflection"``}
             See also: https://pytorch.org/docs/stable/nn.functional.html#grid-sample
-        scale: {``255``, ``65535``} postprocess data by clipping to [0, 1] and scaling
+        scale: {``255``, ``65535``} postprocess data_module by clipping to [0, 1] and scaling
             [0, 255] (``uint8``) or [0, 65535] (``uint16``). Default is ``None`` (no scaling).
-        dtype: data type during resampling computation. Defaults to ``np.float64`` for best precision.
-            if ``None``, use the data type of input data. To set the output data type, use ``output_dtype``.
+        dtype: data_module type during resampling computation. Defaults to ``np.float64`` for best precision.
+            if ``None``, use the data_module type of input data_module. To set the output data_module type, use ``output_dtype``.
         squeeze_end_dims: if ``True``, any trailing singleton dimensions will be removed (after the channel
             has been moved to the end). So if input is (C,H,W,D), this will be altered to (H,W,D,C), and
             then if C==1, it will be saved as (H,W,D). If D is also 1, it will be saved as (H,W). If ``False``,
@@ -355,18 +355,18 @@ class SaveImage(Transform):
             Handled by ``folder_layout`` instead, if ``folder_layout`` is not ``None``.
         print_log: whether to print logs when saving. Default to ``True``.
         output_format: an optional string of filename extension to specify the output image writer.
-            see also: ``monai.data.image_writer.SUPPORTED_WRITERS``.
-        writer: a customised ``monai.data.ImageWriter`` subclass to save data arrays.
-            if ``None``, use the default writer from ``monai.data.image_writer`` according to ``output_ext``.
-            if it's a string, it's treated as a class name or dotted path (such as ``"monai.data.ITKWriter"``);
+            see also: ``monai.data_module.image_writer.SUPPORTED_WRITERS``.
+        writer: a customised ``monai.data_module.ImageWriter`` subclass to save data_module arrays.
+            if ``None``, use the default writer from ``monai.data_module.image_writer`` according to ``output_ext``.
+            if it's a string, it's treated as a class name or dotted path (such as ``"monai.data_module.ITKWriter"``);
             the supported built-in writer classes are ``"NibabelWriter"``, ``"ITKWriter"``, ``"PILWriter"``.
         channel_dim: the index of the channel dimension. Default to ``0``.
             ``None`` to indicate no channel dimension.
         output_name_formatter: a callable function (returning a kwargs dict) to format the output file name.
-            If using a custom ``monai.data.FolderLayoutBase`` class in ``folder_layout``, consider providing
+            If using a custom ``monai.data_module.FolderLayoutBase`` class in ``folder_layout``, consider providing
             your own formatter.
-            see also: :py:func:`monai.data.folder_layout.default_name_formatter`.
-        folder_layout: A customized ``monai.data.FolderLayoutBase`` subclass to define file naming schemes.
+            see also: :py:func:`monai.data_module.folder_layout.default_name_formatter`.
+        folder_layout: A customized ``monai.data_module.FolderLayoutBase`` subclass to define file naming schemes.
             if ``None``, uses the default ``FolderLayout``.
         savepath_in_metadict: if ``True``, adds a key ``"saved_to"`` to the metadata, which contains the path
             to where the input image has been saved.
@@ -415,7 +415,7 @@ class SaveImage(Transform):
 
         self.output_ext = output_ext.lower() or output_format.lower()
         if isinstance(writer, str):
-            writer_, has_built_in = optional_import("monai.data", name=f"{writer}")  # search built-in
+            writer_, has_built_in = optional_import("monai.data_module", name=f"{writer}")  # search built-in
             if not has_built_in:
                 writer_ = locate(f"{writer}")  # search dotted path
             if writer_ is None:
@@ -461,8 +461,8 @@ class SaveImage(Transform):
     def __call__(self, img: torch.Tensor | np.ndarray, meta_data: dict | None = None):
         """
         Args:
-            img: target data content that save into file. The image should be channel-first, shape: `[C,H,W,[D]]`.
-            meta_data: key-value pairs of metadata corresponding to the data.
+            img: target data_module content that save into file. The image should be channel-first, shape: `[C,H,W,[D]]`.
+            meta_data: key-value pairs of metadata corresponding to the data_module.
         """
         meta_data = img.meta if isinstance(img, MetaTensor) else meta_data
         kw = self.fname_formatter(meta_data, self)
@@ -473,7 +473,7 @@ class SaveImage(Transform):
                 self.data_kwargs["channel_dim"] = None
             elif is_no_channel(self.data_kwargs.get("channel_dim")):
                 warnings.warn(
-                    f"data shape {img.shape} (with spatial shape {meta_spatial_shape}) "
+                    f"data_module shape {img.shape} (with spatial shape {meta_spatial_shape}) "
                     f"but SaveImage `channel_dim` is set to {self.data_kwargs.get('channel_dim')} no channel."
                 )
 

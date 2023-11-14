@@ -40,7 +40,7 @@ DEFAULT_TAG = "Loss"
 
 class TensorBoardHandler:
     """
-    Base class for the handlers to write data into TensorBoard.
+    Base class for the handlers to write data_module into TensorBoard.
 
     Args:
         summary_writer: user can specify TensorBoard or TensorBoardX SummaryWriter,
@@ -74,7 +74,7 @@ class TensorBoardStatsHandler(TensorBoardHandler):
     TensorBoardStatsHandler defines a set of Ignite Event-handlers for all the TensorBoard logics.
     It can be used for any Ignite Engine(trainer, validator and evaluator).
     And it can support both epoch level and iteration level with pre-defined TensorBoard event writer.
-    The expected data source is Ignite ``engine.state.output`` and ``engine.state.metrics``.
+    The expected data_module source is Ignite ``engine.state.output`` and ``engine.state.metrics``.
 
     Default behaviors:
         - When EPOCH_COMPLETED, write each dictionary item in
@@ -105,12 +105,12 @@ class TensorBoardStatsHandler(TensorBoardHandler):
             summary_writer: user can specify TensorBoard or TensorBoardX SummaryWriter,
                 default to create a new TensorBoard writer.
             log_dir: if using default SummaryWriter, write logs to this directory, default is `./runs`.
-            iteration_log: whether to write data to TensorBoard when iteration completed, default to `True`.
+            iteration_log: whether to write data_module to TensorBoard when iteration completed, default to `True`.
                 ``iteration_log`` can be also a function or int. If it is an int, it will be interpreted as the iteration interval
                 at which the iteration_event_writer is called. If it is a function, it will be interpreted as an event filter
                 (see https://pytorch.org/ignite/generated/ignite.engine.events.Events.html for details).
                 Event filter function accepts as input engine and event value (iteration) and should return True/False.
-            epoch_log: whether to write data to TensorBoard when epoch completed, default to `True`.
+            epoch_log: whether to write data_module to TensorBoard when epoch completed, default to `True`.
                 ``epoch_log`` can be also a function or int. If it is an int, it will be interpreted as the epoch interval
                 at which the epoch_event_writer is called. If it is a function, it will be interpreted as an event filter.
                 See ``iteration_log`` argument for more details.
@@ -207,7 +207,7 @@ class TensorBoardStatsHandler(TensorBoardHandler):
             _engine: Ignite Engine, unused argument.
             writer: TensorBoard or TensorBoardX writer, passed or created in TensorBoardHandler.
             tag: tag name in the TensorBoard.
-            value: value of the scalar data for current step.
+            value: value of the scalar data_module for current step.
             step: index of current step.
 
         """
@@ -237,7 +237,7 @@ class TensorBoardStatsHandler(TensorBoardHandler):
 
     def _default_iteration_writer(self, engine: Engine, writer: SummaryWriter | SummaryWriterX) -> None:
         """
-        Execute iteration level event write operation based on Ignite `engine.state.output` data.
+        Execute iteration level event write operation based on Ignite `engine.state.output` data_module.
         Extract the values from `self.output_transform(engine.state.output)`.
         Since `engine.state.output` is a decollated list and we replicated the loss value for every item
         of the decollated list, the default behavior is to track the loss from `output[0]`.
@@ -292,17 +292,17 @@ class TensorBoardImageHandler(TensorBoardHandler):
     2D output (shape in Batch, channel, H, W) will be shown as simple image using the first element in the batch,
     for 3D to ND output (shape in Batch, channel, H, W, D) input, each of ``self.max_channels`` number of images'
     last three dimensions will be shown as animated GIF along the last axis (typically Depth).
-    And if writer is from TensorBoardX, data has 3 channels and `max_channels=3`, will plot as RGB video.
+    And if writer is from TensorBoardX, data_module has 3 channels and `max_channels=3`, will plot as RGB video.
 
     It can be used for any Ignite Engine (trainer, validator and evaluator).
     User can easily add it to engine for any expected Event, for example: ``EPOCH_COMPLETED``,
-    ``ITERATION_COMPLETED``. The expected data source is ignite's ``engine.state.batch`` and ``engine.state.output``.
+    ``ITERATION_COMPLETED``. The expected data_module source is ignite's ``engine.state.batch`` and ``engine.state.output``.
 
     Default behavior:
         - Show y_pred as images (GIF for 3D) on TensorBoard when Event triggered,
         - Need to use ``batch_transform`` and ``output_transform`` to specify
           how many images to show and show which channel.
-        - Expects ``batch_transform(engine.state.batch)`` to return data
+        - Expects ``batch_transform(engine.state.batch)`` to return data_module
           format: (image[N, channel, ...], label[N, channel, ...]).
         - Expects ``output_transform(engine.state.output)`` to return a torch
           tensor in format (y_pred[N, channel, ...], loss).
@@ -341,17 +341,17 @@ class TensorBoardImageHandler(TensorBoardHandler):
                 `engine.state` and `batch_transform` inherit from the ignite concept:
                 https://pytorch.org/ignite/concepts.html#state, explanation and usage example are in the tutorial:
                 https://github.com/Project-MONAI/tutorials/blob/master/modules/batch_output_transform.ipynb.
-            output_transform: a callable that is used to extract the `predictions` data from
+            output_transform: a callable that is used to extract the `predictions` data_module from
                 `ignite.engine.state.output`, will use the result to plot output from `result[index]`.
                 `engine.state` and `output_transform` inherit from the ignite concept:
                 https://pytorch.org/ignite/concepts.html#state, explanation and usage example are in the tutorial:
                 https://github.com/Project-MONAI/tutorials/blob/master/modules/batch_output_transform.ipynb.
             global_iter_transform: a callable that is used to customize global step number for TensorBoard.
                 For example, in evaluation, the evaluator engine needs to know current epoch from trainer.
-            index: plot which element in a data batch, default is the first element.
+            index: plot which element in a data_module batch, default is the first element.
             max_channels: number of channels to plot.
             frame_dim: if plotting 3D image as GIF, specify the dimension used as frames,
-                expect input data shape as `NCHWD`, default to `-3` (the first spatial dim)
+                expect input data_module shape as `NCHWD`, default to `-3` (the first spatial dim)
             max_frames: if plot 3D RGB image as video in TensorBoardX, set the FPS to `max_frames`.
         """
         super().__init__(summary_writer=summary_writer, log_dir=log_dir)

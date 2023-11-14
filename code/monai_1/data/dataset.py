@@ -63,12 +63,12 @@ kvikio_numpy, _ = optional_import("kvikio.numpy")
 
 class Dataset(_TorchDataset):
     """
-    A generic dataset with a length property and an optional callable data transform
-    when fetching a data sample.
-    If passing slicing indices, will return a PyTorch Subset, for example: `data: Subset = dataset[1:4]`,
+    A generic dataset with a length property and an optional callable data_module transform
+    when fetching a data_module sample.
+    If passing slicing indices, will return a PyTorch Subset, for example: `data_module: Subset = dataset[1:4]`,
     for more details, please check: https://pytorch.org/docs/stable/data.html#torch.utils.data.Subset
 
-    For example, typical input data can be a list of dictionaries::
+    For example, typical input data_module can be a list of dictionaries::
 
         [{                            {                            {
              'img': 'image1.nii.gz',      'img': 'image2.nii.gz',      'img': 'image3.nii.gz',
@@ -80,8 +80,8 @@ class Dataset(_TorchDataset):
     def __init__(self, data: Sequence, transform: Callable | None = None) -> None:
         """
         Args:
-            data: input data to load and transform to generate dataset for model.
-            transform: a callable data transform on input data.
+            data: input data_module to load and transform to generate dataset for model.
+            transform: a callable data_module transform on input data_module.
 
         """
         self.data = data
@@ -92,14 +92,14 @@ class Dataset(_TorchDataset):
 
     def _transform(self, index: int):
         """
-        Fetch single data item from `self.data`.
+        Fetch single data_module item from `self.data_module`.
         """
         data_i = self.data[index]
         return apply_transform(self.transform, data_i) if self.transform is not None else data_i
 
     def __getitem__(self, index: int | slice | Sequence[int]):
         """
-        Returns a `Subset` if `index` is a slice or Sequence, a data item otherwise.
+        Returns a `Subset` if `index` is a slice or Sequence, a data_module item otherwise.
         """
         if isinstance(index, slice):
             # dataset[:42]
@@ -117,25 +117,25 @@ class DatasetFunc(Dataset):
     Execute function on the input dataset and leverage the output to act as a new Dataset.
     It can be used to load / fetch the basic dataset items, like the list of `image, label` paths.
     Or chain together to execute more complicated logic, like `partition_dataset`, `resample_datalist`, etc.
-    The `data` arg of `Dataset` will be applied to the first arg of callable `func`.
+    The `data_module` arg of `Dataset` will be applied to the first arg of callable `func`.
     Usage example::
 
         data_list = DatasetFunc(
-            data="path to file",
-            func=monai.data.load_decathlon_datalist,
+            data_module="path to file",
+            func=monai.data_module.load_decathlon_datalist,
             data_list_key="validation",
             base_dir="path to base dir",
         )
         # partition dataset for every rank
         data_partition = DatasetFunc(
-            data=data_list,
-            func=lambda **kwargs: monai.data.partition_dataset(**kwargs)[torch.distributed.get_rank()],
+            data_module=data_list,
+            func=lambda **kwargs: monai.data_module.partition_dataset(**kwargs)[torch.distributed.get_rank()],
             num_partitions=torch.distributed.get_world_size(),
         )
-        dataset = Dataset(data=data_partition, transform=transforms)
+        dataset = Dataset(data_module=data_partition, transform=transforms)
 
     Args:
-        data: input data for the func to process, will apply to `func` as the first arg.
+        data: input data_module for the func to process, will apply to `func` as the first arg.
         func: callable function to generate dataset items.
         kwargs: other arguments for the `func` except for the first arg.
 
@@ -164,17 +164,17 @@ class DatasetFunc(Dataset):
 
 class PersistentDataset(Dataset):
     """
-    Persistent storage of pre-computed values to efficiently manage larger than memory dictionary format data,
+    Persistent storage of pre-computed values to efficiently manage larger than memory dictionary format data_module,
     it can operate transforms for specific fields.  Results from the non-random transform components are computed
     when first used, and stored in the `cache_dir` for rapid retrieval on subsequent uses.
-    If passing slicing indices, will return a PyTorch Subset, for example: `data: Subset = dataset[1:4]`,
+    If passing slicing indices, will return a PyTorch Subset, for example: `data_module: Subset = dataset[1:4]`,
     for more details, please check: https://pytorch.org/docs/stable/data.html#torch.utils.data.Subset
 
     The transforms which are supposed to be cached must implement the `monai.transforms.Transform`
     interface and should not be `Randomizable`. This dataset will cache the outcomes before the first
     `Randomizable` `Transform` within a `Compose` instance.
 
-    For example, typical input data can be a list of dictionaries::
+    For example, typical input data_module can be a list of dictionaries::
 
         [{                            {                            {
             'image': 'image1.nii.gz',    'image': 'image2.nii.gz',    'image': 'image3.nii.gz',
@@ -201,10 +201,10 @@ class PersistentDataset(Dataset):
     Subsequent uses of a dataset directly read pre-processed results from `cache_dir`
     followed by applying the random dependant parts of transform processing.
 
-    During training call `set_data()` to update input data and recompute cache content.
+    During training call `set_data()` to update input data_module and recompute cache content.
 
     Note:
-        The input data must be a list of file paths and will hash them as cache keys.
+        The input data_module must be a list of file paths and will hash them as cache keys.
 
         The filenames of the cached files also try to contain the hash of the transforms. In this
         fashion, `PersistentDataset` should be robust to changes in transforms. This, however, is
@@ -231,33 +231,33 @@ class PersistentDataset(Dataset):
     ) -> None:
         """
         Args:
-            data: input data file paths to load and transform to generate dataset for model.
-                `PersistentDataset` expects input data to be a list of serializable
+            data: input data_module file paths to load and transform to generate dataset for model.
+                `PersistentDataset` expects input data_module to be a list of serializable
                 and hashes them as cache keys using `hash_func`.
-            transform: transforms to execute operations on input data.
+            transform: transforms to execute operations on input data_module.
             cache_dir: If specified, this is the location for persistent storage
-                of pre-computed transformed data tensors. The cache_dir is computed once, and
+                of pre-computed transformed data_module tensors. The cache_dir is computed once, and
                 persists on disk until explicitly removed.  Different runs, programs, experiments
                 may share a common cache dir provided that the transforms pre-processing is consistent.
                 If `cache_dir` doesn't exist, will automatically create it.
                 If `cache_dir` is `None`, there is effectively no caching.
-            hash_func: a callable to compute hash from data items to be cached.
-                defaults to `monai.data.utils.pickle_hashing`.
+            hash_func: a callable to compute hash from data_module items to be cached.
+                defaults to `monai.data_module.utils.pickle_hashing`.
             pickle_module: string representing the module used for pickling metadata and objects,
                 default to `"pickle"`. due to the pickle limitation in multi-processing of Dataloader,
                 we can't use `pickle` as arg directly, so here we use a string name instead.
                 if want to use other pickle module at runtime, just register like:
-                >>> from monai.data import utils
+                >>> from monai.data_module import utils
                 >>> utils.SUPPORTED_PICKLE_MOD["test"] = other_pickle
                 this arg is used by `torch.save`, for more details, please check:
                 https://pytorch.org/docs/stable/generated/torch.save.html#torch.save,
-                and ``monai.data.utils.SUPPORTED_PICKLE_MOD``.
+                and ``monai.data_module.utils.SUPPORTED_PICKLE_MOD``.
             pickle_protocol: can be specified to override the default protocol, default to `2`.
                 this arg is used by `torch.save`, for more details, please check:
                 https://pytorch.org/docs/stable/generated/torch.save.html#torch.save.
             hash_transform: a callable to compute hash from the transform information when caching.
                 This may reduce errors due to transforms changing during experiments. Default to None (no hash).
-                Other options are `pickle_hashing` and `json_hashing` functions from `monai.data.utils`.
+                Other options are `pickle_hashing` and `json_hashing` functions from `monai.data_module.utils`.
             reset_ops_id: whether to set `TraceKeys.ID` to ``Tracekys.NONE``, defaults to ``True``.
                 When this is enabled, the traced transform instance IDs will be removed from the cached MetaTensors.
                 This is useful for skipping the transform instance checks when inverting applied operations
@@ -303,7 +303,7 @@ class PersistentDataset(Dataset):
 
     def set_data(self, data: Sequence):
         """
-        Set the input data and delete all the out-dated cache content.
+        Set the input data_module and delete all the out-dated cache content.
 
         """
         self.data = data
@@ -313,10 +313,10 @@ class PersistentDataset(Dataset):
 
     def _pre_transform(self, item_transformed):
         """
-        Process the data from original state up to the first random element.
+        Process the data_module from original state up to the first random element.
 
         Args:
-            item_transformed: The data to be transformed
+            item_transformed: The data_module to be transformed
 
         Returns:
             the transformed element up to the first identified
@@ -337,10 +337,10 @@ class PersistentDataset(Dataset):
 
     def _post_transform(self, item_transformed):
         """
-        Process the data from before the first random transform to the final state ready for evaluation.
+        Process the data_module from before the first random transform to the final state ready for evaluation.
 
         Args:
-            item_transformed: The data to be transformed (already processed up to the first random transform)
+            item_transformed: The data_module to be transformed (already processed up to the first random transform)
 
         Returns:
             the transformed element through the random transforms
@@ -358,13 +358,13 @@ class PersistentDataset(Dataset):
 
     def _cachecheck(self, item_transformed):
         """
-        A function to cache the expensive input data transform operations
-        so that huge data sets (larger than computer memory) can be processed
+        A function to cache the expensive input data_module transform operations
+        so that huge data_module sets (larger than computer memory) can be processed
         on the fly as needed, and intermediate results written to disk for
         future use.
 
         Args:
-            item_transformed: The current data element to be mutated into transformed representation
+            item_transformed: The current data_module element to be mutated into transformed representation
 
         Returns:
             The transformed data_element, either from cache, or explicitly computing it.
@@ -439,34 +439,34 @@ class CacheNTransDataset(PersistentDataset):
     ) -> None:
         """
         Args:
-            data: input data file paths to load and transform to generate dataset for model.
-                `PersistentDataset` expects input data to be a list of serializable
+            data: input data_module file paths to load and transform to generate dataset for model.
+                `PersistentDataset` expects input data_module to be a list of serializable
                 and hashes them as cache keys using `hash_func`.
-            transform: transforms to execute operations on input data.
+            transform: transforms to execute operations on input data_module.
             cache_n_trans: cache the result of first N transforms.
             cache_dir: If specified, this is the location for persistent storage
-                of pre-computed transformed data tensors. The cache_dir is computed once, and
+                of pre-computed transformed data_module tensors. The cache_dir is computed once, and
                 persists on disk until explicitly removed.  Different runs, programs, experiments
                 may share a common cache dir provided that the transforms pre-processing is consistent.
                 If `cache_dir` doesn't exist, will automatically create it.
                 If `cache_dir` is `None`, there is effectively no caching.
-            hash_func: a callable to compute hash from data items to be cached.
-                defaults to `monai.data.utils.pickle_hashing`.
+            hash_func: a callable to compute hash from data_module items to be cached.
+                defaults to `monai.data_module.utils.pickle_hashing`.
             pickle_module: string representing the module used for pickling metadata and objects,
                 default to `"pickle"`. due to the pickle limitation in multi-processing of Dataloader,
                 we can't use `pickle` as arg directly, so here we use a string name instead.
                 if want to use other pickle module at runtime, just register like:
-                >>> from monai.data import utils
+                >>> from monai.data_module import utils
                 >>> utils.SUPPORTED_PICKLE_MOD["test"] = other_pickle
                 this arg is used by `torch.save`, for more details, please check:
                 https://pytorch.org/docs/stable/generated/torch.save.html#torch.save,
-                and ``monai.data.utils.SUPPORTED_PICKLE_MOD``.
+                and ``monai.data_module.utils.SUPPORTED_PICKLE_MOD``.
             pickle_protocol: can be specified to override the default protocol, default to `2`.
                 this arg is used by `torch.save`, for more details, please check:
                 https://pytorch.org/docs/stable/generated/torch.save.html#torch.save.
             hash_transform: a callable to compute hash from the transform information when caching.
                 This may reduce errors due to transforms changing during experiments. Default to None (no hash).
-                Other options are `pickle_hashing` and `json_hashing` functions from `monai.data.utils`.
+                Other options are `pickle_hashing` and `json_hashing` functions from `monai.data_module.utils`.
             reset_ops_id: whether to set `TraceKeys.ID` to ``Tracekys.NONE``, defaults to ``True``.
                 When this is enabled, the traced transform instance IDs will be removed from the cached MetaTensors.
                 This is useful for skipping the transform instance checks when inverting applied operations
@@ -487,10 +487,10 @@ class CacheNTransDataset(PersistentDataset):
 
     def _pre_transform(self, item_transformed):
         """
-        Process the data from original state up to the N element.
+        Process the data_module from original state up to the N element.
 
         Args:
-            item_transformed: The data to be transformed
+            item_transformed: The data_module to be transformed
 
         Returns:
             the transformed element up to the N transform object
@@ -505,10 +505,10 @@ class CacheNTransDataset(PersistentDataset):
 
     def _post_transform(self, item_transformed):
         """
-        Process the data from before the N + 1 transform to the final state ready for evaluation.
+        Process the data_module from before the N + 1 transform to the final state ready for evaluation.
 
         Args:
-            item_transformed: The data to be transformed (already processed up to the first N transform)
+            item_transformed: The data_module to be transformed (already processed up to the first N transform)
 
         Returns:
             the final transformed result
@@ -524,13 +524,13 @@ class LMDBDataset(PersistentDataset):
     Extension of `PersistentDataset` using LMDB as the backend.
 
     See Also:
-        :py:class:`monai.data.PersistentDataset`
+        :py:class:`monai.data_module.PersistentDataset`
 
     Examples:
 
-        >>> items = [{"data": i} for i in range(5)]
-        # [{'data': 0}, {'data': 1}, {'data': 2}, {'data': 3}, {'data': 4}]
-        >>> lmdb_ds = monai.data.LMDBDataset(items, transform=monai.transforms.SimulateDelayd("data", delay_time=1))
+        >>> items = [{"data_module": i} for i in range(5)]
+        # [{'data_module': 0}, {'data_module': 1}, {'data_module': 2}, {'data_module': 3}, {'data_module': 4}]
+        >>> lmdb_ds = monai.data_module.LMDBDataset(items, transform=monai.transforms.SimulateDelayd("data_module", delay_time=1))
         >>> print(list(lmdb_ds))  # using the cached results
 
     """
@@ -550,24 +550,24 @@ class LMDBDataset(PersistentDataset):
     ) -> None:
         """
         Args:
-            data: input data file paths to load and transform to generate dataset for model.
-                `LMDBDataset` expects input data to be a list of serializable
+            data: input data_module file paths to load and transform to generate dataset for model.
+                `LMDBDataset` expects input data_module to be a list of serializable
                 and hashes them as cache keys using `hash_func`.
-            transform: transforms to execute operations on input data.
+            transform: transforms to execute operations on input data_module.
             cache_dir: if specified, this is the location for persistent storage
-                of pre-computed transformed data tensors. The cache_dir is computed once, and
+                of pre-computed transformed data_module tensors. The cache_dir is computed once, and
                 persists on disk until explicitly removed.  Different runs, programs, experiments
                 may share a common cache dir provided that the transforms pre-processing is consistent.
                 If the cache_dir doesn't exist, will automatically create it. Defaults to "./cache".
-            hash_func: a callable to compute hash from data items to be cached.
-                defaults to `monai.data.utils.pickle_hashing`.
+            hash_func: a callable to compute hash from data_module items to be cached.
+                defaults to `monai.data_module.utils.pickle_hashing`.
             db_name: lmdb database file name. Defaults to "monai_cache".
             progress: whether to display a progress bar.
             pickle_protocol: pickle protocol version. Defaults to pickle.HIGHEST_PROTOCOL.
                 https://docs.python.org/3/library/pickle.html#pickle-protocols
             hash_transform: a callable to compute hash from the transform information when caching.
                 This may reduce errors due to transforms changing during experiments. Default to None (no hash).
-                Other options are `pickle_hashing` and `json_hashing` functions from `monai.data.utils`.
+                Other options are `pickle_hashing` and `json_hashing` functions from `monai.data_module.utils`.
             reset_ops_id: whether to set `TraceKeys.ID` to ``Tracekeys.NONE``, defaults to ``True``.
                 When this is enabled, the traced transform instance IDs will be removed from the cached MetaTensors.
                 This is useful for skipping the transform instance checks when inverting applied operations
@@ -600,7 +600,7 @@ class LMDBDataset(PersistentDataset):
 
     def set_data(self, data: Sequence):
         """
-        Set the input data and delete all the out-dated cache content.
+        Set the input data_module and delete all the out-dated cache content.
 
         """
         super().set_data(data=data)
@@ -695,11 +695,11 @@ class LMDBDataset(PersistentDataset):
 
 class CacheDataset(Dataset):
     """
-    Dataset with cache mechanism that can load data and cache deterministic transforms' result during training.
+    Dataset with cache mechanism that can load data_module and cache deterministic transforms' result during training.
 
-    By caching the results of non-random preprocessing transforms, it accelerates the training data pipeline.
-    If the requested data is not in the cache, all transforms will run normally
-    (see also :py:class:`monai.data.dataset.Dataset`).
+    By caching the results of non-random preprocessing transforms, it accelerates the training data_module pipeline.
+    If the requested data_module is not in the cache, all transforms will run normally
+    (see also :py:class:`monai.data_module.dataset.Dataset`).
 
     Users can set the cache rate or number of items to cache.
     It is recommended to experiment with different `cache_num` or `cache_rate` to identify the best training speed.
@@ -709,7 +709,7 @@ class CacheDataset(Dataset):
     `Randomizable` `Transform` within a `Compose` instance.
     So to improve the caching efficiency, please always put as many as possible non-random transforms
     before the randomized ones when composing the chain of transforms.
-    If passing slicing indices, will return a PyTorch Subset, for example: `data: Subset = dataset[1:4]`,
+    If passing slicing indices, will return a PyTorch Subset, for example: `data_module: Subset = dataset[1:4]`,
     for more details, please check: https://pytorch.org/docs/stable/data.html#torch.utils.data.Subset
 
     For example, if the transform is a `Compose` of::
@@ -731,13 +731,13 @@ class CacheDataset(Dataset):
     ``RandCropByPosNegLabeld`` and ``ToTensord``, as ``RandCropByPosNegLabeld`` is a randomized transform
     and the outcome not cached.
 
-    During training call `set_data()` to update input data and recompute cache content, note that it requires
+    During training call `set_data()` to update input data_module and recompute cache content, note that it requires
     `persistent_workers=False` in the PyTorch DataLoader.
 
     Note:
         `CacheDataset` executes non-random transforms and prepares cache content in the main process before
         the first epoch, then all the subprocesses of DataLoader will read the same cache content in the main process
-        during training. it may take a long time to prepare cache content according to the size of expected cache data.
+        during training. it may take a long time to prepare cache content according to the size of expected cache data_module.
         So to debug or verify the program before real training, users can set `cache_rate=0.0` or `cache_num=0` to
         temporarily skip caching.
 
@@ -764,11 +764,11 @@ class CacheDataset(Dataset):
     ) -> None:
         """
         Args:
-            data: input data to load and transform to generate dataset for model.
-            transform: transforms to execute operations on input data.
+            data: input data_module to load and transform to generate dataset for model.
+            transform: transforms to execute operations on input data_module.
             cache_num: number of items to be cached. Default is `sys.maxsize`.
                 will take the minimum of (cache_num, data_length x cache_rate, data_length).
-            cache_rate: percentage of cached data in total, default is 1.0 (cache all).
+            cache_rate: percentage of cached data_module in total, default is 1.0 (cache all).
                 will take the minimum of (cache_num, data_length x cache_rate, data_length).
             num_workers: the number of worker threads if computing cache in the initialization.
                 If num_workers is None then the number returned by os.cpu_count() is used.
@@ -781,13 +781,13 @@ class CacheDataset(Dataset):
                 may set `copy=False` for better performance.
             as_contiguous: whether to convert the cached NumPy array or PyTorch tensor to be contiguous.
                 it may help improve the performance of following logic.
-            hash_as_key: whether to compute hash value of input data as the key to save cache,
+            hash_as_key: whether to compute hash value of input data_module as the key to save cache,
                 if key exists, avoid saving duplicated content. it can help save memory when
                 the dataset has duplicated items or augmented dataset.
-            hash_func: if `hash_as_key`, a callable to compute hash from data items to be cached.
-                defaults to `monai.data.utils.pickle_hashing`.
+            hash_func: if `hash_as_key`, a callable to compute hash from data_module items to be cached.
+                defaults to `monai.data_module.utils.pickle_hashing`.
             runtime_cache: mode of cache at the runtime. Default to `False` to prepare
-                the cache content for the entire ``data`` during initialization, this potentially largely increase the
+                the cache content for the entire ``data_module`` during initialization, this potentially largely increase the
                 time required between the constructor called and first mini-batch generated.
                 Three options are provided to compute the cache on the fly after the dataset initialization:
 
@@ -796,7 +796,7 @@ class CacheDataset(Dataset):
                 3. A list-like object: a users-provided container to be used to store the cache items.
 
                 For `thread-based` caching (typically for caching cuda tensors), option 1 is recommended.
-                For single process workflows with multiprocessing data loading, option 2 is recommended.
+                For single process workflows with multiprocessing data_module loading, option 2 is recommended.
                 For multiprocessing workflows (typically for distributed training),
                 where this class is initialized in subprocesses, option 3 is recommended,
                 and the list-like object should be prepared in the main process and passed to all subprocesses.
@@ -824,7 +824,7 @@ class CacheDataset(Dataset):
 
     def set_data(self, data: Sequence) -> None:
         """
-        Set the input data and run deterministic transforms to generate cache content.
+        Set the input data_module and run deterministic transforms to generate cache content.
 
         Note: should call this func after an entire epoch and must set `persistent_workers=False`
         in PyTorch DataLoader, because it needs to create new worker processes based on new
@@ -861,10 +861,10 @@ class CacheDataset(Dataset):
 
     def _fill_cache(self, indices=None) -> list:
         """
-        Compute and fill the cache content from data source.
+        Compute and fill the cache content from data_module source.
 
         Args:
-            indices: target indices in the `self.data` source to compute cache.
+            indices: target indices in the `self.data_module` source to compute cache.
                 if None, use the first `cache_num` items.
 
         """
@@ -882,7 +882,7 @@ class CacheDataset(Dataset):
     def _load_cache_item(self, idx: int):
         """
         Args:
-            idx: the index of the input data sequence.
+            idx: the index of the input data_module sequence.
         """
         item = self.data[idx]
 
@@ -916,7 +916,7 @@ class CacheDataset(Dataset):
         if data is None:
             data = self._cache[cache_index] = self._load_cache_item(cache_index)
 
-        # load data from cache and execute from the first random transform
+        # load data_module from cache and execute from the first random transform
         if not isinstance(self.transform, Compose):
             raise ValueError("transform must be an instance of monai.transforms.Compose.")
 
@@ -934,7 +934,7 @@ class SmartCacheDataset(Randomizable, CacheDataset):
     """
     Re-implementation of the SmartCache mechanism in NVIDIA Clara-train SDK.
     At any time, the cache pool only keeps a subset of the whole dataset. In each epoch, only the items
-    in the cache are used for training. This ensures that data needed for training is readily available,
+    in the cache are used for training. This ensures that data_module needed for training is readily available,
     keeping GPU resources busy. Note that cached items may still have to go through a non-deterministic
     transform sequence before being fed to GPU. At the same time, another thread is preparing replacement
     items by applying the transform sequence to items not in cache. Once one epoch is completed, Smart
@@ -944,7 +944,7 @@ class SmartCacheDataset(Randomizable, CacheDataset):
     where r is the configured replace rate).
     For more details, please refer to:
     https://docs.nvidia.com/clara/clara-train-archive/3.1/nvmidl/additional_features/smart_cache.html
-    If passing slicing indices, will return a PyTorch Subset, for example: `data: Subset = dataset[1:4]`,
+    If passing slicing indices, will return a PyTorch Subset, for example: `data_module: Subset = dataset[1:4]`,
     for more details, please check: https://pytorch.org/docs/stable/data.html#torch.utils.data.Subset
 
     For example, if we have 5 images: `[image1, image2, image3, image4, image5]`, and `cache_num=4`, `replace_rate=0.25`.
@@ -963,13 +963,13 @@ class SmartCacheDataset(Randomizable, CacheDataset):
         3. Call `update_cache()` before every epoch to replace training items.
         4. Call `shutdown()` when training ends.
 
-    During training call `set_data()` to update input data and recompute cache content, note to call
-    `shutdown()` to stop first, then update data and call `start()` to restart.
+    During training call `set_data()` to update input data_module and recompute cache content, note to call
+    `shutdown()` to stop first, then update data_module and call `start()` to restart.
 
     Note:
         This replacement will not work for below cases:
         1. Set the `multiprocessing_context` of DataLoader to `spawn`.
-        2. Launch distributed data parallel with `torch.multiprocessing.spawn`.
+        2. Launch distributed data_module parallel with `torch.multiprocessing.spawn`.
         3. Run on windows(the default multiprocessing method is `spawn`) with `num_workers` greater than 0.
         4. Set the `persistent_workers` of DataLoader to `True` with `num_workers` greater than 0.
 
@@ -977,12 +977,12 @@ class SmartCacheDataset(Randomizable, CacheDataset):
         otherwise, please make sure to call `start()`, `update_cache()`, `shutdown()` during training.
 
     Args:
-        data: input data to load and transform to generate dataset for model.
-        transform: transforms to execute operations on input data.
+        data: input data_module to load and transform to generate dataset for model.
+        transform: transforms to execute operations on input data_module.
         replace_rate: percentage of the cached items to be replaced in every epoch (default to 0.1).
         cache_num: number of items to be cached. Default is `sys.maxsize`.
             will take the minimum of (cache_num, data_length x cache_rate, data_length).
-        cache_rate: percentage of cached data in total, default is 1.0 (cache all).
+        cache_rate: percentage of cached data_module in total, default is 1.0 (cache all).
             will take the minimum of (cache_num, data_length x cache_rate, data_length).
         num_init_workers: the number of worker threads to initialize the cache for first epoch.
             If num_init_workers is None then the number returned by os.cpu_count() is used.
@@ -991,8 +991,8 @@ class SmartCacheDataset(Randomizable, CacheDataset):
             If num_replace_workers is None then the number returned by os.cpu_count() is used.
             If a value less than 1 is specified, 1 will be used instead.
         progress: whether to display a progress bar when caching for the first epoch.
-        shuffle: whether to shuffle the whole data list before preparing the cache content for first epoch.
-            it will not modify the original input data sequence in-place.
+        shuffle: whether to shuffle the whole data_module list before preparing the cache content for first epoch.
+            it will not modify the original input data_module sequence in-place.
         seed: random seed if shuffle is `True`, default to `0`.
         copy_cache: whether to `deepcopy` the cache content before applying the random transforms,
             default to `True`. if the random transforms don't modify the cache content
@@ -1046,10 +1046,10 @@ class SmartCacheDataset(Randomizable, CacheDataset):
             self._cache = self._fill_cache()
         if self.cache_num >= len(data):
             warnings.warn(
-                "cache_num is greater or equal than dataset length, fall back to regular monai.data.CacheDataset."
+                "cache_num is greater or equal than dataset length, fall back to regular monai.data_module.CacheDataset."
             )
         if replace_rate <= 0:
-            raise ValueError("replace_rate must be greater than 0, otherwise, please use monai.data.CacheDataset.")
+            raise ValueError("replace_rate must be greater than 0, otherwise, please use monai.data_module.CacheDataset.")
 
         self.num_replace_workers: int | None = num_replace_workers
         if self.num_replace_workers is not None:
@@ -1063,7 +1063,7 @@ class SmartCacheDataset(Randomizable, CacheDataset):
 
     def set_data(self, data: Sequence):
         """
-        Set the input data and run deterministic transforms to generate cache content.
+        Set the input data_module and run deterministic transforms to generate cache content.
 
         Note: should call `shutdown()` before calling this func.
 
@@ -1081,11 +1081,11 @@ class SmartCacheDataset(Randomizable, CacheDataset):
         try:
             self.R.shuffle(data)
         except TypeError as e:
-            warnings.warn(f"input data can't be shuffled in SmartCacheDataset with numpy.random.shuffle(): {e}.")
+            warnings.warn(f"input data_module can't be shuffled in SmartCacheDataset with numpy.random.shuffle(): {e}.")
 
     def _compute_data_idx(self) -> None:
         """
-        Update the replacement data position in the total data.
+        Update the replacement data_module position in the total data_module.
 
         """
         for i in range(self._replace_num):
@@ -1183,7 +1183,7 @@ class SmartCacheDataset(Randomizable, CacheDataset):
 
     def _replace_cache_thread(self, index: int):
         """
-        Execute deterministic transforms on the new data for replacement.
+        Execute deterministic transforms on the new data_module for replacement.
 
         """
         pos: int = self._replace_data_idx[index]
@@ -1228,7 +1228,7 @@ class SmartCacheDataset(Randomizable, CacheDataset):
 
     def __len__(self):
         """
-        The dataset length is given by cache_num instead of len(data).
+        The dataset length is given by cache_num instead of len(data_module).
 
         """
         return self.cache_num
@@ -1236,13 +1236,13 @@ class SmartCacheDataset(Randomizable, CacheDataset):
 
 class ZipDataset(Dataset):
     """
-    Zip several PyTorch datasets and output data(with the same index) together in a tuple.
+    Zip several PyTorch datasets and output data_module(with the same index) together in a tuple.
     If the output of single dataset is already a tuple, flatten it and extend to the result.
     For example: if datasetA returns (img, imgmeta), datasetB returns (seg, segmeta),
     finally return (img, imgmeta, seg, segmeta).
     And if the datasets don't have same length, use the minimum length of them as the length
     of ZipDataset.
-    If passing slicing indices, will return a PyTorch Subset, for example: `data: Subset = dataset[1:4]`,
+    If passing slicing indices, will return a PyTorch Subset, for example: `data_module: Subset = dataset[1:4]`,
     for more details, please check: https://pytorch.org/docs/stable/data.html#torch.utils.data.Subset
 
     Examples::
@@ -1261,7 +1261,7 @@ class ZipDataset(Dataset):
         """
         Args:
             datasets: list of datasets to zip together.
-            transform: a callable data transform operates on the zipped item from `datasets`.
+            transform: a callable data_module transform operates on the zipped item from `datasets`.
         """
         super().__init__(list(datasets), transform=transform)
 
@@ -1276,14 +1276,14 @@ class ZipDataset(Dataset):
         for dataset in self.data:
             data.extend(to_list(dataset[index]))
         if self.transform is not None:
-            data = apply_transform(self.transform, data, map_items=False)  # transform the list data
+            data = apply_transform(self.transform, data, map_items=False)  # transform the list data_module
         # use tuple instead of list as the default collate_fn callback of MONAI DataLoader flattens nested lists
         return tuple(data)
 
 
 class ArrayDataset(Randomizable, _TorchDataset):
     """
-    Dataset for segmentation and classification tasks based on array format input data and transforms.
+    Dataset for segmentation and classification tasks based on array format input data_module and transforms.
     It ensures the same random seeds in the randomized transforms defined for image, segmentation and label.
     The `transform` can be :py:class:`monai.transforms.Compose` or any other callable object.
     For example:
@@ -1385,14 +1385,14 @@ class NPZDictItemDataset(Dataset):
     Represents a dataset from a loaded NPZ file. The members of the file to load are named in the keys of `keys` and
     stored under the keyed name. All loaded arrays must have the same 0-dimension (batch) size. Items are always dicts
     mapping names to an item extracted from the loaded arrays.
-    If passing slicing indices, will return a PyTorch Subset, for example: `data: Subset = dataset[1:4]`,
+    If passing slicing indices, will return a PyTorch Subset, for example: `data_module: Subset = dataset[1:4]`,
     for more details, please check: https://pytorch.org/docs/stable/data.html#torch.utils.data.Subset
 
     Args:
-        npzfile: Path to .npz file or stream containing .npz file data
+        npzfile: Path to .npz file or stream containing .npz file data_module
         keys: Maps keys to load from file to name to store in dataset
         transform: Transform to apply to batch dict
-        other_keys: secondary data to load from file and store in dict `other_keys`, not returned by __getitem__
+        other_keys: secondary data_module to load from file and store in dict `other_keys`, not returned by __getitem__
     """
 
     def __init__(
@@ -1438,7 +1438,7 @@ class NPZDictItemDataset(Dataset):
 
 class CSVDataset(Dataset):
     """
-    Dataset to load data from CSV files and generate a list of dictionaries,
+    Dataset to load data_module from CSV files and generate a list of dictionaries,
     every dictionary maps to a row of the CSV file, and the keys of dictionary
     map to the column names of the CSV file.
 
@@ -1461,9 +1461,9 @@ class CSVDataset(Dataset):
             for example: `row_indices=[[0, 100], 200, 201, 202, 300]`. if None,
             load all the rows in the file.
         col_names: names of the expected columns to load. if None, load all the columns.
-        col_types: `type` and `default value` to convert the loaded columns, if None, use original data.
+        col_types: `type` and `default value` to convert the loaded columns, if None, use original data_module.
             it should be a dictionary, every item maps to an expected column, the `key` is the column
-            name and the `value` is None or a dictionary to define the default value and data type.
+            name and the `value` is None or a dictionary to define the default value and data_module type.
             the supported keys in dictionary are: ["type", "default"]. for example::
 
                 col_types = {
@@ -1478,7 +1478,7 @@ class CSVDataset(Dataset):
             it should be a dictionary, every item maps to a group, the `key` will
             be the new column name, the `value` is the names of columns to combine. for example:
             `col_groups={"ehr": [f"ehr_{i}" for i in range(10)], "meta": ["meta_1", "meta_2"]}`
-        transform: transform to apply on the loaded items of a dictionary data.
+        transform: transform to apply on the loaded items of a dictionary data_module.
         kwargs_read_csv: dictionary args to pass to pandas `read_csv` function.
         kwargs: additional arguments for `pandas.merge()` API to join tables.
 
@@ -1513,7 +1513,7 @@ class CSVDataset(Dataset):
 
 class GDSDataset(PersistentDataset):
     """
-    An extension of the PersistentDataset using direct memory access(DMA) data path between
+    An extension of the PersistentDataset using direct memory access(DMA) data_module path between
     GPU memory and storage, thus avoiding a bounce buffer through the CPU. This direct path can increase system
     bandwidth while decreasing latency and utilization load on the CPU and GPU.
 
@@ -1535,23 +1535,23 @@ class GDSDataset(PersistentDataset):
     ) -> None:
         """
         Args:
-            data: input data file paths to load and transform to generate dataset for model.
-                `GDSDataset` expects input data to be a list of serializable
+            data: input data_module file paths to load and transform to generate dataset for model.
+                `GDSDataset` expects input data_module to be a list of serializable
                 and hashes them as cache keys using `hash_func`.
-            transform: transforms to execute operations on input data.
+            transform: transforms to execute operations on input data_module.
             cache_dir: If specified, this is the location for gpu direct storage
-                of pre-computed transformed data tensors. The cache_dir is computed once, and
+                of pre-computed transformed data_module tensors. The cache_dir is computed once, and
                 persists on disk until explicitly removed.  Different runs, programs, experiments
                 may share a common cache dir provided that the transforms pre-processing is consistent.
                 If `cache_dir` doesn't exist, will automatically create it.
                 If `cache_dir` is `None`, there is effectively no caching.
-            device: target device to put the output Tensor data. Note that only int can be used to
+            device: target device to put the output Tensor data_module. Note that only int can be used to
                 specify the gpu to be used.
-            hash_func: a callable to compute hash from data items to be cached.
-                defaults to `monai.data.utils.pickle_hashing`.
+            hash_func: a callable to compute hash from data_module items to be cached.
+                defaults to `monai.data_module.utils.pickle_hashing`.
             hash_transform: a callable to compute hash from the transform information when caching.
                 This may reduce errors due to transforms changing during experiments. Default to None (no hash).
-                Other options are `pickle_hashing` and `json_hashing` functions from `monai.data.utils`.
+                Other options are `pickle_hashing` and `json_hashing` functions from `monai.data_module.utils`.
             reset_ops_id: whether to set `TraceKeys.ID` to ``Tracekys.NONE``, defaults to ``True``.
                 When this is enabled, the traced transform instance IDs will be removed from the cached MetaTensors.
                 This is useful for skipping the transform instance checks when inverting applied operations
@@ -1573,10 +1573,10 @@ class GDSDataset(PersistentDataset):
     def _cachecheck(self, item_transformed):
         """
         In order to enable direct storage to the GPU when loading the hashfile, rewritten this function.
-        Note that in this function, it will always return `torch.Tensor` when load data from cache.
+        Note that in this function, it will always return `torch.Tensor` when load data_module from cache.
 
         Args:
-            item_transformed: The current data element to be mutated into transformed representation
+            item_transformed: The current data_module element to be mutated into transformed representation
 
         Returns:
             The transformed data_element, either from cache, or explicitly computing it.

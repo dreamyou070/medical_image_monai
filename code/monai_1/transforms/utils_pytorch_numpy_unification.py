@@ -97,11 +97,11 @@ def percentile(
     https://numpy.org/doc/stable/reference/generated/numpy.percentile.html.
 
     Args:
-        x: input data.
+        x: input data_module.
         q: percentile to compute (should in range 0 <= q <= 100).
         dim: the dim along which the percentiles are computed. default is to compute the percentile
             along a flattened version of the array.
-        keepdim: whether the output data has dim retained or not.
+        keepdim: whether the output data_module has dim retained or not.
         kwargs: if `x` is numpy array, additional args for `np.percentile`, more details:
             https://numpy.org/doc/stable/reference/generated/numpy.percentile.html.
 
@@ -146,7 +146,7 @@ def argwhere(a: NdarrayTensor) -> NdarrayTensor:
     """`np.argwhere` with equivalent implementation for torch.
 
     Args:
-        a: input data.
+        a: input data_module.
 
     Returns:
         Indices of elements that are non-zero. Indices are grouped by element.
@@ -308,7 +308,7 @@ def cumsum(a: NdarrayOrTensor, axis=None, **kwargs) -> NdarrayOrTensor:
     `np.cumsum` with equivalent implementation for torch.
 
     Args:
-        a: input data to compute cumsum.
+        a: input data_module to compute cumsum.
         axis: expected axis to compute cumsum.
         kwargs: if `a` is PyTorch Tensor, additional args for `torch.cumsum`, more details:
             https://pytorch.org/docs/stable/generated/torch.cumsum.html.
@@ -353,7 +353,7 @@ def repeat(a: NdarrayOrTensor, repeats: int, axis: int | None = None, **kwargs) 
     `np.repeat` with equivalent implementation for torch (`repeat_interleave`).
 
     Args:
-        a: input data to repeat.
+        a: input data_module to repeat.
         repeats: number of repetitions for each element, repeats is broadcast to fit the shape of the given axis.
         axis: axis along which to repeat values.
         kwargs: if `a` is PyTorch Tensor, additional args for `torch.repeat_interleave`, more details:

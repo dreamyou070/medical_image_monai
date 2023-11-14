@@ -36,7 +36,7 @@ def _apply_affine_to_points(points: torch.Tensor, affine: torch.Tensor, include_
         include_shift: default True, whether the function apply translation (shift) in the affine transform
 
     Returns:
-        transformed point coordinates, with same data type as ``points``, does not share memory with ``points``
+        transformed point coordinates, with same data_module type as ``points``, does not share memory with ``points``
     """
 
     spatial_dims = get_spatial_dims(points=points)
@@ -68,7 +68,7 @@ def apply_affine_to_boxes(boxes: NdarrayTensor, affine: NdarrayOrTensor) -> Ndar
         affine: affine matrix to be applied to the box coordinates, sized (spatial_dims+1,spatial_dims+1)
 
     Returns:
-        returned affine transformed boxes, with same data type as ``boxes``, does not share memory with ``boxes``
+        returned affine transformed boxes, with same data_module type as ``boxes``, does not share memory with ``boxes``
     """
 
     # convert numpy to tensor if needed
@@ -110,7 +110,7 @@ def zoom_boxes(boxes: NdarrayTensor, zoom: Sequence[float] | float) -> NdarrayTe
             If a sequence, zoom should contain one value for each spatial axis.
 
     Returns:
-        zoomed boxes, with same data type as ``boxes``, does not share memory with ``boxes``
+        zoomed boxes, with same data_module type as ``boxes``, does not share memory with ``boxes``
 
     Example:
         .. code-block:: python
@@ -138,7 +138,7 @@ def resize_boxes(
         dst_spatial_size: target image spatial size.
 
     Returns:
-        resized boxes, with same data type as ``boxes``, does not share memory with ``boxes``
+        resized boxes, with same data_module type as ``boxes``, does not share memory with ``boxes``
 
     Example:
         .. code-block:: python
@@ -174,7 +174,7 @@ def flip_boxes(
             specified in the tuple.
 
     Returns:
-        flipped boxes, with same data type as ``boxes``, does not share memory with ``boxes``
+        flipped boxes, with same data_module type as ``boxes``, does not share memory with ``boxes``
     """
     spatial_dims: int = get_spatial_dims(boxes=boxes)
     spatial_size = ensure_tuple_rep(spatial_size, spatial_dims)
@@ -211,7 +211,7 @@ def convert_box_to_mask(
 
             - If True, it assumes the object shape is close to ellipse or ellipsoid.
             - If False, it assumes the object shape is close to rectangle or cube and well occupies the bounding box.
-            - If the users are going to apply random rotation as data augmentation, we suggest setting ellipse_mask=True
+            - If the users are going to apply random rotation as data_module augmentation, we suggest setting ellipse_mask=True
               See also Kalra et al. "Towards Rotation Invariance in Object Detection", ICCV 2021.
 
     Return:

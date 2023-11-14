@@ -103,7 +103,7 @@ DEFAULT_POST_FIX = PostFix.meta()
 class Activationsd(MapTransform):
     """
     Dictionary-based wrapper of :py:class:`monai.transforms.AddActivations`.
-    Add activation layers to the input data specified by `keys`.
+    Add activation layers to the input data_module specified by `keys`.
     """
 
     backend = Activations.backend
@@ -168,13 +168,13 @@ class AsDiscreted(MapTransform):
         Args:
             keys: keys of the corresponding items to model output and label.
                 See also: :py:class:`monai.transforms.compose.MapTransform`
-            argmax: whether to execute argmax function on input data before transform.
+            argmax: whether to execute argmax function on input data_module before transform.
                 it also can be a sequence of bool, each element corresponds to a key in ``keys``.
-            to_onehot: if not None, convert input data into the one-hot format with specified number of classes.
+            to_onehot: if not None, convert input data_module into the one-hot format with specified number of classes.
                 defaults to ``None``. it also can be a sequence, each element corresponds to a key in ``keys``.
             threshold: if not None, threshold the float values to int number 0 or 1 with specified threshold value.
                 defaults to ``None``. it also can be a sequence, each element corresponds to a key in ``keys``.
-            rounding: if not None, round the data according to the specified option,
+            rounding: if not None, round the data_module according to the specified option,
                 available options: ["torchrounding"]. it also can be a sequence of str or None,
                 each element corresponds to a key in ``keys``.
             allow_missing_keys: don't raise exception if key is missing.
@@ -234,8 +234,8 @@ class KeepLargestConnectedComponentd(MapTransform):
             applied_labels: Labels for applying the connected component analysis on.
                 If given, voxels whose value is in this list will be analyzed.
                 If `None`, all non-zero values will be analyzed.
-            is_onehot: if `True`, treat the input data as OneHot format data, otherwise, not OneHot format data.
-                default to None, which treats multi-channel data as OneHot and single channel data as not OneHot.
+            is_onehot: if `True`, treat the input data_module as OneHot format data_module, otherwise, not OneHot format data_module.
+                default to None, which treats multi-channel data_module as OneHot and single channel data_module as not OneHot.
             independent: whether to treat ``applied_labels`` as a union of foreground labels.
                 If ``True``, the connected component analysis will be performed on each foreground label independently
                 and return the intersection of the largest components.
@@ -409,9 +409,9 @@ class Ensembled(MapTransform):
         """
         Args:
             keys: keys of the corresponding items to be stack and execute ensemble.
-                if only 1 key provided, suppose it's a PyTorch Tensor with data stacked on dimension `E`.
+                if only 1 key provided, suppose it's a PyTorch Tensor with data_module stacked on dimension `E`.
             output_key: the key to store ensemble result in the dictionary.
-            ensemble: callable method to execute ensemble on specified data.
+            ensemble: callable method to execute ensemble on specified data_module.
                 if only 1 key provided in `keys`, `output_key` can be None and use `keys` as default.
             allow_missing_keys: don't raise exception if key is missing.
 
@@ -458,17 +458,17 @@ class MeanEnsembled(Ensembled):
         """
         Args:
             keys: keys of the corresponding items to be stack and execute ensemble.
-                if only 1 key provided, suppose it's a PyTorch Tensor with data stacked on dimension `E`.
+                if only 1 key provided, suppose it's a PyTorch Tensor with data_module stacked on dimension `E`.
             output_key: the key to store ensemble result in the dictionary.
                 if only 1 key provided in `keys`, `output_key` can be None and use `keys` as default.
-            weights: can be a list or tuple of numbers for input data with shape: [E, C, H, W[, D]].
-                or a Numpy ndarray or a PyTorch Tensor data.
-                the `weights` will be added to input data from highest dimension, for example:
-                1. if the `weights` only has 1 dimension, it will be added to the `E` dimension of input data.
+            weights: can be a list or tuple of numbers for input data_module with shape: [E, C, H, W[, D]].
+                or a Numpy ndarray or a PyTorch Tensor data_module.
+                the `weights` will be added to input data_module from highest dimension, for example:
+                1. if the `weights` only has 1 dimension, it will be added to the `E` dimension of input data_module.
                 2. if the `weights` has 2 dimensions, it will be added to `E` and `C` dimensions.
                 it's a typical practice to add weights for different classes:
                 to ensemble 3 segmentation model outputs, every output has 4 channels(classes),
-                so the input data shape can be: [3, 4, H, W, D].
+                so the input data_module shape can be: [3, 4, H, W, D].
                 and add different `weights` for different classes, so the `weights` shape can be: [3, 4].
                 for example: `weights = [[1, 2, 3, 4], [4, 3, 2, 1], [1, 1, 1, 1]]`.
 
@@ -488,10 +488,10 @@ class VoteEnsembled(Ensembled):
         """
         Args:
             keys: keys of the corresponding items to be stack and execute ensemble.
-                if only 1 key provided, suppose it's a PyTorch Tensor with data stacked on dimension `E`.
+                if only 1 key provided, suppose it's a PyTorch Tensor with data_module stacked on dimension `E`.
             output_key: the key to store ensemble result in the dictionary.
                 if only 1 key provided in `keys`, `output_key` can be None and use `keys` as default.
-            num_classes: if the input is single channel data instead of One-Hot, we can't get class number
+            num_classes: if the input is single channel data_module instead of One-Hot, we can't get class number
                 from channel, need to explicitly specify the number of classes to vote.
 
         """
@@ -558,7 +558,7 @@ class Invertd(MapTransform):
     Utility transform to invert the previously applied transforms.
 
     Taking the ``transform`` previously applied on ``orig_keys``, this ``Invertd`` will apply the inverse of it
-    to the data stored at ``keys``.
+    to the data_module stored at ``keys``.
 
     ``Invertd``'s output will also include a copy of the metadata
     dictionary (originally from  ``orig_meta_keys`` or the metadata of ``orig_keys``),
@@ -572,13 +572,13 @@ class Invertd(MapTransform):
 
     Note:
 
-        - The output of the inverted data and metadata will be stored at ``keys`` and ``meta_keys`` respectively.
+        - The output of the inverted data_module and metadata will be stored at ``keys`` and ``meta_keys`` respectively.
         - To correctly invert the transforms, the information of the previously applied transforms should be
           available at ``{orig_keys}_transforms``, and the original metadata at ``orig_meta_keys``.
           (``meta_key_postfix`` is an optional string to conveniently construct "meta_keys" and/or "orig_meta_keys".)
           see also: :py:class:`monai.transforms.TraceableTransform`.
         - The transform will not change the content in ``orig_keys`` and ``orig_meta_key``.
-          These keys are only used to represent the data status of ``key`` before inverting.
+          These keys are only used to represent the data_module status of ``key`` before inverting.
 
     """
 
@@ -598,17 +598,17 @@ class Invertd(MapTransform):
     ) -> None:
         """
         Args:
-            keys: the key of expected data in the dict, the inverse of ``transforms`` will be applied on it in-place.
+            keys: the key of expected data_module in the dict, the inverse of ``transforms`` will be applied on it in-place.
                 It also can be a list of keys, will apply the inverse transform respectively.
             transform: the transform applied to ``orig_key``, its inverse will be applied on ``key``.
-            orig_keys: the key of the original input data in the dict. These keys default to `self.keys` if not set.
+            orig_keys: the key of the original input data_module in the dict. These keys default to `self.keys` if not set.
                 the transform trace information of ``transforms`` should be stored at ``{orig_keys}_transforms``.
                 It can also be a list of keys, each matches the ``keys``.
             meta_keys: The key to output the inverted metadata dictionary.
                 The metadata is a dictionary optionally containing: filename, original_shape.
                 It can be a sequence of strings, maps to ``keys``.
                 If None, will try to create a metadata dict with the default key: `{key}_{meta_key_postfix}`.
-            orig_meta_keys: the key of the metadata of original input data.
+            orig_meta_keys: the key of the metadata of original input data_module.
                 The metadata is a dictionary optionally containing: filename, original_shape.
                 It can be a sequence of strings, maps to the `keys`.
                 If None, will try to create a metadata dict with the default key: `{orig_key}_{meta_key_postfix}`.
@@ -617,19 +617,19 @@ class Invertd(MapTransform):
                 metadata from dict, if `meta_keys` is None, use `{key}_{meta_key_postfix}`. Default: ``"meta_dict"``.
             nearest_interp: whether to use `nearest` interpolation mode when inverting the spatial transforms,
                 default to `True`. If `False`, use the same interpolation mode as the original transform.
-                It also can be a list of bool, each matches to the `keys` data.
-            to_tensor: whether to convert the inverted data into PyTorch Tensor first, default to `True`.
-                It also can be a list of bool, each matches to the `keys` data.
+                It also can be a list of bool, each matches to the `keys` data_module.
+            to_tensor: whether to convert the inverted data_module into PyTorch Tensor first, default to `True`.
+                It also can be a list of bool, each matches to the `keys` data_module.
             device: if converted to Tensor, move the inverted results to target device before `post_func`,
-                default to None, it also can be a list of string or `torch.device`, each matches to the `keys` data.
-            post_func: post processing for the inverted data, should be a callable function.
-                It also can be a list of callable, each matches to the `keys` data.
+                default to None, it also can be a list of string or `torch.device`, each matches to the `keys` data_module.
+            post_func: post processing for the inverted data_module, should be a callable function.
+                It also can be a list of callable, each matches to the `keys` data_module.
             allow_missing_keys: don't raise exception if key is missing.
 
         """
         super().__init__(keys, allow_missing_keys)
         if not isinstance(transform, InvertibleTransform):
-            raise ValueError("transform is not invertible, can't invert transform for the data.")
+            raise ValueError("transform is not invertible, can't invert transform for the data_module.")
         self.transform = transform
         self.orig_keys = ensure_tuple_rep(orig_keys, len(self.keys)) if orig_keys is not None else self.keys
         self.meta_keys = ensure_tuple_rep(None, len(self.keys)) if meta_keys is None else ensure_tuple(meta_keys)
@@ -697,7 +697,7 @@ class Invertd(MapTransform):
             inputs.applied_operations = deepcopy(transform_info)
             inputs.meta = deepcopy(meta_info)
 
-            # construct the input dict data
+            # construct the input dict data_module
             input_dict = {orig_key: inputs}
             if config.USE_META_DICT:
                 input_dict[InvertibleTransform.trace_key(orig_key)] = transform_info
@@ -705,12 +705,12 @@ class Invertd(MapTransform):
             with allow_missing_keys_mode(self.transform):  # type: ignore
                 inverted = self.transform.inverse(input_dict)
 
-            # save the inverted data
+            # save the inverted data_module
             inverted_data = inverted[orig_key]
             if to_tensor and not isinstance(inverted_data, MetaTensor):
                 inverted_data = self._totensor(inverted_data)
             if isinstance(inverted_data, np.ndarray) and device is not None and torch.device(device).type != "cpu":
-                raise ValueError(f"Inverted data with type of 'numpy.ndarray' support device='cpu', got {device}.")
+                raise ValueError(f"Inverted data_module with type of 'numpy.ndarray' support device='cpu', got {device}.")
             if isinstance(inverted_data, torch.Tensor):
                 inverted_data = inverted_data.to(device=device)
             d[key] = post_func(inverted_data) if callable(post_func) else inverted_data
@@ -748,25 +748,25 @@ class SaveClassificationd(MapTransform):
             keys: keys of the corresponding items to model output, this transform only supports 1 key.
                 See also: :py:class:`monai.transforms.compose.MapTransform`
             meta_keys: explicitly indicate the key of the corresponding metadata dictionary.
-                for example, for data with key `image`, the metadata by default is in `image_meta_dict`.
+                for example, for data_module with key `image`, the metadata by default is in `image_meta_dict`.
                 the metadata is a dictionary object which contains: filename, original_shape, etc.
                 it can be a sequence of string, map to the `keys`.
                 if None, will try to construct meta_keys by `key_{meta_key_postfix}`.
                 will extract the filename of input image to save classification results.
             meta_key_postfix: `key_{postfix}` was used to store the metadata in `LoadImaged`.
                 so need the key to extract the metadata of input image, like filename, etc. default is `meta_dict`.
-                for example, for data with key `image`, the metadata by default is in `image_meta_dict`.
+                for example, for data_module with key `image`, the metadata by default is in `image_meta_dict`.
                 the metadata is a dictionary object which contains: filename, original_shape, etc.
                 this arg only works when `meta_keys=None`. if no corresponding metadata, set to `None`.
             saver: the saver instance to save classification results, if None, create a CSVSaver internally.
-                the saver must provide `save(data, meta_data)` and `finalize()` APIs.
+                the saver must provide `save(data_module, meta_data)` and `finalize()` APIs.
             output_dir: if `saver=None`, specify the directory to save the CSV file.
             filename: if `saver=None`, specify the name of the saved CSV file.
             delimiter: the delimiter character in the saved file, default to "," as the default output type is `csv`.
                 to be consistent with: https://docs.python.org/3/library/csv.html#csv.Dialect.delimiter.
             overwrite: if `saver=None`, indicate whether to overwriting existing CSV file content, if True,
                 will clear the file before saving. otherwise, will append new content to the CSV file.
-            flush: if `saver=None`, indicate whether to write the cache data to CSV file immediately
+            flush: if `saver=None`, indicate whether to write the cache data_module to CSV file immediately
                 in this transform and clear the cache. default to True.
                 If False, may need user to call `saver.finalize()` manually or use `ClassificationSaver` handler.
             allow_missing_keys: don't raise exception if key is missing.
@@ -816,7 +816,7 @@ class SobelGradientsd(MapTransform):
         padding_mode: the padding mode of the image when convolving with Sobel kernels. Defaults to `"reflect"`.
             Acceptable values are ``'zeros'``, ``'reflect'``, ``'replicate'`` or ``'circular'``.
             See ``torch.nn.Conv1d()`` for more information.
-        dtype: kernel data type (torch.dtype). Defaults to `torch.float32`.
+        dtype: kernel data_module type (torch.dtype). Defaults to `torch.float32`.
         new_key_prefix: this prefix be prepended to the key to create a new key for the output and keep the value of
             key intact. By default not prefix is set and the corresponding array to the key will be replaced.
         allow_missing_keys: don't raise exception if key is missing.
@@ -863,7 +863,7 @@ class DistanceTransformEDTd(MapTransform):
     """
     Applies the Euclidean distance transform on the input.
     Either GPU based with CuPy / cuCIM or CPU based with scipy.
-    To use the GPU implementation, make sure cuCIM is available and that the data is a `torch.tensor` on a GPU device.
+    To use the GPU implementation, make sure cuCIM is available and that the data_module is a `torch.tensor` on a GPU device.
 
     Note that the results of the libraries can differ, so stick to one if possible.
     For details, check out the `SciPy`_ and `cuCIM`_ documentation and / or :func:`monai.transforms.utils.distance_transform_edt`.

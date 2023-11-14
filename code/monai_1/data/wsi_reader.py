@@ -53,7 +53,7 @@ class BaseWSIReader(ImageReader):
         power_rtol: the acceptable relative tolerance for objective power.
         power_atol: the acceptable absolute tolerance for objective power.
         channel_dim: the desired dimension for color channel.
-        dtype: the data type of output image.
+        dtype: the data_module type of output image.
         device: target device to put the extracted patch. Note that if device is "cuda"",
             the output will be converted to torch tenor and sent to the gpu even if the dtype is numpy.
         mode: the output image color mode, e.g., "RGB" or "RGBA".
@@ -73,7 +73,7 @@ class BaseWSIReader(ImageReader):
         img_data, meta_data = image_reader.get_data(wsi)
 
     - The `read` call converts an image filename into whole slide image object,
-    - The `get_data` call fetches the image data, as well as metadata.
+    - The `get_data` call fetches the image data_module, as well as metadata.
 
     The following methods needs to be implemented for any concrete implementation of this class:
 
@@ -279,7 +279,7 @@ class BaseWSIReader(ImageReader):
             size: (height, width) tuple giving the patch size at the given level (`level`).
                 If None, it is set to the full image size at the given level.
             level: the level number.
-            dtype: the data type of output image.
+            dtype: the data_module type of output image.
             mode: the output image mode, 'RGB' or 'RGBA'.
 
         """
@@ -338,7 +338,7 @@ class BaseWSIReader(ImageReader):
             level: the whole slide image level at which the patches are extracted.
             mpp: the resolution in micron per pixel at which the patches are extracted.
             power: the objective power at which the patches are extracted.
-            dtype: the data type of output image.
+            dtype: the data_module type of output image.
             mode: the output image mode, 'RGB' or 'RGBA'.
 
         Returns:
@@ -458,7 +458,7 @@ class WSIReader(BaseWSIReader):
         power_rtol: the acceptable relative tolerance for objective power.
         power_atol: the acceptable absolute tolerance for objective power.
         channel_dim: the desired dimension for color channel. Default to 0 (channel first).
-        dtype: the data type of output image. Defaults to `np.uint8`.
+        dtype: the data_module type of output image. Defaults to `np.uint8`.
         device: target device to put the extracted patch. Note that if device is "cuda"",
             the output will be converted to torch tenor and sent to the gpu even if the dtype is numpy.
         mode: the output image color mode, "RGB" or "RGBA". Defaults to "RGB".
@@ -626,7 +626,7 @@ class WSIReader(BaseWSIReader):
             size: (height, width) tuple giving the patch size at the given level (`level`).
                 If None, it is set to the full image size at the given level.
             level: the level number.
-            dtype: the data type of output image
+            dtype: the data_module type of output image
             mode: the output image mode, 'RGB' or 'RGBA'.
 
         """
@@ -661,7 +661,7 @@ class CuCIMWSIReader(BaseWSIReader):
         power_rtol: the acceptable relative tolerance for objective power.
         power_atol: the acceptable absolute tolerance for objective power.
         channel_dim: the desired dimension for color channel. Default to 0 (channel first).
-        dtype: the data type of output image. Defaults to `np.uint8`.
+        dtype: the data_module type of output image. Defaults to `np.uint8`.
         device: target device to put the extracted patch. Note that if device is "cuda"",
             the output will be converted to torch tenor and sent to the gpu even if the dtype is numpy.
         mode: the output image color mode, "RGB" or "RGBA". Defaults to "RGB".
@@ -801,7 +801,7 @@ class CuCIMWSIReader(BaseWSIReader):
             size: (height, width) tuple giving the patch size at the given level (`level`).
                 If None, it is set to the full image size at the given level.
             level: the level number.
-            dtype: the data type of output image.
+            dtype: the data_module type of output image.
             mode: the output image mode, 'RGB' or 'RGBA'.
 
         """
@@ -843,7 +843,7 @@ class OpenSlideWSIReader(BaseWSIReader):
         power_rtol: the acceptable relative tolerance for objective power.
         power_atol: the acceptable absolute tolerance for objective power.
         channel_dim: the desired dimension for color channel. Default to 0 (channel first).
-        dtype: the data type of output image. Defaults to `np.uint8`.
+        dtype: the data_module type of output image. Defaults to `np.uint8`.
         device: target device to put the extracted patch. Note that if device is "cuda"",
             the output will be converted to torch tenor and sent to the gpu even if the dtype is numpy.
         mode: the output image color mode, "RGB" or "RGBA". Defaults to "RGB".
@@ -991,7 +991,7 @@ class OpenSlideWSIReader(BaseWSIReader):
             size: (height, width) tuple giving the patch size at the given level (`level`).
                 If None, it is set to the full image size at the given level.
             level: the level number.
-            dtype: the data type of output image.
+            dtype: the data_module type of output image.
             mode: the output image mode, 'RGB' or 'RGBA'.
 
         """
@@ -1022,7 +1022,7 @@ class TiffFileWSIReader(BaseWSIReader):
         mpp_rtol: the acceptable relative tolerance for resolution in micro per pixel.
         mpp_atol: the acceptable absolute tolerance for resolution in micro per pixel.
         channel_dim: the desired dimension for color channel. Default to 0 (channel first).
-        dtype: the data type of output image. Defaults to `np.uint8`.
+        dtype: the data_module type of output image. Defaults to `np.uint8`.
         device: target device to put the extracted patch. Note that if device is "cuda"",
             the output will be converted to torch tenor and sent to the gpu even if the dtype is numpy.
         mode: the output image color mode, "RGB" or "RGBA". Defaults to "RGB".
@@ -1159,7 +1159,7 @@ class TiffFileWSIReader(BaseWSIReader):
             size: (height, width) tuple giving the patch size at the given level (`level`).
                 If None, it is set to the full image size at the given level.
             level: the level number.
-            dtype: the data type of output image.
+            dtype: the data_module type of output image.
             mode: the output image mode, 'RGB' or 'RGBA'.
 
         """

@@ -39,7 +39,7 @@ class MetricsSaver:
             "*" - save all the existing metrics in `engine.state.metrics` dict into separate files.
             list of strings - specify the expected metrics to save.
             default to "*" to save all the metrics into `metrics.csv`.
-        metric_details: expected metric details to save into files, the data comes from
+        metric_details: expected metric details to save into files, the data_module comes from
             `engine.state.metric_details`, which should be provided by different `Metrics`,
             typically, it's some intermediate values in metric computation.
             for example: mean dice of every channel of every image in the validation dataset.

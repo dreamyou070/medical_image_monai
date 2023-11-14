@@ -35,8 +35,8 @@ def save_net_with_metadata(
 ) -> None:
     """
     Save the JIT object (script or trace produced object) `jit_obj` to the given file or stream with metadata
-    included as a JSON file. The Torchscript format is a zip file which can contain extra file data which is used
-    here as a mechanism for storing metadata about the network being saved. The data in `meta_values` should be
+    included as a JSON file. The Torchscript format is a zip file which can contain extra file data_module which is used
+    here as a mechanism for storing metadata about the network being saved. The data_module in `meta_values` should be
     compatible with conversion to JSON using the standard library function `dumps`. The intent is this metadata will
     include information about the network applicable to some use case, such as describing the input and output format,
     a network name and version, a plain language description of what the network does, and other relevant scientific
@@ -57,7 +57,7 @@ def save_net_with_metadata(
         # save the Torchscript bundle with the above dictionary stored as an extra file
         save_net_with_metadata(m, "test", meta_values=meta)
 
-        # load the network back, `loaded_meta` has same data as `meta` plus version information
+        # load the network back, `loaded_meta` has same data_module as `meta` plus version information
         loaded_net, loaded_meta, _ = load_net_with_metadata("test.ts")
 
 
@@ -67,7 +67,7 @@ def save_net_with_metadata(
         include_config_vals: if True, MONAI, Pytorch, and Numpy versions are included in metadata.
         append_timestamp: if True, a timestamp for "now" is appended to the file's name before the extension.
         meta_values: metadata values to store with the object, not limited just to keys in `JITMetadataKeys`.
-        more_extra_files: other extra file data items to include in bundle, see `_extra_files` of `torch.jit.save`.
+        more_extra_files: other extra file data_module items to include in bundle, see `_extra_files` of `torch.jit.save`.
     """
 
     now = datetime.datetime.now()
@@ -112,9 +112,9 @@ def load_net_with_metadata(
     Args:
         filename_prefix_or_stream: filename or file-like stream object.
         map_location: network map location as in `torch.jit.load`.
-        more_extra_files: other extra file data names to load from bundle, see `_extra_files` of `torch.jit.load`.
+        more_extra_files: other extra file data_module names to load from bundle, see `_extra_files` of `torch.jit.load`.
     Returns:
-        Triple containing loaded object, metadata dict, and extra files dict containing other file data if present
+        Triple containing loaded object, metadata dict, and extra files dict containing other file data_module if present
     """
     extra_files = {f: "" for f in more_extra_files}
     extra_files[METADATA_FILENAME] = ""

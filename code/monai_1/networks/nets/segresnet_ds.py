@@ -130,7 +130,7 @@ class SegResEncoder(nn.Module):
     <https://arxiv.org/pdf/1810.11654.pdf>`_.
 
     Args:
-        spatial_dims: spatial dimension of the input data. Defaults to 3.
+        spatial_dims: spatial dimension of the input data_module. Defaults to 3.
         init_filters: number of output channels for initial convolution layer. Defaults to 32.
         in_channels: number of input channels for the network. Defaults to 1.
         out_channels: number of output channels for the network. Defaults to 2.
@@ -239,7 +239,7 @@ class SegResNetDS(nn.Module):
     improvements including deep supervision and non-isotropic kernel support.
 
     Args:
-        spatial_dims: spatial dimension of the input data. Defaults to 3.
+        spatial_dims: spatial dimension of the input data_module. Defaults to 3.
         init_filters: number of output channels for initial convolution layer. Defaults to 32.
         in_channels: number of input channels for the network. Defaults to 1.
         out_channels: number of output channels for the network. Defaults to 2.

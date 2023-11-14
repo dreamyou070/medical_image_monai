@@ -108,15 +108,15 @@ class StandardizeEmptyBoxd(MapTransform, InvertibleTransform):
     Example:
         .. code-block:: python
 
-            data = {"boxes": torch.ones(0,), "image": torch.ones(1, 128, 128, 128)}
+            data_module = {"boxes": torch.ones(0,), "image": torch.ones(1, 128, 128, 128)}
             box_converter = StandardizeEmptyBoxd(box_keys=["boxes"], box_ref_image_keys="image")
-            box_converter(data)
+            box_converter(data_module)
     """
 
     def __init__(self, box_keys: KeysCollection, box_ref_image_keys: str, allow_missing_keys: bool = False) -> None:
         """
         Args:
-            box_keys: Keys to pick data for transformation.
+            box_keys: Keys to pick data_module for transformation.
             box_ref_image_keys: The single key that represents the reference image to which ``box_keys`` are attached.
             allow_missing_keys: don't raise exception if key is missing.
 
@@ -152,10 +152,10 @@ class ConvertBoxModed(MapTransform, InvertibleTransform):
     Example:
         .. code-block:: python
 
-            data = {"boxes": torch.ones(10,4)}
+            data_module = {"boxes": torch.ones(10,4)}
             # convert boxes with format [xmin, ymin, xmax, ymax] to [xcenter, ycenter, xsize, ysize].
             box_converter = ConvertBoxModed(box_keys=["boxes"], src_mode="xyxy", dst_mode="ccwh")
-            box_converter(data)
+            box_converter(data_module)
     """
 
     def __init__(
@@ -167,7 +167,7 @@ class ConvertBoxModed(MapTransform, InvertibleTransform):
     ) -> None:
         """
         Args:
-            box_keys: Keys to pick data for transformation.
+            box_keys: Keys to pick data_module for transformation.
             src_mode: source box mode. If it is not given, this func will assume it is ``StandardMode()``.
                 It follows the same format with ``src_mode`` in :class:`~monai.apps.detection.transforms.array.ConvertBoxMode` .
             dst_mode: target box mode. If it is not given, this func will assume it is ``StandardMode()``.
@@ -210,10 +210,10 @@ class ConvertBoxToStandardModed(MapTransform, InvertibleTransform):
     Example:
         .. code-block:: python
 
-            data = {"boxes": torch.ones(10,6)}
+            data_module = {"boxes": torch.ones(10,6)}
             # convert boxes with format [xmin, xmax, ymin, ymax, zmin, zmax] to [xmin, ymin, zmin, xmax, ymax, zmax]
             box_converter = ConvertBoxToStandardModed(box_keys=["boxes"], mode="xxyyzz")
-            box_converter(data)
+            box_converter(data_module)
     """
 
     def __init__(
@@ -224,7 +224,7 @@ class ConvertBoxToStandardModed(MapTransform, InvertibleTransform):
     ) -> None:
         """
         Args:
-            box_keys: Keys to pick data for transformation.
+            box_keys: Keys to pick data_module for transformation.
             mode: source box mode. If it is not given, this func will assume it is ``StandardMode()``.
                 It follows the same format with ``src_mode`` in :class:`~monai.apps.detection.transforms.array.ConvertBoxMode` .
             allow_missing_keys: don't raise exception if key is missing.
@@ -259,17 +259,17 @@ class AffineBoxToImageCoordinated(MapTransform, InvertibleTransform):
     Dictionary-based transform that converts box in world coordinate to image coordinate.
 
     Args:
-        box_keys: Keys to pick box data for transformation. The box mode is assumed to be ``StandardMode``.
+        box_keys: Keys to pick box data_module for transformation. The box mode is assumed to be ``StandardMode``.
         box_ref_image_keys: The single key that represents the reference image to which ``box_keys`` are attached.
         remove_empty: whether to remove the boxes that are actually empty
         allow_missing_keys: don't raise exception if key is missing.
         image_meta_key: explicitly indicate the key of the corresponding metadata dictionary.
-            for example, for data with key `image`, the metadata by default is in `image_meta_dict`.
+            for example, for data_module with key `image`, the metadata by default is in `image_meta_dict`.
             the metadata is a dictionary object which contains: filename, affine, original_shape, etc.
             it is a string, map to the `box_ref_image_key`.
             if None, will try to construct meta_keys by `box_ref_image_key_{meta_key_postfix}`.
         image_meta_key_postfix: if image_meta_keys=None, use `box_ref_image_key_{postfix}` to fetch the metadata according
-            to the key data, default is `meta_dict`, the metadata is a dictionary object.
+            to the key data_module, default is `meta_dict`, the metadata is a dictionary object.
             For example, to handle key `image`,  read/write affine matrices from the
             metadata `image_meta_dict` dictionary's `affine` field.
         affine_lps_to_ras: default ``False``. Yet if 1) the image is read by ITKReader,
@@ -351,17 +351,17 @@ class AffineBoxToWorldCoordinated(AffineBoxToImageCoordinated):
     Dictionary-based transform that converts box in image coordinate to world coordinate.
 
     Args:
-        box_keys: Keys to pick box data for transformation. The box mode is assumed to be ``StandardMode``.
+        box_keys: Keys to pick box data_module for transformation. The box mode is assumed to be ``StandardMode``.
         box_ref_image_keys: The single key that represents the reference image to which ``box_keys`` are attached.
         remove_empty: whether to remove the boxes that are actually empty
         allow_missing_keys: don't raise exception if key is missing.
         image_meta_key: explicitly indicate the key of the corresponding metadata dictionary.
-            for example, for data with key `image`, the metadata by default is in `image_meta_dict`.
+            for example, for data_module with key `image`, the metadata by default is in `image_meta_dict`.
             the metadata is a dictionary object which contains: filename, affine, original_shape, etc.
             it is a string, map to the `box_ref_image_key`.
             if None, will try to construct meta_keys by `box_ref_image_key_{meta_key_postfix}`.
         image_meta_key_postfix: if image_meta_keys=None, use `box_ref_image_key_{postfix}` to fetch the metadata according
-            to the key data, default is `meta_dict`, the metadata is a dictionary object.
+            to the key data_module, default is `meta_dict`, the metadata is a dictionary object.
             For example, to handle key `image`,  read/write affine matrices from the
             metadata `image_meta_dict` dictionary's `affine` field.
         affine_lps_to_ras: default ``False``. Yet if 1) the image is read by ITKReader,
@@ -399,8 +399,8 @@ class ZoomBoxd(MapTransform, InvertibleTransform):
     Dictionary-based transform that zooms input boxes and images with the given zoom scale.
 
     Args:
-        image_keys: Keys to pick image data for transformation.
-        box_keys: Keys to pick box data for transformation. The box mode is assumed to be ``StandardMode``.
+        image_keys: Keys to pick image data_module for transformation.
+        box_keys: Keys to pick box data_module for transformation. The box mode is assumed to be ``StandardMode``.
         box_ref_image_keys: Keys that represent the reference images to which ``box_keys`` are attached.
         zoom: The zoom factor along the spatial axes.
             If a float, zoom is the same for each spatial axis.
@@ -413,7 +413,7 @@ class ZoomBoxd(MapTransform, InvertibleTransform):
             ``"mean"``, ``"median"``, ``"minimum"``, ``"reflect"``, ``"symmetric"``, ``"wrap"``, ``"empty"``}
             available modes for PyTorch Tensor: {``"constant"``, ``"reflect"``, ``"replicate"``, ``"circular"``}.
             One of the listed string values or a user supplied function. Defaults to ``"constant"``.
-            The mode to pad data after zooming.
+            The mode to pad data_module after zooming.
             See also: https://numpy.org/doc/1.18/reference/generated/numpy.pad.html
             https://pytorch.org/docs/stable/generated/torch.nn.functional.pad.html
         align_corners: This only has an effect when mode is
@@ -502,20 +502,20 @@ class RandZoomBoxd(RandomizableTransform, MapTransform, InvertibleTransform):
     Dictionary-based transform that randomly zooms input boxes and images with given probability within given zoom range.
 
     Args:
-        image_keys: Keys to pick image data for transformation.
-        box_keys: Keys to pick box data for transformation. The box mode is assumed to be ``StandardMode``.
+        image_keys: Keys to pick image data_module for transformation.
+        box_keys: Keys to pick box data_module for transformation. The box mode is assumed to be ``StandardMode``.
         box_ref_image_keys: Keys that represent the reference images to which ``box_keys`` are attached.
         prob: Probability of zooming.
         min_zoom: Min zoom factor. Can be float or sequence same size as image.
             If a float, select a random factor from `[min_zoom, max_zoom]` then apply to all spatial dims
             to keep the original spatial shape ratio.
             If a sequence, min_zoom should contain one value for each spatial axis.
-            If 2 values provided for 3D data, use the first value for both H & W dims to keep the same zoom ratio.
+            If 2 values provided for 3D data_module, use the first value for both H & W dims to keep the same zoom ratio.
         max_zoom: Max zoom factor. Can be float or sequence same size as image.
             If a float, select a random factor from `[min_zoom, max_zoom]` then apply to all spatial dims
             to keep the original spatial shape ratio.
             If a sequence, max_zoom should contain one value for each spatial axis.
-            If 2 values provided for 3D data, use the first value for both H & W dims to keep the same zoom ratio.
+            If 2 values provided for 3D data_module, use the first value for both H & W dims to keep the same zoom ratio.
         mode: {``"nearest"``, ``"nearest-exact"``, ``"linear"``, ``"bilinear"``, ``"bicubic"``, ``"trilinear"``, ``"area"``}
             The interpolation mode. Defaults to ``"area"``.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
@@ -524,7 +524,7 @@ class RandZoomBoxd(RandomizableTransform, MapTransform, InvertibleTransform):
             ``"mean"``, ``"median"``, ``"minimum"``, ``"reflect"``, ``"symmetric"``, ``"wrap"``, ``"empty"``}
             available modes for PyTorch Tensor: {``"constant"``, ``"reflect"``, ``"replicate"``, ``"circular"``}.
             One of the listed string values or a user supplied function. Defaults to ``"constant"``.
-            The mode to pad data after zooming.
+            The mode to pad data_module after zooming.
             See also: https://numpy.org/doc/1.18/reference/generated/numpy.pad.html
             https://pytorch.org/docs/stable/generated/torch.nn.functional.pad.html
         align_corners: This only has an effect when mode is
@@ -645,8 +645,8 @@ class FlipBoxd(MapTransform, InvertibleTransform):
     Dictionary-based transform that flip boxes and images.
 
     Args:
-        image_keys: Keys to pick image data for transformation.
-        box_keys: Keys to pick box data for transformation. The box mode is assumed to be ``StandardMode``.
+        image_keys: Keys to pick image data_module for transformation.
+        box_keys: Keys to pick box data_module for transformation. The box mode is assumed to be ``StandardMode``.
         box_ref_image_keys: Keys that represent the reference images to which ``box_keys`` are attached.
         spatial_axis: Spatial axes along which to flip over. Default is None.
         allow_missing_keys: don't raise exception if key is missing.
@@ -707,8 +707,8 @@ class RandFlipBoxd(RandomizableTransform, MapTransform, InvertibleTransform):
     Dictionary-based transform that randomly flip boxes and images with the given probabilities.
 
     Args:
-        image_keys: Keys to pick image data for transformation.
-        box_keys: Keys to pick box data for transformation. The box mode is assumed to be ``StandardMode``.
+        image_keys: Keys to pick image data_module for transformation.
+        box_keys: Keys to pick box data_module for transformation. The box mode is assumed to be ``StandardMode``.
         box_ref_image_keys: Keys that represent the reference images to which ``box_keys`` are attached.
         prob: Probability of flipping.
         spatial_axis: Spatial axes along which to flip over. Default is None.
@@ -790,7 +790,7 @@ class ClipBoxToImaged(MapTransform):
     There might be multiple keys of labels/scores associated with one key of boxes.
 
     Args:
-        box_keys: The single key to pick box data for transformation. The box mode is assumed to be ``StandardMode``.
+        box_keys: The single key to pick box data_module for transformation. The box mode is assumed to be ``StandardMode``.
         label_keys: Keys that represent the labels corresponding to the ``box_keys``. Multiple keys are allowed.
         box_ref_image_keys: The single key that represents the reference image
             to which ``box_keys`` and ``label_keys`` are attached.
@@ -859,7 +859,7 @@ class BoxToMaskd(MapTransform):
         3) use ``MaskToBoxd`` to convert box_masks back to boxes and labels.
 
     Args:
-        box_keys: Keys to pick box data for transformation. The box mode is assumed to be ``StandardMode``.
+        box_keys: Keys to pick box data_module for transformation. The box mode is assumed to be ``StandardMode``.
         box_mask_keys: Keys to store output box mask results for transformation. Same length with ``box_keys``.
         label_keys: Keys that represent the labels corresponding to the ``box_keys``. Same length with ``box_keys``.
         box_ref_image_keys: Keys that represent the reference images to which ``box_keys`` are attached.
@@ -868,7 +868,7 @@ class BoxToMaskd(MapTransform):
 
             - If True, it assumes the object shape is close to ellipse or ellipsoid.
             - If False, it assumes the object shape is close to rectangle or cube and well occupies the bounding box.
-            - If the users are going to apply random rotation as data augmentation, we suggest setting ellipse_mask=True
+            - If the users are going to apply random rotation as data_module augmentation, we suggest setting ellipse_mask=True
               See also Kalra et al. "Towards Rotation Invariance in Object Detection", ICCV 2021.
         allow_missing_keys: don't raise exception if key is missing.
 
@@ -947,7 +947,7 @@ class MaskToBoxd(MapTransform):
         3) use ``MaskToBoxd`` to convert box_masks back to boxes and labels.
 
     Args:
-        box_keys: Keys to pick box data for transformation. The box mode is assumed to be ``StandardMode``.
+        box_keys: Keys to pick box data_module for transformation. The box mode is assumed to be ``StandardMode``.
         box_mask_keys: Keys to store output box mask results for transformation. Same length with ``box_keys``.
         label_keys: Keys that represent the labels corresponding to the ``box_keys``. Same length with ``box_keys``.
         min_fg_label: min foreground box label.
@@ -1015,21 +1015,21 @@ class RandCropBoxByPosNegLabeld(Randomizable, MapTransform):
     """
     Crop random fixed sized regions that contains foreground boxes.
     Suppose all the expected fields specified by `image_keys` have same shape,
-    and add `patch_index` to the corresponding meta data.
+    and add `patch_index` to the corresponding meta data_module.
     And will return a list of dictionaries for all the cropped images.
     If a dimension of the expected spatial size is bigger than the input image size,
     will not crop that dimension. So the cropped result may be smaller than the expected size,
     and the cropped results of several images may not have exactly the same shape.
 
     Args:
-        image_keys: Keys to pick image data for transformation. They need to have the same spatial size.
-        box_keys: The single key to pick box data for transformation. The box mode is assumed to be ``StandardMode``.
+        image_keys: Keys to pick image data_module for transformation. They need to have the same spatial size.
+        box_keys: The single key to pick box data_module for transformation. The box mode is assumed to be ``StandardMode``.
         label_keys: Keys that represent the labels corresponding to the ``box_keys``. Multiple keys are allowed.
         spatial_size: the spatial size of the crop region e.g. [224, 224, 128].
             if a dimension of ROI size is bigger than image size, will not crop that dimension of the image.
-            if its components have non-positive values, the corresponding size of `data[label_key]` will be used.
-            for example: if the spatial size of input data is [40, 40, 40] and `spatial_size=[32, 64, -1]`,
-            the spatial size of output data will be [32, 40, 40].
+            if its components have non-positive values, the corresponding size of `data_module[label_key]` will be used.
+            for example: if the spatial size of input data_module is [40, 40, 40] and `spatial_size=[32, 64, -1]`,
+            the spatial size of output data_module will be [32, 40, 40].
         pos: used with `neg` together to calculate the ratio ``pos / (pos + neg)`` for the probability
             to pick a foreground voxel as a center rather than a background voxel.
         neg: used with `pos` together to calculate the ratio ``pos / (pos + neg)`` for the probability
@@ -1051,12 +1051,12 @@ class RandCropBoxByPosNegLabeld(Randomizable, MapTransform):
             a typical usage is to call `FgBgToIndicesd` transform first and cache the results.
         meta_keys: explicitly indicate the key of the corresponding metadata dictionary.
             used to add `patch_index` to the meta dict.
-            for example, for data with key `image`, the metadata by default is in `image_meta_dict`.
+            for example, for data_module with key `image`, the metadata by default is in `image_meta_dict`.
             the metadata is a dictionary object which contains: filename, original_shape, etc.
             it can be a sequence of string, map to the `keys`.
             if None, will try to construct meta_keys by `key_{meta_key_postfix}`.
         meta_key_postfix: if meta_keys is None, use `key_{postfix}` to fetch the metadata according
-            to the key data, default is `meta_dict`, the metadata is a dictionary object.
+            to the key data_module, default is `meta_dict`, the metadata is a dictionary object.
             used to add `patch_index` to the meta dict.
         allow_smaller: if `False`, an exception will be raised if the image is smaller than
             the requested ROI in any dimension. If `True`, any smaller dimensions will be set to
@@ -1229,8 +1229,8 @@ class RotateBox90d(MapTransform, InvertibleTransform):
     in the plane specified by ``spatial_axes`` for ``k`` times
 
     Args:
-        image_keys: Keys to pick image data for transformation.
-        box_keys: Keys to pick box data for transformation. The box mode is assumed to be ``StandardMode``.
+        image_keys: Keys to pick image data_module for transformation.
+        box_keys: Keys to pick box data_module for transformation. The box mode is assumed to be ``StandardMode``.
         box_ref_image_keys: Keys that represent the reference images to which ``box_keys`` are attached.
         k: number of times to rotate by 90 degrees.
         spatial_axes: 2 int numbers, defines the plane to rotate with 2 spatial axes.
@@ -1297,8 +1297,8 @@ class RandRotateBox90d(RandomizableTransform, MapTransform, InvertibleTransform)
     in the plane specified by `spatial_axes`.
 
     Args:
-        image_keys: Keys to pick image data for transformation.
-        box_keys: Keys to pick box data for transformation. The box mode is assumed to be ``StandardMode``.
+        image_keys: Keys to pick image data_module for transformation.
+        box_keys: Keys to pick box data_module for transformation. The box mode is assumed to be ``StandardMode``.
         box_ref_image_keys: Keys that represent the reference images to which ``box_keys`` are attached.
         prob: probability of rotating.
             (Default 0.1, with 10% probability it returns a rotated array.)

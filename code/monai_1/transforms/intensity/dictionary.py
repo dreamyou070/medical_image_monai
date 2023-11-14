@@ -181,7 +181,7 @@ class RandGaussianNoised(RandomizableTransform, MapTransform):
         prob: Probability to add Gaussian noise.
         mean: Mean or “centre” of the distribution.
         std: Standard deviation (spread) of distribution.
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
         allow_missing_keys: don't raise exception if key is missing.
     """
 
@@ -249,7 +249,7 @@ class RandRicianNoised(RandomizableTransform, MapTransform):
             histogram.
         sample_std: If True, sample the spread of the Gaussian distributions
             uniformly from 0 to std.
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
         allow_missing_keys: Don't raise exception if key is missing.
     """
 
@@ -328,12 +328,12 @@ class ShiftIntensityd(MapTransform):
                 it also can be a sequence of strings, map to `keys`.
             meta_keys: explicitly indicate the key of the corresponding metadata dictionary.
                 used to extract the factor value is `factor_key` is not None.
-                for example, for data with key `image`, the metadata by default is in `image_meta_dict`.
+                for example, for data_module with key `image`, the metadata by default is in `image_meta_dict`.
                 the metadata is a dictionary object which contains: filename, original_shape, etc.
                 it can be a sequence of string, map to the `keys`.
                 if None, will try to construct meta_keys by `key_{meta_key_postfix}`.
             meta_key_postfix: if meta_keys is None, use `key_{postfix}` to fetch the metadata according
-                to the key data, default is `meta_dict`, the metadata is a dictionary object.
+                to the key data_module, default is `meta_dict`, the metadata is a dictionary object.
                 used to extract the factor value is `factor_key` is not None.
             allow_missing_keys: don't raise exception if key is missing.
         """
@@ -391,12 +391,12 @@ class RandShiftIntensityd(RandomizableTransform, MapTransform):
                 it also can be a sequence of strings, map to `keys`.
             meta_keys: explicitly indicate the key of the corresponding metadata dictionary.
                 used to extract the factor value is `factor_key` is not None.
-                for example, for data with key `image`, the metadata by default is in `image_meta_dict`.
+                for example, for data_module with key `image`, the metadata by default is in `image_meta_dict`.
                 the metadata is a dictionary object which contains: filename, original_shape, etc.
                 it can be a sequence of string, map to the `keys`.
                 if None, will try to construct meta_keys by `key_{meta_key_postfix}`.
             meta_key_postfix: if meta_keys is None, use `key_{postfix}` to fetch the metadata according
-                to the key data, default is `meta_dict`, the metadata is a dictionary object.
+                to the key data_module, default is `meta_dict`, the metadata is a dictionary object.
                 used to extract the factor value is `factor_key` is not None.
             prob: probability of shift.
                 (Default 0.1, with 10% probability it returns an array shifted intensity.)
@@ -471,7 +471,7 @@ class StdShiftIntensityd(MapTransform):
             nonzero: whether only count non-zero values.
             channel_wise: if True, calculate on each channel separately. Please ensure
                 that the first dimension represents the channel of the image if True.
-            dtype: output data type, if None, same as input image. defaults to float32.
+            dtype: output data_module type, if None, same as input image. defaults to float32.
             allow_missing_keys: don't raise exception if key is missing.
         """
         super().__init__(keys, allow_missing_keys)
@@ -510,7 +510,7 @@ class RandStdShiftIntensityd(RandomizableTransform, MapTransform):
             prob: probability of std shift.
             nonzero: whether only count non-zero values.
             channel_wise: if True, calculate on each channel separately.
-            dtype: output data type, if None, same as input image. defaults to float32.
+            dtype: output data_module type, if None, same as input image. defaults to float32.
             allow_missing_keys: don't raise exception if key is missing.
         """
         MapTransform.__init__(self, keys, allow_missing_keys)
@@ -564,13 +564,13 @@ class ScaleIntensityd(MapTransform):
         Args:
             keys: keys of the corresponding items to be transformed.
                 See also: :py:class:`monai.transforms.compose.MapTransform`
-            minv: minimum value of output data.
-            maxv: maximum value of output data.
+            minv: minimum value of output data_module.
+            maxv: maximum value of output data_module.
             factor: factor scale by ``v = v * (1 + factor)``. In order to use
                 this parameter, please set both `minv` and `maxv` into None.
             channel_wise: if True, scale on each channel separately. Please ensure
                 that the first dimension represents the channel of the image if True.
-            dtype: output data type, if None, same as input image. defaults to float32.
+            dtype: output data_module type, if None, same as input image. defaults to float32.
             allow_missing_keys: don't raise exception if key is missing.
 
         """
@@ -610,7 +610,7 @@ class RandScaleIntensityd(RandomizableTransform, MapTransform):
                 (Default 0.1, with 10% probability it returns a scaled array.)
             channel_wise: if True, scale on each channel separately. Please ensure
                 that the first dimension represents the channel of the image if True.
-            dtype: output data type, if None, same as input image. defaults to float32.
+            dtype: output data_module type, if None, same as input image. defaults to float32.
             allow_missing_keys: don't raise exception if key is missing.
 
         """
@@ -678,7 +678,7 @@ class RandScaleIntensityFixedMeand(RandomizableTransform, MapTransform):
             channel_wise: if True, scale on each channel separately. `preserve_range` and `fixed_mean` are also applied
             on each channel separately if `channel_wise` is True. Please ensure that the first dimension represents the
             channel of the image if True.
-            dtype: output data type, if None, same as input image. defaults to float32.
+            dtype: output data_module type, if None, same as input image. defaults to float32.
             allow_missing_keys: don't raise exception if key is missing.
 
         """
@@ -735,7 +735,7 @@ class RandBiasFieldd(RandomizableTransform, MapTransform):
             degree: degree of freedom of the polynomials. The value should be no less than 1.
                 Defaults to 3.
             coeff_range: range of the random coefficients. Defaults to (0.0, 0.1).
-            dtype: output data type, if None, same as input image. defaults to float32.
+            dtype: output data_module type, if None, same as input image. defaults to float32.
             prob: probability to do random bias field.
             allow_missing_keys: don't raise exception if key is missing.
 
@@ -786,7 +786,7 @@ class NormalizeIntensityd(MapTransform):
         nonzero: whether only normalize non-zero values.
         channel_wise: if True, calculate on each channel separately, otherwise, calculate on
             the entire image directly. default to False.
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
         allow_missing_keys: don't raise exception if key is missing.
     """
 
@@ -857,7 +857,7 @@ class ScaleIntensityRanged(MapTransform):
         b_min: intensity target range min.
         b_max: intensity target range max.
         clip: whether to perform clip after scaling.
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
         allow_missing_keys: don't raise exception if key is missing.
     """
 
@@ -1009,7 +1009,7 @@ class ScaleIntensityRangePercentilesd(MapTransform):
         relative: whether to scale to the corresponding percentiles of [b_min, b_max]
         channel_wise: if True, compute intensity percentile and normalize every channel separately.
             default to False.
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
         allow_missing_keys: don't raise exception if key is missing.
     """
 
@@ -1045,13 +1045,13 @@ class MaskIntensityd(MapTransform):
     Args:
         keys: keys of the corresponding items to be transformed.
             See also: :py:class:`monai.transforms.compose.MapTransform`
-        mask_data: if mask data is single channel, apply to every channel
+        mask_data: if mask data_module is single channel, apply to every channel
             of input image. if multiple channels, the channel number must
-            match input data. the intensity values of input image corresponding
-            to the selected values in the mask data will keep the original value,
-            others will be set to `0`. if None, will extract the mask data from
-            input data based on `mask_key`.
-        mask_key: the key to extract mask data from input dictionary, only works
+            match input data_module. the intensity values of input image corresponding
+            to the selected values in the mask data_module will keep the original value,
+            others will be set to `0`. if None, will extract the mask data_module from
+            input data_module based on `mask_key`.
+        mask_key: the key to extract mask data_module from input dictionary, only works
             when `mask_data` is None.
         select_fn: function to select valid values of the `mask_data`, default is
             to select `values > 0`.
@@ -1124,7 +1124,7 @@ class MedianSmoothd(MapTransform):
     Args:
         keys: keys of the corresponding items to be transformed.
             See also: :py:class:`monai.transforms.compose.MapTransform`
-        radius: if a list of values, must match the count of spatial dimensions of input data,
+        radius: if a list of values, must match the count of spatial dimensions of input data_module,
             and apply every value in the list to 1 spatial dimension. if only 1 value provided,
             use it for all spatial dimensions.
         allow_missing_keys: don't raise exception if key is missing.
@@ -1151,7 +1151,7 @@ class GaussianSmoothd(MapTransform):
     Args:
         keys: keys of the corresponding items to be transformed.
             See also: :py:class:`monai.transforms.compose.MapTransform`
-        sigma: if a list of values, must match the count of spatial dimensions of input data,
+        sigma: if a list of values, must match the count of spatial dimensions of input data_module,
             and apply every value in the list to 1 spatial dimension. if only 1 value provided,
             use it for all spatial dimensions.
         approx: discrete Gaussian kernel type, available options are "erf", "sampled", and "scalespace".
@@ -1244,10 +1244,10 @@ class GaussianSharpend(MapTransform):
         keys: keys of the corresponding items to be transformed.
             See also: :py:class:`monai.transforms.compose.MapTransform`
         sigma1: sigma parameter for the first gaussian kernel. if a list of values, must match the count
-            of spatial dimensions of input data, and apply every value in the list to 1 spatial dimension.
+            of spatial dimensions of input data_module, and apply every value in the list to 1 spatial dimension.
             if only 1 value provided, use it for all spatial dimensions.
         sigma2: sigma parameter for the second gaussian kernel. if a list of values, must match the count
-            of spatial dimensions of input data, and apply every value in the list to 1 spatial dimension.
+            of spatial dimensions of input data_module, and apply every value in the list to 1 spatial dimension.
             if only 1 value provided, use it for all spatial dimensions.
         alpha: weight parameter to compute the final result.
         approx: discrete Gaussian kernel type, available options are "erf", "sampled", and "scalespace".
@@ -1411,14 +1411,14 @@ class RandGibbsNoised(RandomizableTransform, MapTransform):
     randomly applies Gibbs noise to 2D/3D MRI images. Gibbs artifacts
     are one of the common type of type artifacts appearing in MRI scans.
 
-    The transform is applied to all the channels in the data.
+    The transform is applied to all the channels in the data_module.
 
     For general information on Gibbs artifacts, please refer to:
     https://pubs.rsna.org/doi/full/10.1148/rg.313105115
     https://pubs.rsna.org/doi/full/10.1148/radiographics.22.4.g02jl14949
 
     Args:
-        keys: 'image', 'label', or ['image', 'label'] depending on which data
+        keys: 'image', 'label', or ['image', 'label'] depending on which data_module
                 you need to transform.
         prob (float): probability of applying the transform.
         alpha (float, List[float]): Parametrizes the intensity of the Gibbs noise filter applied. Takes
@@ -1473,7 +1473,7 @@ class GibbsNoised(MapTransform):
     https://pubs.rsna.org/doi/full/10.1148/radiographics.22.4.g02jl14949
 
     Args:
-        keys: 'image', 'label', or ['image', 'label'] depending on which data
+        keys: 'image', 'label', or ['image', 'label'] depending on which data_module
                 you need to transform.
         alpha (float): Parametrizes the intensity of the Gibbs noise filter applied. Takes
             values in the interval [0,1] with alpha = 0 acting as the identity mapping.
@@ -1498,7 +1498,7 @@ class KSpaceSpikeNoised(MapTransform):
     Dictionary-based wrapper of :py:class:`monai.transforms.KSpaceSpikeNoise`.
 
     Applies localized spikes in `k`-space at the given locations and intensities.
-    Spike (Herringbone) artifact is a type of data acquisition artifact which
+    Spike (Herringbone) artifact is a type of data_module acquisition artifact which
     may occur during MRI scans.
 
     For general information on spike artifacts, please refer to:
@@ -1511,7 +1511,7 @@ class KSpaceSpikeNoised(MapTransform):
 
     Args:
         keys: "image", "label", or ["image", "label"] depending
-             on which data you need to transform.
+             on which data_module you need to transform.
         loc: spatial location for the spikes. For
             images with 3D spatial dimensions, the user can provide (C, X, Y, Z)
             to fix which channel C is affected, or (X, Y, Z) to place the same
@@ -1522,12 +1522,12 @@ class KSpaceSpikeNoised(MapTransform):
             channel is not specified, then this argument should receive a float. If
             ``loc`` is given a sequence of locations, then this argument should
             receive a sequence of intensities. This value should be tested as it is
-            data-dependent. The default values are the 2.5 the mean of the
+            data_module-dependent. The default values are the 2.5 the mean of the
             log-intensity for each channel.
         allow_missing_keys: do not raise exception if key is missing.
 
     Example:
-        When working with 4D data,
+        When working with 4D data_module,
         ``KSpaceSpikeNoised("image", loc = ((3,60,64,32), (64,60,32)), k_intensity = (13,14))``
         will place a spike at `[3, 60, 64, 32]` with `log-intensity = 13`, and
         one spike per channel located respectively at `[: , 64, 60, 32]`
@@ -1562,7 +1562,7 @@ class RandKSpaceSpikeNoised(RandomizableTransform, MapTransform):
     """
     Dictionary-based version of :py:class:`monai.transforms.RandKSpaceSpikeNoise`.
 
-    Naturalistic data augmentation via spike artifacts. The transform applies
+    Naturalistic data_module augmentation via spike artifacts. The transform applies
     localized spikes in `k`-space.
 
     For general information on spike artifacts, please refer to:
@@ -1575,7 +1575,7 @@ class RandKSpaceSpikeNoised(RandomizableTransform, MapTransform):
 
     Args:
         keys: "image", "label", or ["image", "label"] depending
-             on which data you need to transform.
+             on which data_module you need to transform.
         prob: probability to add spike artifact to each item in the
             dictionary provided it is realized that the noise will be applied
             to the dictionary.
@@ -1632,7 +1632,7 @@ class RandKSpaceSpikeNoised(RandomizableTransform, MapTransform):
 class RandCoarseDropoutd(RandomizableTransform, MapTransform):
     """
     Dictionary-based wrapper of :py:class:`monai.transforms.RandCoarseDropout`.
-    Expect all the data specified by `keys` have same spatial shape and will randomly dropout the same regions
+    Expect all the data_module specified by `keys` have same spatial shape and will randomly dropout the same regions
     for every key, if want to dropout differently for every key, please use this transform separately.
 
     Args:
@@ -1719,7 +1719,7 @@ class RandCoarseDropoutd(RandomizableTransform, MapTransform):
 class RandCoarseShuffled(RandomizableTransform, MapTransform):
     """
     Dictionary-based wrapper of :py:class:`monai.transforms.RandCoarseShuffle`.
-    Expect all the data specified by `keys` have same spatial shape and will randomly dropout the same regions
+    Expect all the data_module specified by `keys` have same spatial shape and will randomly dropout the same regions
     for every key, if want to shuffle different regions for every key, please use this transform separately.
 
     Args:
@@ -1804,7 +1804,7 @@ class HistogramNormalized(MapTransform):
             only points at which `mask==True` are used for the equalization.
             can also provide the mask by `mask_key` at runtime.
         mask_key: if mask is None, will try to get the mask with `mask_key`.
-        dtype: output data type, if None, same as input image. defaults to float32.
+        dtype: output data_module type, if None, same as input image. defaults to float32.
         allow_missing_keys: do not raise exception if key is missing.
 
     """

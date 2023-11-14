@@ -91,7 +91,7 @@ class MonaiAlgoStats(ClientAlgoStats):
         config_train_filename: bundle training config path relative to bundle_root. Can be a list of files;
             defaults to "configs/train.json". only useful when `workflow` is None.
         config_filters_filename: filter configuration file. Can be a list of files; defaults to `None`.
-        data_stats_transform_list: transforms to apply for the data stats result.
+        data_stats_transform_list: transforms to apply for the data_module stats result.
         histogram_only: whether to only compute histograms. Defaults to False.
         workflow: the bundle workflow to execute, usually it's training, evaluation or inference.
             if None, will create an `ConfigWorkflow` internally based on `config_train_filename`.
@@ -168,7 +168,7 @@ class MonaiAlgoStats(ClientAlgoStats):
 
     def get_data_stats(self, extra: dict | None = None) -> ExchangeObject:
         """
-        Returns summary statistics about the local data.
+        Returns summary statistics about the local data_module.
 
         Args:
             extra: Dict with additional information that can be provided by the FL system.
@@ -196,7 +196,7 @@ class MonaiAlgoStats(ClientAlgoStats):
 
             stats_dict = {}
 
-            # train data stats
+            # train data_module stats
             train_summary_stats, train_case_stats = self._get_data_key_stats(
                 data=self.workflow.train_dataset_data,  # type: ignore
                 data_key=self.train_data_key,
@@ -208,7 +208,7 @@ class MonaiAlgoStats(ClientAlgoStats):
                 # Only return summary statistics to FL server
                 stats_dict.update({self.train_data_key: train_summary_stats})
 
-            # eval data stats
+            # eval data_module stats
             eval_summary_stats = None
             eval_case_stats = None
             if self.workflow.val_dataset_data is not None:  # type: ignore
@@ -233,7 +233,7 @@ class MonaiAlgoStats(ClientAlgoStats):
                 )
                 stats_dict.update({FlStatistics.TOTAL_DATA: total_summary_stats})
 
-            # optional filter of data stats
+            # optional filter of data_module stats
             stats = ExchangeObject(statistics=stats_dict)
             if self.post_statistics_filters is not None:
                 for _filter in self.post_statistics_filters:
@@ -253,7 +253,7 @@ class MonaiAlgoStats(ClientAlgoStats):
             histogram_only=self.histogram_only,
         )
 
-        self.logger.info(f"{self.client_name} compute data statistics on {data_key}...")
+        self.logger.info(f"{self.client_name} compute data_module statistics on {data_key}...")
         all_stats = analyzer.get_all_case_stats(transform_list=self.data_stats_transform_list, key=data_key)
 
         case_stats = all_stats[DataStatsKeys.BY_CASE]
@@ -330,7 +330,7 @@ class MonaiAlgo(ClientAlgo, MonaiAlgoStats):
         save_dict_key: If a model checkpoint contains several state dicts,
             the one defined by `save_dict_key` will be returned by `get_weights`; defaults to "model".
             If all state dicts should be returned, set `save_dict_key` to None.
-        data_stats_transform_list: transforms to apply for the data stats result.
+        data_stats_transform_list: transforms to apply for the data_module stats result.
         eval_workflow_name: the workflow name corresponding to the "config_evaluate_filename", default to "train"
             as the default "config_evaluate_filename" overrides the train workflow config.
             this arg is only useful when `eval_workflow` is None.
@@ -502,7 +502,7 @@ class MonaiAlgo(ClientAlgo, MonaiAlgoStats):
 
     def train(self, data: ExchangeObject, extra: dict | None = None) -> None:
         """
-        Train on client's local data.
+        Train on client's local data_module.
 
         Args:
             data: `ExchangeObject` containing the current global model weights.
@@ -514,7 +514,7 @@ class MonaiAlgo(ClientAlgo, MonaiAlgoStats):
         if extra is None:
             extra = {}
         if not isinstance(data, ExchangeObject):
-            raise ValueError(f"expected data to be ExchangeObject but received {type(data)}")
+            raise ValueError(f"expected data_module to be ExchangeObject but received {type(data)}")
 
         if self.trainer is None:
             raise ValueError("self.trainer should not be None.")
@@ -589,7 +589,7 @@ class MonaiAlgo(ClientAlgo, MonaiAlgoStats):
                     weights[k] = weights[k].cpu()
                 weigh_type = WeightType.WEIGHTS
                 stats = self.trainer.get_stats()
-                # calculate current iteration and epoch data after training.
+                # calculate current iteration and epoch data_module after training.
                 stats[FlStatistics.NUM_EXECUTED_ITERATIONS] = self.trainer.state.iteration - self.iter_of_start_time
                 # compute weight differences
                 if self.send_weight_diff:
@@ -621,7 +621,7 @@ class MonaiAlgo(ClientAlgo, MonaiAlgoStats):
 
     def evaluate(self, data: ExchangeObject, extra: dict | None = None) -> ExchangeObject:
         """
-        Evaluate on client's local data.
+        Evaluate on client's local data_module.
 
         Args:
             data: `ExchangeObject` containing the current global model weights.
@@ -636,7 +636,7 @@ class MonaiAlgo(ClientAlgo, MonaiAlgoStats):
         if extra is None:
             extra = {}
         if not isinstance(data, ExchangeObject):
-            raise ValueError(f"expected data to be ExchangeObject but received {type(data)}")
+            raise ValueError(f"expected data_module to be ExchangeObject but received {type(data)}")
 
         if self.evaluator is None:
             raise ValueError("self.evaluator should not be None.")

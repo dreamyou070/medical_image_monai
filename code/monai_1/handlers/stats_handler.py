@@ -82,12 +82,12 @@ class StatsHandler:
         """
 
         Args:
-            iteration_log: whether to log data when iteration completed, default to `True`. ``iteration_log`` can
+            iteration_log: whether to log data_module when iteration completed, default to `True`. ``iteration_log`` can
                 be also a function and it will be interpreted as an event filter
                 (see https://pytorch.org/ignite/generated/ignite.engine.events.Events.html for details).
                 Event filter function accepts as input engine and event value (iteration) and should return True/False.
                 Event filtering can be helpful to customize iteration logging frequency.
-            epoch_log: whether to log data when epoch completed, default to `True`. ``epoch_log`` can be
+            epoch_log: whether to log data_module when epoch completed, default to `True`. ``epoch_log`` can be
                 also a function and it will be interpreted as an event filter. See ``iteration_log`` argument for more
                 details.
             epoch_print_logger: customized callable printer for epoch level logging.
@@ -240,7 +240,7 @@ class StatsHandler:
 
     def _default_iteration_print(self, engine: Engine) -> None:
         """
-        Execute iteration log operation based on Ignite `engine.state.output` data.
+        Execute iteration log operation based on Ignite `engine.state.output` data_module.
         Print the values from `self.output_transform(engine.state.output)`.
         Since `engine.state.output` is a decollated list and we replicated the loss value for every item
         of the decollated list, the default behavior is to print the loss from `output[0]`.

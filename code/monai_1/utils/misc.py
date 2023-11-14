@@ -147,7 +147,7 @@ def ensure_tuple(vals: Any, wrap_array: bool = False) -> tuple:
     Returns a tuple of `vals`.
 
     Args:
-        vals: input data to convert to a tuple.
+        vals: input data_module to convert to a tuple.
         wrap_array: if `True`, treat the input numerical array (ndarray/tensor) as one item of the tuple.
             if `False`, try to convert the array with `tuple(vals)`, default to `False`.
 
@@ -247,7 +247,7 @@ def fall_back_tuple(
     as the fallback.
 
     Typically used when `user_provided` is a tuple of window size provided by the user,
-    `default` is defined by data, this function returns an updated `user_provided` with its non-positive
+    `default` is defined by data_module, this function returns an updated `user_provided` with its non-positive
     components replaced by the corresponding components from `default`.
 
     Args:
@@ -335,9 +335,9 @@ def set_determinism(
 
         This function will not affect the randomizable objects in :py:class:`monai.transforms.Randomizable`, which
         have independent random states. For those objects, the ``set_random_state()`` method should be used to
-        ensure the deterministic behavior (alternatively, :py:class:`monai.data.DataLoader` by default sets the seeds
-        according to the global random state, please see also: :py:class:`monai.data.utils.worker_init_fn` and
-        :py:class:`monai.data.utils.set_rnd`).
+        ensure the deterministic behavior (alternatively, :py:class:`monai.data_module.DataLoader` by default sets the seeds
+        according to the global random state, please see also: :py:class:`monai.data_module.utils.worker_init_fn` and
+        :py:class:`monai.data_module.utils.set_rnd`).
     """
     if seed is None:
         # cast to 32 bit seed for CUDA
@@ -418,7 +418,7 @@ def copy_to_device(
         obj: object or tuple/list/dictionary of objects to move to ``device``.
         device: move ``obj`` to this device. Can be a string (e.g., ``cpu``, ``cuda``,
             ``cuda:0``, etc.) or of type ``torch.device``.
-        non_blocking: when `True`, moves data to device asynchronously if
+        non_blocking: when `True`, moves data_module to device asynchronously if
             possible, e.g., moving CPU Tensors with pinned memory to CUDA devices.
         verbose: when `True`, will print a warning for any elements of incompatible type
             not copied to ``device``.
@@ -589,11 +589,11 @@ def sample_slices(data: NdarrayOrTensor, dim: int = 1, as_indices: bool = True, 
     """sample several slices of input numpy array or Tensor on specified `dim`.
 
     Args:
-        data: input data to sample slices, can be numpy array or PyTorch Tensor.
+        data: input data_module to sample slices, can be numpy array or PyTorch Tensor.
         dim: expected dimension index to sample slices, default to `1`.
         as_indices: if `True`, `slicevals` arg will be treated as the expected indices of slice, like: `1, 3, 5`
-            means `data[..., [1, 3, 5], ...]`, if `False`, `slicevals` arg will be treated as args for `slice` func,
-            like: `1, None` means `data[..., [1:], ...]`, `1, 5` means `data[..., [1: 5], ...]`.
+            means `data_module[..., [1, 3, 5], ...]`, if `False`, `slicevals` arg will be treated as args for `slice` func,
+            like: `1, None` means `data_module[..., [1:], ...]`, `1, 5` means `data_module[..., [1: 5], ...]`.
         slicevals: indices of slices or start and end indices of expected slices, depends on `as_indices` flag.
 
     """
@@ -636,7 +636,7 @@ def save_obj(
     so that files are guaranteed to not be damaged if exception occurs.
 
     Args:
-        obj: input object data to save.
+        obj: input object data_module to save.
         path: target file path to save the input object.
         create_dir: whether to create dictionary of the path if not existing, default to `True`.
         atomic: if `True`, state is serialized to a temporary file first, then move to final destination.

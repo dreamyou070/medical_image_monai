@@ -111,7 +111,7 @@ def grid_pull(
             Defaults to `'linear'`.
         bound (BoundType, or list[BoundType], optional): Boundary conditions.
             Defaults to `'zero'`.
-        extrapolate: Extrapolate out-of-bound data.
+        extrapolate: Extrapolate out-of-bound data_module.
             Defaults to `True`.
 
     Returns:
@@ -212,7 +212,7 @@ def grid_push(
             Defaults to `'linear'`.
         bound (BoundType, or list[BoundType], optional): Boundary conditions.
             Defaults to `'zero'`.
-        extrapolate: Extrapolate out-of-bound data.
+        extrapolate: Extrapolate out-of-bound data_module.
             Defaults to `True`.
 
     Returns:
@@ -311,7 +311,7 @@ def grid_count(grid: torch.Tensor, shape=None, interpolation="linear", bound="ze
             Defaults to `'linear'`.
         bound (BoundType, or list[BoundType], optional): Boundary conditions.
             Defaults to `'zero'`.
-        extrapolate (bool, optional): Extrapolate out-of-bound data.
+        extrapolate (bool, optional): Extrapolate out-of-bound data_module.
             Defaults to `True`.
 
     Returns:
@@ -413,7 +413,7 @@ def grid_grad(input: torch.Tensor, grid: torch.Tensor, interpolation="linear", b
             Defaults to `'linear'`.
         bound (BoundType, or list[BoundType], optional): Boundary conditions.
             Defaults to `'zero'`.
-        extrapolate: Extrapolate out-of-bound data. Defaults to `True`.
+        extrapolate: Extrapolate out-of-bound data_module. Defaults to `True`.
 
     Returns:
         output (torch.Tensor): Sampled gradients (B, C, Wo, Ho, Do, 1|2|3).
@@ -538,7 +538,7 @@ class AffineTransform(nn.Module):
         if tuple(theta.shape[1:]) not in ((3, 3), (4, 4)):
             raise ValueError(f"theta must be Nx3x3 or Nx4x4, got {theta.shape}.")
         if not torch.is_floating_point(theta):
-            raise ValueError(f"theta must be floating point data, got {theta.dtype}")
+            raise ValueError(f"theta must be floating point data_module, got {theta.dtype}")
 
         # validate `src`
         if not isinstance(src, torch.Tensor):

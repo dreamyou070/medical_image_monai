@@ -162,8 +162,8 @@ class AnchorGenerator(nn.Module):
                 anchor width and height w:h = 1:aspect_ratios[j].
                 For 3D images, it is a Sequence of 2 value Sequence aspect_ratios[j,0] and aspect_ratios[j,1],
                 anchor width, height, and depth w:h:d = 1:aspect_ratios[j,0]:aspect_ratios[j,1]
-            dtype: target data type of the output Tensor.
-            device: target device to put the output Tensor data.
+            dtype: target data_module type of the output Tensor.
+            device: target device to put the output Tensor data_module.
 
             Returns:
                 For each s in scales, returns [s, s*aspect_ratios[j]] for 2D images,
@@ -394,8 +394,8 @@ class AnchorGeneratorWithAnchorShape(AnchorGenerator):
         Args:
             anchor_shapes: [w, h] or [w, h, d], sized (N, spatial_dims),
                 represents N anchor shapes for the current feature map.
-            dtype: target data type of the output Tensor.
-            device: target device to put the output Tensor data.
+            dtype: target data_module type of the output Tensor.
+            device: target device to put the output Tensor data_module.
 
         Returns:
             For 2D images, returns [-w/2, -h/2, w/2, h/2];

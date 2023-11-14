@@ -69,9 +69,9 @@ TrainProperties = {
         BundlePropertyConfig.ID: f"train{ID_SEP_KEY}inferer",
     },
     "train_dataset_data": {
-        BundleProperty.DESC: "data source for the training dataset.",
+        BundleProperty.DESC: "data_module source for the training dataset.",
         BundleProperty.REQUIRED: False,
-        BundlePropertyConfig.ID: f"train{ID_SEP_KEY}dataset{ID_SEP_KEY}data",
+        BundlePropertyConfig.ID: f"train{ID_SEP_KEY}dataset{ID_SEP_KEY}data_module",
         BundlePropertyConfig.REF_ID: None,  # no reference to this ID
     },
     "train_handlers": {
@@ -81,19 +81,19 @@ TrainProperties = {
         BundlePropertyConfig.REF_ID: f"train{ID_SEP_KEY}trainer{ID_SEP_KEY}train_handlers",
     },
     "train_preprocessing": {
-        BundleProperty.DESC: "preprocessing for the training input data.",
+        BundleProperty.DESC: "preprocessing for the training input data_module.",
         BundleProperty.REQUIRED: False,
         BundlePropertyConfig.ID: f"train{ID_SEP_KEY}preprocessing",
         BundlePropertyConfig.REF_ID: f"train{ID_SEP_KEY}dataset{ID_SEP_KEY}transform",
     },
     "train_postprocessing": {
-        BundleProperty.DESC: "postprocessing for the training model output data.",
+        BundleProperty.DESC: "postprocessing for the training model output data_module.",
         BundleProperty.REQUIRED: False,
         BundlePropertyConfig.ID: f"train{ID_SEP_KEY}postprocessing",
         BundlePropertyConfig.REF_ID: f"train{ID_SEP_KEY}trainer{ID_SEP_KEY}postprocessing",
     },
     "train_key_metric": {
-        BundleProperty.DESC: "key metric to compute on the training data.",
+        BundleProperty.DESC: "key metric to compute on the training data_module.",
         BundleProperty.REQUIRED: False,
         BundlePropertyConfig.ID: f"train{ID_SEP_KEY}key_metric",
         BundlePropertyConfig.REF_ID: f"train{ID_SEP_KEY}trainer{ID_SEP_KEY}key_train_metric",
@@ -123,9 +123,9 @@ TrainProperties = {
         BundlePropertyConfig.REF_ID: f"validate{ID_SEP_KEY}dataloader{ID_SEP_KEY}dataset",
     },
     "val_dataset_data": {
-        BundleProperty.DESC: "data source for the validation dataset.",
+        BundleProperty.DESC: "data_module source for the validation dataset.",
         BundleProperty.REQUIRED: False,
-        BundlePropertyConfig.ID: f"validate{ID_SEP_KEY}dataset{ID_SEP_KEY}data",
+        BundlePropertyConfig.ID: f"validate{ID_SEP_KEY}dataset{ID_SEP_KEY}data_module",
         BundlePropertyConfig.REF_ID: None,  # no reference to this ID
     },
     "val_inferer": {
@@ -135,19 +135,19 @@ TrainProperties = {
         BundlePropertyConfig.REF_ID: f"validate{ID_SEP_KEY}evaluator{ID_SEP_KEY}inferer",
     },
     "val_preprocessing": {
-        BundleProperty.DESC: "preprocessing for the validation input data.",
+        BundleProperty.DESC: "preprocessing for the validation input data_module.",
         BundleProperty.REQUIRED: False,
         BundlePropertyConfig.ID: f"validate{ID_SEP_KEY}preprocessing",
         BundlePropertyConfig.REF_ID: f"validate{ID_SEP_KEY}dataset{ID_SEP_KEY}transform",
     },
     "val_postprocessing": {
-        BundleProperty.DESC: "postprocessing for the validation model output data.",
+        BundleProperty.DESC: "postprocessing for the validation model output data_module.",
         BundleProperty.REQUIRED: False,
         BundlePropertyConfig.ID: f"validate{ID_SEP_KEY}postprocessing",
         BundlePropertyConfig.REF_ID: f"validate{ID_SEP_KEY}evaluator{ID_SEP_KEY}postprocessing",
     },
     "val_key_metric": {
-        BundleProperty.DESC: "key metric to compute on the validation data.",
+        BundleProperty.DESC: "key metric to compute on the validation data_module.",
         BundleProperty.REQUIRED: False,
         BundlePropertyConfig.ID: f"validate{ID_SEP_KEY}key_metric",
         BundlePropertyConfig.REF_ID: f"validate{ID_SEP_KEY}evaluator{ID_SEP_KEY}key_val_metric",
@@ -191,9 +191,9 @@ InferProperties = {
         BundlePropertyConfig.ID: "inferer",
     },
     "dataset_data": {
-        BundleProperty.DESC: "data source for the inference / evaluation dataset.",
+        BundleProperty.DESC: "data_module source for the inference / evaluation dataset.",
         BundleProperty.REQUIRED: False,
-        BundlePropertyConfig.ID: f"dataset{ID_SEP_KEY}data",
+        BundlePropertyConfig.ID: f"dataset{ID_SEP_KEY}data_module",
         BundlePropertyConfig.REF_ID: None,  # no reference to this ID
     },
     "handlers": {
@@ -203,13 +203,13 @@ InferProperties = {
         BundlePropertyConfig.REF_ID: f"evaluator{ID_SEP_KEY}val_handlers",
     },
     "preprocessing": {
-        BundleProperty.DESC: "preprocessing for the input data.",
+        BundleProperty.DESC: "preprocessing for the input data_module.",
         BundleProperty.REQUIRED: False,
         BundlePropertyConfig.ID: "preprocessing",
         BundlePropertyConfig.REF_ID: f"dataset{ID_SEP_KEY}transform",
     },
     "postprocessing": {
-        BundleProperty.DESC: "postprocessing for the model output data.",
+        BundleProperty.DESC: "postprocessing for the model output data_module.",
         BundleProperty.REQUIRED: False,
         BundlePropertyConfig.ID: "postprocessing",
         BundlePropertyConfig.REF_ID: f"evaluator{ID_SEP_KEY}postprocessing",

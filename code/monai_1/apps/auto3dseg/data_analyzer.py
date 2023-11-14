@@ -48,10 +48,10 @@ __all__ = ["DataAnalyzer"]
 class DataAnalyzer:
     """
     The DataAnalyzer automatically analyzes given medical image dataset and reports the statistics.
-    The module expects file paths to the image data and utilizes the LoadImaged transform to read the
+    The module expects file paths to the image data_module and utilizes the LoadImaged transform to read the
     files, which supports nii, nii.gz, png, jpg, bmp, npz, npy, and dcm formats. Currently, only
     segmentation task is supported, so the user needs to provide paths to the image and label files
-    (if have). Also, label data format is preferred to be (1,H,W,D), with the label index in the
+    (if have). Also, label data_module format is preferred to be (1,H,W,D), with the label index in the
     first dimension. If it is in onehot format, it will be converted to the preferred format.
 
     Args:
@@ -150,7 +150,7 @@ class DataAnalyzer:
     @staticmethod
     def _check_data_uniformity(keys: list[str], result: dict) -> bool:
         """
-        Check data uniformity since DataAnalyzer provides no support to multi-modal images with different
+        Check data_module uniformity since DataAnalyzer provides no support to multi-modal images with different
         affine matrices/spacings due to monai transforms.
 
         Args:
@@ -182,7 +182,7 @@ class DataAnalyzer:
             transform_list: option list of transforms before SegSummarizer
 
         Returns:
-            A data statistics dictionary containing
+            A data_module statistics dictionary containing
                 "stats_summary" (summary statistics of the entire datasets). Within stats_summary
                 there are "image_stats"  (summarizing info of shape, channel, spacing, and etc
                 using operations_summary), "image_foreground_stats" (info of the intensity for the
@@ -205,10 +205,10 @@ class DataAnalyzer:
         result_bycase: dict[DataStatsKeys, Any] = {DataStatsKeys.SUMMARY: {}, DataStatsKeys.BY_CASE: []}
         if self.device.type == "cpu":
             nprocs = 1
-            logger.info("Using CPU for data analyzing!")
+            logger.info("Using CPU for data_module analyzing!")
         else:
             nprocs = torch.cuda.device_count()
-            logger.info(f"Found {nprocs} GPUs for data analyzing!")
+            logger.info(f"Found {nprocs} GPUs for data_module analyzing!")
         if nprocs > 1:
             tmp_ctx = get_context("forkserver")
             with tmp_ctx.Manager() as manager:
@@ -245,14 +245,14 @@ class DataAnalyzer:
         if not self._check_data_uniformity([ImageStatsKeys.SPACING], result):
             logger.info("Data spacing is not completely uniform. MONAI transforms may provide unexpected result")
         if self.output_path:
-            logger.info(f"Writing data stats to {self.output_path}.")
+            logger.info(f"Writing data_module stats to {self.output_path}.")
             ConfigParser.export_config_file(
                 result, self.output_path, fmt=self.fmt, default_flow_style=None, sort_keys=False
             )
             by_case_path = self.output_path.replace(f".{self.fmt}", f"_by_case.{self.fmt}")
             if by_case_path == self.output_path:  # self.output_path not ended with self.fmt?
                 by_case_path += f".by_case.{self.fmt}"
-            logger.info(f"Writing by-case data stats to {by_case_path}, this may take a while.")
+            logger.info(f"Writing by-case data_module stats to {by_case_path}, this may take a while.")
             ConfigParser.export_config_file(
                 result_bycase, by_case_path, fmt=self.fmt, default_flow_style=None, sort_keys=False
             )
@@ -346,7 +346,7 @@ class DataAnalyzer:
                     filename = batch_data["image_meta_dict"]["filename_or_obj"]
                 else:
                     filename = batch_data[self.image_key].meta["filename_or_obj"]
-                logger.info(f"Unable to process data {filename} on {device}. {err}")
+                logger.info(f"Unable to process data_module {filename} on {device}. {err}")
                 if self.device.type == "cuda":
                     logger.info("DataAnalyzer `device` set to GPU execution hit an exception. Falling back to `cpu`.")
                     batch_data[self.image_key] = batch_data[self.image_key].to("cpu")

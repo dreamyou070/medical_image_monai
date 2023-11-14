@@ -45,13 +45,13 @@ __all__ = ["MedNISTDataset", "DecathlonDataset", "CrossValidation", "TciaDataset
 
 class MedNISTDataset(Randomizable, CacheDataset):
     """
-    The Dataset to automatically download MedNIST data and generate items for training, validation or test.
+    The Dataset to automatically download MedNIST data_module and generate items for training, validation or test.
     It's based on `CacheDataset` to accelerate the training process.
 
     Args:
         root_dir: target directory to download and load MedNIST dataset.
-        section: expected data section, can be: `training`, `validation` or `test`.
-        transform: transforms to execute operations on input data.
+        section: expected data_module section, can be: `training`, `validation` or `test`.
+        transform: transforms to execute operations on input data_module.
         download: whether to download and extract the MedNIST from resource link, default is False.
             if expected file already exists, skip downloading even set it to True.
             user can manually copy `MedNIST.tar.gz` file or `MedNIST` folder to root directory.
@@ -60,7 +60,7 @@ class MedNISTDataset(Randomizable, CacheDataset):
         test_frac: percentage of test fraction in the whole dataset, default is 0.1.
         cache_num: number of items to be cached. Default is `sys.maxsize`.
             will take the minimum of (cache_num, data_length x cache_rate, data_length).
-        cache_rate: percentage of cached data in total, default is 1.0 (cache all).
+        cache_rate: percentage of cached data_module in total, default is 1.0 (cache all).
             will take the minimum of (cache_num, data_length x cache_rate, data_length).
         num_workers: the number of worker threads if computing cache in the initialization.
             If num_workers is None then the number returned by os.cpu_count() is used.
@@ -74,7 +74,7 @@ class MedNISTDataset(Randomizable, CacheDataset):
         as_contiguous: whether to convert the cached NumPy array or PyTorch tensor to be contiguous.
             it may help improve the performance of following logic.
         runtime_cache: whether to compute cache at the runtime, default to `False` to prepare
-            the cache content at initialization. See: :py:class:`monai.data.CacheDataset`.
+            the cache content at initialization. See: :py:class:`monai.data_module.CacheDataset`.
 
     Raises:
         ValueError: When ``root_dir`` is not a directory.
@@ -195,19 +195,19 @@ class MedNISTDataset(Randomizable, CacheDataset):
 
 class DecathlonDataset(Randomizable, CacheDataset):
     """
-    The Dataset to automatically download the data of Medical Segmentation Decathlon challenge
+    The Dataset to automatically download the data_module of Medical Segmentation Decathlon challenge
     (http://medicaldecathlon.com/) and generate items for training, validation or test.
     It will also load these properties from the JSON config file of dataset. user can call `get_properties()`
     to get specified properties or all the properties loaded.
-    It's based on :py:class:`monai.data.CacheDataset` to accelerate the training process.
+    It's based on :py:class:`monai.data_module.CacheDataset` to accelerate the training process.
 
     Args:
         root_dir: user's local directory for caching and loading the MSD datasets.
         task: which task to download and execute: one of list ("Task01_BrainTumour", "Task02_Heart",
             "Task03_Liver", "Task04_Hippocampus", "Task05_Prostate", "Task06_Lung", "Task07_Pancreas",
             "Task08_HepaticVessel", "Task09_Spleen", "Task10_Colon").
-        section: expected data section, can be: `training`, `validation` or `test`.
-        transform: transforms to execute operations on input data.
+        section: expected data_module section, can be: `training`, `validation` or `test`.
+        transform: transforms to execute operations on input data_module.
             for further usage, use `EnsureChannelFirstd` to convert the shape to [C, H, W, D].
         download: whether to download and extract the Decathlon from resource link, default is False.
             if expected file already exists, skip downloading even set it to True.
@@ -217,7 +217,7 @@ class DecathlonDataset(Randomizable, CacheDataset):
             note to set same seed for `training` and `validation` sections.
         cache_num: number of items to be cached. Default is `sys.maxsize`.
             will take the minimum of (cache_num, data_length x cache_rate, data_length).
-        cache_rate: percentage of cached data in total, default is 1.0 (cache all).
+        cache_rate: percentage of cached data_module in total, default is 1.0 (cache all).
             will take the minimum of (cache_num, data_length x cache_rate, data_length).
         num_workers: the number of worker threads if computing cache in the initialization.
             If num_workers is None then the number returned by os.cpu_count() is used.
@@ -231,7 +231,7 @@ class DecathlonDataset(Randomizable, CacheDataset):
         as_contiguous: whether to convert the cached NumPy array or PyTorch tensor to be contiguous.
             it may help improve the performance of following logic.
         runtime_cache: whether to compute cache at the runtime, default to `False` to prepare
-            the cache content at initialization. See: :py:class:`monai.data.CacheDataset`.
+            the cache content at initialization. See: :py:class:`monai.data_module.CacheDataset`.
 
     Raises:
         ValueError: When ``root_dir`` is not a directory.
@@ -378,7 +378,7 @@ class DecathlonDataset(Randomizable, CacheDataset):
         return {}
 
     def _generate_data_list(self, dataset_dir: PathLike) -> list[dict]:
-        # the types of the item in data list should be compatible with the dataloader
+        # the types of the item in data_module list should be compatible with the dataloader
         dataset_dir = Path(dataset_dir)
         section = "training" if self.section in ["training", "validation"] else "test"
         datalist = load_decathlon_datalist(dataset_dir / "dataset.json", True, section)
@@ -402,10 +402,10 @@ class DecathlonDataset(Randomizable, CacheDataset):
 
 class TciaDataset(Randomizable, CacheDataset):
     """
-    The Dataset to automatically download the data from a public The Cancer Imaging Archive (TCIA) dataset
+    The Dataset to automatically download the data_module from a public The Cancer Imaging Archive (TCIA) dataset
     and generate items for training, validation or test.
 
-    The Highdicom library is used to load dicom data with modality "SEG", but only a part of collections are
+    The Highdicom library is used to load dicom data_module with modality "SEG", but only a part of collections are
     supported, such as: "C4KC-KiTS", "NSCLC-Radiomics", "NSCLC-Radiomics-Interobserver1", " QIN-PROSTATE-Repeatability"
     and "PROSTATEx". Therefore, if "seg" is included in `keys` of the `LoadImaged` transform and loading some
     other collections, errors may be raised. For supported collections, the original "SEG" information may not
@@ -415,7 +415,7 @@ class TciaDataset(Randomizable, CacheDataset):
     to the second example bellow.
 
 
-    This class is based on :py:class:`monai.data.CacheDataset` to accelerate the training process.
+    This class is based on :py:class:`monai.data_module.CacheDataset` to accelerate the training process.
 
     Args:
         root_dir: user's local directory for caching and loading the TCIA dataset.
@@ -423,8 +423,8 @@ class TciaDataset(Randomizable, CacheDataset):
             a TCIA dataset is defined as a collection. Please check the following list to browse
             the collection list (only public collections can be downloaded):
             https://www.cancerimagingarchive.net/collections/
-        section: expected data section, can be: `training`, `validation` or `test`.
-        transform: transforms to execute operations on input data.
+        section: expected data_module section, can be: `training`, `validation` or `test`.
+        transform: transforms to execute operations on input data_module.
             for further usage, use `EnsureChannelFirstd` to convert the shape to [C, H, W, D].
             If not specified, `LoadImaged(reader="PydicomReader", keys=["image"])` will be used as the default
             transform. In addition, we suggest to set the argument `labels` for `PydicomReader` if segmentations
@@ -440,14 +440,14 @@ class TciaDataset(Randomizable, CacheDataset):
         ref_series_uid_tag: tag of referenced Series Instance UID. Default is (0x0020, 0x000e).
         ref_sop_uid_tag: tag of referenced SOP Instance UID. Default is (0x0008, 0x1155).
         specific_tags: tags that will be loaded for "SEG" series. This argument will be used in
-            `monai.data.PydicomReader`. Default is [(0x0008, 0x1115), (0x0008,0x1140), (0x3006, 0x0010),
+            `monai.data_module.PydicomReader`. Default is [(0x0008, 0x1115), (0x0008,0x1140), (0x3006, 0x0010),
             (0x0020,0x000D), (0x0010,0x0010), (0x0010,0x0020), (0x0020,0x0011), (0x0020,0x0012)].
         val_frac: percentage of validation fraction in the whole dataset, default is 0.2.
         seed: random seed to randomly shuffle the datalist before splitting into training and validation, default is 0.
             note to set same seed for `training` and `validation` sections.
         cache_num: number of items to be cached. Default is `sys.maxsize`.
             will take the minimum of (cache_num, data_length x cache_rate, data_length).
-        cache_rate: percentage of cached data in total, default is 0.0 (no cache).
+        cache_rate: percentage of cached data_module in total, default is 0.0 (no cache).
             will take the minimum of (cache_num, data_length x cache_rate, data_length).
         num_workers: the number of worker threads if computing cache in the initialization.
             If num_workers is None then the number returned by os.cpu_count() is used.
@@ -461,12 +461,12 @@ class TciaDataset(Randomizable, CacheDataset):
         as_contiguous: whether to convert the cached NumPy array or PyTorch tensor to be contiguous.
             it may help improve the performance of following logic.
         runtime_cache: whether to compute cache at the runtime, default to `False` to prepare
-            the cache content at initialization. See: :py:class:`monai.data.CacheDataset`.
+            the cache content at initialization. See: :py:class:`monai.data_module.CacheDataset`.
 
     Example::
 
         # collection is "Pancreatic-CT-CBCT-SEG", seg_type is "RTSTRUCT"
-        data = TciaDataset(
+        data_module = TciaDataset(
             root_dir="./", collection="Pancreatic-CT-CBCT-SEG", seg_type="RTSTRUCT", download=True
         )
 
@@ -479,11 +479,11 @@ class TciaDataset(Randomizable, CacheDataset):
                 ResampleToMatchd(keys="image", key_dst="seg"),
             ]
         )
-        data = TciaDataset(
+        data_module = TciaDataset(
             root_dir="./", collection="C4KC-KiTS", section="validation", seed=12345, download=True
         )
 
-        print(data[0]["seg"].shape)
+        print(data_module[0]["seg"].shape)
 
     """
 
@@ -542,7 +542,7 @@ class TciaDataset(Randomizable, CacheDataset):
             if download_len > 0:
                 seg_series_list = seg_series_list[:download_len]
             if len(seg_series_list) == 0:
-                raise ValueError(f"Cannot find data with collection: {collection} seg_type: {seg_type}")
+                raise ValueError(f"Cannot find data_module with collection: {collection} seg_type: {seg_type}")
             for series_uid in seg_series_list:
                 self._download_series_reference_data(series_uid, download_dir)
 
@@ -634,7 +634,7 @@ class TciaDataset(Randomizable, CacheDataset):
             shutil.copytree(seg_first_dir, seg_dir)
 
     def _generate_data_list(self, dataset_dir: PathLike) -> list[dict]:
-        # the types of the item in data list should be compatible with the dataloader
+        # the types of the item in data_module list should be compatible with the dataloader
         dataset_dir = Path(dataset_dir)
         datalist = []
         patient_list = [f.name for f in os.scandir(dataset_dir) if f.is_dir() and f.name != "raw"]
@@ -675,7 +675,7 @@ class CrossValidation:
     Args:
         dataset_cls: dataset class to be used to create the cross validation partitions.
             It must have `_split_datalist` API.
-        nfolds: number of folds to split the data for cross validation.
+        nfolds: number of folds to split the data_module for cross validation.
         seed: random seed to randomly shuffle the datalist before splitting into N folds, default is 0.
         dataset_params: other additional parameters for the dataset_cls base class.
 
@@ -719,7 +719,7 @@ class CrossValidation:
         Generate dataset based on the specified fold indices in the cross validation group.
 
         Args:
-            folds: index of folds for training or validation, if a list of values, concatenate the data.
+            folds: index of folds for training or validation, if a list of values, concatenate the data_module.
             dataset_params: other additional parameters for the dataset_cls base class, will override
                 the same parameters in `self.dataset_params`.
 

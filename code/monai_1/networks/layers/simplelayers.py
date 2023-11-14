@@ -633,7 +633,7 @@ class LLTM(nn.Module):
     target device where put this module to.
 
     Args:
-        input_features: size of input feature data
+        input_features: size of input feature data_module
         state_size: size of the state of recurrent unit
 
     Referring to: https://pytorch.org/tutorials/advanced/cpp_extension.html

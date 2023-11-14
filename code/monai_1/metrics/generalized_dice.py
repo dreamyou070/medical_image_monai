@@ -89,7 +89,7 @@ class GeneralizedDiceScore(CumulativeIterationMetric):
         """
         data = self.get_buffer()
         if not isinstance(data, torch.Tensor):
-            raise ValueError("The data to aggregate must be a PyTorch Tensor.")
+            raise ValueError("The data_module to aggregate must be a PyTorch Tensor.")
 
         # Validate reduction argument if specified
         if reduction is not None:

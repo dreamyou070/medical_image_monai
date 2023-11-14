@@ -46,7 +46,7 @@ class nnUNetV2Runner:  # noqa: N801
     The output of the interface is a directory that contains:
 
     #. converted dataset met the requirement of nnU-Net V2
-    #. data analysis results
+    #. data_module analysis results
     #. checkpoints from the trained U-Net models
     #. validation accuracy in each fold of cross-validation
     #. the predictions on the testing datasets from the final algorithm ensemble and potential post-processing
@@ -79,21 +79,21 @@ class nnUNetV2Runner:  # noqa: N801
 
             python -m monai.apps.nnunet nnUNetV2Runner run --input_config ./input.yaml
 
-        - Use `convert_dataset` to prepare the data to meet nnU-Net requirements, generate dataset JSON file,
+        - Use `convert_dataset` to prepare the data_module to meet nnU-Net requirements, generate dataset JSON file,
             and copy the dataset to a location specified by ``nnunet_raw`` in the input config file
 
         .. code-block:: bash
 
             python -m monai.apps.nnunet nnUNetV2Runner convert_dataset --input_config="./input.yaml"
 
-        - `convert_msd_dataset` is an alternative option to prepare the data if the dataset is MSD.
+        - `convert_msd_dataset` is an alternative option to prepare the data_module if the dataset is MSD.
 
         .. code-block:: bash
 
             python -m monai.apps.nnunet nnUNetV2Runner convert_msd_dataset \\
                 --input_config "./input.yaml" --data_dir "/path/to/Task09_Spleen"
 
-        - experiment planning and data pre-processing
+        - experiment planning and data_module pre-processing
 
         .. code-block:: bash
 
@@ -377,13 +377,13 @@ class nnUNetV2Runner:  # noqa: N801
         verbose: bool = False,
     ) -> None:
         """
-        Apply a set of preprocessing operations to the input data before the training.
+        Apply a set of preprocessing operations to the input data_module before the training.
 
         Args:
             overwrite_plans_name: [OPTIONAL] You can use this to specify a custom plans file that you may have
                 generated.
             c: [OPTIONAL] Configurations for which the preprocessing should be run. Default: 2d 3f_fullres
-                3d_lowres. 3d_cascade_fullres does not need to be specified because it uses the data
+                3d_lowres. 3d_cascade_fullres does not need to be specified because it uses the data_module
                 from 3f_fullres. Configurations that do not exist for some datasets will be skipped).
             n_proc: [OPTIONAL] Use this to define how many processes are to be used. If this is just one number then
                 this number of processes is used for all configurations specified with -c. If it's a
@@ -462,7 +462,7 @@ class nnUNetV2Runner:  # noqa: N801
                 overwritten. You will then need to specify your custom plans file with -p whenever
                 running other nnunet commands (training, inference, etc)
             c: [OPTIONAL] Configurations for which the preprocessing should be run. Default: 2d 3f_fullres
-                3d_lowres. 3d_cascade_fullres does not need to be specified because it uses the data
+                3d_lowres. 3d_cascade_fullres does not need to be specified because it uses the data_module
                 from 3f_fullres. Configurations that do not exist for some datasets will be skipped.
             n_proc: [OPTIONAL] Use this to define how many processes are to be used. If this is just one number then
                 this number of processes is used for all configurations specified with -c. If it's a
@@ -500,7 +500,7 @@ class nnUNetV2Runner:  # noqa: N801
                     - plans_identifier: custom plans identifier. Default: "nnUNetPlans".
                     - pretrained_weights: path to nnU-Net checkpoint file to be used as pretrained model. Will only be
                         used when actually training. Beta. Use with caution. Default: False.
-                    - use_compressed_data: True to use compressed data for training. Reading compressed data is much
+                    - use_compressed_data: True to use compressed data_module for training. Reading compressed data_module is much
                         more CPU and (potentially) RAM intensive and should only be used if you know what you are
                         doing. Default: False.
                     - continue_training: continue training from latest checkpoint. Default: False.

@@ -66,7 +66,7 @@ class ImageReader(ABC):
         img_data, meta_data = image_reader.get_data(img_obj)
 
     - The `read` call converts image filenames into image objects,
-    - The `get_data` call fetches the image data, as well as metadata.
+    - The `get_data` call fetches the image data_module, as well as metadata.
     - A reader should implement `verify_suffix` with the logic of checking the input filename
       by the filename extensions.
 
@@ -89,8 +89,8 @@ class ImageReader(ABC):
     @abstractmethod
     def read(self, data: Sequence[PathLike] | PathLike, **kwargs) -> Sequence[Any] | Any:
         """
-        Read image data from specified file or files.
-        Note that it returns a data object or a sequence of data objects.
+        Read image data_module from specified file or files.
+        Note that it returns a data_module object or a sequence of data_module objects.
 
         Args:
             data: file name or a list of file names to read.
@@ -102,8 +102,8 @@ class ImageReader(ABC):
     @abstractmethod
     def get_data(self, img) -> tuple[np.ndarray, dict]:
         """
-        Extract data array and metadata from loaded image and return them.
-        This function must return two objects, the first is a numpy array of image data,
+        Extract data_module array and metadata from loaded image and return them.
+        This function must return two objects, the first is a numpy array of image data_module,
         the second is a dictionary of metadata.
 
         Args:
@@ -153,7 +153,7 @@ class ITKReader(ImageReader):
     Load medical images based on ITK library.
     All the supported image formats can be found at:
     https://github.com/InsightSoftwareConsortium/ITK/tree/master/Modules/IO
-    The loaded data array will be in C order, for example, a 3D image NumPy
+    The loaded data_module array will be in C order, for example, a 3D image NumPy
     array index order will be `CDWH`.
 
     Args:
@@ -166,7 +166,7 @@ class ITKReader(ImageReader):
 
         series_name: the name of the DICOM series if there are multiple ones.
             used when loading DICOM series.
-        reverse_indexing: whether to use a reversed spatial indexing convention for the returned data array.
+        reverse_indexing: whether to use a reversed spatial indexing convention for the returned data_module array.
             If ``False``, the spatial indexing follows the numpy convention;
             otherwise, the spatial indexing convention is reversed to be compatible with ITK. Default is ``False``.
             This option does not affect the metadata.
@@ -209,8 +209,8 @@ class ITKReader(ImageReader):
 
     def read(self, data: Sequence[PathLike] | PathLike, **kwargs):
         """
-        Read image data from specified file or files, it can read a list of images
-        and stack them together as multi-channel data in `get_data()`.
+        Read image data_module from specified file or files, it can read a list of images
+        and stack them together as multi-channel data_module in `get_data()`.
         If passing directory path instead of file path, will treat it as DICOM images series and read.
         Note that the returned object is ITK image object or list of ITK image objects.
 
@@ -260,8 +260,8 @@ class ITKReader(ImageReader):
 
     def get_data(self, img) -> tuple[np.ndarray, dict]:
         """
-        Extract data array and metadata from loaded image and return them.
-        This function returns two objects, first is numpy array of image data, second is dict of metadata.
+        Extract data_module array and metadata from loaded image and return them.
+        This function returns two objects, first is numpy array of image data_module, second is dict of metadata.
         It constructs `affine`, `original_affine`, and `spatial_shape` and stores them in meta dict.
         When loading a list of files, they are stacked together at a new dimension as the first dimension,
         and the metadata of the first image is used to represent the output metadata.
@@ -350,9 +350,9 @@ class ITKReader(ImageReader):
 
     def _get_array_data(self, img):
         """
-        Get the raw array data of the image, converted to Numpy array.
+        Get the raw array data_module of the image, converted to Numpy array.
 
-        Following PyTorch conventions, the returned array data has contiguous channels,
+        Following PyTorch conventions, the returned array data_module has contiguous channels,
         e.g. for an RGB image, all red channel image pixels are contiguous in memory.
         The last axis of the returned array is the channel axis.
 
@@ -379,7 +379,7 @@ class PydicomReader(ImageReader):
     https://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html
 
     PydicomReader is also able to load segmentations, if a dicom file contains tag: `SegmentSequence`, the reader
-    will consider it as segmentation data, and to load it successfully, `PerFrameFunctionalGroupsSequence` is required
+    will consider it as segmentation data_module, and to load it successfully, `PerFrameFunctionalGroupsSequence` is required
     for dicom file, and for each frame of dicom file, `SegmentIdentificationSequence` is required.
     This method refers to the Highdicom library.
 
@@ -400,7 +400,7 @@ class PydicomReader(ImageReader):
         prune_metadata: whether to prune the saved information in metadata. This argument is used for
             `get_data` function. If True, only items that are related to the affine matrix will be saved.
             Default to ``True``.
-        label_dict: label of the dicom data. If provided, it will be used when loading segmentation data.
+        label_dict: label of the dicom data_module. If provided, it will be used when loading segmentation data_module.
             Keys of the dict are the classes, and values are the corresponding class number. For example:
             for TCIA collection "C4KC-KiTS", it can be: {"Kidney": 0, "Renal Tumor": 1}.
         kwargs: additional args for `pydicom.dcmread` API. more details about available args:
@@ -441,8 +441,8 @@ class PydicomReader(ImageReader):
 
     def read(self, data: Sequence[PathLike] | PathLike, **kwargs):
         """
-        Read image data from specified file or files, it can read a list of images
-        and stack them together as multi-channel data in `get_data()`.
+        Read image data_module from specified file or files, it can read a list of images
+        and stack them together as multi-channel data_module in `get_data()`.
         If passing directory path instead of file path, will treat it as DICOM images series and read.
 
         Args:
@@ -450,9 +450,9 @@ class PydicomReader(ImageReader):
             kwargs: additional args for `pydicom.dcmread` API, will override `self.kwargs` for existing keys.
 
         Returns:
-            If `data` represents a filename: return a pydicom dataset object.
-            If `data` represents a list of filenames or a directory: return a list of pydicom dataset object.
-            If `data` represents a list of directories: return a list of list of pydicom dataset object.
+            If `data_module` represents a filename: return a pydicom dataset object.
+            If `data_module` represents a list of filenames or a directory: return a list of pydicom dataset object.
+            If `data_module` represents a list of directories: return a list of list of pydicom dataset object.
 
         """
         img_ = []
@@ -480,7 +480,7 @@ class PydicomReader(ImageReader):
 
     def _combine_dicom_series(self, data: Iterable):
         """
-        Combine dicom series (a list of pydicom dataset objects). Their data arrays will be stacked together at a new
+        Combine dicom series (a list of pydicom dataset objects). Their data_module arrays will be stacked together at a new
         dimension as the last dimension.
 
         The stack order depends on Instance Number. The metadata will be based on the
@@ -494,7 +494,7 @@ class PydicomReader(ImageReader):
         Args:
             data: a list of pydicom dataset objects.
         Returns:
-            a tuple that consisted with data array and metadata.
+            a tuple that consisted with data_module array and metadata.
         """
         slices: list = []
         # for a dicom series
@@ -547,17 +547,17 @@ class PydicomReader(ImageReader):
 
     def get_data(self, data) -> tuple[np.ndarray, dict]:
         """
-        Extract data array and metadata from loaded image and return them.
-        This function returns two objects, first is numpy array of image data, second is dict of metadata.
+        Extract data_module array and metadata from loaded image and return them.
+        This function returns two objects, first is numpy array of image data_module, second is dict of metadata.
         It constructs `affine`, `original_affine`, and `spatial_shape` and stores them in meta dict.
         For dicom series within the input, all slices will be stacked first,
         When loading a list of files (dicom file, or stacked dicom series), they are stacked together at a new
         dimension as the first dimension, and the metadata of the first image is used to represent the output metadata.
 
-        To use this function, all pydicom dataset objects (if not segmentation data) should contain:
+        To use this function, all pydicom dataset objects (if not segmentation data_module) should contain:
         `pixel_array`, `PixelSpacing`, `ImagePositionPatient` and `ImageOrientationPatient`.
 
-        For segmentation data, we assume that the input is not a dicom series, and the object should contain
+        For segmentation data_module, we assume that the input is not a dicom series, and the object should contain
         `SegmentSequence` in order to identify it.
         In addition, tags (5200, 9229) and (5200, 9230) are required to achieve
         `PixelSpacing`, `ImageOrientationPatient` and `ImagePositionPatient`.
@@ -749,7 +749,7 @@ class PydicomReader(ImageReader):
 
     def _get_seg_data(self, img):
         """
-        Get the array data and metadata of the segmentation image.
+        Get the array data_module and metadata of the segmentation image.
 
         Aegs:
             img: a Pydicom dataset object that has attribute "SegmentSequence".
@@ -818,8 +818,8 @@ class PydicomReader(ImageReader):
 
     def _get_array_data(self, img):
         """
-        Get the array data of the image. If `RescaleSlope` and `RescaleIntercept` are available, the raw array data
-        will be rescaled. The output data has the dtype np.float32 if the rescaling is applied.
+        Get the array data_module of the image. If `RescaleSlope` and `RescaleIntercept` are available, the raw array data_module
+        will be rescaled. The output data_module has the dtype np.float32 if the rescaling is applied.
 
         Args:
             img: a Pydicom dataset object.
@@ -827,7 +827,7 @@ class PydicomReader(ImageReader):
         """
         # process Dicom series
         if not hasattr(img, "pixel_array"):
-            raise ValueError(f"dicom data: {img.filename} does not have pixel_array.")
+            raise ValueError(f"dicom data_module: {img.filename} does not have pixel_array.")
         data = img.pixel_array
 
         slope, offset = 1.0, 0.0
@@ -888,8 +888,8 @@ class NibabelReader(ImageReader):
 
     def read(self, data: Sequence[PathLike] | PathLike, **kwargs):
         """
-        Read image data from specified file or files, it can read a list of images
-        and stack them together as multi-channel data in `get_data()`.
+        Read image data_module from specified file or files, it can read a list of images
+        and stack them together as multi-channel data_module in `get_data()`.
         Note that the returned object is Nibabel image object or list of Nibabel image objects.
 
         Args:
@@ -912,8 +912,8 @@ class NibabelReader(ImageReader):
 
     def get_data(self, img) -> tuple[np.ndarray, dict]:
         """
-        Extract data array and metadata from loaded image and return them.
-        This function returns two objects, first is numpy array of image data, second is dict of metadata.
+        Extract data_module array and metadata from loaded image and return them.
+        This function returns two objects, first is numpy array of image data_module, second is dict of metadata.
         It constructs `affine`, `original_affine`, and `spatial_shape` and stores them in meta dict.
         When loading a list of files, they are stacked together at a new dimension as the first dimension,
         and the metadata of the first image is used to present the output metadata.
@@ -979,7 +979,7 @@ class NibabelReader(ImageReader):
 
     def _get_spatial_shape(self, img):
         """
-        Get the spatial shape of image data, it doesn't contain the channel dim.
+        Get the spatial shape of image data_module, it doesn't contain the channel dim.
 
         Args:
             img: a Nibabel image object loaded from an image file.
@@ -1003,7 +1003,7 @@ class NibabelReader(ImageReader):
 
     def _get_array_data(self, img):
         """
-        Get the raw array data of the image, converted to Numpy array.
+        Get the raw array data_module of the image, converted to Numpy array.
 
         Args:
             img: a Nibabel image object loaded from an image file.
@@ -1014,8 +1014,8 @@ class NibabelReader(ImageReader):
 
 class NumpyReader(ImageReader):
     """
-    Load NPY or NPZ format data based on Numpy library, they can be arrays or pickled objects.
-    A typical usage is to load the `mask` data for classification task.
+    Load NPY or NPZ format data_module based on Numpy library, they can be arrays or pickled objects.
+    A typical usage is to load the `mask` data_module for classification task.
     It can load part of the npz file with specified `npz_keys`.
 
     Args:
@@ -1048,8 +1048,8 @@ class NumpyReader(ImageReader):
 
     def read(self, data: Sequence[PathLike] | PathLike, **kwargs):
         """
-        Read image data from specified file or files, it can read a list of data files
-        and stack them together as multi-channel data in `get_data()`.
+        Read image data_module from specified file or files, it can read a list of data_module files
+        and stack them together as multi-channel data_module in `get_data()`.
         Note that the returned object is Numpy array or list of Numpy arrays.
 
         Args:
@@ -1078,8 +1078,8 @@ class NumpyReader(ImageReader):
 
     def get_data(self, img) -> tuple[np.ndarray, dict]:
         """
-        Extract data array and metadata from loaded image and return them.
-        This function returns two objects, first is numpy array of image data, second is dict of metadata.
+        Extract data_module array and metadata from loaded image and return them.
+        This function returns two objects, first is numpy array of image data_module, second is dict of metadata.
         It constructs `affine`, `original_affine`, and `spatial_shape` and stores them in meta dict.
         When loading a list of files, they are stacked together at a new dimension as the first dimension,
         and the metadata of the first image is used to represent the output metadata.
@@ -1117,7 +1117,7 @@ class PILReader(ImageReader):
     Load common 2D image format (supports PNG, JPG, BMP) file or files from provided path.
 
     Args:
-        converter: additional function to convert the image data after `read()`.
+        converter: additional function to convert the image data_module after `read()`.
             for example, use `converter=lambda image: image.convert("LA")` to convert image format.
         reverse_indexing: whether to swap axis 0 and 1 after loading the array, this is enabled by default,
             so that output of the reader is consistent with the other readers. Set this option to ``False`` to use
@@ -1145,8 +1145,8 @@ class PILReader(ImageReader):
 
     def read(self, data: Sequence[PathLike] | PathLike | np.ndarray, **kwargs):
         """
-        Read image data from specified file or files, it can read a list of images
-        and stack them together as multi-channel data in `get_data()`.
+        Read image data_module from specified file or files, it can read a list of images
+        and stack them together as multi-channel data_module in `get_data()`.
         Note that the returned object is PIL image or list of PIL image.
 
         Args:
@@ -1171,8 +1171,8 @@ class PILReader(ImageReader):
 
     def get_data(self, img) -> tuple[np.ndarray, dict]:
         """
-        Extract data array and metadata from loaded image and return them.
-        This function returns two objects, first is numpy array of image data, second is dict of metadata.
+        Extract data_module array and metadata from loaded image and return them.
+        This function returns two objects, first is numpy array of image data_module, second is dict of metadata.
         It computes `spatial_shape` and stores it in meta dict.
         When loading a list of files, they are stacked together at a new dimension as the first dimension,
         and the metadata of the first image is used to represent the output metadata.
@@ -1209,7 +1209,7 @@ class PILReader(ImageReader):
 
     def _get_spatial_shape(self, img):
         """
-        Get the spatial shape of image data, it doesn't contain the channel dim.
+        Get the spatial shape of image data_module, it doesn't contain the channel dim.
         Args:
             img: a PIL Image object loaded from an image file.
         """
@@ -1234,8 +1234,8 @@ class NrrdReader(ImageReader):
             This is used to set original_channel_dim in the metadata, EnsureChannelFirstD reads this field.
             If None, `original_channel_dim` will be either `no_channel` or `0`.
             NRRD files are usually "channel first".
-        dtype: dtype of the data array when loading image.
-        index_order: Specify whether the returned data array should be in C-order (‘C’) or Fortran-order (‘F’).
+        dtype: dtype of the data_module array when loading image.
+        index_order: Specify whether the returned data_module array should be in C-order (‘C’) or Fortran-order (‘F’).
             Numpy is usually in C-order, but default on the NRRD header is F
         affine_lps_to_ras: whether to convert the affine matrix from "LPS" to "RAS". Defaults to ``True``.
             Set to ``True`` to be consistent with ``NibabelReader``, otherwise the affine matrix is unmodified.
@@ -1273,8 +1273,8 @@ class NrrdReader(ImageReader):
 
     def read(self, data: Sequence[PathLike] | PathLike, **kwargs) -> Sequence[Any] | Any:
         """
-        Read image data from specified file or files.
-        Note that it returns a data object or a sequence of data objects.
+        Read image data_module from specified file or files.
+        Note that it returns a data_module object or a sequence of data_module objects.
 
         Args:
             data: file name or a list of file names to read.
@@ -1292,8 +1292,8 @@ class NrrdReader(ImageReader):
 
     def get_data(self, img: NrrdImage | list[NrrdImage]) -> tuple[np.ndarray, dict]:
         """
-        Extract data array and metadata from loaded image and return them.
-        This function must return two objects, the first is a numpy array of image data,
+        Extract data_module array and metadata from loaded image and return them.
+        This function must return two objects, the first is a numpy array of image data_module,
         the second is a dictionary of metadata.
 
         Args:
@@ -1318,7 +1318,7 @@ class NrrdReader(ImageReader):
 
             header[MetaKeys.AFFINE] = header[MetaKeys.ORIGINAL_AFFINE].copy()
             header[MetaKeys.SPATIAL_SHAPE] = header["sizes"]
-            [header.pop(k) for k in ("sizes", "space origin", "space directions")]  # rm duplicated data in header
+            [header.pop(k) for k in ("sizes", "space origin", "space directions")]  # rm duplicated data_module in header
 
             if self.channel_dim is None:  # default to "no_channel" or -1
                 header[MetaKeys.ORIGINAL_CHANNEL_DIM] = (

@@ -80,7 +80,7 @@ class ConfusionMatrixMetric(CumulativeIterationMetric):
     def _compute_tensor(self, y_pred: torch.Tensor, y: torch.Tensor) -> torch.Tensor:  # type: ignore[override]
         """
         Args:
-            y_pred: input data to compute. It must be one-hot format and first dim is batch.
+            y_pred: input data_module to compute. It must be one-hot format and first dim is batch.
                 The values should be binarized.
             y: ground truth to compute the metric. It must be one-hot format and first dim is batch.
                 The values should be binarized.
@@ -114,7 +114,7 @@ class ConfusionMatrixMetric(CumulativeIterationMetric):
         """
         data = self.get_buffer()
         if not isinstance(data, torch.Tensor):
-            raise ValueError("the data to aggregate must be PyTorch Tensor.")
+            raise ValueError("the data_module to aggregate must be PyTorch Tensor.")
 
         results: list[torch.Tensor | tuple[torch.Tensor, torch.Tensor]] = []
         for metric_name in self.metric_name:
@@ -139,7 +139,7 @@ def get_confusion_matrix(y_pred: torch.Tensor, y: torch.Tensor, include_backgrou
     the number of classes that need to be computed.
 
     Args:
-        y_pred: input data to compute. It must be one-hot format and first dim is batch.
+        y_pred: input data_module to compute. It must be one-hot format and first dim is batch.
             The values should be binarized.
         y: ground truth to compute the metric. It must be one-hot format and first dim is batch.
             The values should be binarized.

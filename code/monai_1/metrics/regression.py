@@ -61,7 +61,7 @@ class RegressionMetric(CumulativeIterationMetric):
         """
         data = self.get_buffer()
         if not isinstance(data, torch.Tensor):
-            raise ValueError("the data to aggregate must be PyTorch Tensor.")
+            raise ValueError("the data_module to aggregate must be PyTorch Tensor.")
 
         f, not_nans = do_metric_reduction(data, reduction or self.reduction)
         return (f, not_nans) if self.get_not_nans else f
@@ -399,7 +399,7 @@ def compute_ssim_and_cs(
         kernel_size: the size of the kernel to use for the SSIM computation.
         kernel_sigma: the standard deviation of the kernel to use for the SSIM computation.
         spatial_dims: number of spatial dimensions of the images (2, 3)
-        data_range: the data range of the images.
+        data_range: the data_module range of the images.
         kernel_type: the type of kernel to use for the SSIM computation. Can be either "gaussian" or "uniform".
         k1: the first stability constant.
         k2: the second stability constant.

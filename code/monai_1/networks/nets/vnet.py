@@ -202,7 +202,7 @@ class VNet(nn.Module):
     The model supports 2D or 3D inputs.
 
     Args:
-        spatial_dims: spatial dimension of the input data. Defaults to 3.
+        spatial_dims: spatial dimension of the input data_module. Defaults to 3.
         in_channels: number of input channels for the network. Defaults to 1.
             The value should meet the condition that ``16 % in_channels == 0``.
         out_channels: number of output channels for the network. Defaults to 1.

@@ -26,8 +26,8 @@ class DistributedSampler(_TorchDistributedSampler):
 
     Args:
         dataset: Dataset used for sampling.
-        even_divisible: if False, different ranks can have different data length.
-            for example, input data: [1, 2, 3, 4, 5], rank 0: [1, 3, 5], rank 1: [2, 4].
+        even_divisible: if False, different ranks can have different data_module length.
+            for example, input data_module: [1, 2, 3, 4, 5], rank 0: [1, 3, 5], rank 1: [2, 4].
         num_replicas: number of processes participating in distributed training.
             by default, `world_size` is retrieved from the current distributed group.
         rank: rank of the current process within `num_replicas`. by default,
@@ -64,7 +64,7 @@ class DistributedSampler(_TorchDistributedSampler):
 class DistributedWeightedRandomSampler(DistributedSampler):
     """
     Extend the `DistributedSampler` to support weighted sampling.
-    Refer to `torch.utils.data.WeightedRandomSampler`, for more details please check:
+    Refer to `torch.utils.data_module.WeightedRandomSampler`, for more details please check:
     https://pytorch.org/docs/stable/data.html#torch.utils.data.WeightedRandomSampler.
 
     Args:
@@ -75,8 +75,8 @@ class DistributedWeightedRandomSampler(DistributedSampler):
             the distributed subset of dataset.
             if None, default to the length of dataset split by DistributedSampler.
         generator: PyTorch Generator used in sampling.
-        even_divisible: if False, different ranks can have different data length.
-            for example, input data: [1, 2, 3, 4, 5], rank 0: [1, 3, 5], rank 1: [2, 4].'
+        even_divisible: if False, different ranks can have different data_module length.
+            for example, input data_module: [1, 2, 3, 4, 5], rank 0: [1, 3, 5], rank 1: [2, 4].'
         num_replicas: number of processes participating in distributed training.
             by default, `world_size` is retrieved from the current distributed group.
         rank: rank of the current process within `num_replicas`. by default,

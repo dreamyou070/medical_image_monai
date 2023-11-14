@@ -197,7 +197,7 @@ class ZarrAvgMerger(Merger):
     """Merge patches by taking average of the overlapping area and store the results in zarr array.
 
     Zarr is a format for the storage of chunked, compressed, N-dimensional arrays.
-    Zarr data can be stored in any storage system that can be represented as a key-value store,
+    Zarr data_module can be stored in any storage system that can be represented as a key-value store,
     like POSIX file systems, cloud object storage, zip files, and relational and document databases.
     See https://zarr.readthedocs.io/en/stable/ for more details.
     It is particularly useful for storing N-dimensional arrays too large to fit into memory.
@@ -360,14 +360,14 @@ def iterate_over_chunks(chunks, cdata_shape, slice_tuple=()):
 
     Args:
         chunks: the chunk shape
-        cdata_shape: the shape of the data in chunks
+        cdata_shape: the shape of the data_module in chunks
         slice_tuple: the slice tuple to be used for indexing
 
     Raises:
         ValueError: When the length of chunks and cdata_shape are not the same.
 
     Yields:
-        slices of the data
+        slices of the data_module
     """
     if len(chunks) != len(cdata_shape):
         raise ValueError("chunks and cdata_shape must have the same length")

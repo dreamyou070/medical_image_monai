@@ -20,9 +20,9 @@ def roll_1d(x: Tensor, shift: int, shift_dim: int) -> Tensor:
     Similar to roll but for only one dim.
 
     Args:
-        x: input data (k-space or image) that can be
+        x: input data_module (k-space or image) that can be
             1) real-valued: the shape is (C,H,W) for 2D spatial inputs and (C,H,W,D) for 3D, or
-            2) complex-valued: the shape is (C,H,W,2) for 2D spatial data and (C,H,W,D,2) for 3D. C is the number of channels.
+            2) complex-valued: the shape is (C,H,W,2) for 2D spatial data_module and (C,H,W,D,2) for 3D. C is the number of channels.
         shift: the amount of shift along each of shift_dims dimension
         shift_dim: the dimension over which the shift is applied
 
@@ -47,9 +47,9 @@ def roll(x: Tensor, shift: list[int], shift_dims: list[int]) -> Tensor:
     Similar to np.roll but applies to PyTorch Tensors
 
     Args:
-        x: input data (k-space or image) that can be
+        x: input data_module (k-space or image) that can be
             1) real-valued: the shape is (C,H,W) for 2D spatial inputs and (C,H,W,D) for 3D, or
-            2) complex-valued: the shape is (C,H,W,2) for 2D spatial data and (C,H,W,D,2) for 3D. C is the number of channels.
+            2) complex-valued: the shape is (C,H,W,2) for 2D spatial data_module and (C,H,W,D,2) for 3D. C is the number of channels.
         shift: the amount of shift along each of shift_dims dimensions
         shift_dims: dimensions over which the shift is applied
 
@@ -71,9 +71,9 @@ def fftshift(x: Tensor, shift_dims: list[int]) -> Tensor:
     Similar to np.fft.fftshift but applies to PyTorch Tensors
 
     Args:
-        x: input data (k-space or image) that can be
+        x: input data_module (k-space or image) that can be
             1) real-valued: the shape is (C,H,W) for 2D spatial inputs and (C,H,W,D) for 3D, or
-            2) complex-valued: the shape is (C,H,W,2) for 2D spatial data and (C,H,W,D,2) for 3D. C is the number of channels.
+            2) complex-valued: the shape is (C,H,W,2) for 2D spatial data_module and (C,H,W,D,2) for 3D. C is the number of channels.
         shift_dims: dimensions over which the shift is applied
 
     Returns:
@@ -93,9 +93,9 @@ def ifftshift(x: Tensor, shift_dims: list[int]) -> Tensor:
     Similar to np.fft.ifftshift but applies to PyTorch Tensors
 
     Args:
-        x: input data (k-space or image) that can be
+        x: input data_module (k-space or image) that can be
             1) real-valued: the shape is (C,H,W) for 2D spatial inputs and (C,H,W,D) for 3D, or
-            2) complex-valued: the shape is (C,H,W,2) for 2D spatial data and (C,H,W,D,2) for 3D. C is the number of channels.
+            2) complex-valued: the shape is (C,H,W,2) for 2D spatial data_module and (C,H,W,D,2) for 3D. C is the number of channels.
         shift_dims: dimensions over which the shift is applied
 
     Returns:
@@ -117,9 +117,9 @@ def ifftn_centered_t(ksp: Tensor, spatial_dims: int, is_complex: bool = True) ->
     This is equivalent to do fft in numpy based on numpy.fft.ifftn, numpy.fft.fftshift, and numpy.fft.ifftshift
 
     Args:
-        ksp: k-space data that can be
+        ksp: k-space data_module that can be
             1) real-valued: the shape is (C,H,W) for 2D spatial inputs and (C,H,W,D) for 3D, or
-            2) complex-valued: the shape is (C,H,W,2) for 2D spatial data and (C,H,W,D,2) for 3D. C is the number of channels.
+            2) complex-valued: the shape is (C,H,W,2) for 2D spatial data_module and (C,H,W,D,2) for 3D. C is the number of channels.
         spatial_dims: number of spatial dimensions (e.g., is 2 for an image, and is 3 for a volume)
         is_complex: if True, then the last dimension of the input ksp is expected to be 2 (representing real and imaginary channels)
 
@@ -167,7 +167,7 @@ def fftn_centered_t(im: Tensor, spatial_dims: int, is_complex: bool = True) -> T
     Args:
         im: image that can be
             1) real-valued: the shape is (C,H,W) for 2D spatial inputs and (C,H,W,D) for 3D, or
-            2) complex-valued: the shape is (C,H,W,2) for 2D spatial data and (C,H,W,D,2) for 3D. C is the number of channels.
+            2) complex-valued: the shape is (C,H,W,2) for 2D spatial data_module and (C,H,W,D,2) for 3D. C is the number of channels.
         spatial_dims: number of spatial dimensions (e.g., is 2 for an image, and is 3 for a volume)
         is_complex: if True, then the last dimension of the input im is expected to be 2 (representing real and imaginary channels)
 

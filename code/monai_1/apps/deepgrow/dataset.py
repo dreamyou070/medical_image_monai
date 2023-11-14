@@ -36,16 +36,16 @@ def create_dataset(
 ) -> list[dict]:
     """
     Utility to pre-process and create dataset list for Deepgrow training over on existing one.
-    The input data list is normally a list of images and labels (3D volume) that needs pre-processing
+    The input data_module list is normally a list of images and labels (3D volume) that needs pre-processing
     for Deepgrow training pipeline.
 
     Args:
-        datalist: A list of data dictionary. Each entry should at least contain 'image_key': <image filename>.
-            For example, typical input data can be a list of dictionaries::
+        datalist: A list of data_module dictionary. Each entry should at least contain 'image_key': <image filename>.
+            For example, typical input data_module can be a list of dictionaries::
 
                 [{'image': <image filename>, 'label': <label filename>}]
 
-        output_dir: target directory to store the training data for Deepgrow Training
+        output_dir: target directory to store the training data_module for Deepgrow Training
         pixdim: output voxel spacing.
         dimension: dimension for Deepgrow training.  It can be 2 or 3.
         image_key: image key in input datalist. Defaults to 'image'.
@@ -53,7 +53,7 @@ def create_dataset(
         base_dir: base directory in case related path is used for the keys in datalist.  Defaults to None.
         limit: limit number of inputs for pre-processing.  Defaults to 0 (no limit).
         relative_path: output keys values should be based on relative path.  Defaults to False.
-        transforms: explicit transforms to execute operations on input data.
+        transforms: explicit transforms to execute operations on input data_module.
 
     Raises:
         ValueError: When ``dimension`` is not one of [2, 3]

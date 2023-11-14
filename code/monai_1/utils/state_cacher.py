@@ -54,7 +54,7 @@ class StateCacher:
         Args:
             in_memory: boolean to determine if the object will be cached in memory or on
                 disk.
-            cache_dir: directory for data to be cached if `in_memory==False`. Defaults
+            cache_dir: directory for data_module to be cached if `in_memory==False`. Defaults
                 to using a temporary directory. Any created files will be deleted during
                 the `StateCacher`'s destructor.
             allow_overwrite: allow the cache to be overwritten. If set to `False`, an
@@ -85,8 +85,8 @@ class StateCacher:
         Store a given object with the given key name.
 
         Args:
-            key: key of the data object to store.
-            data_obj: data object to store.
+            key: key of the data_module object to store.
+            data_obj: data_module object to store.
             pickle_module: module used for pickling metadata and objects, default to `self.pickle_module`.
                 this arg is used by `torch.save`, for more details, please check:
                 https://pytorch.org/docs/stable/generated/torch.save.html#torch.save.

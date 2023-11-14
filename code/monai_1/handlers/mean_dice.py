@@ -41,7 +41,7 @@ class MeanDice(IgniteMetricHandler):
                 ``"mean_channel"``, ``"sum_channel"``}, default to ``"mean"``. if "none", will not do reduction.
             num_classes: number of input channels (always including the background). When this is None,
                 ``y_pred.shape[1]`` will be used. This option is useful when both ``y_pred`` and ``y`` are
-                single-channel class indices and the number of classes is not automatically inferred from data.
+                single-channel class indices and the number of classes is not automatically inferred from data_module.
             output_transform: callable to extract `y_pred` and `y` from `ignite.engine.state.output` then
                 construct `(y_pred, y)` pair, where `y_pred` and `y` can be `batch-first` Tensors or
                 lists of `channel-first` Tensors. the form of `(y_pred, y)` is required by the `update()`.

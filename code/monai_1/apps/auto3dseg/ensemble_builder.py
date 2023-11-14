@@ -89,7 +89,7 @@ class AlgoEnsemble(ABC):
 
         Args:
             dataroot: the path of the files
-            data_list_or_path: the data source file path
+            data_list_or_path: the data_module source file path
         """
 
         self.infer_files = []
@@ -101,7 +101,7 @@ class AlgoEnsemble(ABC):
             if data_key in datalist:
                 self.infer_files, _ = datafold_read(datalist=datalist, basedir=dataroot, fold=-1, key=data_key)
             elif not hasattr(self, "rank") or self.rank == 0:
-                logger.info(f"Datalist file has no testing key - {data_key}. No data for inference is specified")
+                logger.info(f"Datalist file has no testing key - {data_key}. No data_module for inference is specified")
 
         else:
             raise ValueError("Unsupported parameter type")
@@ -320,7 +320,7 @@ class AlgoEnsembleBuilder:
 
     Args:
         history: a collection of trained bundleAlgo algorithms.
-        data_src_cfg_name: filename of the data source.
+        data_src_cfg_name: filename of the data_module source.
 
     Examples:
 
@@ -399,7 +399,7 @@ class EnsembleRunner:
     The Runner for ensembler. It ensembles predictions and saves them to the disk with a support of using multi-GPU.
 
     Args:
-        data_src_cfg_name: filename of the data source.
+        data_src_cfg_name: filename of the data_module source.
         work_dir: working directory to save the intermediate and final results. Default is `./work_dir`.
         num_fold: number of fold. Default is 5.
         ensemble_method_name: method to ensemble predictions from different model. Default is AlgoEnsembleBestByFold.

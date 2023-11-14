@@ -25,7 +25,7 @@ class MILModel(nn.Module):
     """
     Multiple Instance Learning (MIL) model, with a backbone classification model.
     Currently, it only works for 2D images, a typical use case is for classification of the
-    digital pathology whole slide images. The expected shape of input data is `[B, N, C, H, W]`,
+    digital pathology whole slide images. The expected shape of input data_module is `[B, N, C, H, W]`,
     where `B` is the batch_size of PyTorch Dataloader and `N` is the number of instances
     extracted from every original image in the batch. A tutorial example is available at:
     https://github.com/Project-MONAI/tutorials/tree/master/pathology/multiple_instance_learning.

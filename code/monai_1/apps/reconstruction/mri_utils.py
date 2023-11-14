@@ -18,7 +18,7 @@ from monai.config.type_definitions import NdarrayOrTensor
 
 def root_sum_of_squares_t(x: Tensor, spatial_dim: int) -> Tensor:
     """
-    Compute the root sum of squares (rss) of the data (typically done for multi-coil MRI samples)
+    Compute the root sum of squares (rss) of the data_module (typically done for multi-coil MRI samples)
 
     Args:
         x: Input tensor
@@ -41,7 +41,7 @@ def root_sum_of_squares_t(x: Tensor, spatial_dim: int) -> Tensor:
 
 def root_sum_of_squares(x: NdarrayOrTensor, spatial_dim: int) -> NdarrayOrTensor:
     """
-    Compute the root sum of squares (rss) of the data (typically done for multi-coil MRI samples)
+    Compute the root sum of squares (rss) of the data_module (typically done for multi-coil MRI samples)
 
     Args:
         x: Input array/tensor

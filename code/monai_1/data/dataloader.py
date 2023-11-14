@@ -29,30 +29,30 @@ class DataLoader(_TorchDataLoader):
     DataLoader and adds enhanced `collate_fn` and `worker_fn` by default.
 
     Although this class could be configured to be the same as
-    `torch.utils.data.DataLoader`, its default configuration is
+    `torch.utils.data_module.DataLoader`, its default configuration is
     recommended, mainly for the following extra features:
 
         - It handles MONAI randomizable objects with appropriate random state
           managements for deterministic behaviour.
         - It is aware of the patch-based transform (such as
           :py:class:`monai.transforms.RandSpatialCropSamplesDict`) samples for
-          preprocessing with enhanced data collating behaviour.
+          preprocessing with enhanced data_module collating behaviour.
           See: :py:class:`monai.transforms.Compose`.
 
-    For more details about :py:class:`torch.utils.data.DataLoader`, please see:
+    For more details about :py:class:`torch.utils.data_module.DataLoader`, please see:
     https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader.
 
-    For example, to construct a randomized dataset and iterate with the data loader:
+    For example, to construct a randomized dataset and iterate with the data_module loader:
 
     .. code-block:: python
 
         import torch
 
-        from monai.data import DataLoader
+        from monai.data_module import DataLoader
         from monai.transforms import Randomizable
 
 
-        class RandomDataset(torch.utils.data.Dataset, Randomizable):
+        class RandomDataset(torch.utils.data_module.Dataset, Randomizable):
             def __getitem__(self, index):
                 return self.R.randint(0, 1000, (1,))
 
@@ -64,15 +64,15 @@ class DataLoader(_TorchDataLoader):
         dataloader = DataLoader(dataset, batch_size=2, num_workers=4)
         for epoch in range(2):
             for i, batch in enumerate(dataloader):
-                print(epoch, i, batch.data.numpy().flatten().tolist())
+                print(epoch, i, batch.data_module.numpy().flatten().tolist())
 
     Args:
-        dataset: dataset from which to load the data.
-        num_workers: how many subprocesses to use for data
-            loading. ``0`` means that the data will be loaded in the main process.
+        dataset: dataset from which to load the data_module.
+        num_workers: how many subprocesses to use for data_module
+            loading. ``0`` means that the data_module will be loaded in the main process.
             (default: ``0``)
-        collate_fn: default to :py:func:`monai.data.utils.list_data_collate`.
-        worker_init_fn: default to :py:func:`monai.data.utils.worker_init_fn`.
+        collate_fn: default to :py:func:`monai.data_module.utils.list_data_collate`.
+        worker_init_fn: default to :py:func:`monai.data_module.utils.worker_init_fn`.
         kwargs: other parameters for PyTorch DataLoader.
     """
 

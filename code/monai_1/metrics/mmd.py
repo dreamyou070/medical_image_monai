@@ -43,7 +43,7 @@ class MMDMetric(Metric):
 def compute_mmd(y: torch.Tensor, y_pred: torch.Tensor, y_mapping: Callable | None) -> torch.Tensor:
     """
     Args:
-        y: first sample (e.g., the reference image). Its shape is (B,C,W,H) for 2D data and (B,C,W,H,D) for 3D.
+        y: first sample (e.g., the reference image). Its shape is (B,C,W,H) for 2D data_module and (B,C,W,H,D) for 3D.
         y_pred: second sample (e.g., the reconstructed image). It has similar shape as y.
         y_mapping: Callable to transform the y tensors before computing the metric.
     """

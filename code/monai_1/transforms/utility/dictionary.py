@@ -334,9 +334,9 @@ class SplitDimd(MapTransform, MultiSampleTrait):
         Args:
             keys: keys of the corresponding items to be transformed.
                 See also: :py:class:`monai.transforms.compose.MapTransform`
-            output_postfixes: the postfixes to construct keys to store split data.
-                for example: if the key of input data is `pred` and split 2 classes, the output
-                data keys will be: pred_(output_postfixes[0]), pred_(output_postfixes[1])
+            output_postfixes: the postfixes to construct keys to store split data_module.
+                for example: if the key of input data_module is `pred` and split 2 classes, the output
+                data_module keys will be: pred_(output_postfixes[0]), pred_(output_postfixes[1])
                 if None, using the index number: `pred_0`, `pred_1`, ... `pred_N`.
             dim: which dimension of input image is the channel, default to 0.
             keepdim: if `True`, output will have singleton in the split dimension. If `False`, this
@@ -364,7 +364,7 @@ class SplitDimd(MapTransform, MultiSampleTrait):
             results = [self.splitter(d[key]) for key in all_keys]
             for row in zip(*results):
                 new_dict = dict(zip(all_keys, row))
-                # fill in the extra keys with unmodified data
+                # fill in the extra keys with unmodified data_module
                 for k in set(d.keys()).difference(set(all_keys)):
                     new_dict[k] = deepcopy(d[k])
                 output.append(new_dict)
@@ -378,7 +378,7 @@ class SplitDimd(MapTransform, MultiSampleTrait):
             for i, r in enumerate(rets):
                 split_key = f"{key}_{postfixes[i]}"
                 if split_key in d:
-                    raise RuntimeError(f"input data already contains key {split_key}.")
+                    raise RuntimeError(f"input data_module already contains key {split_key}.")
                 d[split_key] = r
         return d
 
@@ -400,7 +400,7 @@ class CastToTyped(MapTransform):
         Args:
             keys: keys of the corresponding items to be transformed.
                 See also: :py:class:`monai.transforms.compose.MapTransform`
-            dtype: convert image to this data type, default is `np.float32`.
+            dtype: convert image to this data_module type, default is `np.float32`.
                 it also can be a sequence of dtypes or torch.dtype,
                 each element corresponds to a key in ``keys``.
             allow_missing_keys: don't raise exception if key is missing.
@@ -438,12 +438,12 @@ class ToTensord(MapTransform, InvertibleTransform):
         Args:
             keys: keys of the corresponding items to be transformed.
                 See also: :py:class:`monai.transforms.compose.MapTransform`
-            dtype: target data content type to convert, for example: torch.float, etc.
-            device: specify the target device to put the Tensor data.
+            dtype: target data_module content type to convert, for example: torch.float, etc.
+            device: specify the target device to put the Tensor data_module.
             wrap_sequence: if `False`, then lists will recursively call this function, default to `True`.
                 E.g., if `False`, `[1, 2]` -> `[tensor(1), tensor(2)]`, if `True`, then `[1, 2]` -> `tensor([1, 2])`.
             track_meta: if `True` convert to ``MetaTensor``, otherwise to Pytorch ``Tensor``,
-                if ``None`` behave according to return value of py:func:`monai.data.meta_obj.get_track_meta`.
+                if ``None`` behave according to return value of py:func:`monai.data_module.meta_obj.get_track_meta`.
             allow_missing_keys: don't raise exception if key is missing.
 
         """
@@ -473,12 +473,12 @@ class EnsureTyped(MapTransform):
     """
     Dictionary-based wrapper of :py:class:`monai.transforms.EnsureType`.
 
-    Ensure the input data to be a PyTorch Tensor or numpy array, support: `numpy array`, `PyTorch Tensor`,
+    Ensure the input data_module to be a PyTorch Tensor or numpy array, support: `numpy array`, `PyTorch Tensor`,
     `float`, `int`, `bool`, `string` and `object` keep the original.
     If passing a dictionary, list or tuple, still return dictionary, list or tuple and recursively convert
-    every item to the expected data type if `wrap_sequence=False`.
+    every item to the expected data_module type if `wrap_sequence=False`.
 
-    Note: Currently, we only convert tensor data to numpy array or scalar number in the inverse operation.
+    Note: Currently, we only convert tensor data_module to numpy array or scalar number in the inverse operation.
 
     """
 
@@ -498,14 +498,14 @@ class EnsureTyped(MapTransform):
         Args:
             keys: keys of the corresponding items to be transformed.
                 See also: :py:class:`monai.transforms.compose.MapTransform`
-            data_type: target data type to convert, should be "tensor" or "numpy".
-            dtype: target data content type to convert, for example: np.float32, torch.float, etc.
+            data_type: target data_module type to convert, should be "tensor" or "numpy".
+            dtype: target data_module content type to convert, for example: np.float32, torch.float, etc.
                 It also can be a sequence of dtype, each element corresponds to a key in ``keys``.
-            device: for Tensor data type, specify the target device.
+            device: for Tensor data_module type, specify the target device.
             wrap_sequence: if `False`, then lists will recursively call this function, default to `True`.
                 E.g., if `False`, `[1, 2]` -> `[tensor(1), tensor(2)]`, if `True`, then `[1, 2]` -> `tensor([1, 2])`.
             track_meta: whether to convert to `MetaTensor` when `data_type` is "tensor".
-                If False, the output data type will be `torch.Tensor`. Default to the return value of `get_track_meta`.
+                If False, the output data_module type will be `torch.Tensor`. Default to the return value of `get_track_meta`.
             allow_missing_keys: don't raise exception if key is missing.
         """
         super().__init__(keys, allow_missing_keys)
@@ -539,7 +539,7 @@ class ToNumpyd(MapTransform):
         Args:
             keys: keys of the corresponding items to be transformed.
                 See also: :py:class:`monai.transforms.compose.MapTransform`
-            dtype: target data type when converting to numpy array.
+            dtype: target data_module type when converting to numpy array.
             wrap_sequence: if `False`, then lists will recursively call this function, default to `True`.
                 E.g., if `False`, `[1, 2]` -> `[array(1), array(2)]`, if `True`, then `[1, 2]` -> `array([1, 2])`.
             allow_missing_keys: don't raise exception if key is missing.
@@ -561,7 +561,7 @@ class ToCupyd(MapTransform):
     Args:
         keys: keys of the corresponding items to be transformed.
             See also: :py:class:`monai.transforms.compose.MapTransform`
-        dtype: data type specifier. It is inferred from the input by default.
+        dtype: data_module type specifier. It is inferred from the input by default.
             if not None, must be an argument of `numpy.dtype`, for more details:
             https://docs.cupy.dev/en/stable/reference/generated/cupy.array.html.
         wrap_sequence: if `False`, then lists will recursively call this function, default to `True`.
@@ -649,7 +649,7 @@ class Transposed(MapTransform, InvertibleTransform):
 
 class DeleteItemsd(MapTransform):
     """
-    Delete specified items from data dictionary to release memory.
+    Delete specified items from data_module dictionary to release memory.
     It will remove the key-values and copy the others to construct a new dictionary.
     """
 
@@ -686,7 +686,7 @@ class DeleteItemsd(MapTransform):
 
 class SelectItemsd(MapTransform):
     """
-    Select only specified items from data dictionary to release memory.
+    Select only specified items from data_module dictionary to release memory.
     It will copy the selected key-values and construct a new dictionary.
     """
 
@@ -798,17 +798,17 @@ class DataStatsd(MapTransform):
                 See also: :py:class:`monai.transforms.compose.MapTransform`
             prefix: will be printed in format: "{prefix} statistics".
                 it also can be a sequence of string, each element corresponds to a key in ``keys``.
-            data_type: whether to show the type of input data.
+            data_type: whether to show the type of input data_module.
                 it also can be a sequence of bool, each element corresponds to a key in ``keys``.
-            data_shape: whether to show the shape of input data.
+            data_shape: whether to show the shape of input data_module.
                 it also can be a sequence of bool, each element corresponds to a key in ``keys``.
-            value_range: whether to show the value range of input data.
+            value_range: whether to show the value range of input data_module.
                 it also can be a sequence of bool, each element corresponds to a key in ``keys``.
-            data_value: whether to show the raw value of input data.
+            data_value: whether to show the raw value of input data_module.
                 it also can be a sequence of bool, each element corresponds to a key in ``keys``.
                 a typical example is to print some properties of Nifti image: affine, pixdim, etc.
             additional_info: user can define callable function to extract
-                additional info from input data. it also can be a sequence of string, each element
+                additional info from input data_module. it also can be a sequence of string, each element
                 corresponds to a key in ``keys``.
             name: identifier of `logging.logger` to use, defaulting to "DataStats".
             allow_missing_keys: don't raise exception if key is missing.
@@ -864,7 +864,7 @@ class SimulateDelayd(MapTransform):
 
 class CopyItemsd(MapTransform):
     """
-    Copy specified items from data dictionary and save with different key names.
+    Copy specified items from data_module dictionary and save with different key names.
     It can copy several items together and copy several times.
     """
 
@@ -882,8 +882,8 @@ class CopyItemsd(MapTransform):
             keys: keys of the corresponding items to be transformed.
                 See also: :py:class:`monai.transforms.compose.MapTransform`
             times: expected copy times, for example, if keys is "img", times is 3,
-                it will add 3 copies of "img" data to the dictionary, default to 1.
-            names: the names corresponding to the newly copied data,
+                it will add 3 copies of "img" data_module to the dictionary, default to 1.
+            names: the names corresponding to the newly copied data_module,
                 the length should match `len(keys) x times`. for example, if keys is ["img", "seg"]
                 and times is 2, names can be: ["img_1", "seg_1", "img_2", "seg_2"].
                 if None, use "{key}_{index}" as key for copy times `N`, index from `0` to `N-1`.
@@ -909,7 +909,7 @@ class CopyItemsd(MapTransform):
     def __call__(self, data: Mapping[Hashable, NdarrayOrTensor]) -> dict[Hashable, NdarrayOrTensor]:
         """
         Raises:
-            KeyError: When a key in ``self.names`` already exists in ``data``.
+            KeyError: When a key in ``self.names`` already exists in ``data_module``.
 
         """
         d = dict(data)
@@ -917,7 +917,7 @@ class CopyItemsd(MapTransform):
         for i in range(self.times):
             for key, new_key in self.key_iterator(d, self.names[i * key_len : (i + 1) * key_len]):
                 if new_key in d:
-                    raise KeyError(f"Key {new_key} already exists in data.")
+                    raise KeyError(f"Key {new_key} already exists in data_module.")
                 val = d[key]
                 d[new_key] = MetaObj.copy_items(val) if isinstance(val, (torch.Tensor, np.ndarray)) else deepcopy(val)
         return d
@@ -925,7 +925,7 @@ class CopyItemsd(MapTransform):
 
 class ConcatItemsd(MapTransform):
     """
-    Concatenate specified items from data dictionary together on the first dim to construct a big array.
+    Concatenate specified items from data_module dictionary together on the first dim to construct a big array.
     Expect all the items are numpy array or PyTorch Tensor or MetaTensor.
     Return the first input's meta information when items are MetaTensor.
     """
@@ -937,7 +937,7 @@ class ConcatItemsd(MapTransform):
         Args:
             keys: keys of the corresponding items to be concatenated together.
                 See also: :py:class:`monai.transforms.compose.MapTransform`
-            name: the name corresponding to the key to store the concatenated data.
+            name: the name corresponding to the key to store the concatenated data_module.
             dim: on which dimension to concatenate the items, default is 0.
             allow_missing_keys: don't raise exception if key is missing.
         """
@@ -948,7 +948,7 @@ class ConcatItemsd(MapTransform):
     def __call__(self, data: Mapping[Hashable, NdarrayOrTensor]) -> dict[Hashable, NdarrayOrTensor]:
         """
         Raises:
-            TypeError: When items in ``data`` differ in type.
+            TypeError: When items in ``data_module`` differ in type.
             TypeError: When the item type is not in ``Union[numpy.ndarray, torch.Tensor, MetaTensor]``.
 
         """
@@ -959,7 +959,7 @@ class ConcatItemsd(MapTransform):
             if data_type is None:
                 data_type = type(d[key])
             elif not isinstance(d[key], data_type):
-                raise TypeError("All items in data must have the same type.")
+                raise TypeError("All items in data_module must have the same type.")
             output.append(d[key])
 
         if len(output) == 0:
@@ -971,7 +971,7 @@ class ConcatItemsd(MapTransform):
             d[self.name] = torch.cat(output, dim=self.dim)  # type: ignore
         else:
             raise TypeError(
-                f"Unsupported data type: {data_type}, available options are (numpy.ndarray, torch.Tensor, MetaTensor)."
+                f"Unsupported data_module type: {data_type}, available options are (numpy.ndarray, torch.Tensor, MetaTensor)."
             )
         return d
 
@@ -998,9 +998,9 @@ class Lambdad(MapTransform, InvertibleTransform):
             each element corresponds to a key in ``keys``.
         inv_func: Lambda/function of inverse operation if want to invert transforms, default to `lambda x: x`.
             It also can be a sequence of Callable, each element corresponds to a key in ``keys``.
-        track_meta:  If `False`, then standard data objects will be returned (e.g., torch.Tensor` and `np.ndarray`)
+        track_meta:  If `False`, then standard data_module objects will be returned (e.g., torch.Tensor` and `np.ndarray`)
             as opposed to MONAI's enhanced objects. By default, this is `True`.
-        overwrite: whether to overwrite the original data in the input dictionary with lambda function output. it
+        overwrite: whether to overwrite the original data_module in the input dictionary with lambda function output. it
             can be bool or str, when setting to str, it will create a new key for the output and keep the value of
             key intact. default to True. it also can be a sequence of bool or str, each element corresponds to a key
             in ``keys``.
@@ -1059,12 +1059,12 @@ class RandLambdad(Lambdad, RandomizableTransform):
             each element corresponds to a key in ``keys``.
         inv_func: Lambda/function of inverse operation if want to invert transforms, default to `lambda x: x`.
             It also can be a sequence of Callable, each element corresponds to a key in ``keys``.
-        track_meta:  If `False`, then standard data objects will be returned (e.g., torch.Tensor` and `np.ndarray`)
+        track_meta:  If `False`, then standard data_module objects will be returned (e.g., torch.Tensor` and `np.ndarray`)
             as opposed to MONAI's enhanced objects. By default, this is `True`.
-        overwrite: whether to overwrite the original data in the input dictionary with lambda function output.
+        overwrite: whether to overwrite the original data_module in the input dictionary with lambda function output.
             default to True. it also can be a sequence of bool, each element corresponds to a key in ``keys``.
         prob: probability of executing the random function, default to 1.0, with 100% probability to execute.
-            note that all the data specified by `keys` will share the same random probability to execute or not.
+            note that all the data_module specified by `keys` will share the same random probability to execute or not.
         allow_missing_keys: don't raise exception if key is missing.
 
     For more details, please check :py:class:`monai.transforms.Lambdad`.
@@ -1136,7 +1136,7 @@ class LabelToMaskd(MapTransform):
             is the expected label values, like: [1, 2, 3]. for One-Hot format label, the
             `select_labels` is the expected channel indices.
         merge_channels: whether to use `np.any()` to merge the result on channel dim.
-            if yes, will return a single channel mask with binary data.
+            if yes, will return a single channel mask with binary data_module.
         allow_missing_keys: don't raise exception if key is missing.
 
     """
@@ -1290,11 +1290,11 @@ class AddExtremePointsChanneld(Randomizable, MapTransform):
         label_key: key to label source to get the extreme points.
         background: Class index of background label, defaults to 0.
         pert: Random perturbation amount to add to the points, defaults to 0.0.
-        sigma: if a list of values, must match the count of spatial dimensions of input data,
+        sigma: if a list of values, must match the count of spatial dimensions of input data_module,
             and apply every value in the list to 1 spatial dimension. if only 1 value provided,
             use it for all spatial dimensions.
-        rescale_min: minimum value of output data.
-        rescale_max: maximum value of output data.
+        rescale_min: minimum value of output data_module.
+        rescale_max: maximum value of output data_module.
         allow_missing_keys: don't raise exception if key is missing.
 
     """
@@ -1354,7 +1354,7 @@ class TorchVisiond(MapTransform):
 
     Note:
         As most of the TorchVision transforms only work for PIL image and PyTorch Tensor, this transform expects input
-        data to be dict of PyTorch Tensors, users can easily call `ToTensord` transform to convert Numpy to Tensor.
+        data_module to be dict of PyTorch Tensors, users can easily call `ToTensord` transform to convert Numpy to Tensor.
     """
 
     backend = TorchVision.backend
@@ -1397,7 +1397,7 @@ class RandTorchVisiond(MapTransform, RandomizableTrait):
     Note:
 
         - As most of the TorchVision transforms only work for PIL image and PyTorch Tensor, this transform expects input
-          data to be dict of PyTorch Tensors. Users should call `ToTensord` transform first to convert Numpy to Tensor.
+          data_module to be dict of PyTorch Tensors. Users should call `ToTensord` transform first to convert Numpy to Tensor.
         - This class inherits the ``Randomizable`` purely to prevent any dataset caching to skip the transform
           computation. If the random factor of the underlying torchvision transform is not derived from `self.R`,
           the results may not be deterministic. See Also: :py:class:`monai.transforms.Randomizable`.
@@ -1439,7 +1439,7 @@ class MapLabelValued(MapTransform):
                 See also: :py:class:`monai.transforms.compose.MapTransform`
             orig_labels: original labels that map to others.
             target_labels: expected label values, 1: 1 map to the `orig_labels`.
-            dtype: convert the output data to dtype, default to float32.
+            dtype: convert the output data_module to dtype, default to float32.
                 if dtype is from PyTorch, the transform will use the pytorch backend, else with numpy backend.
             allow_missing_keys: don't raise exception if key is missing.
 
@@ -1478,12 +1478,12 @@ class IntensityStatsd(MapTransform):
             if True, return a list of values for every operation, default to False.
         meta_keys: explicitly indicate the key of the corresponding metadata dictionary.
             used to store the computed statistics to the meta dict.
-            for example, for data with key `image`, the metadata by default is in `image_meta_dict`.
+            for example, for data_module with key `image`, the metadata by default is in `image_meta_dict`.
             the metadata is a dictionary object which contains: filename, original_shape, etc.
             it can be a sequence of string, map to the `keys`.
             if None, will try to construct meta_keys by `key_{meta_key_postfix}`.
         meta_key_postfix: if meta_keys is None, use `key_{postfix}` to fetch the metadata according
-            to the key data, default is `meta_dict`, the metadata is a dictionary object.
+            to the key data_module, default is `meta_dict`, the metadata is a dictionary object.
             used to store the computed statistics to the meta dict.
         allow_missing_keys: don't raise exception if key is missing.
 
@@ -1565,7 +1565,7 @@ class CuCIMd(MapTransform):
         kwargs: parameters for the CuCIM transform.
 
     Note:
-        CuCIM transforms only work with CuPy arrays, this transform expects input data to be `cupy.ndarray`.
+        CuCIM transforms only work with CuPy arrays, this transform expects input data_module to be `cupy.ndarray`.
         Users can call `ToCuPy` transform to convert a numpy array or torch tensor to cupy array.
     """
 
@@ -1603,7 +1603,7 @@ class RandCuCIMd(MapTransform, RandomizableTrait):
         kwargs: parameters for the CuCIM transform.
 
     Note:
-        - CuCIM transform only work with CuPy arrays, so this transform expects input data to be `cupy.ndarray`.
+        - CuCIM transform only work with CuPy arrays, so this transform expects input data_module to be `cupy.ndarray`.
           Users should call `ToCuPy` transform first to convert a numpy array or torch tensor to cupy array.
         - This class inherits the ``Randomizable`` purely to prevent any dataset caching to skip the transform
           computation. If the random factor of the underlying cuCIM transform is not derived from `self.R`,
@@ -1710,7 +1710,7 @@ class RandImageFilterd(MapTransform, RandomizableTransform):
             Computational complexity increases exponentially with kernel_size, which
             should be considered when choosing the kernel size.
         prob:
-            Probability the transform is applied to the data
+            Probability the transform is applied to the data_module
         allow_missing_keys:
             Don't raise exception if key is missing.
     """

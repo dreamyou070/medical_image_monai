@@ -49,7 +49,7 @@ class DiceMetric(CumulativeIterationMetric):
             If `False`, 1 will be set if the predictions of empty ground truth cases are also empty.
         num_classes: number of input channels (always including the background). When this is None,
             ``y_pred.shape[1]`` will be used. This option is useful when both ``y_pred`` and ``y`` are
-            single-channel class indices and the number of classes is not automatically inferred from data.
+            single-channel class indices and the number of classes is not automatically inferred from data_module.
 
     """
 
@@ -79,7 +79,7 @@ class DiceMetric(CumulativeIterationMetric):
     def _compute_tensor(self, y_pred: torch.Tensor, y: torch.Tensor) -> torch.Tensor:  # type: ignore[override]
         """
         Args:
-            y_pred: input data to compute, typical segmentation model output.
+            y_pred: input data_module to compute, typical segmentation model output.
                 It must be one-hot format and first dim is batch, example shape: [16, 3, 32, 32]. The values
                 should be binarized.
             y: ground truth to compute mean Dice metric. `y` can be single-channel class indices or
@@ -108,7 +108,7 @@ class DiceMetric(CumulativeIterationMetric):
         """
         data = self.get_buffer()
         if not isinstance(data, torch.Tensor):
-            raise ValueError(f"the data to aggregate must be PyTorch Tensor, got {type(data)}.")
+            raise ValueError(f"the data_module to aggregate must be PyTorch Tensor, got {type(data)}.")
 
         # do metric reduction
         f, not_nans = do_metric_reduction(data, reduction or self.reduction)
@@ -125,7 +125,7 @@ def compute_dice(
     """Computes Dice score metric for a batch of predictions.
 
     Args:
-        y_pred: input data to compute, typical segmentation model output.
+        y_pred: input data_module to compute, typical segmentation model output.
             `y_pred` can be single-channel class indices or in the one-hot format.
         y: ground truth to compute mean dice metric. `y` can be single-channel class indices or in the one-hot format.
         include_background: whether to include Dice computation on the first channel of
@@ -135,7 +135,7 @@ def compute_dice(
             If `False`, 1 will be set if the predictions of empty ground truth cases are also empty.
         num_classes: number of input channels (always including the background). When this is None,
             ``y_pred.shape[1]`` will be used. This option is useful when both ``y_pred`` and ``y`` are
-            single-channel class indices and the number of classes is not automatically inferred from data.
+            single-channel class indices and the number of classes is not automatically inferred from data_module.
 
     Returns:
         Dice scores per batch and per class, (shape: [batch_size, num_classes]).
@@ -202,7 +202,7 @@ class DiceHelper:
                 If `False`, 1 will be set if the Union of ``y_pred`` and ``y`` is empty.
             num_classes: number of input channels (always including the background). When this is None,
                 ``y_pred.shape[1]`` will be used. This option is useful when both ``y_pred`` and ``y`` are
-                single-channel class indices and the number of classes is not automatically inferred from data.
+                single-channel class indices and the number of classes is not automatically inferred from data_module.
         """
         self.sigmoid = sigmoid
         self.reduction = reduction

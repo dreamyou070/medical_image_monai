@@ -21,14 +21,14 @@ from monai.apps.reconstruction.networks.nets.utils import sensitivity_map_expand
 class VarNetBlock(nn.Module):
     """
     A variational block based on Sriram et. al., "End-to-end variational networks for accelerated MRI reconstruction".
-    It applies data consistency and refinement to the intermediate kspace and combines those results.
+    It applies data_module consistency and refinement to the intermediate kspace and combines those results.
 
     Modified and adopted from: https://github.com/facebookresearch/fastMRI
 
     Args:
         refinement_model: the model used for refinement (typically a U-Net but can be any deep learning model
             that performs well when the input and output are in image domain (e.g., a convolutional network).
-        spatial_dims: is 2 for 2D data and is 3 for 3D data
+        spatial_dims: is 2 for 2D data_module and is 3 for 3D data_module
     """
 
     def __init__(self, refinement_model: nn.Module, spatial_dims: int = 2):
@@ -42,15 +42,15 @@ class VarNetBlock(nn.Module):
 
     def soft_dc(self, x: Tensor, ref_kspace: Tensor, mask: Tensor) -> Tensor:
         """
-        Applies data consistency to input x. Suppose x is an intermediate estimate of the kspace and ref_kspace
+        Applies data_module consistency to input x. Suppose x is an intermediate estimate of the kspace and ref_kspace
         is the reference under-sampled measurement. This function returns mask * (x - ref_kspace). View this as the
         residual between the original under-sampled kspace and the estimate given by the network.
 
         Args:
             x: 2D kspace (B,C,H,W,2) with the last dimension being 2 (for real/imaginary parts) and C denoting the
-                coil dimension. 3D data will have the shape (B,C,H,W,D,2).
+                coil dimension. 3D data_module will have the shape (B,C,H,W,D,2).
             ref_kspace: original under-sampled kspace with the same shape as x.
-            mask: the under-sampling mask with shape (1,1,1,W,1) for 2D data or (1,1,1,1,D,1) for 3D data.
+            mask: the under-sampling mask with shape (1,1,1,W,1) for 2D data_module or (1,1,1,1,D,1) for 3D data_module.
 
         Returns:
             Output of DC block with the same shape as x
@@ -62,10 +62,10 @@ class VarNetBlock(nn.Module):
         Args:
             current_kspace: Predicted kspace from the previous block. It's a 2D kspace (B,C,H,W,2)
                 with the last dimension being 2 (for real/imaginary parts) and C denoting the
-                coil dimension. 3D data will have the shape (B,C,H,W,D,2).
-            ref_kspace: reference kspace for applying data consistency (is the under-sampled kspace in MRI reconstruction).
+                coil dimension. 3D data_module will have the shape (B,C,H,W,D,2).
+            ref_kspace: reference kspace for applying data_module consistency (is the under-sampled kspace in MRI reconstruction).
                 Its shape is the same as current_kspace.
-            mask: the under-sampling mask with shape (1,1,1,W,1) for 2D data or (1,1,1,1,D,1) for 3D data.
+            mask: the under-sampling mask with shape (1,1,1,W,1) for 2D data_module or (1,1,1,1,D,1) for 3D data_module.
             sens_maps: coil sensitivity maps with the same shape as current_kspace
 
         Returns:

@@ -47,8 +47,8 @@ class MLFlowHandler:
     MLFlowHandler defines a set of Ignite Event-handlers for the MLFlow tracking logics.
     It can be used for any Ignite Engine(trainer, validator and evaluator).
     And it can track both epoch level and iteration level logging, then MLFlow can store
-    the data and visualize.
-    The expected data source is Ignite ``engine.state.output`` and ``engine.state.metrics``.
+    the data_module and visualize.
+    The expected data_module source is Ignite ``engine.state.output`` and ``engine.state.metrics``.
 
     Default behaviors:
         - When EPOCH_COMPLETED, track each dictionary item in
@@ -63,13 +63,13 @@ class MLFlowHandler:
         tracking_uri: connects to a tracking URI. can also set the `MLFLOW_TRACKING_URI` environment
             variable to have MLflow find a URI from there. in both cases, the URI can either be
             an HTTP/HTTPS URI for a remote server, a database connection string, or a local path
-            to log data to a directory. The URI defaults to path `mlruns`.
+            to log data_module to a directory. The URI defaults to path `mlruns`.
             for more details: https://mlflow.org/docs/latest/python_api/mlflow.html#mlflow.set_tracking_uri.
-        iteration_log: whether to log data to MLFlow when iteration completed, default to `True`.
+        iteration_log: whether to log data_module to MLFlow when iteration completed, default to `True`.
             ``iteration_log`` can be also a function and it will be interpreted as an event filter
             (see https://pytorch.org/ignite/generated/ignite.engine.events.Events.html for details).
             Event filter function accepts as input engine and event value (iteration) and should return True/False.
-        epoch_log: whether to log data to MLFlow when epoch completed, default to `True`.
+        epoch_log: whether to log data_module to MLFlow when epoch completed, default to `True`.
             ``epoch_log`` can be also a function and it will be interpreted as an event filter.
             See ``iteration_log`` argument for more details.
         epoch_logger: customized callable logger for epoch level logging with MLFlow.
@@ -80,7 +80,7 @@ class MLFlowHandler:
             Must accept parameter "dataset_dict", use default logger if None.
         dataset_dict: a dictionary in which the key is the name of the dataset and the value is a PyTorch
             dataset, that needs to be recorded. This arg is only useful when MLFlow version >= 2.4.0.
-            For more details about how to log data with MLFlow, please go to the website:
+            For more details about how to log data_module with MLFlow, please go to the website:
             https://mlflow.org/docs/latest/python_api/mlflow.data.html.
         dataset_keys: a key or a collection of keys to indicate contents in the dataset that
             need to be stored by MLFlow.
@@ -378,7 +378,7 @@ class MLFlowHandler:
 
     def _default_iteration_log(self, engine: Engine) -> None:
         """
-        Execute iteration log operation based on Ignite `engine.state.output` data.
+        Execute iteration log operation based on Ignite `engine.state.output` data_module.
         Log the values from `self.output_transform(engine.state.output)`.
         Since `engine.state.output` is a decollated list and we replicated the loss value for every item
         of the decollated list, the default behavior is to track the loss from `output[0]`.
@@ -444,7 +444,7 @@ class MLFlowHandler:
                 raise AttributeError(f"The {dataset_type} dataset of is None. Cannot record it by MLFlow.")
 
             sample_dict: dict[str, list[str]] = {}
-            dataset_samples = getattr(dataset, "data", [])
+            dataset_samples = getattr(dataset, "data_module", [])
             for sample in tqdm(dataset_samples, f"Recording the {dataset_type} dataset"):
                 for key in self.dataset_keys:
                     if key not in sample_dict:

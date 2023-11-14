@@ -44,7 +44,7 @@ else:
 class IgniteMetricHandler(Metric):
     """
     Base Metric class based on ignite event handler mechanism.
-    The input `prediction` or `label` data can be a PyTorch Tensor or numpy array with batch dim and channel dim,
+    The input `prediction` or `label` data_module can be a PyTorch Tensor or numpy array with batch dim and channel dim,
     or a list of PyTorch Tensor or numpy array without batch dim.
 
     Args:

@@ -134,7 +134,7 @@ class PanopticQualityMetric(CumulativeIterationMetric):
         """
         data = self.get_buffer()
         if not isinstance(data, torch.Tensor):
-            raise ValueError("the data to aggregate must be PyTorch Tensor.")
+            raise ValueError("the data_module to aggregate must be PyTorch Tensor.")
 
         # do metric reduction
         f, _ = do_metric_reduction(data, reduction or self.reduction)
@@ -169,7 +169,7 @@ def compute_panoptic_quality(
     calculate PQ, and returning them directly enables further calculation over all images.
 
     Args:
-        pred: input data to compute, it must be in the form of HW and have integer type.
+        pred: input data_module to compute, it must be in the form of HW and have integer type.
         gt: ground truth. It must have the same shape as `pred` and have integer type.
         metric_name: output metric. The value can be "pq", "sq" or "rq".
         remap: whether to remap `pred` and `gt` to ensure contiguous ordering of instance id.

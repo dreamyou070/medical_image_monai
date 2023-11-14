@@ -92,7 +92,7 @@ class ConvertBoxMode(Transform):
         dst_mode: target box mode. If it is not given, this func will assume it is ``StandardMode()``.
 
     Note:
-        ``StandardMode`` = :class:`~monai.data.box_utils.CornerCornerModeTypeA`,
+        ``StandardMode`` = :class:`~monai.data_module.box_utils.CornerCornerModeTypeA`,
         also represented as "xyxy" for 2D and "xyzxyz" for 3D.
 
         src_mode and dst_mode can be:
@@ -106,13 +106,13 @@ class ConvertBoxMode(Transform):
                 - "xyzwhd": boxes has format [xmin, ymin, zmin, xsize, ysize, zsize]
                 - "ccwh": boxes has format [xcenter, ycenter, xsize, ysize]
                 - "cccwhd": boxes has format [xcenter, ycenter, zcenter, xsize, ysize, zsize]
-            #. BoxMode class: choose from the subclasses of :class:`~monai.data.box_utils.BoxMode`, for example,
+            #. BoxMode class: choose from the subclasses of :class:`~monai.data_module.box_utils.BoxMode`, for example,
                 - CornerCornerModeTypeA: equivalent to "xyxy" or "xyzxyz"
                 - CornerCornerModeTypeB: equivalent to "xxyy" or "xxyyzz"
                 - CornerCornerModeTypeC: equivalent to "xyxy" or "xyxyzz"
                 - CornerSizeMode: equivalent to "xywh" or "xyzwhd"
                 - CenterSizeMode: equivalent to "ccwh" or "cccwhd"
-            #. BoxMode object: choose from the subclasses of :class:`~monai.data.box_utils.BoxMode`, for example,
+            #. BoxMode object: choose from the subclasses of :class:`~monai.data_module.box_utils.BoxMode`, for example,
                 - CornerCornerModeTypeA(): equivalent to "xyxy" or "xyzxyz"
                 - CornerCornerModeTypeB(): equivalent to "xxyy" or "xxyyzz"
                 - CornerCornerModeTypeC(): equivalent to "xyxy" or "xyxyzz"
@@ -147,7 +147,7 @@ class ConvertBoxMode(Transform):
             boxes: source bounding boxes, Nx4 or Nx6 torch tensor or ndarray. The box mode is assumed to be ``StandardMode``
 
         Returns:
-            bounding boxes with target mode, with same data type as ``boxes``, does not share memory with ``boxes``
+            bounding boxes with target mode, with same data_module type as ``boxes``, does not share memory with ``boxes``
         """
         return convert_box_mode(boxes, src_mode=self.src_mode, dst_mode=self.dst_mode)
 
@@ -186,7 +186,7 @@ class ConvertBoxToStandardMode(Transform):
             boxes: source bounding boxes, Nx4 or Nx6 torch tensor or ndarray. The box mode is assumed to be ``StandardMode``
 
         Returns:
-            bounding boxes with standard mode, with same data type as ``boxes``, does not share memory with ``boxes``
+            bounding boxes with standard mode, with same data_module type as ``boxes``, does not share memory with ``boxes``
         """
         return convert_box_to_standard_mode(boxes, mode=self.mode)
 
@@ -406,7 +406,7 @@ class BoxToMask(Transform):
 
             - If True, it assumes the object shape is close to ellipse or ellipsoid.
             - If False, it assumes the object shape is close to rectangle or cube and well occupies the bounding box.
-            - If the users are going to apply random rotation as data augmentation, we suggest setting ellipse_mask=True
+            - If the users are going to apply random rotation as data_module augmentation, we suggest setting ellipse_mask=True
               See also Kalra et al. "Towards Rotation Invariance in Object Detection", ICCV 2021.
     """
 

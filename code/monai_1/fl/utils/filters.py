@@ -27,10 +27,10 @@ class Filter(abc.ABC):
         Run the filtering.
 
         Arguments:
-            data: ExchangeObject containing some data.
+            data: ExchangeObject containing some data_module.
 
         Returns:
-            ExchangeObject: filtered data.
+            ExchangeObject: filtered data_module.
         """
 
         raise NotImplementedError
@@ -43,13 +43,13 @@ class SummaryFilter(Filter):
 
     def __call__(self, data: ExchangeObject, extra: dict | None = None) -> ExchangeObject:
         """
-        Example filter that doesn't filter anything but only prints data summary.
+        Example filter that doesn't filter anything but only prints data_module summary.
 
         Arguments:
-            data: ExchangeObject containing some data.
+            data: ExchangeObject containing some data_module.
 
         Returns:
-            ExchangeObject: filtered data.
+            ExchangeObject: filtered data_module.
         """
 
         print(f"Summary of ExchangeObject: {data.summary()}")

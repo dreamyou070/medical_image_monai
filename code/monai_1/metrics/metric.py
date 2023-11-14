@@ -56,7 +56,7 @@ class IterationMetric(Metric):
         It supports inputs of a list of "channel-first" Tensor and a "batch-first" Tensor.
 
         Args:
-            y_pred: the raw model prediction data at one iteration, must be a list of `channel-first` Tensor
+            y_pred: the raw model prediction data_module at one iteration, must be a list of `channel-first` Tensor
                 or a `batch-first` Tensor.
             y: the ground truth to compute, must be a list of `channel-first` Tensor
                 or a `batch-first` Tensor.
@@ -68,10 +68,10 @@ class IterationMetric(Metric):
             When it's a list of tensors, each item in the list can represent a specific type of metric.
 
         """
-        # handling a list of channel-first data
+        # handling a list of channel-first data_module
         if isinstance(y_pred, (list, tuple)) or isinstance(y, (list, tuple)):
             return self._compute_list(y_pred, y, **kwargs)
-        # handling a single batch-first data
+        # handling a single batch-first data_module
         if isinstance(y_pred, torch.Tensor):
             y_ = y.detach() if isinstance(y, torch.Tensor) else None
             return self._compute_tensor(y_pred.detach(), y_, **kwargs)
@@ -112,7 +112,7 @@ class IterationMetric(Metric):
     @abstractmethod
     def _compute_tensor(self, y_pred: torch.Tensor, y: torch.Tensor | None = None, **kwargs: Any) -> TensorOrList:
         """
-        Computation logic for `y_pred` and `y` of an iteration, the data should be "batch-first" Tensors.
+        Computation logic for `y_pred` and `y` of an iteration, the data_module should be "batch-first" Tensors.
         A subclass should implement its own computation logic.
         The return value is usually a "batch_first" tensor, or a list of "batch_first" tensors.
         """
@@ -125,15 +125,15 @@ class Cumulative:
     It provides interfaces to accumulate values in the local buffers, synchronize buffers across distributed nodes,
     and aggregate the buffered values.
 
-    In multi-processing, PyTorch programs usually distribute data to multiple nodes. Each node runs with a subset
-    of the data, adds values to its local buffers. Calling `get_buffer` could gather all the results and
+    In multi-processing, PyTorch programs usually distribute data_module to multiple nodes. Each node runs with a subset
+    of the data_module, adds values to its local buffers. Calling `get_buffer` could gather all the results and
     `aggregate` can further handle the results to generate the final outcomes.
 
     Users can implement their own `aggregate` method to handle the results,
     using `get_buffer` to get the buffered contents.
 
-    Note: the data list should have the same length every time calling `add()` in a round,
-    it will automatically create buffers according to the length of data list.
+    Note: the data_module list should have the same length every time calling `add()` in a round,
+    it will automatically create buffers according to the length of data_module list.
 
     Typically, this class is expected to execute the following steps:
 
@@ -162,7 +162,7 @@ class Cumulative:
         print(c.get_buffer())  # [tensor([1, 3, 4]), tensor([2, 5, 6])]
         print(len(c))
 
-    The following is an example of extending with variable length data:
+    The following is an example of extending with variable length data_module:
 
     .. code-block:: python
 
@@ -199,9 +199,9 @@ class Cumulative:
 
     def extend(self, *data: Any) -> None:
         """
-        Extend the local buffers with new ("batch-first") data.
-        A buffer will be allocated for each `data` item.
-        Compared with `self.append`, this method adds a "batch" of data to the local buffers.
+        Extend the local buffers with new ("batch-first") data_module.
+        A buffer will be allocated for each `data_module` item.
+        Compared with `self.append`, this method adds a "batch" of data_module to the local buffers.
 
         Args:
             data: each item can be a "batch-first" tensor or a list of "channel-first" tensors.
@@ -216,7 +216,7 @@ class Cumulative:
                 b.extend([x[0] for x in torch.split(d_t, 1, dim=0)])
             except (AttributeError, IndexError, RuntimeError) as e:
                 raise TypeError(
-                    f"{e}. `data` should be a batch-first tensor or"
+                    f"{e}. `data_module` should be a batch-first tensor or"
                     f" a list of channel-first tensors, got {type(d_t)}"
                 ) from e
         self._synced = False
@@ -224,7 +224,7 @@ class Cumulative:
     def append(self, *data: Any) -> None:
         """
         Add samples to the local cumulative buffers.
-        A buffer will be allocated for each `data` item.
+        A buffer will be allocated for each `data_module` item.
         Compared with `self.extend`, this method adds a single sample (instead
         of a "batch") to the local buffers.
 
@@ -292,7 +292,7 @@ class Cumulative:
 
 class CumulativeIterationMetric(Cumulative, IterationMetric):
     """
-    Base class of cumulative metric which collects metrics on each mini-batch data at the iteration level.
+    Base class of cumulative metric which collects metrics on each mini-batch data_module at the iteration level.
 
     Typically, it computes some intermediate results for each iteration, adds them to the buffers,
     then the buffer contents could be gathered and aggregated for the final result when epoch completed.
@@ -327,11 +327,11 @@ class CumulativeIterationMetric(Cumulative, IterationMetric):
         """
         Execute basic computation for model prediction and ground truth.
         It can support  both `list of channel-first Tensor` and `batch-first Tensor`.
-        Users call this API to execute computation on every batch of data, then accumulate the results,
-        or accumulate the original `y_pred` and `y`, then execute on the accumulated data.
+        Users call this API to execute computation on every batch of data_module, then accumulate the results,
+        or accumulate the original `y_pred` and `y`, then execute on the accumulated data_module.
 
         Args:
-            y_pred: the model prediction data to compute, must be a list of `channel-first` Tensor
+            y_pred: the model prediction data_module to compute, must be a list of `channel-first` Tensor
                 or a `batch-first` Tensor.
             y: the ground truth to compute, must be a list of `channel-first` Tensor
                 or a `batch-first` Tensor.

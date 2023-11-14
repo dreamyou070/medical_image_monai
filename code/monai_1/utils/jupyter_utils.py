@@ -100,7 +100,7 @@ def plot_metric_images(
     window_fraction: int = 20,
 ) -> list:
     """
-    Plot metric graph data with images below into figure `fig`. The intended use is for the graph data to be
+    Plot metric graph data_module with images below into figure `fig`. The intended use is for the graph data_module to be
     metrics from a training run and the images to be the batch and output from the last iteration. This uses
     `plot_metric_graph` to plot the metric graph.
 
@@ -174,7 +174,7 @@ def plot_engine_status(
 
     Args:
         engine: Engine to extract images from
-        logger: MetricLogger to extract loss and metric data from
+        logger: MetricLogger to extract loss and metric data_module from
         title: graph title
         yscale: for metric plot, scale for y-axis compatible with `Axes.set_yscale`
         avg_keys: for metric plot, tuple of keys in `graphmap` to provide running average plots for

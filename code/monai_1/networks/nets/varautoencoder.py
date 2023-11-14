@@ -31,7 +31,7 @@ class VarAutoEncoder(AutoEncoder):
 
     Args:
         spatial_dims: number of spatial dimensions.
-        in_shape: shape of input data starting with channel dimension.
+        in_shape: shape of input data_module starting with channel dimension.
         out_channels: number of output channels.
         latent_size: size of the latent variable.
         channels: sequence of channels. Top block first. The length of `channels` should be no less than 2.

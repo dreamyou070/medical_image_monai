@@ -37,11 +37,11 @@ class NNUNETMode(StrEnum):
 
 def analyze_data(datalist_json: dict, data_dir: str) -> tuple[int, int]:
     """
-    Analyze (training) data
+    Analyze (training) data_module
 
     Args:
-        datalist_json: original data list .json (required by most monai tutorials).
-        data_dir: raw data directory.
+        datalist_json: original data_module list .json (required by most monai tutorials).
+        data_dir: raw data_module directory.
     """
     img = monai.transforms.LoadImage(image_only=True, ensure_channel_first=True, simple_keys=True)(
         os.path.join(data_dir, datalist_json["training"][0]["image"])
@@ -64,12 +64,12 @@ def create_new_data_copy(
     test_key: str, datalist_json: dict, data_dir: str, num_input_channels: int, output_datafolder: str
 ) -> None:
     """
-    Create and organize a new copy of data to meet the requirements of nnU-Net V2
+    Create and organize a new copy of data_module to meet the requirements of nnU-Net V2
 
     Args:
-        test_key: key for test data in the data list .json.
-        datalist_json: original data list .json (required by most monai tutorials).
-        data_dir: raw data directory.
+        test_key: key for test data_module in the data_module list .json.
+        datalist_json: original data_module list .json (required by most monai tutorials).
+        data_dir: raw data_module directory.
         num_input_channels: number of input (image) channels.
         output_datafolder: output folder.
     """
@@ -82,7 +82,7 @@ def create_new_data_copy(
         if _key is None:
             continue
 
-        logger.info(f"converting data section: {_key}...")
+        logger.info(f"converting data_module section: {_key}...")
         for _k in tqdm(range(len(datalist_json[_key]))) if has_tqdm else range(len(datalist_json[_key])):
             orig_img_name = (
                 datalist_json[_key][_k]["image"]
@@ -144,7 +144,7 @@ def create_new_dataset_json(
         modality: image modality, could a string or a list of strings.
         num_foreground_classes: number of foreground classes.
         num_input_channels: number of input (image) channels.
-        num_training_data: number of training data.
+        num_training_data: number of training data_module.
         output_filepath: output file path/name.
     """
     new_json_data: dict = {}

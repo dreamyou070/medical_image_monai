@@ -173,7 +173,7 @@ class OcclusionSensitivity:
             cropped_grid: subsection of the meshgrid, where each voxel refers to the coordinate of
                 the input image. The meshgrid is created by the ``OcclusionSensitivity`` class, and
                 the generation of the subset is determined by ``sliding_window_inference``.
-            nn_module: module to call on data.
+            nn_module: module to call on data_module.
             x: the image that was originally passed into ``OcclusionSensitivity.__call__``.
             mul: occluded region will be multiplied by this. Can be ``torch.Tensor`` or ``float``.
             add: after multiplication, this is added to the occluded region. Can be ``torch.Tensor`` or ``float``.

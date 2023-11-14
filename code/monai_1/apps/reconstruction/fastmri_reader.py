@@ -37,8 +37,8 @@ class FastMRIReader(ImageReader):
 
     It also has several attributes with the following keys:
 
-    - acquisition (str): acquisition mode of the data (e.g., AXT2 denotes T2 brain MRI scans)
-    - max (float): dynamic range of the data
+    - acquisition (str): acquisition mode of the data_module (e.g., AXT2 denotes T2 brain MRI scans)
+    - max (float): dynamic range of the data_module
     - norm (float): norm of the kspace
     - patient_id (str): the patient's id whose measurements were recorded
     """
@@ -55,7 +55,7 @@ class FastMRIReader(ImageReader):
 
     def read(self, data: Sequence[PathLike] | PathLike) -> dict:  # type: ignore
         """
-        Read data from specified h5 file.
+        Read data_module from specified h5 file.
         Note that the returned object is a dictionary.
 
         Args:
@@ -77,8 +77,8 @@ class FastMRIReader(ImageReader):
 
     def get_data(self, dat: dict) -> tuple[ndarray, dict]:
         """
-        Extract data array and metadata from the loaded data and return them.
-        This function returns two objects, first is numpy array of image data, second is dict of metadata.
+        Extract data_module array and metadata from the loaded data_module and return them.
+        This function returns two objects, first is numpy array of image data_module, second is dict of metadata.
 
         Args:
             dat: a dictionary loaded from an h5 file

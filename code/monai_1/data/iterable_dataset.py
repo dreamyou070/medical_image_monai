@@ -27,24 +27,24 @@ pd, _ = optional_import("pandas")
 
 class IterableDataset(_TorchIterableDataset):
     """
-    A generic dataset for iterable data source and an optional callable data transform
-    when fetching a data sample. Inherit from PyTorch IterableDataset:
+    A generic dataset for iterable data_module source and an optional callable data_module transform
+    when fetching a data_module sample. Inherit from PyTorch IterableDataset:
     https://pytorch.org/docs/stable/data.html?highlight=iterabledataset#torch.utils.data.IterableDataset.
-    For example, typical input data can be web data stream which can support multi-process access.
+    For example, typical input data_module can be web data_module stream which can support multi-process access.
 
     To accelerate the loading process, it can support multi-processing based on PyTorch DataLoader workers,
-    every process executes transforms on part of every loaded data.
-    Note that the order of output data may not match data source in multi-processing mode.
+    every process executes transforms on part of every loaded data_module.
+    Note that the order of output data_module may not match data_module source in multi-processing mode.
     And each worker process will have a different copy of the dataset object, need to guarantee
-    process-safe from data source or DataLoader.
+    process-safe from data_module source or DataLoader.
 
     """
 
     def __init__(self, data: Iterable[Any], transform: Callable | None = None) -> None:
         """
         Args:
-            data: input data source to load and transform to generate dataset for model.
-            transform: a callable data transform on input data.
+            data: input data_module source to load and transform to generate dataset for model.
+            transform: a callable data_module transform on input data_module.
         """
         self.data = data
         self.transform = transform
@@ -68,8 +68,8 @@ class ShuffleBuffer(Randomizable, IterableDataset):
     Extend the IterableDataset with a buffer and randomly pop items.
 
     Args:
-        data: input data source to load and transform to generate dataset for model.
-        transform: a callable data transform on input data.
+        data: input data_module source to load and transform to generate dataset for model.
+        transform: a callable data_module transform on input data_module.
         buffer_size: size of the buffer to store items and randomly pop, default to 512.
         seed: random seed to initialize the random state of all workers, set `seed += 1` in
             every iter() call, refer to the PyTorch idea:
@@ -77,16 +77,16 @@ class ShuffleBuffer(Randomizable, IterableDataset):
         epochs: number of epochs to iterate over the dataset, default to 1, -1 means infinite epochs.
 
     Note:
-        Both ``monai.data.DataLoader`` and ``torch.utils.data.DataLoader`` do not seed this class (as a subclass of
+        Both ``monai.data_module.DataLoader`` and ``torch.utils.data_module.DataLoader`` do not seed this class (as a subclass of
         ``IterableDataset``) at run time. ``persistent_workers=True`` flag (and pytorch>1.8) is therefore required
         for multiple epochs of loading when ``num_workers>0``. For example::
 
             import monai
 
             def run():
-                dss = monai.data.ShuffleBuffer([1, 2, 3, 4], buffer_size=30, seed=42)
+                dss = monai.data_module.ShuffleBuffer([1, 2, 3, 4], buffer_size=30, seed=42)
 
-                dataloader = monai.data.DataLoader(
+                dataloader = monai.data_module.DataLoader(
                     dss, batch_size=1, num_workers=2, persistent_workers=True)
                 for epoch in range(3):
                     for item in dataloader:
@@ -123,7 +123,7 @@ class ShuffleBuffer(Randomizable, IterableDataset):
 
     def __iter__(self):
         """
-        Randomly pop buffered items from `self.data`.
+        Randomly pop buffered items from `self.data_module`.
         Multiple dataloader workers sharing this dataset will generate identical item sequences.
         """
         self.seed += 1
@@ -137,22 +137,22 @@ class ShuffleBuffer(Randomizable, IterableDataset):
 
 class CSVIterableDataset(IterableDataset):
     """
-    Iterable dataset to load CSV files and generate dictionary data.
-    It is particularly useful when data come from a stream, inherits from PyTorch IterableDataset:
+    Iterable dataset to load CSV files and generate dictionary data_module.
+    It is particularly useful when data_module come from a stream, inherits from PyTorch IterableDataset:
     https://pytorch.org/docs/stable/data.html?highlight=iterabledataset#torch.utils.data.IterableDataset.
 
     It also can be helpful when loading extremely big CSV files that can't read into memory directly,
     just treat the big CSV file as stream input, call `reset()` of `CSVIterableDataset` for every epoch.
     Note that as a stream input, it can't get the length of dataset.
 
-    To effectively shuffle the data in the big dataset, users can set a big buffer to continuously store
-    the loaded data, then randomly pick data from the buffer for following tasks.
+    To effectively shuffle the data_module in the big dataset, users can set a big buffer to continuously store
+    the loaded data_module, then randomly pick data_module from the buffer for following tasks.
 
     To accelerate the loading process, it can support multi-processing based on PyTorch DataLoader workers,
-    every process executes transforms on part of every loaded data.
-    Note: the order of output data may not match data source in multi-processing mode.
+    every process executes transforms on part of every loaded data_module.
+    Note: the order of output data_module may not match data_module source in multi-processing mode.
 
-    It can load data from multiple CSV files and join the tables with additional `kwargs` arg.
+    It can load data_module from multiple CSV files and join the tables with additional `kwargs` arg.
     Support to only load specific columns.
     And it can also group several loaded columns to generate a new column, for example,
     set `col_groups={"meta": ["meta_0", "meta_1", "meta_2"]}`, output can be::
@@ -166,13 +166,13 @@ class CSVIterableDataset(IterableDataset):
         src: if provided the filename of CSV file, it can be a str, URL, path object or file-like object to load.
             also support to provide iter for stream input directly, will skip loading from filename.
             if provided a list of filenames or iters, it will join the tables.
-        chunksize: rows of a chunk when loading iterable data from CSV files, default to 1000. more details:
+        chunksize: rows of a chunk when loading iterable data_module from CSV files, default to 1000. more details:
             https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html.
         buffer_size: size of the buffer to store the loaded chunks, if None, set to `2 x chunksize`.
         col_names: names of the expected columns to load. if None, load all the columns.
-        col_types: `type` and `default value` to convert the loaded columns, if None, use original data.
+        col_types: `type` and `default value` to convert the loaded columns, if None, use original data_module.
             it should be a dictionary, every item maps to an expected column, the `key` is the column
-            name and the `value` is None or a dictionary to define the default value and data type.
+            name and the `value` is None or a dictionary to define the default value and data_module type.
             the supported keys in dictionary are: ["type", "default"]. for example::
 
                 col_types = {
@@ -187,8 +187,8 @@ class CSVIterableDataset(IterableDataset):
             it should be a dictionary, every item maps to a group, the `key` will
             be the new column name, the `value` is the names of columns to combine. for example:
             `col_groups={"ehr": [f"ehr_{i}" for i in range(10)], "meta": ["meta_1", "meta_2"]}`
-        transform: transform to apply on the loaded items of a dictionary data.
-        shuffle: whether to shuffle all the data in the buffer every time a new chunk loaded.
+        transform: transform to apply on the loaded items of a dictionary data_module.
+        shuffle: whether to shuffle all the data_module in the buffer every time a new chunk loaded.
         seed: random seed to initialize the random state for all the workers if `shuffle` is True,
             set `seed += 1` in every iter() call, refer to the PyTorch idea:
             https://github.com/pytorch/pytorch/blob/v1.10.0/torch/utils/data/distributed.py#L98.
@@ -227,7 +227,7 @@ class CSVIterableDataset(IterableDataset):
 
     def reset(self, src: str | Sequence[str] | Iterable | Sequence[Iterable] | None = None):
         """
-        Reset the pandas `TextFileReader` iterable object to read data. For more details, please check:
+        Reset the pandas `TextFileReader` iterable object to read data_module. For more details, please check:
         https://pandas.pydata.org/pandas-docs/stable/user_guide/io.html?#iteration.
 
         Args:

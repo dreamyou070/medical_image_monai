@@ -27,15 +27,15 @@ class Operations(UserDict):
 
     def evaluate(self, data: Any, **kwargs: Any) -> dict:
         """
-        For key-value pairs in the self.data, if the value is a callable,
-        then this function will apply the callable to the input data.
+        For key-value pairs in the self.data_module, if the value is a callable,
+        then this function will apply the callable to the input data_module.
         The result will be written under the same key under the output dict.
 
         Args:
-            data: input data.
+            data: input data_module.
 
         Returns:
-            a dictionary which has same keys as the self.data if the value
+            a dictionary which has same keys as the self.data_module if the value
                 is callable.
         """
         return {k: v(data, **kwargs) for k, v in self.data.items() if callable(v)}
@@ -85,11 +85,11 @@ class SampleOperations(Operations):
 
     def evaluate(self, data: Any, **kwargs: Any) -> dict:
         """
-        Applies the callables to the data, and convert the
+        Applies the callables to the data_module, and convert the
         numerics to list or Python numeric types (int/float).
 
         Args:
-            data: input data
+            data: input data_module
         """
         ret = super().evaluate(data, **kwargs)
         for k, v in self.data_addon.items():
@@ -115,17 +115,17 @@ class SummaryOperations(Operations):
         .. code-block:: python
 
             import numpy as np
-            data = {
+            data_module = {
                 "min": np.random.rand(4),
                 "max": np.random.rand(4),
                 "mean": np.random.rand(4),
                 "sum": np.random.rand(4),
             }
             op = SummaryOperations()
-            print(op.evaluate(data)) # "sum" is not registered yet, so it won't contain "sum"
+            print(op.evaluate(data_module)) # "sum" is not registered yet, so it won't contain "sum"
 
             op.update({"sum", np.sum})
-            print(op.evaluate(data)) # output has "sum"
+            print(op.evaluate(data_module)) # output has "sum"
     """
 
     def __init__(self) -> None:
@@ -143,10 +143,10 @@ class SummaryOperations(Operations):
 
     def evaluate(self, data: Any, **kwargs: Any) -> dict:
         """
-        Applies the callables to the data, and convert the numerics to list or Python
+        Applies the callables to the data_module, and convert the numerics to list or Python
         numeric types (int/float).
 
         Args:
-            data: input data
+            data: input data_module
         """
         return {k: v(data[k], **kwargs).tolist() for k, v in self.data.items() if (callable(v) and k in data)}

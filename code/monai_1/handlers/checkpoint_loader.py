@@ -31,7 +31,7 @@ else:
 
 class CheckpointLoader:
     """
-    CheckpointLoader acts as an Ignite handler to load checkpoint data from file.
+    CheckpointLoader acts as an Ignite handler to load checkpoint data_module from file.
     It can load variables for network, optimizer, lr_scheduler, etc.
     If saving checkpoint after `torch.nn.DataParallel`, need to save `model.module` instead
     as PyTorch recommended and then use this loader to load the model.
@@ -66,10 +66,10 @@ class CheckpointLoader:
             first load the module to CPU and then copy each parameter to where it was
             saved, which would result in all processes on the same machine using the
             same set of devices.
-        strict: whether to strictly enforce that the keys and data shape in the `state_dict` of every item
+        strict: whether to strictly enforce that the keys and data_module shape in the `state_dict` of every item
             of `load_dict` match the `state_dict` of the corresponding items of checkpoint, default to `True`.
-        strict_shape: whether to enforce the data shape of the matched layers in the checkpoint,
-            `if `False`, it will skip the layers that have different data shape with checkpoint content,
+        strict_shape: whether to enforce the data_module shape of the matched layers in the checkpoint,
+            `if `False`, it will skip the layers that have different data_module shape with checkpoint content,
             and ignore the `strict` arg. this can be useful advanced feature for transfer learning.
             users should totally understand which layers will have different shape. default to `True`.
 
@@ -134,7 +134,7 @@ class CheckpointLoader:
             pop_items: list[str] = []
             for k, obj in self.load_dict.items():
                 if isinstance(obj, torch.nn.Module):
-                    # skip items that don't match key name or data shape
+                    # skip items that don't match key name or data_module shape
                     checkpoint[k] = copy_model_state(obj, checkpoint, inplace=False)[0]
                 else:
                     warnings.warn("`strict_shape` is False, load checkpoint for model, skip others in `load_dict`.")

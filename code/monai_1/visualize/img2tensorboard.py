@@ -52,8 +52,8 @@ def _image3_animated_gif(
         tag: Data identifier
         image: 3D image tensors expected to be in `HWD` format
         writer: the tensorboard writer to plot image
-        frame_dim: the dimension used as frames for GIF image, expect data shape as `HWD`, default to `0`.
-        scale_factor: amount to multiply values by. if the image data is between 0 and 1, using 255 for this value will
+        frame_dim: the dimension used as frames for GIF image, expect data_module shape as `HWD`, default to `0`.
+        scale_factor: amount to multiply values by. if the image data_module is between 0 and 1, using 255 for this value will
             scale it to displayable range
     """
     if len(image.shape) != 3:
@@ -92,10 +92,10 @@ def make_animated_gif_summary(
         image: The image, expected to be in `CHWD` format
         writer: the tensorboard writer to plot image
         max_out: maximum number of image channels to animate through
-        frame_dim: the dimension used as frames for GIF image, expect input data shape as `CHWD`,
+        frame_dim: the dimension used as frames for GIF image, expect input data_module shape as `CHWD`,
             default to `-3` (the first spatial dim)
         scale_factor: amount to multiply values by.
-            if the image data is between 0 and 1, using 255 for this value will scale it to displayable range
+            if the image data_module is between 0 and 1, using 255 for this value will scale it to displayable range
     """
 
     suffix = "/image" if max_out == 1 else "/image/{}"
@@ -129,9 +129,9 @@ def add_animated_gif(
         tag: Data identifier
         image_tensor: tensor for the image to add, expected to be in `CHWD` format
         max_out: maximum number of image channels to animate through
-        frame_dim: the dimension used as frames for GIF image, expect input data shape as `CHWD`,
+        frame_dim: the dimension used as frames for GIF image, expect input data_module shape as `CHWD`,
             default to `-3` (the first spatial dim)
-        scale_factor: amount to multiply values by. If the image data is between 0 and 1, using 255 for this value will
+        scale_factor: amount to multiply values by. If the image data_module is between 0 and 1, using 255 for this value will
             scale it to displayable range
         global_step: Global step value to record
     """
@@ -157,23 +157,23 @@ def plot_2d_or_3d_image(
 
     Note:
         Plot 3D or 2D image(with more than 3 channels) as separate images.
-        And if writer is from TensorBoardX, data has 3 channels and `max_channels=3`, will plot as RGB video.
+        And if writer is from TensorBoardX, data_module has 3 channels and `max_channels=3`, will plot as RGB video.
 
     Args:
-        data: target data to be plotted as image on the TensorBoard.
-            The data is expected to have 'NCHW[D]' dimensions or a list of data with `CHW[D]` dimensions,
+        data: target data_module to be plotted as image on the TensorBoard.
+            The data_module is expected to have 'NCHW[D]' dimensions or a list of data_module with `CHW[D]` dimensions,
             and only plot the first in the batch.
         step: current step to plot in a chart.
         writer: specify TensorBoard or TensorBoardX SummaryWriter to plot the image.
-        index: plot which element in the input data batch, default is the first element.
+        index: plot which element in the input data_module batch, default is the first element.
         max_channels: number of channels to plot.
         frame_dim: if plotting 3D image as GIF, specify the dimension used as frames,
-            expect input data shape as `NCHWD`, default to `-3` (the first spatial dim)
+            expect input data_module shape as `NCHWD`, default to `-3` (the first spatial dim)
         max_frames: if plot 3D RGB image as video in TensorBoardX, set the FPS to `max_frames`.
         tag: tag of the plotted image on TensorBoard.
     """
     data_index = data[index]
-    # as the `d` data has no batch dim, reduce the spatial dim index if positive
+    # as the `d` data_module has no batch dim, reduce the spatial dim index if positive
     frame_dim = frame_dim - 1 if frame_dim > 0 else frame_dim
 
     d: np.ndarray = data_index.detach().cpu().numpy() if isinstance(data_index, torch.Tensor) else data_index
@@ -203,7 +203,7 @@ def plot_2d_or_3d_image(
             d = np.moveaxis(d, frame_dim, -1)
             writer.add_video(tag, d[None], step, fps=max_frames, dataformats="NCHWT")
             return
-        # scale data to 0 - 255 for visualization
+        # scale data_module to 0 - 255 for visualization
         max_channels = min(max_channels, d.shape[0])
         d = np.stack([rescale_array(i, 0, 255) for i in d[:max_channels]], axis=0)
         # will plot every channel as a separate GIF image

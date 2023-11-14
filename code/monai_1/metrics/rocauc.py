@@ -77,7 +77,7 @@ class ROCAUCMetric(CumulativeIterationMetric):
 
 def _calculate(y_pred: torch.Tensor, y: torch.Tensor) -> float:
     if not (y.ndimension() == y_pred.ndimension() == 1 and len(y) == len(y_pred)):
-        raise AssertionError("y and y_pred must be 1 dimension data with same length.")
+        raise AssertionError("y and y_pred must be 1 dimension data_module with same length.")
     y_unique = y.unique()
     if len(y_unique) == 1:
         warnings.warn(f"y values can not be all {y_unique.item()}, skip AUC computation and return `Nan`.")
@@ -120,12 +120,12 @@ def compute_roc_auc(
     sklearn.metrics.roc_auc_score.html#sklearn.metrics.roc_auc_score>`_.
 
     Args:
-        y_pred: input data to compute, typical classification model output.
+        y_pred: input data_module to compute, typical classification model output.
             the first dim must be batch, if multi-classes, it must be in One-Hot format.
-            for example: shape `[16]` or `[16, 1]` for a binary data, shape `[16, 2]` for 2 classes data.
+            for example: shape `[16]` or `[16, 1]` for a binary data_module, shape `[16, 2]` for 2 classes data_module.
         y: ground truth to compute ROC AUC metric, the first dim must be batch.
             if multi-classes, it must be in One-Hot format.
-            for example: shape `[16]` or `[16, 1]` for a binary data, shape `[16, 2]` for 2 classes data.
+            for example: shape `[16]` or `[16, 1]` for a binary data_module, shape `[16, 2]` for 2 classes data_module.
         average: {``"macro"``, ``"weighted"``, ``"micro"``, ``"none"``}
             Type of averaging performed if not binary classification.
             Defaults to ``"macro"``.
@@ -165,7 +165,7 @@ def compute_roc_auc(
         return _calculate(y_pred, y)
 
     if y.shape != y_pred.shape:
-        raise ValueError(f"data shapes of y_pred and y do not match, got {y_pred.shape} and {y.shape}.")
+        raise ValueError(f"data_module shapes of y_pred and y do not match, got {y_pred.shape} and {y.shape}.")
 
     average = look_up_option(average, Average)
     if average == Average.MICRO:

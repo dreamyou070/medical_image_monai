@@ -30,7 +30,7 @@ from monai.utils import LossReduction
 class HausdorffDTLoss(_Loss):
     """
     Compute channel-wise binary Hausdorff loss based on distance transform. It can support both multi-classes and
-    multi-labels tasks. The data `input` (BNHW[D] where N is number of classes) is compared with ground truth `target`
+    multi-labels tasks. The data_module `input` (BNHW[D] where N is number of classes) is compared with ground truth `target`
     (BNHW[D]).
 
     Note that axis N of `input` is expected to be logits or probabilities for each class, if passing logits as input,

@@ -29,10 +29,10 @@ def reshape_complex_to_channel_dim(x: Tensor) -> Tensor:
     parts as two separate channels.
 
     Args:
-        x: input of shape (B,C,H,W,2) for 2D data or (B,C,H,W,D,2) for 3D data
+        x: input of shape (B,C,H,W,2) for 2D data_module or (B,C,H,W,D,2) for 3D data_module
 
     Returns:
-        output of shape (B,C*2,H,W) for 2D data or (B,C*2,H,W,D) for 3D data
+        output of shape (B,C*2,H,W) for 2D data_module or (B,C*2,H,W,D) for 3D data_module
     """
     if x.shape[-1] != 2:
         raise ValueError(f"last dim must be 2, but x.shape[-1] is {x.shape[-1]}.")
@@ -46,7 +46,7 @@ def reshape_complex_to_channel_dim(x: Tensor) -> Tensor:
         return x.permute(0, 5, 1, 2, 3, 4).contiguous().view(b, 2 * c, h, w, d)
 
     else:
-        raise ValueError(f"only 2D (B,C,H,W,2) and 3D (B,C,H,W,D,2) data are supported but x has shape {x.shape}")
+        raise ValueError(f"only 2D (B,C,H,W,2) and 3D (B,C,H,W,D,2) data_module are supported but x has shape {x.shape}")
 
 
 def reshape_channel_complex_to_last_dim(x: Tensor) -> Tensor:
@@ -54,10 +54,10 @@ def reshape_channel_complex_to_last_dim(x: Tensor) -> Tensor:
     Swaps the complex dimension with the channel dimension so that the network output has 2 as its last dimension
 
     Args:
-        x: input of shape (B,C*2,H,W) for 2D data or (B,C*2,H,W,D) for 3D data
+        x: input of shape (B,C*2,H,W) for 2D data_module or (B,C*2,H,W,D) for 3D data_module
 
     Returns:
-        output of shape (B,C,H,W,2) for 2D data or (B,C,H,W,D,2) for 3D data
+        output of shape (B,C,H,W,2) for 2D data_module or (B,C,H,W,D,2) for 3D data_module
     """
     if x.shape[1] % 2 != 0:
         raise ValueError(f"channel dimension should be even but ({x.shape[1]}) is odd.")
@@ -73,7 +73,7 @@ def reshape_channel_complex_to_last_dim(x: Tensor) -> Tensor:
         return x.view(b, 2, c, h, w, d).permute(0, 2, 3, 4, 5, 1)
 
     else:
-        raise ValueError(f"only 2D (B,C*2,H,W) and 3D (B,C*2,H,W,D) data are supported but x has shape {x.shape}")
+        raise ValueError(f"only 2D (B,C*2,H,W) and 3D (B,C*2,H,W,D) data_module are supported but x has shape {x.shape}")
 
 
 def reshape_channel_to_batch_dim(x: Tensor) -> tuple[Tensor, int]:
@@ -81,7 +81,7 @@ def reshape_channel_to_batch_dim(x: Tensor) -> tuple[Tensor, int]:
     Combines batch and channel dimensions.
 
     Args:
-        x: input of shape (B,C,H,W,2) for 2D data or (B,C,H,W,D,2) for 3D data
+        x: input of shape (B,C,H,W,2) for 2D data_module or (B,C,H,W,D,2) for 3D data_module
 
     Returns:
         A tuple containing:
@@ -98,7 +98,7 @@ def reshape_channel_to_batch_dim(x: Tensor) -> tuple[Tensor, int]:
         return x.contiguous().view(b * c, 1, h, w, d, two), b
 
     else:
-        raise ValueError(f"only 2D (B,C,H,W,2) and 3D (B,C,H,W,D,2) data are supported but x has shape {x.shape}")
+        raise ValueError(f"only 2D (B,C,H,W,2) and 3D (B,C,H,W,D,2) data_module are supported but x has shape {x.shape}")
 
 
 def reshape_batch_channel_to_channel_dim(x: Tensor, batch_size: int) -> Tensor:
@@ -106,7 +106,7 @@ def reshape_batch_channel_to_channel_dim(x: Tensor, batch_size: int) -> Tensor:
     Detaches batch and channel dimensions.
 
     Args:
-        x: input of shape (B*C,1,H,W,2) for 2D data or (B*C,1,H,W,D,2) for 3D data
+        x: input of shape (B*C,1,H,W,2) for 2D data_module or (B*C,1,H,W,D,2) for 3D data_module
         batch_size: batch size
 
     Returns:
@@ -123,20 +123,20 @@ def reshape_batch_channel_to_channel_dim(x: Tensor, batch_size: int) -> Tensor:
         return x.view(batch_size, c, h, w, d, two)
 
     else:
-        raise ValueError(f"only 2D (B*C,1,H,W,2) and 3D (B*C,1,H,W,D,2) data are supported but x has shape {x.shape}")
+        raise ValueError(f"only 2D (B*C,1,H,W,2) and 3D (B*C,1,H,W,D,2) data_module are supported but x has shape {x.shape}")
 
 
 def complex_normalize(x: Tensor) -> tuple[Tensor, Tensor, Tensor]:
     """
-    Performs layer mean-std normalization for complex data. Normalization is done for each batch member
+    Performs layer mean-std normalization for complex data_module. Normalization is done for each batch member
     along each part (part refers to real and imaginary parts), separately.
 
     Args:
-        x: input of shape (B,C,H,W) for 2D data or (B,C,H,W,D) for 3D data
+        x: input of shape (B,C,H,W) for 2D data_module or (B,C,H,W,D) for 3D data_module
 
     Returns:
         A tuple containing
-            (1) normalized output of shape (B,C,H,W) for 2D data or (B,C,H,W,D) for 3D data
+            (1) normalized output of shape (B,C,H,W) for 2D data_module or (B,C,H,W,D) for 3D data_module
             (2) mean
             (3) std
     """
@@ -163,7 +163,7 @@ def complex_normalize(x: Tensor) -> tuple[Tensor, Tensor, Tensor]:
         return (x - mean) / std, mean, std
 
     else:
-        raise ValueError(f"only 2D (B,C,H,W) and 3D (B,C,H,W,D) data are supported but x has shape {x.shape}")
+        raise ValueError(f"only 2D (B,C,H,W) and 3D (B,C,H,W,D) data_module are supported but x has shape {x.shape}")
 
 
 def divisible_pad_t(
@@ -173,7 +173,7 @@ def divisible_pad_t(
     Pad input to feed into the network (torch script compatible)
 
     Args:
-        x: input of shape (B,C,H,W) for 2D data or (B,C,H,W,D) for 3D data
+        x: input of shape (B,C,H,W) for 2D data_module or (B,C,H,W,D) for 3D data_module
         k: padding factor. each padded dimension will be divisible by k.
 
     Returns:
@@ -186,13 +186,13 @@ def divisible_pad_t(
 
             import torch
 
-            # 2D data
+            # 2D data_module
             x = torch.ones([3,2,50,70])
             x_pad,padding_sizes = divisible_pad_t(x, k=16)
             # the following line should print (3, 2, 64, 80)
             print(x_pad.shape)
 
-            # 3D data
+            # 3D data_module
             x = torch.ones([3,2,50,70,80])
             x_pad,padding_sizes = divisible_pad_t(x, k=16)
             # the following line should print (3, 2, 64, 80, 80)
@@ -223,7 +223,7 @@ def divisible_pad_t(
         pad_sizes = (h_pad, w_pad, d_pad, h_mult, w_mult, d_mult)
 
     else:
-        raise ValueError(f"only 2D (B,C,H,W) and 3D (B,C,H,W,D) data are supported but x has shape {x.shape}")
+        raise ValueError(f"only 2D (B,C,H,W) and 3D (B,C,H,W,D) data_module are supported but x has shape {x.shape}")
 
     return x, pad_sizes
 
@@ -235,7 +235,7 @@ def inverse_divisible_pad_t(
     De-pad network output to match its original shape
 
     Args:
-        x: input of shape (B,C,H,W) for 2D data or (B,C,H,W,D) for 3D data
+        x: input of shape (B,C,H,W) for 2D data_module or (B,C,H,W,D) for 3D data_module
         pad_sizes: padding values
 
     Returns:
@@ -250,7 +250,7 @@ def inverse_divisible_pad_t(
         return x[..., h_pad[0] : h_mult - h_pad[1], w_pad[0] : w_mult - w_pad[1], d_pad[0] : d_mult - d_pad[1]]
 
     else:
-        raise ValueError(f"only 2D (B,C,H,W) and 3D (B,C,H,W,D) data are supported but x has shape {x.shape}")
+        raise ValueError(f"only 2D (B,C,H,W) and 3D (B,C,H,W,D) data_module are supported but x has shape {x.shape}")
 
 
 def floor_ceil(n: float) -> tuple[int, int]:
@@ -277,12 +277,12 @@ def sensitivity_map_reduce(kspace: Tensor, sens_maps: Tensor, spatial_dims: int 
 
     Args:
         kspace: 2D kspace (B,C,H,W,2) with the last dimension being 2 (for real/imaginary parts) and C denoting the
-            coil dimension. 3D data will have the shape (B,C,H,W,D,2).
+            coil dimension. 3D data_module will have the shape (B,C,H,W,D,2).
         sens_maps: sensitivity maps of the same shape as input x.
-        spatial_dims: is 2 for 2D data and is 3 for 3D data
+        spatial_dims: is 2 for 2D data_module and is 3 for 3D data_module
 
     Returns:
-        reduction of x to (B,1,H,W,2) for 2D data or (B,1,H,W,D,2) for 3D data.
+        reduction of x to (B,1,H,W,2) for 2D data_module or (B,1,H,W,D,2) for 3D data_module.
     """
     img = ifftn_centered_t(kspace, spatial_dims=spatial_dims, is_complex=True)  # inverse fourier transform
     return complex_mul_t(img, complex_conj_t(sens_maps)).sum(dim=1, keepdim=True)
@@ -295,14 +295,14 @@ def sensitivity_map_expand(img: Tensor, sens_maps: Tensor, spatial_dims: int = 2
     the resulting C coil images along the channel dimension which is reserved for coils.
 
     Args:
-        img: 2D image (B,1,H,W,2) with the last dimension being 2 (for real/imaginary parts). 3D data will have
+        img: 2D image (B,1,H,W,2) with the last dimension being 2 (for real/imaginary parts). 3D data_module will have
             the shape (B,1,H,W,D,2).
-        sens_maps: Sensitivity maps for combining coil images. The shape is (B,C,H,W,2) for 2D data
-            or (B,C,H,W,D,2) for 3D data (C denotes the coil dimension).
-        spatial_dims: is 2 for 2D data and is 3 for 3D data
+        sens_maps: Sensitivity maps for combining coil images. The shape is (B,C,H,W,2) for 2D data_module
+            or (B,C,H,W,D,2) for 3D data_module (C denotes the coil dimension).
+        spatial_dims: is 2 for 2D data_module and is 3 for 3D data_module
 
     Returns:
-        Expansion of x to (B,C,H,W,2) for 2D data and (B,C,H,W,D,2) for 3D data. The output is transferred
+        Expansion of x to (B,C,H,W,2) for 2D data_module and (B,C,H,W,D,2) for 3D data_module. The output is transferred
             to the frequency domain to yield coil measurements.
     """
     return fftn_centered_t(complex_mul_t(img, sens_maps), spatial_dims=spatial_dims, is_complex=True)

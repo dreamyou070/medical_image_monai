@@ -22,7 +22,7 @@ def issequenceiterable(obj: Any) -> bool:
 
 
 def ensure_tuple(vals: Any, wrap_array: bool = False) -> tuple:
-    """ vals: input data to convert to a tuple.
+    """ vals: input data_module to convert to a tuple.
         if wrap_array = `True`, treat the input numerical array (ndarray/tensor) as one item of the tuple. """
     if wrap_array and isinstance(vals, (np.ndarray, torch.Tensor)):
         return (vals,)

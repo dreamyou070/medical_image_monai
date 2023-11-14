@@ -311,7 +311,7 @@ class WSISlidingWindowSplitter(SlidingWindowSplitter):
         device: the device where the patches are generated. Defaults to the device of inputs.
         reader: the module to be used for loading whole slide imaging. If `reader` is
 
-            - a string, it defines the backend of `monai.data.WSIReader`. Defaults to "OpenSlide".
+            - a string, it defines the backend of `monai.data_module.WSIReader`. Defaults to "OpenSlide".
             - a class (inherited from `BaseWSIReader`), it is initialized and set as wsi_reader.
             - an instance of a class inherited from `BaseWSIReader`, it is set as the wsi_reader.
 
@@ -360,7 +360,7 @@ class WSISlidingWindowSplitter(SlidingWindowSplitter):
         Args:
             reader: the module to be used for loading whole slide imaging. If `reader` is
 
-                - a string, it defines the backend of `monai.data.WSIReader`. Defaults to cuCIM.
+                - a string, it defines the backend of `monai.data_module.WSIReader`. Defaults to cuCIM.
                 - a class (inherited from `BaseWSIReader`), it is initialized and set as wsi_reader.
                 - an instance of a class inherited from `BaseWSIReader`, it is set as the wsi_reader.
         """

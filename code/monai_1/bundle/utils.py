@@ -48,7 +48,7 @@ DEFAULT_INFERENCE = {
     "imports": ["$import glob"],
     "device": "$torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')",
     "ckpt_path": "$@bundle_root + '/models/model.pt'",
-    "dataset_dir": "/workspace/data",
+    "dataset_dir": "/workspace/data_module",
     "datalist": "$list(sorted(glob.glob(@dataset_dir + '/*.jpeg')))",
     "network_def": {"_target_": "???", "spatial_dims": 2},
     "network": "$@network_def.to(@device)",
@@ -61,7 +61,7 @@ DEFAULT_INFERENCE = {
             {"_target_": "EnsureTyped", "keys": "image", "device": "@device"},
         ],
     },
-    "dataset": {"_target_": "Dataset", "data": "$[{'image': i} for i in @datalist]", "transform": "@preprocessing"},
+    "dataset": {"_target_": "Dataset", "data_module": "$[{'image': i} for i in @datalist]", "transform": "@preprocessing"},
     "dataloader": {
         "_target_": "DataLoader",
         "dataset": "@dataset",

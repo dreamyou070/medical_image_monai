@@ -65,9 +65,9 @@ def execute_compose(
     Args:
         data: a tensor-like object to be transformed
         transforms: a sequence of transforms to be carried out
-        map_items: whether to apply transform to each item in the input `data` if `data` is a list or tuple.
+        map_items: whether to apply transform to each item in the input `data_module` if `data_module` is a list or tuple.
             defaults to `True`.
-        unpack_items: whether to unpack input `data` with `*` as parameters for the callable function of transform.
+        unpack_items: whether to unpack input `data_module` with `*` as parameters for the callable function of transform.
             defaults to `False`.
         start: the index of the first transform to be executed. If not set, this defaults to 0
         end: the index after the last transform to be executed. If set, the transform at index-1
@@ -89,7 +89,7 @@ def execute_compose(
 
     Returns:
         A tensorlike, sequence of tensorlikes or dict of tensorlists containing the result of running
-        `data`` through the sequence of ``transforms``.
+        `data_module`` through the sequence of ``transforms``.
     """
     end_ = len(transforms) if end is None else end
     if start is None:
@@ -131,8 +131,8 @@ class Compose(Randomizable, InvertibleTransform, LazyTransform):
        dictionary. It is required that the dictionary is copied between input
        and output of each transform.
 
-    If some transform takes a data item dictionary as input, and returns a
-    sequence of data items in the transform chain, all following transforms
+    If some transform takes a data_module item dictionary as input, and returns a
+    sequence of data_module items in the transform chain, all following transforms
     will be applied to each item of this list if `map_items` is `True` (the
     default).  If `map_items` is `False`, the returned sequence is passed whole
     to the next callable in the chain.
@@ -147,12 +147,12 @@ class Compose(Randomizable, InvertibleTransform, LazyTransform):
     #. transformB crops out image patches from the 'img' and 'seg' of
        `data_dict`, and return a list of three patch samples::
 
-        {'img': 3x100x100 data, 'seg': 1x100x100 data, 'shape': (100, 100)}
+        {'img': 3x100x100 data_module, 'seg': 1x100x100 data_module, 'shape': (100, 100)}
                              applying transformB
                                  ---------->
-        [{'img': 3x20x20 data, 'seg': 1x20x20 data, 'shape': (20, 20)},
-         {'img': 3x20x20 data, 'seg': 1x20x20 data, 'shape': (20, 20)},
-         {'img': 3x20x20 data, 'seg': 1x20x20 data, 'shape': (20, 20)},]
+        [{'img': 3x20x20 data_module, 'seg': 1x20x20 data_module, 'shape': (20, 20)},
+         {'img': 3x20x20 data_module, 'seg': 1x20x20 data_module, 'shape': (20, 20)},
+         {'img': 3x20x20 data_module, 'seg': 1x20x20 data_module, 'shape': (20, 20)},]
 
     #. transformC then randomly rotates or flips 'img' and 'seg' of
        each dictionary item in the list returned by transformB.
@@ -205,9 +205,9 @@ class Compose(Randomizable, InvertibleTransform, LazyTransform):
 
     Args:
         transforms: sequence of callables.
-        map_items: whether to apply transform to each item in the input `data` if `data` is a list or tuple.
+        map_items: whether to apply transform to each item in the input `data_module` if `data_module` is a list or tuple.
             defaults to `True`.
-        unpack_items: whether to unpack input `data` with `*` as parameters for the callable function of transform.
+        unpack_items: whether to unpack input `data_module` with `*` as parameters for the callable function of transform.
             defaults to `False`.
         log_stats: this optional parameter allows you to specify a logger by name for logging of pipeline execution.
             Setting this to False disables logging. Setting it to True enables logging to the default loggers.
@@ -377,9 +377,9 @@ class Compose(Randomizable, InvertibleTransform, LazyTransform):
         if invertible is False:
             if reasons is not None:
                 reason_text = "\n".join(reasons)
-                raise RuntimeError(f"Unable to run inverse on 'data' for the following reasons:\n{reason_text}")
+                raise RuntimeError(f"Unable to run inverse on 'data_module' for the following reasons:\n{reason_text}")
             else:
-                raise RuntimeError("Unable to run inverse on 'data'; no reason logged in trace data")
+                raise RuntimeError("Unable to run inverse on 'data_module'; no reason logged in trace data_module")
 
 
 class OneOf(Compose):
@@ -391,9 +391,9 @@ class OneOf(Compose):
         transforms: sequence of callables.
         weights: probabilities corresponding to each callable in transforms.
             Probabilities are normalized to sum to one.
-        map_items: whether to apply transform to each item in the input `data` if `data` is a list or tuple.
+        map_items: whether to apply transform to each item in the input `data_module` if `data_module` is a list or tuple.
             defaults to `True`.
-        unpack_items: whether to unpack input `data` with `*` as parameters for the callable function of transform.
+        unpack_items: whether to unpack input `data_module` with `*` as parameters for the callable function of transform.
             defaults to `False`.
         log_stats: this optional parameter allows you to specify a logger by name for logging of pipeline execution.
             Setting this to False disables logging. Setting it to True enables logging to the default loggers.
@@ -486,7 +486,7 @@ class OneOf(Compose):
             log_stats=self.log_stats,
         )
 
-        # if the data is a mapping (dictionary), append the OneOf transform to the end
+        # if the data_module is a mapping (dictionary), append the OneOf transform to the end
         if isinstance(data, monai.data.MetaTensor):
             self.push_transform(data, extra_info={"index": index})
         elif isinstance(data, Mapping):
@@ -508,7 +508,7 @@ class OneOf(Compose):
                     index = self.pop_transform(data, key)[TraceKeys.EXTRA_INFO]["index"]
         else:
             raise RuntimeError(
-                f"Inverse only implemented for Mapping (dictionary) or MetaTensor data, got type {type(data)}."
+                f"Inverse only implemented for Mapping (dictionary) or MetaTensor data_module, got type {type(data)}."
             )
         if index is None:
             # no invertible transforms have been applied
@@ -525,9 +525,9 @@ class RandomOrder(Compose):
 
     Args:
         transforms: sequence of callables.
-        map_items: whether to apply transform to each item in the input `data` if `data` is a list or tuple.
+        map_items: whether to apply transform to each item in the input `data_module` if `data_module` is a list or tuple.
             defaults to `True`.
-        unpack_items: whether to unpack input `data` with `*` as parameters for the callable function of transform.
+        unpack_items: whether to unpack input `data_module` with `*` as parameters for the callable function of transform.
             defaults to `False`.
         log_stats: this optional parameter allows you to specify a logger by name for logging of pipeline execution.
             Setting this to False disables logging. Setting it to True enables logging to the default loggers.
@@ -581,7 +581,7 @@ class RandomOrder(Compose):
             log_stats=self.log_stats,
         )
 
-        # if the data is a mapping (dictionary), append the RandomOrder transform to the end
+        # if the data_module is a mapping (dictionary), append the RandomOrder transform to the end
         if isinstance(input_, monai.data.MetaTensor):
             self.push_transform(input_, extra_info={"applied_order": applied_order})
         elif isinstance(input_, Mapping):
@@ -603,7 +603,7 @@ class RandomOrder(Compose):
                     applied_order = self.pop_transform(data, key)[TraceKeys.EXTRA_INFO]["applied_order"]
         else:
             raise RuntimeError(
-                f"Inverse only implemented for Mapping (dictionary) or MetaTensor data, got type {type(data)}."
+                f"Inverse only implemented for Mapping (dictionary) or MetaTensor data_module, got type {type(data)}."
             )
         if applied_order is None:
             # no invertible transforms have been applied
@@ -628,9 +628,9 @@ class SomeOf(Compose):
 
     Args:
         transforms: list of callables.
-        map_items: whether to apply transform to each item in the input `data` if `data` is a list or tuple.
+        map_items: whether to apply transform to each item in the input `data_module` if `data_module` is a list or tuple.
             Defaults to `True`.
-        unpack_items: whether to unpack input `data` with `*` as parameters for the callable function of transform.
+        unpack_items: whether to unpack input `data_module` with `*` as parameters for the callable function of transform.
             Defaults to `False`.
         log_stats: this optional parameter allows you to specify a logger by name for logging of pipeline execution.
             Setting this to False disables logging. Setting it to True enables logging to the default loggers.
@@ -770,7 +770,7 @@ class SomeOf(Compose):
                     applied_order = self.pop_transform(data, key)[TraceKeys.EXTRA_INFO]["applied_order"]
         else:
             raise RuntimeError(
-                f"Inverse only implemented for Mapping (dictionary) or MetaTensor data, got type {type(data)}."
+                f"Inverse only implemented for Mapping (dictionary) or MetaTensor data_module, got type {type(data)}."
             )
         if applied_order is None:
             # no invertible transforms have been applied

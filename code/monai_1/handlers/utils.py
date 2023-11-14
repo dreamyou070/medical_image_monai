@@ -65,12 +65,12 @@ def write_metrics_reports(
     """
     Utility function to write the metrics into files, contains 3 parts:
     1. if `metrics` dict is not None, write overall metrics into file, every line is a metric name and value pair.
-    2. if `metric_details` dict is not None,  write raw metric data of every image into file, every line for 1 image.
+    2. if `metric_details` dict is not None,  write raw metric data_module of every image into file, every line for 1 image.
     3. if `summary_ops` is not None, compute summary based on operations on `metric_details` and write to file.
 
     Args:
         save_dir: directory to save all the metrics reports.
-        images: name or path of every input image corresponding to the metric_details data.
+        images: name or path of every input image corresponding to the metric_details data_module.
             if None, will use index number as the filename of every input image.
         metrics: a dictionary of (metric name, metric value) pairs.
         metric_details: a dictionary of (metric name, metric raw values) pairs, usually, it comes from metrics
@@ -163,14 +163,14 @@ def from_engine(keys: KeysCollection, first: bool = False) -> Callable:
     """
     Utility function to simplify the `batch_transform` or `output_transform` args of ignite components
     when handling dictionary or list of dictionaries(for example: `engine.state.batch` or `engine.state.output`).
-    Users only need to set the expected keys, then it will return a callable function to extract data from
+    Users only need to set the expected keys, then it will return a callable function to extract data_module from
     dictionary and construct a tuple respectively.
 
-    If data is a list of dictionaries after decollating, extract expected keys and construct lists respectively,
-    for example, if data is `[{"A": 1, "B": 2}, {"A": 3, "B": 4}]`, from_engine(["A", "B"]): `([1, 3], [2, 4])`.
+    If data_module is a list of dictionaries after decollating, extract expected keys and construct lists respectively,
+    for example, if data_module is `[{"A": 1, "B": 2}, {"A": 3, "B": 4}]`, from_engine(["A", "B"]): `([1, 3], [2, 4])`.
 
     It can help avoid a complicated `lambda` function and make the arg of metrics more straight-forward.
-    For example, set the first key as the prediction and the second key as label to get the expected data
+    For example, set the first key as the prediction and the second key as label to get the expected data_module
     from `engine.state.output` for a metric::
 
         from monai.handlers import MeanDice, from_engine
@@ -181,9 +181,9 @@ def from_engine(keys: KeysCollection, first: bool = False) -> Callable:
         )
 
     Args:
-        keys: specified keys to extract data from dictionary or decollated list of dictionaries.
-        first: whether only extract specified keys from the first item if input data is a list of dictionaries,
-            it's used to extract the scalar data which doesn't have batch dim and was replicated into every
+        keys: specified keys to extract data_module from dictionary or decollated list of dictionaries.
+        first: whether only extract specified keys from the first item if input data_module is a list of dictionaries,
+            it's used to extract the scalar data_module which doesn't have batch dim and was replicated into every
             dictionary when decollating, like `loss`, etc.
 
 
@@ -194,7 +194,7 @@ def from_engine(keys: KeysCollection, first: bool = False) -> Callable:
         if isinstance(data, dict):
             return tuple(data[k] for k in _keys)
         if isinstance(data, list) and isinstance(data[0], dict):
-            # if data is a list of dictionaries, extract expected keys and construct lists,
+            # if data_module is a list of dictionaries, extract expected keys and construct lists,
             # if `first=True`, only extract keys from the first item of the list
             ret = [data[0][k] if first else [i[k] for i in data] for k in _keys]
             return tuple(ret) if len(ret) > 1 else ret[0]
@@ -204,7 +204,7 @@ def from_engine(keys: KeysCollection, first: bool = False) -> Callable:
 
 def ignore_data(x: Any) -> None:
     """
-    Always return `None` for any input data.
+    Always return `None` for any input data_module.
     A typical usage is to avoid logging the engine output of every iteration during evaluation.
 
     """

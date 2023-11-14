@@ -51,7 +51,7 @@ class LrScheduleHandler:
             epoch_level: execute lr_scheduler.step() after every epoch or every iteration.
                 `True` is epoch level, `False` is iteration level.
             step_transform: a callable that is used to transform the information from `engine`
-                to expected input data of lr_scheduler.step() function if necessary.
+                to expected input data_module of lr_scheduler.step() function if necessary.
 
         Raises:
             TypeError: When ``step_transform`` is not ``callable``.

@@ -60,15 +60,15 @@ class MetaTensor(MetaObj, torch.Tensor):
 
     Copying of information:
 
-        * For `c = a + b`, then auxiliary data (e.g., metadata) will be copied from the
+        * For `c = a + b`, then auxiliary data_module (e.g., metadata) will be copied from the
           first instance of `MetaTensor` if `a.is_batch` is False
-          (For batched data, the metadata will be shallow copied for efficiency purposes).
+          (For batched data_module, the metadata will be shallow copied for efficiency purposes).
 
     Example:
         .. code-block:: python
 
             import torch
-            from monai.data import MetaTensor
+            from monai.data_module import MetaTensor
 
             t = torch.tensor([1,2,3])
             affine = torch.as_tensor([[2,0,0,0],
@@ -93,12 +93,12 @@ class MetaTensor(MetaObj, torch.Tensor):
         - A warning will be raised if in the constructor `affine` is not `None` and
           `meta` already contains the key `affine`.
         - You can query whether the `MetaTensor` is a batch with the `is_batch` attribute.
-        - With a batch of data, `batch[0]` will return the 0th image
+        - With a batch of data_module, `batch[0]` will return the 0th image
           with the 0th metadata. When the batch dimension is non-singleton, e.g.,
           `batch[:, 0]`, `batch[..., -1]` and `batch[1:3]`, then all (or a subset in the
           last example) of the metadata will be returned, and `is_batch` will return `True`.
-        - When creating a batch with this class, use `monai.data.DataLoader` as opposed
-          to `torch.utils.data.DataLoader`, as this will take care of collating the
+        - When creating a batch with this class, use `monai.data_module.DataLoader` as opposed
+          to `torch.utils.data_module.DataLoader`, as this will take care of collating the
           metadata properly.
     """
 
@@ -186,9 +186,9 @@ class MetaTensor(MetaObj, torch.Tensor):
                 already a `Sequence`.
             func: the torch function that was applied. Examples might be `torch.squeeze`
                 or `torch.Tensor.__add__`. We need this since the metadata need to be
-                treated differently if a batch of data is considered. For example,
+                treated differently if a batch of data_module is considered. For example,
                 slicing (`torch.Tensor.__getitem__`) the ith element of the 0th
-                dimension of a batch of data should return a ith tensor with the ith
+                dimension of a batch of data_module should return a ith tensor with the ith
                 metadata.
             args: positional arguments that were passed to `func`.
             kwargs: keyword arguments that were passed to `func`.
@@ -228,10 +228,10 @@ class MetaTensor(MetaObj, torch.Tensor):
     @classmethod
     def _handle_batched(cls, ret, idx, metas, func, args, kwargs):
         """utility function to handle batched MetaTensors."""
-        # If we have a batch of data, then we need to be careful if a slice of
-        # the data is returned. Depending on how the data are indexed, we return
+        # If we have a batch of data_module, then we need to be careful if a slice of
+        # the data_module is returned. Depending on how the data_module are indexed, we return
         # some or all of the metadata, and the return object may or may not be a
-        # batch of data (e.g., `batch[:,-1]` versus `batch[0]`).
+        # batch of data_module (e.g., `batch[:,-1]` versus `batch[0]`).
         # if indexing e.g., `batch[0]`
         if func == torch.Tensor.__getitem__:
             if idx > 0 or len(args) < 2 or len(args[0]) < 1:
@@ -359,7 +359,7 @@ class MetaTensor(MetaObj, torch.Tensor):
 
         Args:
             output_type: output type, see also: :py:func:`monai.utils.convert_data_type`.
-            dtype: dtype of output data. Converted to correct library type (e.g.,
+            dtype: dtype of output data_module. Converted to correct library type (e.g.,
                 `np.float32` is converted to `torch.float32` if output type is `torch.Tensor`).
                 If left blank, it remains unchanged.
             device: if the output is a `torch.Tensor`, select device (if `None`, unchanged).
@@ -372,7 +372,7 @@ class MetaTensor(MetaObj, torch.Tensor):
         """
         Copies the elements from src into self tensor and returns self.
         The src tensor must be broadcastable with the self tensor.
-        It may be of a different data type or reside on a different device.
+        It may be of a different data_module type or reside on a different device.
 
         See also: `https://pytorch.org/docs/stable/generated/torch.Tensor.copy_.html`
 
@@ -413,14 +413,14 @@ class MetaTensor(MetaObj, torch.Tensor):
         This method does not make a deep copy of the objects.
 
         Args:
-            key: Base key to store main data. The key for the metadata will be determined using `PostFix`.
-            output_type: `torch.Tensor` or `np.ndarray` for the main data.
-            dtype: dtype of output data. Converted to correct library type (e.g.,
+            key: Base key to store main data_module. The key for the metadata will be determined using `PostFix`.
+            output_type: `torch.Tensor` or `np.ndarray` for the main data_module.
+            dtype: dtype of output data_module. Converted to correct library type (e.g.,
                 `np.float32` is converted to `torch.float32` if output type is `torch.Tensor`).
                 If left blank, it remains unchanged.
 
         Return:
-            A dictionary consisting of three keys, the main data (stored under `key`) and the metadata.
+            A dictionary consisting of three keys, the main data_module (stored under `key`) and the metadata.
         """
         if output_type not in (torch.Tensor, np.ndarray):
             raise ValueError(f"output_type must be torch.Tensor or np.ndarray, got {output_type}.")
@@ -432,16 +432,16 @@ class MetaTensor(MetaObj, torch.Tensor):
 
     def astype(self, dtype, device=None, *_args, **_kwargs):
         """
-        Cast to ``dtype``, sharing data whenever possible.
+        Cast to ``dtype``, sharing data_module whenever possible.
 
         Args:
             dtype: dtypes such as np.float32, torch.float, "np.float32", float.
-            device: the device if `dtype` is a torch data type.
+            device: the device if `dtype` is a torch data_module type.
             _args: additional args (currently unused).
             _kwargs: additional kwargs (currently unused).
 
         Returns:
-            data array instance
+            data_module array instance
         """
         if isinstance(dtype, str):
             mod_str, *dtype = dtype.split(".", 1)
@@ -603,7 +603,7 @@ class MetaTensor(MetaObj, torch.Tensor):
         return self.as_tensor().__format__(format_spec)
 
     def print_verbose(self) -> None:
-        """Verbose print with meta data."""
+        """Verbose print with meta data_module."""
         print(self)
         if self.meta is not None:
             print(self.meta.__repr__())

@@ -311,7 +311,7 @@ class AHNet(nn.Module):
 
     Args:
         layers: number of residual blocks for 4 layers of the network (layer1...layer4). Defaults to ``(3, 4, 6, 3)``.
-        spatial_dims: spatial dimension of the input data. Defaults to 3.
+        spatial_dims: spatial dimension of the input data_module. Defaults to 3.
         in_channels: number of input channels for the network. Default to 1.
         out_channels: number of output channels for the network. Defaults to 1.
         psp_block_num: the number of pyramid volumetric pooling modules used at the end of the network before the final

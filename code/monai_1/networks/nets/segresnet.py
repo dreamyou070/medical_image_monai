@@ -34,7 +34,7 @@ class SegResNet(nn.Module):
     The model supports 2D or 3D inputs.
 
     Args:
-        spatial_dims: spatial dimension of the input data. Defaults to 3.
+        spatial_dims: spatial dimension of the input data_module. Defaults to 3.
         init_filters: number of output channels for initial convolution layer. Defaults to 8.
         in_channels: number of input channels for the network. Defaults to 1.
         out_channels: number of output channels for the network. Defaults to 2.
@@ -198,7 +198,7 @@ class SegResNetVAE(SegResNet):
         vae_default_std: if not to estimate the std, use the default value. Defaults to 0.3.
         vae_nz: number of latent variables in VAE. Defaults to 256.
             Where, 128 to represent mean, and 128 to represent std.
-        spatial_dims: spatial dimension of the input data. Defaults to 3.
+        spatial_dims: spatial dimension of the input data_module. Defaults to 3.
         init_filters: number of output channels for initial convolution layer. Defaults to 8.
         in_channels: number of input channels for the network. Defaults to 1.
         out_channels: number of output channels for the network. Defaults to 2.

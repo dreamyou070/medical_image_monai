@@ -170,7 +170,7 @@ def label_quality_score(
     can be treated as a label quality score
 
     Args:
-        y_pred: Input data of dimension [B, C, H, W, D] or [B, C, H, W] or [B, C, H] where B is Batch-size, C is
+        y_pred: Input data_module of dimension [B, C, H, W, D] or [B, C, H, W] or [B, C, H] where B is Batch-size, C is
             channels and H, W, D stand for Height, Width & Depth
         y: Ground Truth of dimension [B, C, H, W, D] or [B, C, H, W] or [B, C, H] where B is Batch-size, C is channels
             and H, W, D stand for Height, Width & Depth

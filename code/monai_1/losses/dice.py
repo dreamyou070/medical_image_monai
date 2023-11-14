@@ -30,7 +30,7 @@ from monai.utils import DiceCEReduction, LossReduction, Weight, deprecated_arg, 
 class DiceLoss(_Loss):
     """
     Compute average Dice loss between two tensors. It can support both multi-classes and multi-labels tasks.
-    The data `input` (BNHW[D] where N is number of classes) is compared with ground truth `target` (BNHW[D]).
+    The data_module `input` (BNHW[D] where N is number of classes) is compared with ground truth `target` (BNHW[D]).
 
     Note that axis N of `input` is expected to be logits or probabilities for each class, if passing logits as input,
     must set `sigmoid=True` or `softmax=True`, or specifying `other_act`. And the same axis of `target`

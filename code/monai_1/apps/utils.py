@@ -128,7 +128,7 @@ def check_hash(filepath: PathLike, val: str | None = None, hash_type: str = "md5
         val: expected hash value of the file.
         hash_type: type of hash algorithm to use, default is `"md5"`.
             The supported hash types are `"md5"`, `"sha1"`, `"sha256"`, `"sha512"`.
-            See also: :py:data:`monai.apps.utils.SUPPORTED_HASH_TYPES`.
+            See also: :py:data_module:`monai.apps.utils.SUPPORTED_HASH_TYPES`.
 
     """
     if val is None:

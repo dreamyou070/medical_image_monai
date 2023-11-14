@@ -152,9 +152,9 @@ class SpatialResample(InvertibleTransform, LazyTransform):
                 When `mode` is an integer, using numpy/cupy backends, this argument accepts
                 {'reflect', 'grid-mirror', 'constant', 'grid-constant', 'nearest', 'mirror', 'grid-wrap', 'wrap'}.
                 See also: https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.map_coordinates.html
-            dtype: data type for resampling computation. Defaults to ``float64`` for best precision.
-                If ``None``, use the data type of input data. To be compatible with other modules,
-                the output data type is always ``float32``.
+            dtype: data_module type for resampling computation. Defaults to ``float64`` for best precision.
+                If ``None``, use the data_module type of input data_module. To be compatible with other modules,
+                the output data_module type is always ``float32``.
             lazy: a flag to indicate whether this transform should execute lazily or not.
                 Defaults to False
         """
@@ -182,7 +182,7 @@ class SpatialResample(InvertibleTransform, LazyTransform):
             dst_affine: destination affine matrix. Defaults to ``None``, which means the same as `img.affine`.
                 the shape should be `(r+1, r+1)` where `r` is the spatial rank of ``img``.
                 when `dst_affine` and `spatial_size` are None, the input will be returned without resampling,
-                but the data type will be `float32`.
+                but the data_module type will be `float32`.
             spatial_size: output image spatial size.
                 if `spatial_size` and `self.spatial_size` are not defined,
                 the transform will compute a spatial size automatically containing the previous field of view.
@@ -202,9 +202,9 @@ class SpatialResample(InvertibleTransform, LazyTransform):
             align_corners: Geometrically, we consider the pixels of the input as squares rather than points.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
                 Defaults to ``None``, effectively using the value of `self.align_corners`.
-            dtype: data type for resampling computation. Defaults to ``self.dtype`` or
-                ``np.float64`` (for best precision). If ``None``, use the data type of input data.
-                To be compatible with other modules, the output data type is always `float32`.
+            dtype: data_module type for resampling computation. Defaults to ``self.dtype`` or
+                ``np.float64`` (for best precision). If ``None``, use the data_module type of input data_module.
+                To be compatible with other modules, the output data_module type is always `float32`.
             lazy: a flag to indicate whether this transform should execute lazily or not
                 during this call. Setting this to False or True overrides the ``lazy`` flag set
                 during initialization for this call. Defaults to None.
@@ -288,9 +288,9 @@ class ResampleToMatch(SpatialResample):
             align_corners: Geometrically, we consider the pixels of the input as squares rather than points.
                 Defaults to ``None``, effectively using the value of `self.align_corners`.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
-            dtype: data type for resampling computation. Defaults to ``self.dtype`` or
-                ``np.float64`` (for best precision). If ``None``, use the data type of input data.
-                To be compatible with other modules, the output data type is always `float32`.
+            dtype: data_module type for resampling computation. Defaults to ``self.dtype`` or
+                ``np.float64`` (for best precision). If ``None``, use the data_module type of input data_module.
+                To be compatible with other modules, the output data_module type is always `float32`.
             lazy: a flag to indicate whether this transform should execute lazily or not
                 during this call. Setting this to False or True overrides the ``lazy`` flag set
                 during initialization for this call. Defaults to None.
@@ -367,7 +367,7 @@ class Spacing(InvertibleTransform, LazyTransform):
                 corresponding components of the original pixdim, which is computed from the `affine`
                 matrix of input image.
             diagonal: whether to resample the input to have a diagonal affine matrix.
-                If True, the input data is resampled to the following affine::
+                If True, the input data_module is resampled to the following affine::
 
                     np.diag((pixdim_0, pixdim_1, ..., pixdim_n, 1))
 
@@ -376,7 +376,7 @@ class Spacing(InvertibleTransform, LazyTransform):
 
                 If False, this transform preserves the axes orientation, orthogonal rotation and
                 translation components from the original affine. This option will not flip/swap axes
-                of the original data.
+                of the original data_module.
             mode: {``"bilinear"``, ``"nearest"``} or spline interpolation order 0-5 (integers).
                 Interpolation mode to calculate output values. Defaults to ``"bilinear"``.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
@@ -391,12 +391,12 @@ class Spacing(InvertibleTransform, LazyTransform):
                 See also: https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.map_coordinates.html
             align_corners: Geometrically, we consider the pixels of the input as squares rather than points.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
-            dtype: data type for resampling computation. Defaults to ``float64`` for best precision.
-                If None, use the data type of input data. To be compatible with other modules,
-                the output data type is always ``float32``.
+            dtype: data_module type for resampling computation. Defaults to ``float64`` for best precision.
+                If None, use the data_module type of input data_module. To be compatible with other modules,
+                the output data_module type is always ``float32``.
             scale_extent: whether the scale is computed based on the spacing or the full extent of voxels,
                 default False. The option is ignored if output spatial size is specified when calling this transform.
-                See also: :py:func:`monai.data.utils.compute_shape_offset`. When this is True, `align_corners`
+                See also: :py:func:`monai.data_module.utils.compute_shape_offset`. When this is True, `align_corners`
                 should be `True` because `compute_shape_offset` already provides the corner alignment shift/scaling.
             recompute_affine: whether to recompute affine based on the output shape. The affine computed
                 analytically does not reflect the potential quantization errors in terms of the output shape.
@@ -460,12 +460,12 @@ class Spacing(InvertibleTransform, LazyTransform):
             align_corners: Geometrically, we consider the pixels of the input as squares rather than points.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
                 Defaults to ``None``, effectively using the value of `self.align_corners`.
-            dtype: data type for resampling computation. Defaults to ``self.dtype``.
-                If None, use the data type of input data. To be compatible with other modules,
-                the output data type is always ``float32``.
+            dtype: data_module type for resampling computation. Defaults to ``self.dtype``.
+                If None, use the data_module type of input data_module. To be compatible with other modules,
+                the output data_module type is always ``float32``.
             scale_extent: whether the scale is computed based on the spacing or the full extent of voxels,
                 The option is ignored if output spatial size is specified when calling this transform.
-                See also: :py:func:`monai.data.utils.compute_shape_offset`. When this is True, `align_corners`
+                See also: :py:func:`monai.data_module.utils.compute_shape_offset`. When this is True, `align_corners`
                 should be `True` because `compute_shape_offset` already provides the corner alignment shift/scaling.
             output_spatial_shape: specify the shape of the output data_array. This is typically useful for
                 the inverse of `Spacingd` where sometimes we could not compute the exact shape due to the quantization
@@ -479,7 +479,7 @@ class Spacing(InvertibleTransform, LazyTransform):
             ValueError: When ``pixdim`` is nonpositive.
 
         Returns:
-            data tensor or MetaTensor (resampled into `self.pixdim`).
+            data_module tensor or MetaTensor (resampled into `self.pixdim`).
 
         """
         original_spatial_shape = (
@@ -737,8 +737,8 @@ class Resize(InvertibleTransform, LazyTransform):
             By default, this value is chosen as (s - 1) / 2 where s is the
             downsampling factor, where s > 1. For the up-size case, s < 1, no
             anti-aliasing is performed prior to rescaling.
-        dtype: data type for resampling computation. Defaults to ``float32``.
-            If None, use the data type of input data.
+        dtype: data_module type for resampling computation. Defaults to ``float32``.
+            If None, use the data_module type of input data_module.
         lazy: a flag to indicate whether this transform should execute lazily or not.
             Defaults to False
     """
@@ -794,8 +794,8 @@ class Resize(InvertibleTransform, LazyTransform):
                 By default, this value is chosen as (s - 1) / 2 where s is the
                 downsampling factor, where s > 1. For the up-size case, s < 1, no
                 anti-aliasing is performed prior to rescaling.
-            dtype: data type for resampling computation. Defaults to ``self.dtype``.
-                If None, use the data type of input data.
+            dtype: data_module type for resampling computation. Defaults to ``self.dtype``.
+                If None, use the data_module type of input data_module.
             lazy: a flag to indicate whether this transform should execute lazily or not
                 during this call. Setting this to False or True overrides the ``lazy`` flag set
                 during initialization for this call. Defaults to None.
@@ -885,9 +885,9 @@ class Rotate(InvertibleTransform, LazyTransform):
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
         align_corners: Defaults to False.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
-        dtype: data type for resampling computation. Defaults to ``float32``.
-            If None, use the data type of input data. To be compatible with other modules,
-            the output data type is always ``float32``.
+        dtype: data_module type for resampling computation. Defaults to ``float32``.
+            If None, use the data_module type of input data_module. To be compatible with other modules,
+            the output data_module type is always ``float32``.
         lazy: a flag to indicate whether this transform should execute lazily or not.
             Defaults to False
     """
@@ -934,9 +934,9 @@ class Rotate(InvertibleTransform, LazyTransform):
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
             align_corners: Defaults to ``self.align_corners``.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
-            dtype: data type for resampling computation. Defaults to ``self.dtype``.
-                If None, use the data type of input data. To be compatible with other modules,
-                the output data type is always ``float32``.
+            dtype: data_module type for resampling computation. Defaults to ``self.dtype``.
+                If None, use the data_module type of input data_module. To be compatible with other modules,
+                the output data_module type is always ``float32``.
             lazy: a flag to indicate whether this transform should execute lazily or not
                 during this call. Setting this to False or True overrides the ``lazy`` flag set
                 during initialization for this call. Defaults to None.
@@ -1019,14 +1019,14 @@ class Zoom(InvertibleTransform, LazyTransform):
             ``"mean"``, ``"median"``, ``"minimum"``, ``"reflect"``, ``"symmetric"``, ``"wrap"``, ``"empty"``}
             available modes for PyTorch Tensor: {``"constant"``, ``"reflect"``, ``"replicate"``, ``"circular"``}.
             One of the listed string values or a user supplied function. Defaults to ``"edge"``.
-            The mode to pad data after zooming.
+            The mode to pad data_module after zooming.
             See also: https://numpy.org/doc/1.18/reference/generated/numpy.pad.html
             https://pytorch.org/docs/stable/generated/torch.nn.functional.pad.html
         align_corners: This only has an effect when mode is
             'linear', 'bilinear', 'bicubic' or 'trilinear'. Default: None.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
-        dtype: data type for resampling computation. Defaults to ``float32``.
-            If None, use the data type of input data.
+        dtype: data_module type for resampling computation. Defaults to ``float32``.
+            If None, use the data_module type of input data_module.
         keep_size: Should keep original size (padding/slicing if needed), default is True.
         lazy: a flag to indicate whether this transform should execute lazily or not.
             Defaults to False
@@ -1076,14 +1076,14 @@ class Zoom(InvertibleTransform, LazyTransform):
                 ``"mean"``, ``"median"``, ``"minimum"``, ``"reflect"``, ``"symmetric"``, ``"wrap"``, ``"empty"``}
                 available modes for PyTorch Tensor: {``"constant"``, ``"reflect"``, ``"replicate"``, ``"circular"``}.
                 One of the listed string values or a user supplied function. Defaults to ``"edge"``.
-                The mode to pad data after zooming.
+                The mode to pad data_module after zooming.
                 See also: https://numpy.org/doc/1.18/reference/generated/numpy.pad.html
                 https://pytorch.org/docs/stable/generated/torch.nn.functional.pad.html
             align_corners: This only has an effect when mode is
                 'linear', 'bilinear', 'bicubic' or 'trilinear'. Defaults to ``self.align_corners``.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
-            dtype: data type for resampling computation. Defaults to ``self.dtype``.
-                If None, use the data type of input data.
+            dtype: data_module type for resampling computation. Defaults to ``self.dtype``.
+                If None, use the data_module type of input data_module.
             lazy: a flag to indicate whether this transform should execute lazily or not
                 during this call. Setting this to False or True overrides the ``lazy`` flag set
                 during initialization for this call. Defaults to None.
@@ -1267,9 +1267,9 @@ class RandRotate(RandomizableTransform, InvertibleTransform, LazyTransform):
         range_x: Range of rotation angle in radians in the plane defined by the first and second axes.
             If single number, angle is uniformly sampled from (-range_x, range_x).
         range_y: Range of rotation angle in radians in the plane defined by the first and third axes.
-            If single number, angle is uniformly sampled from (-range_y, range_y). only work for 3D data.
+            If single number, angle is uniformly sampled from (-range_y, range_y). only work for 3D data_module.
         range_z: Range of rotation angle in radians in the plane defined by the second and third axes.
-            If single number, angle is uniformly sampled from (-range_z, range_z). only work for 3D data.
+            If single number, angle is uniformly sampled from (-range_z, range_z). only work for 3D data_module.
         prob: Probability of rotation.
         keep_size: If it is False, the output shape is adapted so that the
             input array is contained completely in the output.
@@ -1282,9 +1282,9 @@ class RandRotate(RandomizableTransform, InvertibleTransform, LazyTransform):
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
         align_corners: Defaults to False.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
-        dtype: data type for resampling computation. Defaults to ``float32``.
-            If None, use the data type of input data. To be compatible with other modules,
-            the output data type is always ``float32``.
+        dtype: data_module type for resampling computation. Defaults to ``float32``.
+            If None, use the data_module type of input data_module. To be compatible with other modules,
+            the output data_module type is always ``float32``.
         lazy: a flag to indicate whether this transform should execute lazily or not.
             Defaults to False
     """
@@ -1355,9 +1355,9 @@ class RandRotate(RandomizableTransform, InvertibleTransform, LazyTransform):
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
             align_corners: Defaults to ``self.align_corners``.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
-            dtype: data type for resampling computation. Defaults to ``self.dtype``.
-                If None, use the data type of input data. To be compatible with other modules,
-                the output data type is always ``float32``.
+            dtype: data_module type for resampling computation. Defaults to ``self.dtype``.
+                If None, use the data_module type of input data_module. To be compatible with other modules,
+                the output data_module type is always ``float32``.
             randomize: whether to execute `randomize()` function first, default to True.
             lazy: a flag to indicate whether this transform should execute lazily or not
                 during this call. Setting this to False or True overrides the ``lazy`` flag set
@@ -1521,12 +1521,12 @@ class RandZoom(RandomizableTransform, InvertibleTransform, LazyTransform):
             If a float, select a random factor from `[min_zoom, max_zoom]` then apply to all spatial dims
             to keep the original spatial shape ratio.
             If a sequence, min_zoom should contain one value for each spatial axis.
-            If 2 values provided for 3D data, use the first value for both H & W dims to keep the same zoom ratio.
+            If 2 values provided for 3D data_module, use the first value for both H & W dims to keep the same zoom ratio.
         max_zoom: Max zoom factor. Can be float or sequence same size as image.
             If a float, select a random factor from `[min_zoom, max_zoom]` then apply to all spatial dims
             to keep the original spatial shape ratio.
             If a sequence, max_zoom should contain one value for each spatial axis.
-            If 2 values provided for 3D data, use the first value for both H & W dims to keep the same zoom ratio.
+            If 2 values provided for 3D data_module, use the first value for both H & W dims to keep the same zoom ratio.
         mode: {``"nearest"``, ``"nearest-exact"``, ``"linear"``, ``"bilinear"``, ``"bicubic"``, ``"trilinear"``, ``"area"``}
             The interpolation mode. Defaults to ``"area"``.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
@@ -1534,14 +1534,14 @@ class RandZoom(RandomizableTransform, InvertibleTransform, LazyTransform):
             ``"mean"``, ``"median"``, ``"minimum"``, ``"reflect"``, ``"symmetric"``, ``"wrap"``, ``"empty"``}
             available modes for PyTorch Tensor: {``"constant"``, ``"reflect"``, ``"replicate"``, ``"circular"``}.
             One of the listed string values or a user supplied function. Defaults to ``"constant"``.
-            The mode to pad data after zooming.
+            The mode to pad data_module after zooming.
             See also: https://numpy.org/doc/1.18/reference/generated/numpy.pad.html
             https://pytorch.org/docs/stable/generated/torch.nn.functional.pad.html
         align_corners: This only has an effect when mode is
             'linear', 'bilinear', 'bicubic' or 'trilinear'. Default: None.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
-        dtype: data type for resampling computation. Defaults to ``float32``.
-            If None, use the data type of input data.
+        dtype: data_module type for resampling computation. Defaults to ``float32``.
+            If None, use the data_module type of input data_module.
         keep_size: Should keep original size (pad if needed), default is True.
         lazy: a flag to indicate whether this transform should execute lazily or not.
             Defaults to False
@@ -1591,7 +1591,7 @@ class RandZoom(RandomizableTransform, InvertibleTransform, LazyTransform):
             # to keep the spatial shape ratio, use same random zoom factor for all dims
             self._zoom = ensure_tuple_rep(self._zoom[0], img.ndim - 1)
         elif len(self._zoom) == 2 and img.ndim > 3:
-            # if 2 zoom factors provided for 3D data, use the first factor for H and W dims, second factor for D dim
+            # if 2 zoom factors provided for 3D data_module, use the first factor for H and W dims, second factor for D dim
             self._zoom = ensure_tuple_rep(self._zoom[0], img.ndim - 2) + ensure_tuple(self._zoom[-1])
 
     def __call__(
@@ -1614,14 +1614,14 @@ class RandZoom(RandomizableTransform, InvertibleTransform, LazyTransform):
                 ``"mean"``, ``"median"``, ``"minimum"``, ``"reflect"``, ``"symmetric"``, ``"wrap"``, ``"empty"``}
                 available modes for PyTorch Tensor: {``"constant"``, ``"reflect"``, ``"replicate"``, ``"circular"``}.
                 One of the listed string values or a user supplied function. Defaults to ``"constant"``.
-                The mode to pad data after zooming.
+                The mode to pad data_module after zooming.
                 See also: https://numpy.org/doc/1.18/reference/generated/numpy.pad.html
                 https://pytorch.org/docs/stable/generated/torch.nn.functional.pad.html
             align_corners: This only has an effect when mode is
                 'linear', 'bilinear', 'bicubic' or 'trilinear'. Defaults to ``self.align_corners``.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.interpolate.html
-            dtype: data type for resampling computation. Defaults to ``self.dtype``.
-                If None, use the data type of input data.
+            dtype: data_module type for resampling computation. Defaults to ``self.dtype``.
+                If None, use the data_module type of input data_module.
             randomize: whether to execute `randomize()` function first, default to True.
             lazy: a flag to indicate whether this transform should execute lazily or not
                 during this call. Setting this to False or True overrides the ``lazy`` flag set
@@ -1680,8 +1680,8 @@ class AffineGrid(LazyTransform):
             pixel/voxel relative to the center of the input image. Defaults to no translation.
         scale_params: scale factor for every spatial dims. a tuple of 2 floats for 2D,
             a tuple of 3 floats for 3D. Defaults to `1.0`.
-        dtype: data type for the grid computation. Defaults to ``float32``.
-            If ``None``, use the data type of input data (if `grid` is provided).
+        dtype: data_module type for the grid computation. Defaults to ``float32``.
+            If ``None``, use the data_module type of input data_module (if `grid` is provided).
         device: device on which the tensor will be allocated, if a new grid is generated.
         align_corners: Defaults to False.
             See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
@@ -1824,9 +1824,9 @@ class RandAffineGrid(Randomizable, LazyTransform):
             scale_range: scaling range with format matching `rotate_range`. it defines the range to randomly select
                 the scale factor to translate for every spatial dims. A value of 1.0 is added to the result.
                 This allows 0 to correspond to no change (i.e., a scaling of 1.0).
-            device: device to store the output grid data.
-            dtype: data type for the grid computation. Defaults to ``np.float32``.
-                If ``None``, use the data type of input data (if `grid` is provided).
+            device: device to store the output grid data_module.
+            dtype: data_module type for the grid computation. Defaults to ``np.float32``.
+                If ``None``, use the data_module type of input data_module (if `grid` is provided).
             lazy: a flag to indicate whether this transform should execute lazily or not.
                 Defaults to False
 
@@ -1930,7 +1930,7 @@ class RandDeformGrid(Randomizable, Transform):
                 spacing=(2, 2) indicates deformation field defined on every other pixel in 2D.
             magnitude_range: the random offsets will be generated from
                 `uniform[magnitude[0], magnitude[1])`.
-            device: device to store the output grid data.
+            device: device to store the output grid data_module.
         """
         self.spacing = spacing
         self.magnitude = magnitude_range
@@ -1997,9 +1997,9 @@ class Resample(Transform):
             device: device on which the tensor will be allocated.
             align_corners: Defaults to False.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
-            dtype: data type for resampling computation. Defaults to ``float64`` for best precision.
-                If ``None``, use the data type of input data. To be compatible with other modules,
-                the output data type is always `float32`.
+            dtype: data_module type for resampling computation. Defaults to ``float64`` for best precision.
+                If ``None``, use the data_module type of input data_module. To be compatible with other modules,
+                the output data_module type is always `float32`.
 
         """
         self.mode = mode
@@ -2042,8 +2042,8 @@ class Resample(Transform):
                 When `mode` is an integer, using numpy/cupy backends, this argument accepts
                 {'reflect', 'grid-mirror', 'constant', 'grid-constant', 'nearest', 'mirror', 'grid-wrap', 'wrap'}.
                 See also: https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.map_coordinates.html
-            dtype: data type for resampling computation. Defaults to ``self.dtype``.
-                To be compatible with other modules, the output data type is always `float32`.
+            dtype: data_module type for resampling computation. Defaults to ``self.dtype``.
+                To be compatible with other modules, the output data_module type is always `float32`.
             align_corners: Defaults to ``self.align_corners``.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
 
@@ -2189,9 +2189,9 @@ class Affine(InvertibleTransform, LazyTransform):
                 If `normalized=False`, additional coordinate normalization will be applied before resampling.
                 See also: :py:func:`monai.networks.utils.normalize_transform`.
             device: device on which the tensor will be allocated.
-            dtype: data type for resampling computation. Defaults to ``float32``.
-                If ``None``, use the data type of input data. To be compatible with other modules,
-                the output data type is always `float32`.
+            dtype: data_module type for resampling computation. Defaults to ``float32``.
+                If ``None``, use the data_module type of input data_module. To be compatible with other modules,
+                the output data_module type is always `float32`.
             align_corners: Defaults to False.
                 See also: https://pytorch.org/docs/stable/generated/torch.nn.functional.grid_sample.html
             image_only: if True return only the image volume, otherwise return (image, affine).

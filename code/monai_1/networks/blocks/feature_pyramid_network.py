@@ -154,7 +154,7 @@ class FeaturePyramidNetwork(nn.Module):
     Examples::
 
         >>> m = FeaturePyramidNetwork(2, [10, 20, 30], 5)
-        >>> # get some dummy data
+        >>> # get some dummy data_module
         >>> x = OrderedDict()
         >>> x['feat0'] = torch.rand(1, 10, 64, 64)
         >>> x['feat2'] = torch.rand(1, 20, 16, 16)

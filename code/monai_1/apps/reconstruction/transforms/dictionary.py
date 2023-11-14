@@ -30,18 +30,18 @@ from monai.utils.type_conversion import convert_to_tensor
 
 class ExtractDataKeyFromMetaKeyd(MapTransform):
     """
-    Moves keys from meta to data. It is useful when a dataset of paired samples
-    is loaded and certain keys should be moved from meta to data.
+    Moves keys from meta to data_module. It is useful when a dataset of paired samples
+    is loaded and certain keys should be moved from meta to data_module.
 
     Args:
-        keys: keys to be transferred from meta to data
-        meta_key: the meta key where all the meta-data is stored
+        keys: keys to be transferred from meta to data_module
+        meta_key: the meta key where all the meta-data_module is stored
         allow_missing_keys: don't raise exception if key is missing
 
     Example:
-        When the fastMRI dataset is loaded, "kspace" is stored in the data dictionary,
-        but the ground-truth image with the key "reconstruction_rss" is stored in the meta data.
-        In this case, ExtractDataKeyFromMetaKeyd moves "reconstruction_rss" to data.
+        When the fastMRI dataset is loaded, "kspace" is stored in the data_module dictionary,
+        but the ground-truth image with the key "reconstruction_rss" is stored in the meta data_module.
+        In this case, ExtractDataKeyFromMetaKeyd moves "reconstruction_rss" to data_module.
     """
 
     def __init__(self, keys: KeysCollection, meta_key: str, allow_missing_keys: bool = False) -> None:
@@ -55,7 +55,7 @@ class ExtractDataKeyFromMetaKeyd(MapTransform):
                 loaded dataset
 
         Returns:
-            the new data dictionary
+            the new data_module dictionary
         """
         d = dict(data)
         for key in self.keys:
@@ -63,7 +63,7 @@ class ExtractDataKeyFromMetaKeyd(MapTransform):
                 d[key] = d[self.meta_key][key]  # type: ignore
             elif not self.allow_missing_keys:
                 raise KeyError(
-                    f"Key `{key}` of transform `{self.__class__.__name__}` was missing in the meta data"
+                    f"Key `{key}` of transform `{self.__class__.__name__}` was missing in the meta data_module"
                     " and allow_missing_keys==False."
                 )
         return d  # type: ignore
@@ -84,11 +84,11 @@ class RandomKspaceMaskd(RandomizableTransform, MapTransform):
         accelerations: Amount of under-sampling. This should have the
             same length as center_fractions. If multiple values are provided,
             then one of these is chosen uniformly each time.
-        spatial_dims: Number of spatial dims (e.g., it's 2 for a 2D data; it's
+        spatial_dims: Number of spatial dims (e.g., it's 2 for a 2D data_module; it's
             also 2 for pseudo-3D datasets like the fastMRI dataset).
             The last spatial dim is selected for sampling. For the fastMRI
             dataset, k-space has the form (...,num_slices,num_coils,H,W)
-            and sampling is done along W. For a general 3D data with the
+            and sampling is done along W. For a general 3D data_module with the
             shape (...,num_coils,H,W,D), sampling is done along D.
         is_complex: if True, then the last dimension will be reserved
             for real/imaginary parts.
@@ -128,7 +128,7 @@ class RandomKspaceMaskd(RandomizableTransform, MapTransform):
                 loaded dataset
 
         Returns:
-            the new data dictionary
+            the new data_module dictionary
         """
         d = dict(data)
         for key in self.key_iterator(d):
@@ -152,11 +152,11 @@ class EquispacedKspaceMaskd(RandomKspaceMaskd):
         accelerations: Amount of under-sampling. This should have the same
             length as center_fractions. If multiple values are provided,
             then one of these is chosen uniformly each time.
-        spatial_dims: Number of spatial dims (e.g., it's 2 for a 2D data;
+        spatial_dims: Number of spatial dims (e.g., it's 2 for a 2D data_module;
             it's also 2 for  pseudo-3D datasets like the fastMRI dataset).
             The last spatial dim is selected for sampling. For the fastMRI
             dataset, k-space has the form (...,num_slices,num_coils,H,W)
-            and sampling is done along W. For a general 3D data with the shape
+            and sampling is done along W. For a general 3D data_module with the shape
             (...,num_coils,H,W,D), sampling is done along D.
         is_complex: if True, then the last dimension will be reserved
             for real/imaginary parts.
@@ -207,8 +207,8 @@ class ReferenceBasedSpatialCropd(MapTransform, InvertibleTransform):
 
     Example:
         In an image reconstruction task, let keys=["image"] and ref_key=["target"].
-        Also, let data be the data dictionary. Then, ReferenceBasedSpatialCropd
-        center-crops data["image"] based on the spatial size of data["target"] by
+        Also, let data_module be the data_module dictionary. Then, ReferenceBasedSpatialCropd
+        center-crops data_module["image"] based on the spatial size of data_module["target"] by
         calling :py:class:`monai.transforms.SpatialCrop`.
     """
 
@@ -218,16 +218,16 @@ class ReferenceBasedSpatialCropd(MapTransform, InvertibleTransform):
 
     def __call__(self, data: Mapping[Hashable, Tensor]) -> dict[Hashable, Tensor]:
         """
-        This transform can support to crop ND spatial (channel-first) data.
-        It also supports pseudo ND spatial data (e.g., (C,H,W) is a pseudo-3D
-        data point where C is the number of slices)
+        This transform can support to crop ND spatial (channel-first) data_module.
+        It also supports pseudo ND spatial data_module (e.g., (C,H,W) is a pseudo-3D
+        data_module point where C is the number of slices)
 
         Args:
             data: is a dictionary containing (key,value) pairs from
                 the loaded dataset
 
         Returns:
-            the new data dictionary
+            the new data_module dictionary
         """
         d = dict(data)
 
@@ -261,14 +261,14 @@ class ReferenceBasedNormalizeIntensityd(MapTransform):
         channel_wise: if True, calculate on each channel separately,
             otherwise, calculate on the entire image directly. default
             to False.
-        dtype: output data type, if None, same as input image. defaults
+        dtype: output data_module type, if None, same as input image. defaults
             to float32.
         allow_missing_keys: don't raise exception if key is missing.
 
     Example:
         In an image reconstruction task, let keys=["image", "target"] and ref_key=["image"].
-        Also, let data be the data dictionary. Then, ReferenceBasedNormalizeIntensityd
-        normalizes data["target"] and data["image"] based on the mean-std of data["image"] by
+        Also, let data_module be the data_module dictionary. Then, ReferenceBasedNormalizeIntensityd
+        normalizes data_module["target"] and data_module["image"] based on the mean-std of data_module["image"] by
         calling :py:class:`monai.transforms.NormalizeIntensity`.
     """
 
@@ -291,16 +291,16 @@ class ReferenceBasedNormalizeIntensityd(MapTransform):
 
     def __call__(self, data: Mapping[Hashable, NdarrayOrTensor]) -> dict[Hashable, NdarrayOrTensor]:
         """
-        This transform can support to normalize ND spatial (channel-first) data.
-        It also supports pseudo ND spatial data (e.g., (C,H,W) is a pseudo-3D
-        data point where C is the number of slices)
+        This transform can support to normalize ND spatial (channel-first) data_module.
+        It also supports pseudo ND spatial data_module (e.g., (C,H,W) is a pseudo-3D
+        data_module point where C is the number of slices)
 
         Args:
             data: is a dictionary containing (key,value) pairs from
                 the loaded dataset
 
         Returns:
-            the new data dictionary
+            the new data_module dictionary
         """
         d = dict(data)
 
@@ -308,7 +308,7 @@ class ReferenceBasedNormalizeIntensityd(MapTransform):
         if self.default_normalizer.channel_wise:
             # perform channel-wise normalization
             # compute mean of each channel in the input for mean-std normalization
-            # subtrahend will have the same shape as image, for example (C,W,D) for a 2D data
+            # subtrahend will have the same shape as image, for example (C,W,D) for a 2D data_module
             if self.default_normalizer.subtrahend is None:
                 subtrahend = np.array(
                     [val.mean() if isinstance(val, ndarray) else val.float().mean().item() for val in d[self.ref_key]]

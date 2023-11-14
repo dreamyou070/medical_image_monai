@@ -201,7 +201,7 @@ else:
 
 
 def get_data(keys):
-    """Get the example data to be used.
+    """Get the example data_module to be used.
 
     Use MarsAtlas as it only contains 1 image for quick download and
     that image is parcellated.
@@ -269,7 +269,7 @@ def update_docstring(code_path, transform_name):
 
 
 def pre_process_data(data, ndim, is_map, is_post):
-    """If transform requires 2D data, then convert to 2D"""
+    """If transform requires 2D data_module, then convert to 2D"""
     if ndim == 2:
         for k in keys:
             data[k] = data[k][..., data[k].shape[-1] // 2]

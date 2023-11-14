@@ -60,7 +60,7 @@ class Interaction:
 
     def __call__(self, engine: SupervisedTrainer | SupervisedEvaluator, batchdata: dict[str, torch.Tensor]) -> dict:
         if batchdata is None:
-            raise ValueError("Must provide batch data for current iteration.")
+            raise ValueError("Must provide batch data_module for current iteration.")
 
         if np.random.choice([True, False], p=[self.deepgrow_probability, 1 - self.deepgrow_probability]):
             for j in range(self.max_interactions):

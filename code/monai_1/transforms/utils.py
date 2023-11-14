@@ -335,13 +335,13 @@ def map_binary_to_indices(
     label: NdarrayOrTensor, image: NdarrayOrTensor | None = None, image_threshold: float = 0.0
 ) -> tuple[NdarrayOrTensor, NdarrayOrTensor]:
     """
-    Compute the foreground and background of input label data, return the indices after fattening.
+    Compute the foreground and background of input label data_module, return the indices after fattening.
     For example:
     ``label = np.array([[[0, 1, 1], [1, 0, 1], [1, 1, 0]]])``
     ``foreground indices = np.array([1, 2, 3, 5, 6, 7])`` and ``background indices = np.array([0, 4, 8])``
 
     Args:
-        label: use the label data to get the foreground/background information.
+        label: use the label data_module to get the foreground/background information.
         image: if image is not None, use ``label = 0 & image > image_threshold``
             to define background. so the output items will not map to all the voxels in the label.
         image_threshold: if enabled `image`, use ``image > image_threshold`` to
@@ -350,7 +350,7 @@ def map_binary_to_indices(
     check_non_lazy_pending_ops(label, name="map_binary_to_indices")
     # Prepare fg/bg indices
     if label.shape[0] > 1:
-        label = label[1:]  # for One-Hot format data, remove the background channel
+        label = label[1:]  # for One-Hot format data_module, remove the background channel
     label_flat = ravel(any_np_pt(label, 0))  # in case label has multiple dimensions
     fg_indices = nonzero(label_flat)
     if image is not None:
@@ -375,7 +375,7 @@ def map_classes_to_indices(
     max_samples_per_class: int | None = None,
 ) -> list[NdarrayOrTensor]:
     """
-    Filter out indices of every class of the input label data, return the indices after fattening.
+    Filter out indices of every class of the input label data_module, return the indices after fattening.
     It can handle both One-Hot format label and Argmax format label, must provide `num_classes` for
     Argmax label.
 
@@ -385,7 +385,7 @@ def map_classes_to_indices(
     ``[np.array([0, 4, 8]), np.array([1, 5, 6]), np.array([2, 3, 7])]``
 
     Args:
-        label: use the label data to get the indices of every class.
+        label: use the label data_module to get the indices of every class.
         num_classes: number of classes for argmax label, not necessary for One-Hot label.
         image: if image is not None, only return the indices of every class that are within the valid
             region of the image (``image > image_threshold``).
@@ -492,7 +492,7 @@ def correct_crop_centers(
     Args:
         centers: pre-computed crop centers of every dim, will correct based on the valid region.
         spatial_size: spatial size of the ROIs to be sampled.
-        label_spatial_shape: spatial shape of the original label data to compare with ROI.
+        label_spatial_shape: spatial shape of the original label data_module to compare with ROI.
         allow_smaller: if `False`, an exception will be raised if the image is smaller than
             the requested ROI in any dimension. If `True`, any smaller dimensions will be set to
             match the cropped size (i.e., no cropping in that dimension).
@@ -542,7 +542,7 @@ def generate_pos_neg_label_crop_centers(
         spatial_size: spatial size of the ROIs to be sampled.
         num_samples: total sample centers to be generated.
         pos_ratio: ratio of total locations generated that have center being foreground.
-        label_spatial_shape: spatial shape of the original label data to unravel selected centers.
+        label_spatial_shape: spatial shape of the original label data_module to unravel selected centers.
         fg_indices: pre-computed foreground indices in 1 dimension.
         bg_indices: pre-computed background indices in 1 dimension.
         rand_state: numpy randomState object to align with other modules.
@@ -599,7 +599,7 @@ def generate_label_classes_crop_centers(
     Args:
         spatial_size: spatial size of the ROIs to be sampled.
         num_samples: total sample centers to be generated.
-        label_spatial_shape: spatial shape of the original label data to unravel selected centers.
+        label_spatial_shape: spatial shape of the original label data_module to unravel selected centers.
         indices: sequence of pre-computed foreground indices of every class in 1 dimension.
         ratios: ratios of every class in the label to generate crop centers, including background class.
             if None, every class will have the same ratio to generate crop centers.
@@ -660,7 +660,7 @@ def create_grid(
         spatial_size: spatial size of the grid.
         spacing: same len as ``spatial_size``, defaults to 1.0 (dense grid).
         homogeneous: whether to make homogeneous coordinates.
-        dtype: output grid data type, defaults to `float`.
+        dtype: output grid data_module type, defaults to `float`.
         device: device to compute and store the output (when the backend is "torch").
         backend: APIs to use, ``numpy`` or ``torch``.
 
@@ -1274,11 +1274,11 @@ def extreme_points_to_image(
         points: Extreme points of the object/organ.
         label: label image to get extreme points from. Shape must be
             (1, spatial_dim1, [, spatial_dim2, ...]). Doesn't support one-hot labels.
-        sigma: if a list of values, must match the count of spatial dimensions of input data,
+        sigma: if a list of values, must match the count of spatial dimensions of input data_module,
             and apply every value in the list to 1 spatial dimension. if only 1 value provided,
             use it for all spatial dimensions.
-        rescale_min: minimum value of output data.
-        rescale_max: maximum value of output data.
+        rescale_min: minimum value of output data_module.
+        rescale_max: maximum value of output data_module.
     """
     # points to image
     # points_image = torch.zeros(label.shape[1:], dtype=torch.float)
@@ -1324,7 +1324,7 @@ def map_spatial_axes(
             The default `None` will convert to all the spatial axes of the image.
             If axis is negative it counts from the last to the first axis.
             If axis is a tuple of ints.
-        channel_first: the image data is channel first or channel last, default to channel first.
+        channel_first: the image data_module is channel first or channel last, default to channel first.
 
     """
     if spatial_axes is None:
@@ -1349,11 +1349,11 @@ def allow_missing_keys_mode(transform: MapTransform | Compose | tuple[MapTransfo
 
     .. code-block:: python
 
-        data = {"image": np.arange(16, dtype=float).reshape(1, 4, 4)}
+        data_module = {"image": np.arange(16, dtype=float).reshape(1, 4, 4)}
         t = SpatialPadd(["image", "label"], 10, allow_missing_keys=False)
-        _ = t(data)  # would raise exception
+        _ = t(data_module)  # would raise exception
         with allow_missing_keys_mode(t):
-            _ = t(data)  # OK!
+            _ = t(data_module)  # OK!
     """
     # If given a sequence of transforms, Compose them to get a single list
     if issequenceiterable(transform):
@@ -1425,7 +1425,7 @@ def convert_applied_interp_mode(trans_info, mode: str = "nearest", align_corners
 
 
 def reset_ops_id(data):
-    """find MetaTensors in list or dict `data` and (in-place) set ``TraceKeys.ID`` to ``Tracekeys.NONE``."""
+    """find MetaTensors in list or dict `data_module` and (in-place) set ``TraceKeys.ID`` to ``Tracekeys.NONE``."""
     if isinstance(data, (list, tuple)):
         return [reset_ops_id(d) for d in data]
     if isinstance(data, monai.data.MetaTensor):
@@ -1511,7 +1511,7 @@ class Fourier:
             spatial_dims: Number of spatial dimensions.
 
         Returns
-            k: K-space data.
+            k: K-space data_module.
         """
         dims = tuple(range(-spatial_dims, 0))
         k: NdarrayOrTensor
@@ -1532,7 +1532,7 @@ class Fourier:
         dimensions are transformed.
 
         Args:
-            k: K-space data.
+            k: K-space data_module.
             spatial_dims: Number of spatial dimensions.
 
         Returns:
@@ -1553,12 +1553,12 @@ class Fourier:
 
 def get_number_image_type_conversions(transform: Compose, test_data: Any, key: Hashable | None = None) -> int:
     """
-    Get the number of times that the data need to be converted (e.g., numpy to torch).
+    Get the number of times that the data_module need to be converted (e.g., numpy to torch).
     Conversions between different devices are also counted (e.g., CPU to GPU).
 
     Args:
         transform: composed transforms to be tested
-        test_data: data to be used to count the number of conversions
+        test_data: data_module to be used to count the number of conversions
         key: if using dictionary transforms, this key will be used to check the number of conversions.
     """
     from monai.transforms.compose import OneOf
@@ -1684,7 +1684,7 @@ def convert_pad_mode(dst: NdarrayOrTensor, mode: str | None):
     Utility to convert padding mode between numpy array and PyTorch Tensor.
 
     Args:
-        dst: target data to convert padding mode for, should be numpy array or PyTorch Tensor.
+        dst: target data_module to convert padding mode for, should be numpy array or PyTorch Tensor.
         mode: current padding mode.
 
     """
@@ -1700,17 +1700,17 @@ def convert_pad_mode(dst: NdarrayOrTensor, mode: str | None):
         elif mode == "replicate":
             mode = "edge"
         return look_up_option(mode, NumpyPadMode)
-    raise ValueError(f"unsupported data type: {type(dst)}.")
+    raise ValueError(f"unsupported data_module type: {type(dst)}.")
 
 
 def convert_to_contiguous(
     data: NdarrayOrTensor | str | bytes | Mapping | Sequence[Any], **kwargs
 ) -> NdarrayOrTensor | Mapping | Sequence[Any]:
     """
-    Check and ensure the numpy array or PyTorch Tensor in data to be contiguous in memory.
+    Check and ensure the numpy array or PyTorch Tensor in data_module to be contiguous in memory.
 
     Args:
-        data: input data to convert, will recursively convert the numpy array or PyTorch Tensor in dict and sequence.
+        data: input data_module to convert, will recursively convert the numpy array or PyTorch Tensor in dict and sequence.
         kwargs: if `x` is PyTorch Tensor, additional args for `torch.contiguous`, more details:
             https://pytorch.org/docs/stable/generated/torch.Tensor.contiguous.html#torch.Tensor.contiguous.
 
@@ -1783,7 +1783,7 @@ def sync_meta_info(key, data_dict, t: bool = True):
     if not isinstance(d[key], monai.data.MetaTensor):
         d[key] = monai.data.MetaTensor(data_dict[key])
         d[key].meta = d[meta_dict_key]
-    d[meta_dict_key].update(d[key].meta)  # prefer metatensor's data
+    d[meta_dict_key].update(d[key].meta)  # prefer metatensor's data_module
 
     # update xform info
     xform_key = monai.transforms.TraceableTransform.trace_key(key)
@@ -2071,7 +2071,7 @@ def distance_transform_edt(
 ) -> None | NdarrayOrTensor | tuple[NdarrayOrTensor, NdarrayOrTensor]:
     """
     Euclidean distance transform, either GPU based with CuPy / cuCIM or CPU based with scipy.
-    To use the GPU implementation, make sure cuCIM is available and that the data is a `torch.tensor` on a GPU device.
+    To use the GPU implementation, make sure cuCIM is available and that the data_module is a `torch.tensor` on a GPU device.
 
     Note that the results of the libraries can differ, so stick to one if possible.
     For details, check out the `SciPy`_ and `cuCIM`_ documentation.

@@ -33,7 +33,7 @@ class ProbMapProducer:
     """
     Event handler triggered on completing every iteration to calculate and save the probability map.
     This handler use metadata from MetaTensor to create the probability map. This can be simply achieved by using
-    `monai.data.SlidingPatchWSIDataset` or `monai.data.MaskedPatchWSIDataset` as the dataset.
+    `monai.data_module.SlidingPatchWSIDataset` or `monai.data_module.MaskedPatchWSIDataset` as the dataset.
 
     """
 
@@ -50,7 +50,7 @@ class ProbMapProducer:
             output_dir: output directory to save probability maps.
             output_postfix: a string appended to all output file names.
             prob_key: the key associated to the probability output of the model
-            dtype: the data type in which the probability map is stored. Default np.float64.
+            dtype: the data_module type in which the probability map is stored. Default np.float64.
             name: identifier of logging.logger to use, defaulting to `engine.logger`.
 
         """

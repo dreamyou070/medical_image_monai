@@ -64,7 +64,7 @@ class BilateralFilter(torch.autograd.Function):
 class PHLFilter(torch.autograd.Function):
     """
     Filters input based on arbitrary feature vectors. Uses a permutohedral
-    lattice data structure to efficiently approximate n-dimensional gaussian
+    lattice data_module structure to efficiently approximate n-dimensional gaussian
     filtering. Complexity is broadly independent of kernel size. Most applicable
     to higher filter dimensions and larger kernel sizes.
 
@@ -181,7 +181,7 @@ class TrainableBilateralFilterFunction(torch.autograd.Function):
 class TrainableBilateralFilter(torch.nn.Module):
     """
     Implementation of a trainable bilateral filter layer as proposed in the corresponding publication.
-    All filter parameters can be trained data-driven. The spatial filter kernels x, y, and z determine
+    All filter parameters can be trained data_module-driven. The spatial filter kernels x, y, and z determine
     image smoothing whereas the color parameter specifies the amount of edge preservation.
     Can run on 1D, 2D, or 3D tensors (on top of Batch and Channel dimensions).
 
@@ -346,7 +346,7 @@ class TrainableJointBilateralFilter(torch.nn.Module):
     """
     Implementation of a trainable joint bilateral filter layer as proposed in the corresponding publication.
     The guidance image is used as additional (edge) information during filtering. All filter parameters and the
-    guidance image can be trained data-driven. The spatial filter kernels x, y, and z determine
+    guidance image can be trained data_module-driven. The spatial filter kernels x, y, and z determine
     image smoothing whereas the color parameter specifies the amount of edge preservation.
     Can run on 1D, 2D, or 3D tensors (on top of Batch and Channel dimensions). Input tensor shape must match
     guidance tensor shape.

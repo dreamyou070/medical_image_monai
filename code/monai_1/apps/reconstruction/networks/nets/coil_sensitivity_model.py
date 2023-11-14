@@ -33,7 +33,7 @@ class CoilSensitivityModel(nn.Module):
     but can be specified by the user as well. Learning is done on the center of the under-sampled
     kspace (that region is fully sampled).
 
-    The data being a (complex) 2-channel tensor is a requirement for using this model.
+    The data_module being a (complex) 2-channel tensor is a requirement for using this model.
 
     Modified and adopted from: https://github.com/facebookresearch/fastMRI
 
@@ -46,7 +46,7 @@ class CoilSensitivityModel(nn.Module):
         dropout: dropout ratio. Defaults to 0.0.
         upsample: upsampling mode, available options are
             ``"deconv"``, ``"pixelshuffle"``, ``"nontrainable"``.
-        coil_dim: coil dimension in the data
+        coil_dim: coil dimension in the data_module
         conv_net: the learning model used to estimate the coil sensitivity maps. default
             is :py:class:`monai.apps.reconstruction.networks.nets.complex_unet`. The only
             requirement on the model is to have 2 as input and output number of channels.
@@ -116,21 +116,21 @@ class CoilSensitivityModel(nn.Module):
         """
         Args:
             masked_kspace: the under-sampled kspace (which is the input measurement). Its shape
-                is (B,C,H,W,2) for 2D data or (B,C,H,W,D,2) for 3D data.
-            mask: the under-sampling mask with shape (1,1,1,W,1) for 2D data or (1,1,1,1,D,1) for 3D data.
+                is (B,C,H,W,2) for 2D data_module or (B,C,H,W,D,2) for 3D data_module.
+            mask: the under-sampling mask with shape (1,1,1,W,1) for 2D data_module or (1,1,1,1,D,1) for 3D data_module.
 
         Returns:
-            predicted coil sensitivity maps with shape (B,C,H,W,2) for 2D data or (B,C,H,W,D,2) for 3D data.
+            predicted coil sensitivity maps with shape (B,C,H,W,2) for 2D data_module or (B,C,H,W,D,2) for 3D data_module.
         """
         left, right = self.get_fully_sampled_region(mask)
         num_low_freqs = right - left  # size of the fully-sampled center
 
-        # take out the fully-sampled region and set the rest of the data to zero
+        # take out the fully-sampled region and set the rest of the data_module to zero
         x = torch.zeros_like(masked_kspace)
         start = (mask.shape[-2] - num_low_freqs + 1) // 2  # this marks the start of center extraction
         x[..., start : start + num_low_freqs, :] = masked_kspace[..., start : start + num_low_freqs, :]
 
-        # apply inverse fourier to the extracted fully-sampled data
+        # apply inverse fourier to the extracted fully-sampled data_module
         x = ifftn_centered_t(x, spatial_dims=self.spatial_dims, is_complex=True)
 
         x, b = reshape_channel_to_batch_dim(x)  # shape of x will be (B*C,1,...)

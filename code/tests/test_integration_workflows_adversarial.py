@@ -40,7 +40,7 @@ def run_training_test(root_dir, device="cuda:0"):
     real_images = sorted(glob(os.path.join(root_dir, "img*.nii.gz")))
     train_files = [{CommonKeys.IMAGE: img, CommonKeys.LABEL: img} for img in zip(real_images)]
 
-    # prepare real data
+    # prepare real data_module
     train_transforms = Compose(
         [
             LoadImaged(keys=[CommonKeys.IMAGE, CommonKeys.LABEL]),

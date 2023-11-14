@@ -42,7 +42,7 @@ def get_fid_score(y_pred: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
 
     Args:
         y_pred: feature vectors extracted from a pretrained network run on generated images.
-        y: feature vectors extracted from a pretrained network run on images from the real data distribution.
+        y: feature vectors extracted from a pretrained network run on images from the real data_module distribution.
     """
     y = y.double()
     y_pred = y_pred.double()

@@ -40,28 +40,28 @@ __all__ = ["TraceableTransform", "InvertibleTransform"]
 
 class TraceableTransform(Transform):
     """
-    Maintains a stack of applied transforms to data.
+    Maintains a stack of applied transforms to data_module.
 
     Data can be one of two types:
-        1. A `MetaTensor` (this is the preferred data type).
-        2. A dictionary of data containing arrays/tensors and auxiliary metadata. In
+        1. A `MetaTensor` (this is the preferred data_module type).
+        2. A dictionary of data_module containing arrays/tensors and auxiliary metadata. In
             this case, a key must be supplied (this dictionary-based approach is deprecated).
 
-    If `data` is of type `MetaTensor`, then the applied transform will be added to ``data.applied_operations``.
+    If `data_module` is of type `MetaTensor`, then the applied transform will be added to ``data_module.applied_operations``.
 
-    If `data` is a dictionary, then one of two things can happen:
-        1. If data[key] is a `MetaTensor`, the applied transform will be added to ``data[key].applied_operations``.
+    If `data_module` is a dictionary, then one of two things can happen:
+        1. If data_module[key] is a `MetaTensor`, the applied transform will be added to ``data_module[key].applied_operations``.
         2. Else, the applied transform will be appended to an adjacent list using
             `trace_key`. If, for example, the key is `image`, then the transform
             will be appended to `image_transforms` (this dictionary-based approach is deprecated).
 
     Hopefully it is clear that there are three total possibilities:
-        1. data is `MetaTensor`
-        2. data is dictionary, data[key] is `MetaTensor`
-        3. data is dictionary, data[key] is not `MetaTensor` (this is a deprecated approach).
+        1. data_module is `MetaTensor`
+        2. data_module is dictionary, data_module[key] is `MetaTensor`
+        3. data_module is dictionary, data_module[key] is not `MetaTensor` (this is a deprecated approach).
 
     The ``__call__`` method of this transform class must be implemented so
-    that the transformation information is stored during the data transformation.
+    that the transformation information is stored during the data_module transformation.
 
     The information in the stack of applied transforms must be compatible with the
     default collate, by only storing strings, numbers and arrays.
@@ -102,10 +102,10 @@ class TraceableTransform(Transform):
 
     def push_transform(self, data, *args, **kwargs):
         """
-        Push to a stack of applied transforms of ``data``.
+        Push to a stack of applied transforms of ``data_module``.
 
         Args:
-            data: dictionary of data or `MetaTensor`.
+            data: dictionary of data_module or `MetaTensor`.
             args: additional positional arguments to track_transform_meta.
             kwargs: additional keyword arguments to track_transform_meta,
                 set ``replace=True`` (default False) to rewrite the last transform infor in
@@ -150,11 +150,11 @@ class TraceableTransform(Transform):
         lazy=False,
     ):
         """
-        Update a stack of applied/pending transforms metadata of ``data``.
+        Update a stack of applied/pending transforms metadata of ``data_module``.
 
         Args:
-            data: dictionary of data or `MetaTensor`.
-            key: if data is a dictionary, data[key] will be modified.
+            data: dictionary of data_module or `MetaTensor`.
+            key: if data_module is a dictionary, data_module[key] will be modified.
             sp_size: the expected output spatial size when the transform is applied.
                 it can be tensor or numpy, but will be converted to a list of integers.
             affine: the affine representation of the (spatial) transform in the image space.
@@ -169,10 +169,10 @@ class TraceableTransform(Transform):
 
         Returns:
 
-            For backward compatibility, if ``data`` is a dictionary, it returns the dictionary with
-            updated ``data[key]``. Otherwise, this function returns a MetaObj with updated transform metadata.
+            For backward compatibility, if ``data_module`` is a dictionary, it returns the dictionary with
+            updated ``data_module[key]``. Otherwise, this function returns a MetaObj with updated transform metadata.
         """
-        data_t = data[key] if key is not None else data  # compatible with the dict data representation
+        data_t = data[key] if key is not None else data  # compatible with the dict data_module representation
         out_obj = MetaObj()
         # after deprecating metadict, we should always convert data_t to metatensor here
         if isinstance(data_t, MetaTensor):
@@ -284,8 +284,8 @@ class TraceableTransform(Transform):
         Get most recent transform for the stack.
 
         Args:
-            data: dictionary of data or `MetaTensor`.
-            key: if data is a dictionary, data[key] will be modified.
+            data: dictionary of data_module or `MetaTensor`.
+            key: if data_module is a dictionary, data_module[key] will be modified.
             check: if true, check that `self` is the same type as the most recently-applied transform.
             pop: if true, remove the transform as it is returned.
 
@@ -293,7 +293,7 @@ class TraceableTransform(Transform):
             Dictionary of most recently applied transform
 
         Raises:
-            - RuntimeError: data is neither `MetaTensor` nor dictionary
+            - RuntimeError: data_module is neither `MetaTensor` nor dictionary
         """
         if not self.tracing:
             raise RuntimeError("Transform Tracing must be enabled to get the most recent transform.")
@@ -305,7 +305,7 @@ class TraceableTransform(Transform):
             else:
                 all_transforms = data.get(self.trace_key(key), MetaTensor.get_default_applied_operations())
         else:
-            raise ValueError(f"`data` should be either `MetaTensor` or dictionary, got {type(data)}.")
+            raise ValueError(f"`data_module` should be either `MetaTensor` or dictionary, got {type(data)}.")
         if check:
             self.check_transforms_match(all_transforms[-1])
         return all_transforms.pop() if pop else all_transforms[-1]
@@ -315,15 +315,15 @@ class TraceableTransform(Transform):
         Return and pop the most recent transform.
 
         Args:
-            data: dictionary of data or `MetaTensor`
-            key: if data is a dictionary, data[key] will be modified
+            data: dictionary of data_module or `MetaTensor`
+            key: if data_module is a dictionary, data_module[key] will be modified
             check: if true, check that `self` is the same type as the most recently-applied transform.
 
         Returns:
             Dictionary of most recently applied transform
 
         Raises:
-            - RuntimeError: data is neither `MetaTensor` nor dictionary
+            - RuntimeError: data_module is neither `MetaTensor` nor dictionary
         """
         return self.get_most_recent_transform(data, key, check, pop=True)
 
@@ -367,7 +367,7 @@ class InvertibleTransform(TraceableTransform, InvertibleTrait):
         #. Any extra information that might be needed for the inverse can be included with the
            dictionary ``extra_info``. This dictionary should have the same keys regardless of
            whether ``do_transform`` was `True` or `False` and can only contain objects that are
-           accepted in pytorch data loader's collate function (e.g., `None` is not allowed).
+           accepted in pytorch data_module loader's collate function (e.g., `None` is not allowed).
         #. Implement an ``inverse`` method. Make sure that after performing the inverse,
            ``pop_transform`` is called.
 
@@ -375,8 +375,8 @@ class InvertibleTransform(TraceableTransform, InvertibleTrait):
 
     def inverse_update(self, data):
         """
-        This function is to be called before every `self.inverse(data)`,
-        update each MetaTensor `data[key]` using `data[key_transforms]` and `data[key_meta_dict]`,
+        This function is to be called before every `self.inverse(data_module)`,
+        update each MetaTensor `data_module[key]` using `data_module[key_transforms]` and `data_module[key_meta_dict]`,
         for MetaTensor backward compatibility 0.9.0.
         """
         if not isinstance(data, dict) or not isinstance(self, transforms.MapTransform):

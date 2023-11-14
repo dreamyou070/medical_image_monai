@@ -88,7 +88,7 @@ class Watershedd(MapTransform):
         connectivity: An array with the same number of dimensions as image whose non-zero elements indicate neighbors
             for connection. Following the scipy convention, default is a one-connected array of the dimension of the
             image.
-        dtype: target data content type to convert. Defaults to np.uint8.
+        dtype: target data_module content type to convert. Defaults to np.uint8.
         allow_missing_keys: don't raise exception if key is missing.
 
     Raises:
@@ -135,7 +135,7 @@ class GenerateWatershedMaskd(MapTransform):
             or any callable. Defaults to "softmax".
         threshold: if not None, threshold the float values to int number 0 or 1 with specified threshold.
         min_object_size: objects smaller than this size are removed. Defaults to 10.
-        dtype: target data content type to convert, default is np.uint8.
+        dtype: target data_module content type to convert, default is np.uint8.
         allow_missing_keys: don't raise exception if key is missing.
 
     """
@@ -177,7 +177,7 @@ class GenerateInstanceBorderd(Transform):
         hover_map_key: the input key where hover map is stored. Defaults to `"hover_map"`.
         border_key: the output key where instance border map is written. Defaults to `"border"`.
         kernel_size: the size of the Sobel kernel. Defaults to 21.
-        dtype: target data content type to convert, default is np.float32.
+        dtype: target data_module content type to convert, default is np.float32.
         allow_missing_keys: don't raise exception if key is missing.
 
     Raises:
@@ -219,7 +219,7 @@ class GenerateDistanceMapd(Transform):
         dist_map_key: the output key where distance map is written. Defaults to `"dist_map"`.
         smooth_fn: smoothing function for distance map, which can be any callable object.
             If not provided :py:class:`monai.transforms.GaussianSmooth()` is used.
-        dtype: target data content type to convert, default is np.float32.
+        dtype: target data_module content type to convert, default is np.float32.
     """
 
     backend = GenerateDistanceMap.backend
@@ -258,7 +258,7 @@ class GenerateWatershedMarkersd(Transform):
         radius: the radius of the disk-shaped footprint used in `opening`. Defaults to 2.
         min_object_size: objects smaller than this size are removed. Defaults to 10.
         postprocess_fn: execute additional post transformation on marker. Defaults to None.
-        dtype: target data content type to convert, default is np.uint8.
+        dtype: target data_module content type to convert, default is np.uint8.
         allow_missing_keys: don't raise exception if key is missing.
     """
 
@@ -379,7 +379,7 @@ class GenerateInstanceCentroidd(MapTransform):
         centroid_key_postfix: the output centroid coordinates will be written to the value of
             `{key}_{centroid_key_postfix}`.
         offset_key: keys of offset used in `GenerateInstanceCentroid`.
-        dtype: the data type of output centroid.
+        dtype: the data_module type of output centroid.
         allow_missing_keys: don't raise exception if key is missing.
 
     """
@@ -488,7 +488,7 @@ class HoVerNetInstanceMapPostProcessingd(Transform):
         min_num_points: minimum number of points to be considered as a contour. Defaults to 3.
         contour_level: an optional value for `skimage.measure.find_contours` to find contours in the array.
             If not provided, the level is set to `(max(image) + min(image)) / 2`.
-        device: target device to put the output Tensor data.
+        device: target device to put the output Tensor data_module.
     """
 
     def __init__(
@@ -556,7 +556,7 @@ class HoVerNetNuclearTypePostProcessingd(Transform):
             Defaults to `"instance_info"`.
         instance_map_key: the key where instance map is stored. Defaults to `"instance_map"`.
         type_map_key: the output key where type map is written. Defaults to `"type_map"`.
-        device: target device to put the output Tensor data.
+        device: target device to put the output Tensor data_module.
 
     """
 

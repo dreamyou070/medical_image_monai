@@ -79,7 +79,7 @@ class ConfigParser:
         excludes: when importing modules to instantiate components,
             excluding components from modules specified in ``excludes``.
         globals: pre-import packages as global variables to ``ConfigExpression``,
-            so that expressions, for example, ``"$monai.data.list_data_collate"`` can use ``monai`` modules.
+            so that expressions, for example, ``"$monai.data_module.list_data_collate"`` can use ``monai`` modules.
             The current supported globals and alias names are
             ``{"monai": "monai", "torch": "torch", "np": "numpy", "numpy": "numpy"}``.
             These are MONAI's minimal dependencies. Additional packages could be included with `globals={"itk": "itk"}`.
@@ -95,7 +95,7 @@ class ConfigParser:
     suffixes = ("json", "yaml", "yml")
     suffix_match = rf".*\.({'|'.join(suffixes)})"
     path_match = rf"({suffix_match}$)"
-    # match relative id names, e.g. "@#data", "@##transform#1"
+    # match relative id names, e.g. "@#data_module", "@##transform#1"
     relative_id_prefix = re.compile(rf"(?:{ID_REF_KEY}|{MACRO_KEY}){ID_SEP_KEY}+")
     meta_key = "_meta_"  # field key to save metadata
 
@@ -324,7 +324,7 @@ class ConfigParser:
         Recursively resolve `self.config` to replace the relative ids with absolute ids, for example,
         `@##A` means `A` in the upper level. and replace the macro tokens with target content,
         The macro tokens start with "%", can be from another structured file, like:
-        ``"%default_net"``, ``"%/data/config.json#net"``.
+        ``"%default_net"``, ``"%/data_module/config.json#net"``.
         Note that the macro replacement doesn't support recursive macro tokens.
 
         Args:
@@ -352,14 +352,14 @@ class ConfigParser:
         Recursively resolve `self.config` to replace the relative ids with absolute ids, for example,
         `@##A` means `A` in the upper level. and replace the macro tokens with target content,
         The macro tokens are marked as starting with "%", can be from another structured file, like:
-        ``"%default_net"``, ``"%/data/config.json::net"``.
+        ``"%default_net"``, ``"%/data_module/config.json::net"``.
 
         """
         self.set(self._do_resolve(config=self.get()))
 
     def _do_parse(self, config: Any, id: str = "") -> None:
         """
-        Recursively parse the nested data in config source, add every item as `ConfigItem` to the resolver.
+        Recursively parse the nested data_module in config source, add every item as `ConfigItem` to the resolver.
 
         Args:
             config: config source to parse.
@@ -474,7 +474,7 @@ class ConfigParser:
         To simplify the reference or macro tokens ID in the nested config content, it's available to use
         relative ID name which starts with the `ID_SEP_KEY`, for example, "@#A" means `A` in the same level,
         `@##A` means `A` in the upper level.
-        It resolves the relative ids to absolute ids. For example, if the input data is:
+        It resolves the relative ids to absolute ids. For example, if the input data_module is:
 
         .. code-block:: python
 

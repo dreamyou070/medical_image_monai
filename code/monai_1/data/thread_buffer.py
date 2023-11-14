@@ -32,7 +32,7 @@ class ThreadBuffer:
     be called which will join with the thread.
 
     Args:
-        src: Source data iterable
+        src: Source data_module iterable
         buffer_size: Number of items to buffer from the source
         timeout: Time to wait for an item from the buffer, or to wait while the buffer is full when adding items
     """
@@ -86,7 +86,7 @@ def buffer_iterator(src, buffer_size: int = 1, timeout: float = 0.01, repeats: i
     arguments of the same names, and yield each generated object `repeats` number of times successively.
 
     Args:
-        src: Source data iterable
+        src: Source data_module iterable
         buffer_size: Number of items to buffer from the source
         timeout: Time to wait for an item from the buffer, or to wait while the buffer is full when adding items
         repeats: Number of repeat generations to perform which is asynchronous from the generation of the next value
@@ -112,7 +112,7 @@ class _ProcessThread(Thread):
         try:
             super().run()
         finally:
-            torch.utils.data._utils.worker._worker_info = None  # clean up global data used for processes
+            torch.utils.data._utils.worker._worker_info = None  # clean up global data_module used for processes
 
 
 class _ProcessQueue(Queue):
@@ -137,7 +137,7 @@ class _ProcessThreadContext(SpawnContext):
 class ThreadDataLoader(DataLoader):
     """
     Subclass of `DataLoader` using a `ThreadBuffer` object to implement `__iter__` method asynchronously. This will
-    iterate over data from the loader as expected however the data is generated on a separate thread. Use this class
+    iterate over data_module from the loader as expected however the data_module is generated on a separate thread. Use this class
     where a `DataLoader` instance is required and not just an iterable object.
 
     The default behaviour with `repeats` set to 1 is to yield each batch as it is generated, however with a higher
@@ -145,7 +145,7 @@ class ThreadDataLoader(DataLoader):
     Typically not all relevant information is learned from a batch in a single iteration so training multiple times
     on the same batch will still produce good training with minimal short-term overfitting while allowing a slow batch
     generation process more time to produce a result. This duplication is done by simply yielding the same object many
-    times and not by regenerating the data.
+    times and not by regenerating the data_module.
 
     Another typical usage is to accelerate light-weight preprocessing (usually cached all the deterministic transforms
     and no IO operations), because it leverages the separate thread to execute preprocessing to avoid unnecessary IPC
@@ -167,7 +167,7 @@ class ThreadDataLoader(DataLoader):
 
     Args:
         dataset: input dataset.
-        buffer_size: number of items to buffer from the data source.
+        buffer_size: number of items to buffer from the data_module source.
         buffer_timeout: time to wait for an item from the buffer, or to wait while the buffer is full when adding items.
         repeats: number of times to yield the same batch.
         use_thread_workers: if True and num_workers > 0 the workers are created as threads instead of processes

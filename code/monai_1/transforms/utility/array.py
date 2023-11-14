@@ -111,7 +111,7 @@ __all__ = [
 
 class Identity(Transform):
     """
-    Do nothing to the data.
+    Do nothing to the data_module.
     As the output value is same as input, it can be used as a testing tool to verify the transform chain,
     Compose or transform adaptor, etc.
     """
@@ -127,7 +127,7 @@ class Identity(Transform):
 
 class RandIdentity(RandomizableTrait):
     """
-    Do nothing to the data. This transform is random, so can be used to stop the caching of any
+    Do nothing to the data_module. This transform is random, so can be used to stop the caching of any
     subsequent transforms.
     """
 
@@ -169,7 +169,7 @@ class AsChannelLast(Transform):
 
 class EnsureChannelFirst(Transform):
     """
-    Adjust or add the channel dimension of input data to ensure `channel_first` shape.
+    Adjust or add the channel dimension of input data_module to ensure `channel_first` shape.
 
     This extracts the `original_channel_dim` info from provided meta_data dictionary or MetaTensor input. This value
     should state which dimension is the channel dimension so that it can be moved forward, or contain "no_channel" to
@@ -231,8 +231,8 @@ class EnsureChannelFirst(Transform):
 
 class RepeatChannel(Transform):
     """
-    Repeat channel data to construct expected input shape for models.
-    The `repeats` count includes the origin data, for example:
+    Repeat channel data_module to construct expected input shape for models.
+    The `repeats` count includes the origin data_module, for example:
     ``RepeatChannel(repeats=2)([[1, 2], [3, 4]])`` generates: ``[[1, 2], [1, 2], [3, 4], [3, 4]]``
 
     Args:
@@ -256,8 +256,8 @@ class RepeatChannel(Transform):
 
 class RemoveRepeatedChannel(Transform):
     """
-    RemoveRepeatedChannel data to undo RepeatChannel
-    The `repeats` count specifies the deletion of the origin data, for example:
+    RemoveRepeatedChannel data_module to undo RepeatChannel
+    The `repeats` count specifies the deletion of the origin data_module, for example:
     ``RemoveRepeatedChannel(repeats=2)([[1, 2], [1, 2], [3, 4], [3, 4]])`` generates: ``[[1, 2], [3, 4]]``
 
     Args:
@@ -331,8 +331,8 @@ class SplitDim(Transform, MultiSampleTrait):
 
 class CastToType(Transform):
     """
-    Cast the Numpy data to specified numpy data type, or cast the PyTorch Tensor to
-    specified PyTorch data type.
+    Cast the Numpy data_module to specified numpy data_module type, or cast the PyTorch Tensor to
+    specified PyTorch data_module type.
     """
 
     backend = [TransformBackends.TORCH, TransformBackends.NUMPY]
@@ -340,7 +340,7 @@ class CastToType(Transform):
     def __init__(self, dtype=np.float32) -> None:
         """
         Args:
-            dtype: convert image to this data type, default is `np.float32`.
+            dtype: convert image to this data_module type, default is `np.float32`.
         """
         self.dtype = dtype
 
@@ -349,7 +349,7 @@ class CastToType(Transform):
         Apply the transform to `img`, assuming `img` is a numpy array or PyTorch Tensor.
 
         Args:
-            dtype: convert image to this data type, default is `self.dtype`.
+            dtype: convert image to this data_module type, default is `self.dtype`.
 
         Raises:
             TypeError: When ``img`` type is not in ``Union[numpy.ndarray, torch.Tensor]``.
@@ -361,13 +361,13 @@ class CastToType(Transform):
 class ToTensor(Transform):
     """
     Converts the input image to a tensor without applying any other transformations.
-    Input data can be PyTorch Tensor, numpy array, list, dictionary, int, float, bool, str, etc.
+    Input data_module can be PyTorch Tensor, numpy array, list, dictionary, int, float, bool, str, etc.
     Will convert Tensor, Numpy array, float, int, bool to Tensor, strings and objects keep the original.
     For dictionary, list or tuple, convert every item to a Tensor if applicable and `wrap_sequence=False`.
 
     Args:
-        dtype: target data type to when converting to Tensor.
-        device: target device to put the converted Tensor data.
+        dtype: target data_module type to when converting to Tensor.
+        device: target device to put the converted Tensor data_module.
         wrap_sequence: if `False`, then lists will recursively call this function, default to `True`.
             E.g., if `False`, `[1, 2]` -> `[tensor(1), tensor(2)]`, if `True`, then `[1, 2]` -> `tensor([1, 2])`.
         track_meta: whether to convert to `MetaTensor` or regular tensor, default to `None`,
@@ -403,19 +403,19 @@ class ToTensor(Transform):
 
 class EnsureType(Transform):
     """
-    Ensure the input data to be a PyTorch Tensor or numpy array, support: `numpy array`, `PyTorch Tensor`,
+    Ensure the input data_module to be a PyTorch Tensor or numpy array, support: `numpy array`, `PyTorch Tensor`,
     `float`, `int`, `bool`, `string` and `object` keep the original.
     If passing a dictionary, list or tuple, still return dictionary, list or tuple will recursively convert
-    every item to the expected data type if `wrap_sequence=False`.
+    every item to the expected data_module type if `wrap_sequence=False`.
 
     Args:
-        data_type: target data type to convert, should be "tensor" or "numpy".
-        dtype: target data content type to convert, for example: np.float32, torch.float, etc.
-        device: for Tensor data type, specify the target device.
+        data_type: target data_module type to convert, should be "tensor" or "numpy".
+        dtype: target data_module content type to convert, for example: np.float32, torch.float, etc.
+        device: for Tensor data_module type, specify the target device.
         wrap_sequence: if `False`, then lists will recursively call this function, default to `True`.
             E.g., if `False`, `[1, 2]` -> `[tensor(1), tensor(2)]`, if `True`, then `[1, 2]` -> `tensor([1, 2])`.
         track_meta: if `True` convert to ``MetaTensor``, otherwise to Pytorch ``Tensor``,
-            if ``None`` behave according to return value of py:func:`monai.data.meta_obj.get_track_meta`.
+            if ``None`` behave according to return value of py:func:`monai.data_module.meta_obj.get_track_meta`.
 
     """
 
@@ -438,11 +438,11 @@ class EnsureType(Transform):
     def __call__(self, data: NdarrayOrTensor, dtype: DtypeLike | torch.dtype = None):
         """
         Args:
-            data: input data can be PyTorch Tensor, numpy array, list, dictionary, int, float, bool, str, etc.
+            data: input data_module can be PyTorch Tensor, numpy array, list, dictionary, int, float, bool, str, etc.
                 will ensure Tensor, Numpy array, float, int, bool as Tensors or numpy arrays, strings and
                 objects keep the original. for dictionary, list or tuple, ensure every item as expected type
                 if applicable and `wrap_sequence=False`.
-            dtype: target data content type to convert, for example: np.float32, torch.float, etc.
+            dtype: target data_module content type to convert, for example: np.float32, torch.float, etc.
 
         """
         if self.data_type == "tensor":
@@ -462,10 +462,10 @@ class EnsureType(Transform):
 
 class ToNumpy(Transform):
     """
-    Converts the input data to numpy array, can support list or tuple of numbers and PyTorch Tensor.
+    Converts the input data_module to numpy array, can support list or tuple of numbers and PyTorch Tensor.
 
     Args:
-        dtype: target data type when converting to numpy array.
+        dtype: target data_module type when converting to numpy array.
         wrap_sequence: if `False`, then lists will recursively call this function, default to `True`.
             E.g., if `False`, `[1, 2]` -> `[array(1), array(2)]`, if `True`, then `[1, 2]` -> `array([1, 2])`.
 
@@ -487,10 +487,10 @@ class ToNumpy(Transform):
 
 class ToCupy(Transform):
     """
-    Converts the input data to CuPy array, can support list or tuple of numbers, NumPy and PyTorch Tensor.
+    Converts the input data_module to CuPy array, can support list or tuple of numbers, NumPy and PyTorch Tensor.
 
     Args:
-        dtype: data type specifier. It is inferred from the input by default.
+        dtype: data_module type specifier. It is inferred from the input by default.
             if not None, must be an argument of `numpy.dtype`, for more details:
             https://docs.cupy.dev/en/stable/reference/generated/cupy.array.html.
         wrap_sequence: if `False`, then lists will recursively call this function, default to `True`.
@@ -507,7 +507,7 @@ class ToCupy(Transform):
 
     def __call__(self, data: NdarrayOrTensor):
         """
-        Create a CuPy array from `data` and make it contiguous
+        Create a CuPy array from `data_module` and make it contiguous
         """
         return convert_to_cupy(data, dtype=self.dtype, wrap_sequence=self.wrap_sequence)
 
@@ -601,9 +601,9 @@ class SqueezeDim(Transform):
 
 class DataStats(Transform):
     """
-    Utility transform to show the statistics of data for debug or analysis.
+    Utility transform to show the statistics of data_module for debug or analysis.
     It can be inserted into any place of a transform chain and check results of previous transforms.
-    It support both `numpy.ndarray` and `torch.tensor` as input data,
+    It support both `numpy.ndarray` and `torch.tensor` as input data_module,
     so it can be used in pre-processing and post-processing.
 
     It gets logger from `logging.getLogger(name)`, we can setup a logger outside first with the same `name`.
@@ -627,12 +627,12 @@ class DataStats(Transform):
         """
         Args:
             prefix: will be printed in format: "{prefix} statistics".
-            data_type: whether to show the type of input data.
-            data_shape: whether to show the shape of input data.
-            value_range: whether to show the value range of input data.
-            data_value: whether to show the raw value of input data.
+            data_type: whether to show the type of input data_module.
+            data_shape: whether to show the shape of input data_module.
+            value_range: whether to show the value range of input data_module.
+            data_value: whether to show the raw value of input data_module.
                 a typical example is to print some properties of Nifti image: affine, pixdim, etc.
-            additional_info: user can define callable function to extract additional info from input data.
+            additional_info: user can define callable function to extract additional info from input data_module.
             name: identifier of `logging.logger` to use, defaulting to "DataStats".
 
         Raises:
@@ -705,10 +705,10 @@ class SimulateDelay(Transform):
     """
     This is a pass through transform to be used for testing purposes. It allows
     adding fake behaviors that are useful for testing purposes to simulate
-    how large datasets behave without needing to test on large data sets.
+    how large datasets behave without needing to test on large data_module sets.
 
-    For example, simulating slow NFS data transfers, or slow network transfers
-    in testing by adding explicit timing delays. Testing of small test data
+    For example, simulating slow NFS data_module transfers, or slow network transfers
+    in testing by adding explicit timing delays. Testing of small test data_module
     can lead to incomplete understanding of real world issues, and may lead
     to sub-optimal design choices.
     """
@@ -727,7 +727,7 @@ class SimulateDelay(Transform):
     def __call__(self, img: NdarrayOrTensor, delay_time: float | None = None) -> NdarrayOrTensor:
         """
         Args:
-            img: data remain unchanged throughout this transform.
+            img: data_module remain unchanged throughout this transform.
             delay_time: The minimum amount of time, in fractions of seconds,
                 to accomplish this delay task.
         """
@@ -752,7 +752,7 @@ class Lambda(InvertibleTransform):
     Args:
         func: Lambda/function to be applied.
         inv_func: Lambda/function of inverse operation, default to `lambda x: x`.
-        track_meta:  If `False`, then standard data objects will be returned (e.g., torch.Tensor` and `np.ndarray`)
+        track_meta:  If `False`, then standard data_module objects will be returned (e.g., torch.Tensor` and `np.ndarray`)
             as opposed to MONAI's enhanced objects. By default, this is `True`.
 
     Raises:
@@ -808,7 +808,7 @@ class RandLambda(Lambda, RandomizableTransform):
         func: Lambda/function to be applied.
         prob: probability of executing the random function, default to 1.0, with 100% probability to execute.
         inv_func: Lambda/function of inverse operation, default to `lambda x: x`.
-        track_meta:  If `False`, then standard data objects will be returned (e.g., torch.Tensor` and `np.ndarray`)
+        track_meta:  If `False`, then standard data_module objects will be returned (e.g., torch.Tensor` and `np.ndarray`)
             as opposed to MONAI's enhanced objects. By default, this is `True`.
 
     For more details, please check :py:class:`monai.transforms.Lambda`.
@@ -849,19 +849,19 @@ class RandLambda(Lambda, RandomizableTransform):
 class LabelToMask(Transform):
     """
     Convert labels to mask for other tasks. A typical usage is to convert segmentation labels
-    to mask data to pre-process images and then feed the images into classification network.
+    to mask data_module to pre-process images and then feed the images into classification network.
     It can support single channel labels or One-Hot labels with specified `select_labels`.
-    For example, users can select `label value = [2, 3]` to construct mask data, or select the
-    second and the third channels of labels to construct mask data.
-    The output mask data can be a multiple channels binary data or a single channel binary
-    data that merges all the channels.
+    For example, users can select `label value = [2, 3]` to construct mask data_module, or select the
+    second and the third channels of labels to construct mask data_module.
+    The output mask data_module can be a multiple channels binary data_module or a single channel binary
+    data_module that merges all the channels.
 
     Args:
         select_labels: labels to generate mask from. for 1 channel label, the `select_labels`
             is the expected label values, like: [1, 2, 3]. for One-Hot format label, the
             `select_labels` is the expected channel indices.
         merge_channels: whether to use `np.any()` to merge the result on channel dim. if yes,
-            will return a single channel mask with binary data.
+            will return a single channel mask with binary data_module.
 
     """
 
@@ -882,7 +882,7 @@ class LabelToMask(Transform):
                 is the expected label values, like: [1, 2, 3]. for One-Hot format label, the
                 `select_labels` is the expected channel indices.
             merge_channels: whether to use `np.any()` to merge the result on channel dim. if yes,
-                will return a single channel mask with binary data.
+                will return a single channel mask with binary data_module.
         """
         img = convert_to_tensor(img, track_meta=get_track_meta())
         if select_labels is None:
@@ -913,8 +913,8 @@ class LabelToMask(Transform):
 
 class FgBgToIndices(Transform, MultiSampleTrait):
     """
-    Compute foreground and background of the input label data, return the indices.
-    If no output_shape specified, output data will be 1 dim indices after flattening.
+    Compute foreground and background of the input label data_module, return the indices.
+    If no output_shape specified, output data_module will be 1 dim indices after flattening.
     This transform can help pre-compute foreground and background regions for other transforms.
     A typical usage is to randomly select foreground and background to crop.
     The main logic is based on :py:class:`monai.transforms.utils.map_binary_to_indices`.
@@ -937,7 +937,7 @@ class FgBgToIndices(Transform, MultiSampleTrait):
     ) -> tuple[NdarrayOrTensor, NdarrayOrTensor]:
         """
         Args:
-            label: input data to compute foreground and background indices.
+            label: input data_module to compute foreground and background indices.
             image: if image is not None, use ``label = 0 & image > image_threshold``
                 to define background. so the output items will not map to all the voxels in the label.
             output_shape: expected shape of output indices. if None, use `self.output_shape` instead.
@@ -963,8 +963,8 @@ class ClassesToIndices(Transform, MultiSampleTrait):
         max_samples_per_class: int | None = None,
     ) -> None:
         """
-        Compute indices of every class of the input label data, return a list of indices.
-        If no output_shape specified, output data will be 1 dim indices after flattening.
+        Compute indices of every class of the input label data_module, return a list of indices.
+        If no output_shape specified, output data_module will be 1 dim indices after flattening.
         This transform can help pre-compute indices of the class regions for other transforms.
         A typical usage is to randomly select indices of classes to crop.
         The main logic is based on :py:class:`monai.transforms.utils.map_classes_to_indices`.
@@ -988,7 +988,7 @@ class ClassesToIndices(Transform, MultiSampleTrait):
     ) -> list[NdarrayOrTensor]:
         """
         Args:
-            label: input data to compute the indices of every class.
+            label: input data_module to compute the indices of every class.
             image: if image is not None, use ``image > image_threshold`` to define valid region, and only select
                 the indices within the valid region.
             output_shape: expected shape of output indices. if None, use `self.output_shape` instead.
@@ -1073,11 +1073,11 @@ class AddExtremePointsChannel(Randomizable, Transform):
             img: the image that we want to add new channel to.
             label: label image to get extreme points from. Shape must be
                 (1, spatial_dim1, [, spatial_dim2, ...]). Doesn't support one-hot labels.
-            sigma: if a list of values, must match the count of spatial dimensions of input data,
+            sigma: if a list of values, must match the count of spatial dimensions of input data_module,
                 and apply every value in the list to 1 spatial dimension. if only 1 value provided,
                 use it for all spatial dimensions.
-            rescale_min: minimum value of output data.
-            rescale_max: maximum value of output data.
+            rescale_min: minimum value of output data_module.
+            rescale_max: maximum value of output data_module.
         """
         if label is None:
             raise ValueError("This transform requires a label array!")
@@ -1098,7 +1098,7 @@ class TorchVision:
     """
     This is a wrapper transform for PyTorch TorchVision transform based on the specified transform name and args.
     As most of the TorchVision transforms only work for PIL image and PyTorch Tensor, this transform expects input
-    data to be PyTorch Tensor, users can easily call `ToTensor` transform to convert a Numpy array to Tensor.
+    data_module to be PyTorch Tensor, users can easily call `ToTensor` transform to convert a Numpy array to Tensor.
 
     """
 
@@ -1120,7 +1120,7 @@ class TorchVision:
     def __call__(self, img: NdarrayOrTensor):
         """
         Args:
-            img: PyTorch Tensor data for the TorchVision transform.
+            img: PyTorch Tensor data_module for the TorchVision transform.
 
         """
         img_t, *_ = convert_data_type(img, torch.Tensor)
@@ -1135,7 +1135,7 @@ class MapLabelValue:
     Utility to map label values to another set of values.
     For example, map [3, 2, 1] to [0, 1, 2], [1, 2, 3] -> [0.5, 1.5, 2.5], ["label3", "label2", "label1"] -> [0, 1, 2],
     [3.5, 2.5, 1.5] -> ["label0", "label1", "label2"], etc.
-    The label data must be numpy array or array-like data and the output data will be numpy array.
+    The label data_module must be numpy array or array-like data_module and the output data_module will be numpy array.
 
     """
 
@@ -1146,7 +1146,7 @@ class MapLabelValue:
         Args:
             orig_labels: original labels that map to others.
             target_labels: expected label values, 1: 1 map to the `orig_labels`.
-            dtype: convert the output data to dtype, default to float32.
+            dtype: convert the output data_module to dtype, default to float32.
                 if dtype is from PyTorch, the transform will use the pytorch backend, else with numpy backend.
 
         """
@@ -1220,7 +1220,7 @@ class IntensityStats(Transform):
 
         Args:
             img: input image to compute intensity stats.
-            meta_data: metadata dictionary to store the statistics data, if None, will create an empty dictionary.
+            meta_data: metadata dictionary to store the statistics data_module, if None, will create an empty dictionary.
             mask: if not None, mask the image to extract only the interested area to compute statistics.
                 mask must have the same shape as input `img`.
 
@@ -1266,10 +1266,10 @@ class IntensityStats(Transform):
 class ToDevice(Transform):
     """
     Move PyTorch Tensor to the specified device.
-    It can help cache data into GPU and execute following logic on GPU directly.
+    It can help cache data_module into GPU and execute following logic on GPU directly.
 
     Note:
-        If moving data to GPU device in the multi-processing workers of DataLoader, may got below CUDA error:
+        If moving data_module to GPU device in the multi-processing workers of DataLoader, may got below CUDA error:
         "RuntimeError: Cannot re-initialize CUDA in forked subprocess. To use CUDA with multiprocessing,
         you must use the 'spawn' start method."
         So usually suggest to set `num_workers=0` in the `DataLoader` or `ThreadDataLoader`.
@@ -1307,7 +1307,7 @@ class CuCIM(Transform):
         kwargs: parameters for the CuCIM transform
 
     Note:
-        CuCIM transform only work with CuPy arrays, so this transform expects input data to be `cupy.ndarray`.
+        CuCIM transform only work with CuPy arrays, so this transform expects input data_module to be `cupy.ndarray`.
         Users can call `ToCuPy` transform to convert a numpy array or torch tensor to cupy array.
     """
 
@@ -1341,7 +1341,7 @@ class RandCuCIM(CuCIM, RandomizableTrait):
         kwargs: parameters for the CuCIM transform.
 
     Note:
-        - CuCIM transform only work with CuPy arrays, so this transform expects input data to be `cupy.ndarray`.
+        - CuCIM transform only work with CuPy arrays, so this transform expects input data_module to be `cupy.ndarray`.
           Users can call `ToCuPy` transform to convert a numpy array or torch tensor to cupy array.
         - If the random factor of the underlying cuCIM transform is not derived from `self.R`,
           the results may not be deterministic. See Also: :py:class:`monai.transforms.Randomizable`.
@@ -1375,7 +1375,7 @@ class AddCoordinateChannels(Transform):
     def __call__(self, img: NdarrayOrTensor) -> NdarrayOrTensor:
         """
         Args:
-            img: data to be transformed, assuming `img` is channel first.
+            img: data_module to be transformed, assuming `img` is channel first.
         """
         if max(self.spatial_dims) > img.ndim - 2 or min(self.spatial_dims) < 0:
             raise ValueError(f"`spatial_dims` values must be within [0, {img.ndim - 2}]")
@@ -1467,7 +1467,7 @@ class ImageFilter(Transform):
     * ``padding_mode``: the padding mode of the image when convolving with Sobel kernels. Defaults to ``"reflect"``.
       Acceptable values are ``'zeros'``, ``'reflect'``, ``'replicate'`` or ``'circular'``.
       See ``torch.nn.Conv1d()`` for more information.
-    * ``dtype``: kernel data type (torch.dtype). Defaults to ``torch.float32``.
+    * ``dtype``: kernel data_module type (torch.dtype). Defaults to ``torch.float32``.
 
 
     **Sharpening:** ``filter='sharpen'``
@@ -1532,7 +1532,7 @@ class ImageFilter(Transform):
     def __call__(self, img: NdarrayOrTensor, meta_dict: dict | None = None) -> NdarrayOrTensor:
         """
         Args:
-            img: torch tensor data to apply filter to with shape: [channels, height, width[, depth]]
+            img: torch tensor data_module to apply filter to with shape: [channels, height, width[, depth]]
             meta_dict: An optional dictionary with metadata
 
         Returns:
@@ -1639,7 +1639,7 @@ class ImageFilter(Transform):
 
 class RandImageFilter(RandomizableTransform):
     """
-    Randomly apply a convolutional filter to the input data.
+    Randomly apply a convolutional filter to the input data_module.
 
     Args:
         filter:
@@ -1651,7 +1651,7 @@ class RandImageFilter(RandomizableTransform):
             Computational complexity scales to the power of 2 (2D filter) or 3 (3D filter), which
             should be considered when choosing filter size.
         prob:
-            Probability the transform is applied to the data
+            Probability the transform is applied to the data_module
     """
 
     backend = ImageFilter.backend
@@ -1665,7 +1665,7 @@ class RandImageFilter(RandomizableTransform):
     def __call__(self, img: NdarrayOrTensor, meta_dict: Mapping | None = None) -> NdarrayOrTensor:
         """
         Args:
-            img: torch tensor data to apply filter to with shape: [channels, height, width[, depth]]
+            img: torch tensor data_module to apply filter to with shape: [channels, height, width[, depth]]
             meta_dict: An optional dictionary with metadata
             kwargs: optional arguments required by specific filters. E.g. `sigma`if filter is `gauss`.
                 see py:func:`monai.transforms.utility.array.ImageFilter` for more details

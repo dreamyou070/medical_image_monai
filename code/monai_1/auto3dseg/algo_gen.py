@@ -17,7 +17,7 @@ from monai.transforms import Randomizable
 
 class Algo:
     """
-    An algorithm in this context is loosely defined as a data processing pipeline consisting of multiple components
+    An algorithm in this context is loosely defined as a data_module processing pipeline consisting of multiple components
     such as image preprocessing, followed by deep learning model training and evaluation.
     """
 
@@ -28,11 +28,11 @@ class Algo:
         pass
 
     def train(self, *args, **kwargs):
-        """Read training/validation data and output a model."""
+        """Read training/validation data_module and output a model."""
         pass
 
     def predict(self, *args, **kwargs):
-        """Read test data and output model predictions."""
+        """Read test data_module and output model predictions."""
         pass
 
     def get_score(self, *args, **kwargs):
@@ -46,9 +46,9 @@ class Algo:
 
 class AlgoGen(Randomizable):
     """
-    A data-driven algorithm generator. It optionally takes the following inputs:
+    A data_module-driven algorithm generator. It optionally takes the following inputs:
 
-        - training dataset properties (such as data statistics from ``monai.auto3dseg.analyzer``),
+        - training dataset properties (such as data_module statistics from ``monai.auto3dseg.analyzer``),
         - previous algorithm's scores measuring the model quality,
         - computational budgets,
 

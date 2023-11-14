@@ -67,7 +67,7 @@ class SurfaceDistanceMetric(CumulativeIterationMetric):
     def _compute_tensor(self, y_pred: torch.Tensor, y: torch.Tensor, **kwargs: Any) -> torch.Tensor:  # type: ignore[override]
         """
         Args:
-            y_pred: input data to compute, typical segmentation model output.
+            y_pred: input data_module to compute, typical segmentation model output.
                 It must be one-hot format and first dim is batch, example shape: [16, 3, 32, 32]. The values
                 should be binarized.
             y: ground truth to compute the distance. It must be one-hot format and first dim is batch.
@@ -113,7 +113,7 @@ class SurfaceDistanceMetric(CumulativeIterationMetric):
         """
         data = self.get_buffer()
         if not isinstance(data, torch.Tensor):
-            raise ValueError("the data to aggregate must be PyTorch Tensor.")
+            raise ValueError("the data_module to aggregate must be PyTorch Tensor.")
 
         # do metric reduction
         f, not_nans = do_metric_reduction(data, reduction or self.reduction)
@@ -136,7 +136,7 @@ def compute_average_surface_distance(
     The implementation refers to `DeepMind's implementation <https://github.com/deepmind/surface-distance>`_.
 
     Args:
-        y_pred: input data to compute, typical segmentation model output.
+        y_pred: input data_module to compute, typical segmentation model output.
             It must be one-hot format and first dim is batch, example shape: [16, 3, 32, 32]. The values
             should be binarized.
         y: ground truth to compute mean the distance. It must be one-hot format and first dim is batch.

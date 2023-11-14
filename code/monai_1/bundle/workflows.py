@@ -207,7 +207,7 @@ class ConfigWorkflow(BundleWorkflow):
             other unsupported string will raise a ValueError.
             default to `None` for common workflow.
         override: id-value pairs to override or add the corresponding config content.
-            e.g. ``--net#input_chns 42``, ``--net %/data/other.json#net_arg``
+            e.g. ``--net#input_chns 42``, ``--net %/data_module/other.json#net_arg``
 
     """
 

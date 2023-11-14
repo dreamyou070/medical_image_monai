@@ -26,7 +26,7 @@ class VariationalNetworkModel(nn.Module):
     """
     The end-to-end variational network (or simply e2e-VarNet) based on Sriram et. al., "End-to-end variational
     networks for accelerated MRI reconstruction".
-    It comprises several cascades each consisting of refinement and data consistency steps. The network takes in
+    It comprises several cascades each consisting of refinement and data_module consistency steps. The network takes in
     the under-sampled kspace and estimates the ground-truth reconstruction.
 
     Modified and adopted from: https://github.com/facebookresearch/fastMRI
@@ -38,7 +38,7 @@ class VariationalNetworkModel(nn.Module):
             is :py:class:`monai.apps.reconstruction.networks.nets.complex_unet.ComplexUnet`.
         num_cascades: Number of cascades. Each cascade is a
             :py:class:`monai.apps.reconstruction.networks.blocks.varnetblock.VarNetBlock` which consists of
-            refinement and data consistency steps.
+            refinement and data_module consistency steps.
         spatial_dims: number of spatial dimensions.
     """
 
@@ -59,8 +59,8 @@ class VariationalNetworkModel(nn.Module):
         Args:
             masked_kspace: The under-sampled kspace. It's a 2D kspace (B,C,H,W,2)
                 with the last dimension being 2 (for real/imaginary parts) and C denoting the
-                coil dimension. 3D data will have the shape (B,C,H,W,D,2).
-            mask: The under-sampling mask with shape (1,1,1,W,1) for 2D data or (1,1,1,1,D,1) for 3D data.
+                coil dimension. 3D data_module will have the shape (B,C,H,W,D,2).
+            mask: The under-sampling mask with shape (1,1,1,W,1) for 2D data_module or (1,1,1,1,D,1) for 3D data_module.
 
         Returns:
             The reconstructed image which is the root sum of squares (rss) of the absolute value
@@ -75,5 +75,5 @@ class VariationalNetworkModel(nn.Module):
         output_image = root_sum_of_squares_t(
             complex_abs_t(ifftn_centered_t(kspace_pred, spatial_dims=self.spatial_dims)),
             spatial_dim=1,  # 1 is for C which is the coil dimension
-        )  # shape is (B,H,W) for 2D and (B,H,W,D) for 3D data.
+        )  # shape is (B,H,W) for 2D and (B,H,W,D) for 3D data_module.
         return output_image

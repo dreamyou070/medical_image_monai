@@ -58,10 +58,10 @@ class ImageDataset(Dataset, Randomizable):
             labels: if in classification task, list of classification labels.
             transform: transform to apply to image arrays.
             seg_transform: transform to apply to segmentation arrays.
-            label_transform: transform to apply to the label data.
+            label_transform: transform to apply to the label data_module.
             image_only: if True return only the image volume, otherwise, return image volume and the metadata.
             transform_with_metadata: if True, the metadata will be passed to the transforms whenever possible.
-            dtype: if not None convert the loaded image to this data type.
+            dtype: if not None convert the loaded image to this data_module type.
             reader: register reader to load image file and metadata, if None, will use the default readers.
                 If a string of reader name provided, will construct a reader object with the `*args` and `**kwargs`
                 parameters, supported reader name: "NibabelReader", "PILReader", "ITKReader", "NumpyReader"
@@ -103,7 +103,7 @@ class ImageDataset(Dataset, Randomizable):
         self.randomize()
         meta_data, seg_meta_data, seg, label = None, None, None, None
 
-        # load data and optionally meta
+        # load data_module and optionally meta
         if self.image_only:
             img = self.loader(self.image_files[index])
             if self.seg_files is not None:

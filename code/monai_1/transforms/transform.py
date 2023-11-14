@@ -52,15 +52,15 @@ def _apply_transform(
     logger_name: bool | str = False,
 ) -> ReturnType:
     """
-    Perform a transform 'transform' on 'data', according to the other parameters specified.
+    Perform a transform 'transform' on 'data_module', according to the other parameters specified.
 
-    If `data` is a tuple and `unpack_parameters` is True, each parameter of `data` is unpacked
-    as arguments to `transform`. Otherwise `data` is considered as single argument to `transform`.
+    If `data_module` is a tuple and `unpack_parameters` is True, each parameter of `data_module` is unpacked
+    as arguments to `transform`. Otherwise `data_module` is considered as single argument to `transform`.
 
     If 'lazy' is True, this method first checks whether it can execute this method lazily. If it
-    can't, it will ensure that all pending lazy transforms on 'data' are applied before applying
+    can't, it will ensure that all pending lazy transforms on 'data_module' are applied before applying
     this 'transform' to it. If 'lazy' is True, and 'overrides' are provided, those overrides will
-    be applied to the pending operations on 'data'. See ``Compose`` for more details on lazy
+    be applied to the pending operations on 'data_module'. See ``Compose`` for more details on lazy
     resampling, which is an experimental feature for 1.2.
 
     Please note, this class is function is designed to be called by ``apply_transform``.
@@ -68,7 +68,7 @@ def _apply_transform(
     pipeline execution mechanisms.
 
     Args:
-        transform: a callable to be used to transform `data`.
+        transform: a callable to be used to transform `data_module`.
         data: the tensorlike or dictionary of tensorlikes to be executed on
         unpack_parameters: whether to unpack parameters for `transform`. Defaults to False.
         lazy: whether to enable lazy evaluation for lazy transforms. If False, transforms will be
@@ -108,17 +108,17 @@ def apply_transform(
     overrides: dict | None = None,
 ) -> list[ReturnType] | ReturnType:
     """
-    Transform `data` with `transform`.
+    Transform `data_module` with `transform`.
 
-    If `data` is a list or tuple and `map_data` is True, each item of `data` will be transformed
+    If `data_module` is a list or tuple and `map_data` is True, each item of `data_module` will be transformed
     and this method returns a list of outcomes.
-    otherwise transform will be applied once with `data` as the argument.
+    otherwise transform will be applied once with `data_module` as the argument.
 
     Args:
-        transform: a callable to be used to transform `data`.
+        transform: a callable to be used to transform `data_module`.
         data: an object to be transformed.
-        map_items: whether to apply transform to each item in `data`,
-            if `data` is a list or tuple. Defaults to True.
+        map_items: whether to apply transform to each item in `data_module`,
+            if `data_module` is a list or tuple. Defaults to True.
         unpack_items: whether to unpack parameters using `*`. Defaults to False.
         log_stats: log errors when they occur in the processing pipeline. By default, this is set to False, which
             disables the logger for processing pipeline errors. Setting it to None or True will enable logging to the
@@ -145,7 +145,7 @@ def apply_transform(
         if MONAIEnvVars.debug():
             raise
         if log_stats is not False and not isinstance(transform, transforms.compose.Compose):
-            # log the input data information of exact transform in the transform chain
+            # log the input data_module information of exact transform in the transform chain
             if isinstance(log_stats, str):
                 datastats = transforms.utility.array.DataStats(data_shape=False, value_range=False, name=log_stats)
             else:
@@ -157,10 +157,10 @@ def apply_transform(
 
             def _log_stats(data, prefix: str | None = "Data"):
                 if isinstance(data, (np.ndarray, torch.Tensor)):
-                    # log data type, shape, range for array
+                    # log data_module type, shape, range for array
                     datastats(img=data, data_shape=True, value_range=True, prefix=prefix)
                 else:
-                    # log data type and value for other metadata
+                    # log data_module type and value for other metadata
                     datastats(img=data, data_value=True, prefix=prefix)
 
             if isinstance(data, dict):
@@ -177,7 +177,7 @@ class Randomizable(ThreadUnsafe, RandomizableTrait):
     variable `R`, which is an instance of `np.random.RandomState`.  This
     provides the flexibility of component-specific determinism without
     affecting the global states.  It is recommended to use this API with
-    :py:class:`monai.data.DataLoader` for deterministic behaviour of the
+    :py:class:`monai.data_module.DataLoader` for deterministic behaviour of the
     preprocessing pipelines. This API is not thread-safe. Additionally,
     deepcopying instance of this class often causes insufficient randomness as
     the random states will be duplicated.
@@ -224,7 +224,7 @@ class Randomizable(ThreadUnsafe, RandomizableTrait):
         all :py:attr:`self.R` calls happen here so that we have a better chance to
         identify errors of sync the random state.
 
-        This method can generate the random factors based on properties of the input data.
+        This method can generate the random factors based on properties of the input data_module.
 
         Raises:
             NotImplementedError: When the subclass does not override this method.
@@ -235,17 +235,17 @@ class Randomizable(ThreadUnsafe, RandomizableTrait):
 class Transform(ABC):
     """
     An abstract class of a ``Transform``.
-    A transform is callable that processes ``data``.
+    A transform is callable that processes ``data_module``.
 
-    It could be stateful and may modify ``data`` in place,
+    It could be stateful and may modify ``data_module`` in place,
     the implementation should be aware of:
 
         #. thread safety when mutating its own states.
            When used from a multi-process context, transform's instance variables are read-only.
            thread-unsafe transforms should inherit :py:class:`monai.transforms.ThreadUnsafe`.
-        #. ``data`` content unused by this transform may still be used in the
+        #. ``data_module`` content unused by this transform may still be used in the
            subsequent transforms in a composed transform.
-        #. storing too much information in ``data`` may cause some memory issue or IPC sync issue,
+        #. storing too much information in ``data_module`` may cause some memory issue or IPC sync issue,
            especially in the multi-processing environment of PyTorch DataLoader.
 
     See Also
@@ -254,26 +254,26 @@ class Transform(ABC):
     """
 
     # Transforms should add `monai.transforms.utils.TransformBackends` to this list if they are performing
-    # the data processing using the corresponding backend APIs.
-    # Most of MONAI transform's inputs and outputs will be converted into torch.Tensor or monai.data.MetaTensor.
+    # the data_module processing using the corresponding backend APIs.
+    # Most of MONAI transform's inputs and outputs will be converted into torch.Tensor or monai.data_module.MetaTensor.
     # This variable provides information about whether the input will be converted
-    # to other data types during the transformation. Note that not all `dtype` (such as float32, uint8) are supported
-    # by all the data types, the `dtype` during the conversion is determined automatically by each transform,
+    # to other data_module types during the transformation. Note that not all `dtype` (such as float32, uint8) are supported
+    # by all the data_module types, the `dtype` during the conversion is determined automatically by each transform,
     # please refer to the transform's docstring.
     backend: list[TransformBackends] = []
 
     @abstractmethod
     def __call__(self, data: Any):
         """
-        ``data`` is an element which often comes from an iteration over an
-        iterable, such as :py:class:`torch.utils.data.Dataset`. This method should
-        return an updated version of ``data``.
+        ``data_module`` is an element which often comes from an iteration over an
+        iterable, such as :py:class:`torch.utils.data_module.Dataset`. This method should
+        return an updated version of ``data_module``.
         To simplify the input validations, most of the transforms assume that
 
-        - ``data`` is a Numpy ndarray, PyTorch Tensor or string,
-        - the data shape can be:
+        - ``data_module`` is a Numpy ndarray, PyTorch Tensor or string,
+        - the data_module shape can be:
 
-          #. string data without shape, `LoadImage` transform expects file paths,
+          #. string data_module without shape, `LoadImage` transform expects file paths,
           #. most of the pre-/post-processing transforms expect: ``(num_channels, spatial_dim_1[, spatial_dim_2, ...])``,
              except for example: `AddChannel` expects (spatial_dim_1[, spatial_dim_2, ...])
 
@@ -320,7 +320,7 @@ class RandomizableTransform(Randomizable, Transform):
     """
     An interface for handling random state locally, currently based on a class variable `R`,
     which is an instance of `np.random.RandomState`.
-    This class introduces a randomized flag `_do_transform`, is mainly for randomized data augmentation transforms.
+    This class introduces a randomized flag `_do_transform`, is mainly for randomized data_module augmentation transforms.
     For example:
 
     .. code-block:: python
@@ -355,7 +355,7 @@ class RandomizableTransform(Randomizable, Transform):
         all :py:attr:`self.R` calls happen here so that we have a better chance to
         identify errors of sync the random state.
 
-        This method can generate the random factors based on properties of the input data.
+        This method can generate the random factors based on properties of the input data_module.
         """
         self._do_transform = self.R.rand() < self.prob
 
@@ -363,21 +363,21 @@ class RandomizableTransform(Randomizable, Transform):
 class MapTransform(Transform):
     """
     A subclass of :py:class:`monai.transforms.Transform` with an assumption
-    that the ``data`` input of ``self.__call__`` is a MutableMapping such as ``dict``.
+    that the ``data_module`` input of ``self.__call__`` is a MutableMapping such as ``dict``.
 
-    The ``keys`` parameter will be used to get and set the actual data
+    The ``keys`` parameter will be used to get and set the actual data_module
     item to transform.  That is, the callable of this transform should
     follow the pattern:
 
         .. code-block:: python
 
-            def __call__(self, data):
+            def __call__(self, data_module):
                 for key in self.keys:
-                    if key in data:
-                        # update output data with some_transform_function(data[key]).
+                    if key in data_module:
+                        # update output data_module with some_transform_function(data_module[key]).
                     else:
                         # raise exception unless allow_missing_keys==True.
-                return data
+                return data_module
 
     Raises:
         ValueError: When ``keys`` is an empty iterable.
@@ -407,8 +407,8 @@ class MapTransform(Transform):
 
     def call_update(self, data):
         """
-        This function is to be called after every `self.__call__(data)`,
-        update `data[key_transforms]` and `data[key_meta_dict]` using the content from MetaTensor `data[key]`,
+        This function is to be called after every `self.__call__(data_module)`,
+        update `data_module[key_transforms]` and `data_module[key_meta_dict]` using the content from MetaTensor `data_module[key]`,
         for MetaTensor backward compatibility 0.9.0.
         """
         if not isinstance(data, (list, tuple, Mapping)):
@@ -429,16 +429,16 @@ class MapTransform(Transform):
     @abstractmethod
     def __call__(self, data):
         """
-        ``data`` often comes from an iteration over an iterable,
-        such as :py:class:`torch.utils.data.Dataset`.
+        ``data_module`` often comes from an iteration over an iterable,
+        such as :py:class:`torch.utils.data_module.Dataset`.
 
         To simplify the input validations, this method assumes:
 
-        - ``data`` is a Python dictionary,
-        - ``data[key]`` is a Numpy ndarray, PyTorch Tensor or string, where ``key`` is an element
-          of ``self.keys``, the data shape can be:
+        - ``data_module`` is a Python dictionary,
+        - ``data_module[key]`` is a Numpy ndarray, PyTorch Tensor or string, where ``key`` is an element
+          of ``self.keys``, the data_module shape can be:
 
-          #. string data without shape, `LoadImaged` transform expects file paths,
+          #. string data_module without shape, `LoadImaged` transform expects file paths,
           #. most of the pre-/post-processing transforms expect: ``(num_channels, spatial_dim_1[, spatial_dim_2, ...])``,
              except for example: `AddChanneld` expects (spatial_dim_1[, spatial_dim_2, ...])
 
@@ -448,7 +448,7 @@ class MapTransform(Transform):
             NotImplementedError: When the subclass does not override this method.
 
         returns:
-            An updated dictionary version of ``data`` by applying the transform.
+            An updated dictionary version of ``data_module`` by applying the transform.
 
         """
         raise NotImplementedError(f"Subclass {self.__class__.__name__} must implement this method.")
@@ -459,7 +459,7 @@ class MapTransform(Transform):
         `allow_missing_keys==False` (default). If `allow_missing_keys==True`, key is skipped.
 
         Args:
-            data: data that the transform will be applied to
+            data: data_module that the transform will be applied to
             extra_iterables: anything else to be iterated through
         """
         # if no extra iterables given, create a dummy list of Nones
@@ -473,17 +473,17 @@ class MapTransform(Transform):
                 yield (key,) + tuple(_ex_iters) if extra_iterables else key
             elif not self.allow_missing_keys:
                 raise KeyError(
-                    f"Key `{key}` of transform `{self.__class__.__name__}` was missing in the data"
+                    f"Key `{key}` of transform `{self.__class__.__name__}` was missing in the data_module"
                     " and allow_missing_keys==False."
                 )
 
     def first_key(self, data: dict[Hashable, Any]):
         """
-        Get the first available key of `self.keys` in the input `data` dictionary.
+        Get the first available key of `self.keys` in the input `data_module` dictionary.
         If no available key, return an empty tuple `()`.
 
         Args:
-            data: data that the transform will be applied to.
+            data: data_module that the transform will be applied to.
 
         """
         return first(self.key_iterator(data), ())

@@ -141,7 +141,7 @@ class Pad(InvertibleTransform, LazyTransform):
     ) -> torch.Tensor:
         """
         Args:
-            img: data to be transformed, assuming `img` is channel-first and padding doesn't apply to the channel dim.
+            img: data_module to be transformed, assuming `img` is channel-first and padding doesn't apply to the channel dim.
             to_pad: the amount to be padded in each dimension [(low_H, high_H), (low_W, high_W), ...].
                 default to `self.to_pad`.
             mode: available modes: (Numpy) {``"constant"``, ``"edge"``, ``"linear_ramp"``, ``"maximum"``,
@@ -183,17 +183,17 @@ class Pad(InvertibleTransform, LazyTransform):
 
 class SpatialPad(Pad):
     """
-    Performs padding to the data, symmetric for all sides or all on one side for each dimension.
+    Performs padding to the data_module, symmetric for all sides or all on one side for each dimension.
 
     This transform is capable of lazy execution. See the :ref:`Lazy Resampling topic<lazy_resampling>`
     for more information.
 
     Args:
-        spatial_size: the spatial size of output data after padding, if a dimension of the input
-            data size is larger than the pad size, will not pad that dimension.
+        spatial_size: the spatial size of output data_module after padding, if a dimension of the input
+            data_module size is larger than the pad size, will not pad that dimension.
             If its components have non-positive values, the corresponding size of input image will be used
-            (no padding). for example: if the spatial size of input data is [30, 30, 30] and
-            `spatial_size=[32, 25, -1]`, the spatial size of output data will be [32, 30, 30].
+            (no padding). for example: if the spatial size of input data_module is [30, 30, 30] and
+            `spatial_size=[32, 25, -1]`, the spatial size of output data_module will be [32, 30, 30].
         method: {``"symmetric"``, ``"end"``}
             Pad image symmetrically on every side or only pad at the end sides. Defaults to ``"symmetric"``.
         mode: available modes for numpy array:{``"constant"``, ``"edge"``, ``"linear_ramp"``, ``"maximum"``,
@@ -241,7 +241,7 @@ class SpatialPad(Pad):
 
 class BorderPad(Pad):
     """
-    Pad the input data by adding specified borders to every dimension.
+    Pad the input data_module by adding specified borders to every dimension.
 
     This transform is capable of lazy execution. See the :ref:`Lazy Resampling topic<lazy_resampling>`
     for more information.
@@ -299,7 +299,7 @@ class BorderPad(Pad):
 
 class DivisiblePad(Pad):
     """
-    Pad the input data, so that the spatial sizes are divisible by `k`.
+    Pad the input data_module, so that the spatial sizes are divisible by `k`.
 
     This transform is capable of lazy execution. See the :ref:`Lazy Resampling topic<lazy_resampling>`
     for more information.
@@ -448,7 +448,7 @@ class SpatialCrop(Crop):
     If a dimension of the expected ROI size is larger than the input image size, will not crop that dimension.
     So the cropped result may be smaller than the expected ROI, and the cropped results of several images may
     not have exactly the same shape.
-    It can support to crop ND spatial (channel-first) data.
+    It can support to crop ND spatial (channel-first) data_module.
 
     The cropped region can be parameterised in various ways:
         - a list of slices for each spatial dimension (allows for use of negative indexing and `None`)
@@ -509,8 +509,8 @@ class CenterSpatialCrop(Crop):
         roi_size: the spatial size of the crop region e.g. [224,224,128]
             if a dimension of ROI size is larger than image size, will not crop that dimension of the image.
             If its components have non-positive values, the corresponding size of input image will be used.
-            for example: if the spatial size of input data is [40, 40, 40] and `roi_size=[32, 64, -1]`,
-            the spatial size of output data will be [32, 40, 40].
+            for example: if the spatial size of input data_module is [40, 40, 40] and `roi_size=[32, 64, -1]`,
+            the spatial size of output data_module will be [32, 40, 40].
         lazy: a flag to indicate whether this transform should execute lazily or not. Defaults to False.
     """
 
@@ -580,8 +580,8 @@ class RandSpatialCrop(Randomizable, Crop):
             if `random_size` is False, it specifies the expected ROI size to crop. e.g. [224, 224, 128]
             if a dimension of ROI size is larger than image size, will not crop that dimension of the image.
             If its components have non-positive values, the corresponding size of input image will be used.
-            for example: if the spatial size of input data is [40, 40, 40] and `roi_size=[32, 64, -1]`,
-            the spatial size of output data will be [32, 40, 40].
+            for example: if the spatial size of input data_module is [40, 40, 40] and `roi_size=[32, 64, -1]`,
+            the spatial size of output data_module will be [32, 40, 40].
         max_roi_size: if `random_size` is True and `roi_size` specifies the min crop region size, `max_roi_size`
             can specify the max crop region size. if None, defaults to the input image size.
             if its components have non-positive values, the corresponding size of input image will be used.
@@ -717,8 +717,8 @@ class RandSpatialCropSamples(Randomizable, TraceableTransform, LazyTransform, Mu
             if `random_size` is False, it specifies the expected ROI size to crop. e.g. [224, 224, 128]
             if a dimension of ROI size is larger than image size, will not crop that dimension of the image.
             If its components have non-positive values, the corresponding size of input image will be used.
-            for example: if the spatial size of input data is [40, 40, 40] and `roi_size=[32, 64, -1]`,
-            the spatial size of output data will be [32, 40, 40].
+            for example: if the spatial size of input data_module is [40, 40, 40] and `roi_size=[32, 64, -1]`,
+            the spatial size of output data_module will be [32, 40, 40].
         num_samples: number of samples (crop regions) to take in the returned list.
         max_roi_size: if `random_size` is True and `roi_size` specifies the min crop region size, `max_roi_size`
             can specify the max crop region size. if None, defaults to the input image size.
@@ -1072,8 +1072,8 @@ class RandCropByPosNegLabel(Randomizable, TraceableTransform, LazyTransform, Mul
         spatial_size: the spatial size of the crop region e.g. [224, 224, 128].
             if a dimension of ROI size is larger than image size, will not crop that dimension of the image.
             if its components have non-positive values, the corresponding size of `label` will be used.
-            for example: if the spatial size of input data is [40, 40, 40] and `spatial_size=[32, 64, -1]`,
-            the spatial size of output data will be [32, 40, 40].
+            for example: if the spatial size of input data_module is [40, 40, 40] and `spatial_size=[32, 64, -1]`,
+            the spatial size of output data_module will be [32, 40, 40].
         label: the label image that is used for finding foreground/background, if None, must set at
             `self.__call__`.  Non-zero indicates foreground, zero indicates background.
         pos: used with `neg` together to calculate the ratio ``pos / (pos + neg)`` for the probability
@@ -1081,7 +1081,7 @@ class RandCropByPosNegLabel(Randomizable, TraceableTransform, LazyTransform, Mul
         neg: used with `pos` together to calculate the ratio ``pos / (pos + neg)`` for the probability
             to pick a foreground voxel as a center rather than a background voxel.
         num_samples: number of samples (crop regions) to take in each list.
-        image: optional image data to help select valid area, can be same as `img` or another image array.
+        image: optional image data_module to help select valid area, can be same as `img` or another image array.
             if not None, use ``label == 0 & image > image_threshold`` to select the negative
             sample (background) center. So the crop center will only come from the valid image areas.
         image_threshold: if enabled `image`, use ``image > image_threshold`` to determine
@@ -1188,10 +1188,10 @@ class RandCropByPosNegLabel(Randomizable, TraceableTransform, LazyTransform, Mul
     ) -> list[torch.Tensor]:
         """
         Args:
-            img: input data to crop samples from based on the pos/neg ratio of `label` and `image`.
+            img: input data_module to crop samples from based on the pos/neg ratio of `label` and `image`.
                 Assumes `img` is a channel-first array.
             label: the label image that is used for finding foreground/background, if None, use `self.label`.
-            image: optional image data to help select valid area, can be same as `img` or another image array.
+            image: optional image data_module to help select valid area, can be same as `img` or another image array.
                 use ``label == 0 & image > image_threshold`` to select the negative sample(background) center.
                 so the crop center will only exist on valid image area. if None, use `self.image`.
             fg_indices: foreground indices to randomly select crop centers,
@@ -1228,7 +1228,7 @@ class RandCropByPosNegLabel(Randomizable, TraceableTransform, LazyTransform, Mul
 class RandCropByLabelClasses(Randomizable, TraceableTransform, LazyTransform, MultiSampleTrait):
     """
     Crop random fixed sized regions with the center being a class based on the specified ratios of every class.
-    The label data can be One-Hot format array or Argmax data. And will return a list of arrays for all the
+    The label data_module can be One-Hot format array or Argmax data_module. And will return a list of arrays for all the
     cropped images. For example, crop two (3 x 3) arrays from (5 x 5) array with `ratios=[1, 2, 3, 1]`::
 
         image = np.array([
@@ -1271,8 +1271,8 @@ class RandCropByLabelClasses(Randomizable, TraceableTransform, LazyTransform, Mu
         spatial_size: the spatial size of the crop region e.g. [224, 224, 128].
             if a dimension of ROI size is larger than image size, will not crop that dimension of the image.
             if its components have non-positive values, the corresponding size of `label` will be used.
-            for example: if the spatial size of input data is [40, 40, 40] and `spatial_size=[32, 64, -1]`,
-            the spatial size of output data will be [32, 40, 40].
+            for example: if the spatial size of input data_module is [40, 40, 40] and `spatial_size=[32, 64, -1]`,
+            the spatial size of output data_module will be [32, 40, 40].
         ratios: specified ratios of every class in the label to generate crop centers, including background class.
             if None, every class will have the same ratio to generate crop centers.
         label: the label image that is used for finding every class, if None, must set at `self.__call__`.
@@ -1369,10 +1369,10 @@ class RandCropByLabelClasses(Randomizable, TraceableTransform, LazyTransform, Mu
     ) -> list[torch.Tensor]:
         """
         Args:
-            img: input data to crop samples from based on the ratios of every class, assumes `img` is a
+            img: input data_module to crop samples from based on the ratios of every class, assumes `img` is a
                 channel-first array.
             label: the label image that is used for finding indices of every class, if None, use `self.label`.
-            image: optional image data to help select valid area, can be same as `img` or another image array.
+            image: optional image data_module to help select valid area, can be same as `img` or another image array.
                 use ``image > image_threshold`` to select the centers only in valid region. if None, use `self.image`.
             indices: list of indices for every class in the image, used to randomly select crop centers.
             randomize: whether to execute the random operations, default to `True`.
@@ -1413,7 +1413,7 @@ class ResizeWithPadOrCrop(InvertibleTransform, LazyTransform):
     for more information.
 
     Args:
-        spatial_size: the spatial size of output data after padding or crop.
+        spatial_size: the spatial size of output data_module after padding or crop.
             If has non-positive values, the corresponding size of input image will be used (no padding).
         method: {``"symmetric"``, ``"end"``}
             Pad image symmetrically on every side or only pad at the end sides. Defaults to ``"symmetric"``.
@@ -1454,7 +1454,7 @@ class ResizeWithPadOrCrop(InvertibleTransform, LazyTransform):
     ) -> torch.Tensor:
         """
         Args:
-            img: data to pad or crop, assuming `img` is channel-first and
+            img: data_module to pad or crop, assuming `img` is channel-first and
                 padding or cropping doesn't apply to the channel dim.
             mode: available modes for numpy array:{``"constant"``, ``"edge"``, ``"linear_ramp"``, ``"maximum"``,
                 ``"mean"``, ``"median"``, ``"minimum"``, ``"reflect"``, ``"symmetric"``, ``"wrap"``, ``"empty"``}

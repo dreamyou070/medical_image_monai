@@ -201,7 +201,7 @@ class VideoFileDataset(Dataset, VideoDataset):
 
     def __getitem__(self, index: int) -> Any:
         """
-        Fetch single data item from index.
+        Fetch single data_module item from index.
         """
         if self.max_num_frames is not None and index >= self.max_num_frames:
             raise IndexError

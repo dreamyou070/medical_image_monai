@@ -139,13 +139,13 @@ class AsDiscrete(Transform):
         -  round the value to the closest integer.
 
     Args:
-        argmax: whether to execute argmax function on input data before transform.
+        argmax: whether to execute argmax function on input data_module before transform.
             Defaults to ``False``.
-        to_onehot: if not None, convert input data into the one-hot format with specified number of classes.
+        to_onehot: if not None, convert input data_module into the one-hot format with specified number of classes.
             Defaults to ``None``.
         threshold: if not None, threshold the float values to int number 0 or 1 with specified threshold.
             Defaults to ``None``.
-        rounding: if not None, round the data according to the specified option,
+        rounding: if not None, round the data_module according to the specified option,
             available options: ["torchrounding"].
         kwargs: additional parameters to `torch.argmax`, `monai.networks.one_hot`.
             currently ``dim``, ``keepdim``, ``dtype`` are supported, unrecognized parameters will be ignored.
@@ -195,15 +195,15 @@ class AsDiscrete(Transform):
     ) -> NdarrayOrTensor:
         """
         Args:
-            img: the input tensor data to convert, if no channel dimension when converting to `One-Hot`,
+            img: the input tensor data_module to convert, if no channel dimension when converting to `One-Hot`,
                 will automatically add it.
-            argmax: whether to execute argmax function on input data before transform.
+            argmax: whether to execute argmax function on input data_module before transform.
                 Defaults to ``self.argmax``.
-            to_onehot: if not None, convert input data into the one-hot format with specified number of classes.
+            to_onehot: if not None, convert input data_module into the one-hot format with specified number of classes.
                 Defaults to ``self.to_onehot``.
             threshold: if not None, threshold the float values to int number 0 or 1 with specified threshold value.
                 Defaults to ``self.threshold``.
-            rounding: if not None, round the data according to the specified option,
+            rounding: if not None, round the data_module according to the specified option,
                 available options: ["torchrounding"].
 
         """
@@ -241,9 +241,9 @@ class KeepLargestConnectedComponent(Transform):
     This transform can be used as a post-processing step to clean up over-segment areas in model output.
 
     The input is assumed to be a channel-first PyTorch Tensor:
-      1) For not OneHot format data, the values correspond to expected labels,
+      1) For not OneHot format data_module, the values correspond to expected labels,
       0 will be treated as background and the over-segment pixels will be set to 0.
-      2) For OneHot format data, the values should be 0, 1 on each labels,
+      2) For OneHot format data_module, the values should be 0, 1 on each labels,
       the over-segment pixels will be set to 0 in its channel.
 
     For example:
@@ -294,8 +294,8 @@ class KeepLargestConnectedComponent(Transform):
             applied_labels: Labels for applying the connected component analysis on.
                 If given, voxels whose value is in this list will be analyzed.
                 If `None`, all non-zero values will be analyzed.
-            is_onehot: if `True`, treat the input data as OneHot format data, otherwise, not OneHot format data.
-                default to None, which treats multi-channel data as OneHot and single channel data as not OneHot.
+            is_onehot: if `True`, treat the input data_module as OneHot format data_module, otherwise, not OneHot format data_module.
+                default to None, which treats multi-channel data_module as OneHot and single channel data_module as not OneHot.
             independent: whether to treat ``applied_labels`` as a union of foreground labels.
                 If ``True``, the connected component analysis will be performed on each foreground label independently
                 and return the intersection of the largest components.
@@ -433,7 +433,7 @@ class LabelFilter(Transform):
             Pytorch tensor or numpy array of the same shape as the input.
         """
         if not isinstance(img, (np.ndarray, torch.Tensor)):
-            raise NotImplementedError(f"{self.__class__} can not handle data of type {type(img)}.")
+            raise NotImplementedError(f"{self.__class__} can not handle data_module of type {type(img)}.")
 
         if isinstance(img, torch.Tensor):
             img = convert_to_tensor(img, track_meta=get_track_meta())
@@ -549,7 +549,7 @@ class LabelToContour(Transform):
     def __call__(self, img: NdarrayOrTensor) -> NdarrayOrTensor:
         """
         Args:
-            img: torch tensor data to extract the contour, with shape: [channels, height, width[, depth]]
+            img: torch tensor data_module to extract the contour, with shape: [channels, height, width[, depth]]
 
         Raises:
             ValueError: When ``image`` ndim is not one of [3, 4].
@@ -599,22 +599,22 @@ class Ensemble:
 
 class MeanEnsemble(Ensemble, Transform):
     """
-    Execute mean ensemble on the input data.
-    The input data can be a list or tuple of PyTorch Tensor with shape: [C[, H, W, D]],
+    Execute mean ensemble on the input data_module.
+    The input data_module can be a list or tuple of PyTorch Tensor with shape: [C[, H, W, D]],
     Or a single PyTorch Tensor with shape: [E, C[, H, W, D]], the `E` dimension represents
-    the output data from different models.
-    Typically, the input data is model output of segmentation task or classification task.
-    And it also can support to add `weights` for the input data.
+    the output data_module from different models.
+    Typically, the input data_module is model output of segmentation task or classification task.
+    And it also can support to add `weights` for the input data_module.
 
     Args:
-        weights: can be a list or tuple of numbers for input data with shape: [E, C, H, W[, D]].
-            or a Numpy ndarray or a PyTorch Tensor data.
-            the `weights` will be added to input data from highest dimension, for example:
-            1. if the `weights` only has 1 dimension, it will be added to the `E` dimension of input data.
+        weights: can be a list or tuple of numbers for input data_module with shape: [E, C, H, W[, D]].
+            or a Numpy ndarray or a PyTorch Tensor data_module.
+            the `weights` will be added to input data_module from highest dimension, for example:
+            1. if the `weights` only has 1 dimension, it will be added to the `E` dimension of input data_module.
             2. if the `weights` has 2 dimensions, it will be added to `E` and `C` dimensions.
             it's a typical practice to add weights for different classes:
             to ensemble 3 segmentation model outputs, every output has 4 channels(classes),
-            so the input data shape can be: [3, 4, H, W, D].
+            so the input data_module shape can be: [3, 4, H, W, D].
             and add different `weights` for different classes, so the `weights` shape can be: [3, 4].
             for example: `weights = [[1, 2, 3, 4], [4, 3, 2, 1], [1, 1, 1, 1]]`.
 
@@ -642,20 +642,20 @@ class MeanEnsemble(Ensemble, Transform):
 
 class VoteEnsemble(Ensemble, Transform):
     """
-    Execute vote ensemble on the input data.
-    The input data can be a list or tuple of PyTorch Tensor with shape: [C[, H, W, D]],
+    Execute vote ensemble on the input data_module.
+    The input data_module can be a list or tuple of PyTorch Tensor with shape: [C[, H, W, D]],
     Or a single PyTorch Tensor with shape: [E[, C, H, W, D]], the `E` dimension represents
-    the output data from different models.
-    Typically, the input data is model output of segmentation task or classification task.
+    the output data_module from different models.
+    Typically, the input data_module is model output of segmentation task or classification task.
 
     Note:
-        This vote transform expects the input data is discrete values. It can be multiple channels
-        data in One-Hot format or single channel data. It will vote to select the most common data
+        This vote transform expects the input data_module is discrete values. It can be multiple channels
+        data_module in One-Hot format or single channel data_module. It will vote to select the most common data_module
         between items.
-        The output data has the same shape as every item of the input data.
+        The output data_module has the same shape as every item of the input data_module.
 
     Args:
-        num_classes: if the input is single channel data instead of One-Hot, we can't get class number
+        num_classes: if the input is single channel data_module instead of One-Hot, we can't get class number
             from channel, need to explicitly specify the number of classes to vote.
 
     """
@@ -671,7 +671,7 @@ class VoteEnsemble(Ensemble, Transform):
         if self.num_classes is not None:
             has_ch_dim = True
             if img_.ndimension() > 1 and img_.shape[1] > 1:
-                warnings.warn("no need to specify num_classes for One-Hot format data.")
+                warnings.warn("no need to specify num_classes for One-Hot format data_module.")
             else:
                 if img_.ndimension() == 1:
                     # if no channel dim, need to remove channel dim after voting
@@ -684,7 +684,7 @@ class VoteEnsemble(Ensemble, Transform):
             # if not One-Hot, use "argmax" to vote the most common class
             out_pt = torch.argmax(img_, dim=0, keepdim=has_ch_dim)
         else:
-            # for One-Hot data, round the float number to 0 or 1
+            # for One-Hot data_module, round the float number to 0 or 1
             out_pt = torch.round(img_)
         return self.post_convert(out_pt, img)
 
@@ -799,10 +799,10 @@ class Invert(Transform):
                 default to `True`. If `False`, use the same interpolation mode as the original transform.
             device: move the inverted results to a target device before `post_func`, default to `None`.
             post_func: postprocessing for the inverted result, should be a callable function.
-            to_tensor: whether to convert the inverted data into PyTorch Tensor first, default to `True`.
+            to_tensor: whether to convert the inverted data_module into PyTorch Tensor first, default to `True`.
         """
         if not isinstance(transform, InvertibleTransform):
-            raise ValueError("transform is not invertible, can't invert transform for the data.")
+            raise ValueError("transform is not invertible, can't invert transform for the data_module.")
         self.transform = transform
         self.nearest_interp = nearest_interp
         self.device = device
@@ -842,7 +842,7 @@ class SobelGradients(Transform):
         padding_mode: the padding mode of the image when convolving with Sobel kernels. Defaults to `"reflect"`.
             Acceptable values are ``'zeros'``, ``'reflect'``, ``'replicate'`` or ``'circular'``.
             See ``torch.nn.Conv1d()`` for more information.
-        dtype: kernel data type (torch.dtype). Defaults to `torch.float32`.
+        dtype: kernel data_module type (torch.dtype). Defaults to `torch.float32`.
 
     """
 
@@ -944,7 +944,7 @@ class DistanceTransformEDT(Transform):
     """
     Applies the Euclidean distance transform on the input.
     Either GPU based with CuPy / cuCIM or CPU based with scipy.
-    To use the GPU implementation, make sure cuCIM is available and that the data is a `torch.tensor` on a GPU device.
+    To use the GPU implementation, make sure cuCIM is available and that the data_module is a `torch.tensor` on a GPU device.
 
     Note that the results of the libraries can differ, so stick to one if possible.
     For details, check out the `SciPy`_ and `cuCIM`_ documentation and / or :func:`monai.transforms.utils.distance_transform_edt`.
@@ -971,6 +971,6 @@ class DistanceTransformEDT(Transform):
                 if a single number, this is used for all axes. If not specified, a grid spacing of unity is implied.
 
         Returns:
-            An array with the same shape and data type as img
+            An array with the same shape and data_module type as img
         """
         return distance_transform_edt(img=img, sampling=self.sampling)  # type: ignore

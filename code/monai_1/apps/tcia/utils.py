@@ -115,7 +115,7 @@ def get_tcia_ref_uid(
     """
     Achieve the referenced UID from the referenced Series Sequence for the input pydicom dataset object.
     The referenced UID could be Series Instance UID or SOP Instance UID. The UID will be detected from
-    the data element of the input object. If the data element is a sequence, each dataset within the sequence
+    the data_module element of the input object. If the data_module element is a sequence, each dataset within the sequence
     will be detected iteratively. The first detected UID will be returned.
 
     Args:

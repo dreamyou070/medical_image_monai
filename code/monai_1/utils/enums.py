@@ -182,7 +182,7 @@ class UpsampleMode(StrEnum):
 
 class BlendMode(StrEnum):
     """
-    See also: :py:class:`monai.data.utils.compute_importance_map`
+    See also: :py:class:`monai.data_module.utils.compute_importance_map`
     """
 
     CONSTANT = "constant"
@@ -330,9 +330,9 @@ class TraceStatusKeys(StrEnum):
 class CommonKeys(StrEnum):
     """
     A set of common keys for dictionary based supervised training process.
-    `IMAGE` is the input image data.
+    `IMAGE` is the input image data_module.
     `LABEL` is the training or evaluation label of segmentation or classification task.
-    `PRED` is the prediction data of model output.
+    `PRED` is the prediction data_module of model output.
     `LOSS` is the loss value of current iteration.
     `INFO` is some useful information during training or evaluation, like loss value, etc.
 
@@ -380,11 +380,11 @@ class PostFix(StrEnum):
 
 class TransformBackends(StrEnum):
     """
-    Transform backends. Most of `monai.transforms` components first converts the input data into ``torch.Tensor`` or
-    ``monai.data.MetaTensor``. Internally, some transforms are made by converting the data into ``numpy.array`` or
+    Transform backends. Most of `monai.transforms` components first converts the input data_module into ``torch.Tensor`` or
+    ``monai.data_module.MetaTensor``. Internally, some transforms are made by converting the data_module into ``numpy.array`` or
     ``cupy.array`` and use the underlying transform backend API to achieve the actual output array and
     converting back to ``Tensor``/``MetaTensor``. Transforms with more than one backend indicate the that they may
-    convert the input data types to accommodate the underlying API.
+    convert the input data_module types to accommodate the underlying API.
     """
 
     TORCH = "torch"
@@ -499,7 +499,7 @@ class WSIPatchKeys(StrEnum):
 
 class FastMRIKeys(StrEnum):
     """
-    The keys to be used for extracting data from the fastMRI dataset
+    The keys to be used for extracting data_module from the fastMRI dataset
     """
 
     KSPACE = "kspace"
@@ -528,7 +528,7 @@ class MetaKeys(StrEnum):
     """
 
     AFFINE = "affine"  # MetaTensor.affine
-    ORIGINAL_AFFINE = "original_affine"  # the affine after image loading before any data processing
+    ORIGINAL_AFFINE = "original_affine"  # the affine after image loading before any data_module processing
     SPATIAL_SHAPE = "spatial_shape"  # optional key for the length in each spatial dimension
     SPACE = "space"  # possible values of space type are defined in `SpaceKeys`
     ORIGINAL_CHANNEL_DIM = "original_channel_dim"  # an integer or float("nan")

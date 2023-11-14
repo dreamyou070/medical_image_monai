@@ -46,7 +46,7 @@ class DataLoaderIter:
     def __init__(self, data_loader: DataLoader, image_extractor: Callable, label_extractor: Callable) -> None:
         if not isinstance(data_loader, DataLoader):
             raise ValueError(
-                f"Loader has unsupported type: {type(data_loader)}. Expected type was `torch.utils.data.DataLoader`"
+                f"Loader has unsupported type: {type(data_loader)}. Expected type was `torch.utils.data_module.DataLoader`"
             )
         self.data_loader = data_loader
         self._iterator = iter(data_loader)
@@ -94,7 +94,7 @@ class TrainDataLoaderIter(DataLoaderIter):
 class ValDataLoaderIter(DataLoaderIter):
     """This iterator will reset itself **only** when it is acquired by
     the syntax of normal `iterator`. That is, this iterator just works
-    like a `torch.data.DataLoader`. If you want to restart it, you
+    like a `torch.data_module.DataLoader`. If you want to restart it, you
     should use it like:
 
         ```
@@ -103,7 +103,7 @@ class ValDataLoaderIter(DataLoaderIter):
             ...
 
         # `loader_iter` should run out of values now, you can restart it by:
-        # 1. the way we use a `torch.data.DataLoader`
+        # 1. the way we use a `torch.data_module.DataLoader`
         for batch in loader_iter:        # __iter__ is called implicitly
             ...
 
@@ -129,13 +129,13 @@ class ValDataLoaderIter(DataLoaderIter):
 
 
 def default_image_extractor(x: Any) -> torch.Tensor:
-    """Default callable for getting image from batch data."""
+    """Default callable for getting image from batch data_module."""
     out: torch.Tensor = x["image"] if isinstance(x, dict) else x[0]
     return out
 
 
 def default_label_extractor(x: Any) -> torch.Tensor:
-    """Default callable for getting label from batch data."""
+    """Default callable for getting label from batch data_module."""
     out: torch.Tensor = x["label"] if isinstance(x, dict) else x[1]
     return out
 
@@ -162,12 +162,12 @@ class LearningRateFinder:
     >>> train_data = ...    # prepared dataset
     >>> desired_bs, real_bs = 32, 4         # batch size
     >>> accumulation_steps = desired_bs // real_bs     # required steps for accumulation
-    >>> data_loader = torch.utils.data.DataLoader(train_data, batch_size=real_bs, shuffle=True)
+    >>> data_loader = torch.utils.data_module.DataLoader(train_data, batch_size=real_bs, shuffle=True)
     >>> acc_lr_finder = LearningRateFinder(net, optimizer, criterion)
     >>> acc_lr_finder.range_test(data_loader, end_lr=10, num_iter=100, accumulation_steps=accumulation_steps)
 
-    By default, image will be extracted from data loader with x["image"] and x[0], depending on whether
-    batch data is a dictionary or not (and similar behaviour for extracting the label). If your data loader
+    By default, image will be extracted from data_module loader with x["image"] and x[0], depending on whether
+    batch data_module is a dictionary or not (and similar behaviour for extracting the label). If your data_module loader
     returns something other than this, pass a callable function to extract it, e.g.:
     >>> image_extractor = lambda x: x["input"]
     >>> label_extractor = lambda x: x[100]
@@ -269,11 +269,11 @@ class LearningRateFinder:
         """Performs the learning rate range test.
 
         Args:
-            train_loader: training set data loader.
-            val_loader: validation data loader (if desired).
-            image_extractor: callable function to get the image from a batch of data.
+            train_loader: training set data_module loader.
+            val_loader: validation data_module loader (if desired).
+            image_extractor: callable function to get the image from a batch of data_module.
                 Default: `x["image"] if isinstance(x, dict) else x[0]`.
-            label_extractor: callable function to get the label from a batch of data.
+            label_extractor: callable function to get the label from a batch of data_module.
                 Default: `x["label"] if isinstance(x, dict) else x[1]`.
             start_lr : the starting learning rate for the range test.
                 The default is the optimizer's learning rate.
@@ -287,7 +287,7 @@ class LearningRateFinder:
                 `diverge_th * best_loss`.
             accumulation_steps: steps for gradient accumulation. If set to `1`,
                 gradients are not accumulated.
-            non_blocking_transfer: when `True`, moves data to device asynchronously if
+            non_blocking_transfer: when `True`, moves data_module to device asynchronously if
                 possible, e.g., moving CPU Tensors with pinned memory to CUDA devices.
             auto_reset: if `True`, returns model and optimizer to original states at end
                 of test.
@@ -325,7 +325,7 @@ class LearningRateFinder:
         if smooth_f < 0 or smooth_f >= 1:
             raise ValueError("smooth_f is outside the range [0, 1[")
 
-        # Create an iterator to get data batch by batch
+        # Create an iterator to get data_module batch by batch
         train_iter = TrainDataLoaderIter(train_loader, image_extractor, label_extractor)
         if val_loader:
             val_iter = ValDataLoaderIter(val_loader, image_extractor, label_extractor)
@@ -430,7 +430,7 @@ class LearningRateFinder:
         running_loss = 0
         with eval_mode(self.model):
             for inputs, labels in val_iter:
-                # Copy data to the correct device
+                # Copy data_module to the correct device
                 inputs, labels = copy_to_device(
                     [inputs, labels], device=self.device, non_blocking=non_blocking_transfer
                 )

@@ -25,7 +25,7 @@ __all__ = ["Upsample", "UpSample", "SubpixelUpsample", "Subpixelupsample", "Subp
 
 class UpSample(nn.Sequential):
     """
-    Upsamples data by `scale_factor`.
+    Upsamples data_module by `scale_factor`.
     Supported modes are:
 
         - "deconv": uses a transposed convolution.

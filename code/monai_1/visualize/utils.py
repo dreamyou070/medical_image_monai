@@ -55,7 +55,7 @@ def matshow3d(
     Create a 3D volume figure as a grid of images.
 
     Args:
-        volume: 3D volume to display. data shape can be `BCHWD`, `CHWD` or `HWD`.
+        volume: 3D volume to display. data_module shape can be `BCHWD`, `CHWD` or `HWD`.
             Higher dimensional arrays will be reshaped into (-1, H, W, [C]), `C` depends on `channel_dim` arg.
             A list of channel-first (C, H[, W, D]) arrays can also be passed in,
             in which case they will be displayed as a padded and stacked volume.
@@ -76,7 +76,7 @@ def matshow3d(
         show: if True, show the figure.
         fill_value: value to use for the empty part of the grid.
         margin: margin to use for the grid.
-        dtype: data type of the output stacked frames.
+        dtype: data_module type of the output stacked frames.
         kwargs: additional keyword arguments to matplotlib `matshow` and `imshow`.
 
     See Also:
@@ -177,8 +177,8 @@ def blend_images(
     The label is expected to have C==1.
 
     Args:
-        image: the input image to blend with label data.
-        label: the input label to blend with image data.
+        image: the input image to blend with label data_module.
+        label: the input label to blend with image data_module.
         alpha: this specifies the weighting given to the label, where 0 is completely
             transparent and 1 is completely opaque. This can be given as either a
             single value or an array/tensor that is the same size as the input image.

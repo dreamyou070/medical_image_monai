@@ -80,13 +80,13 @@ def get_testing_algo_template_path():
 
 def clone(data: NdarrayTensor) -> NdarrayTensor:
     """
-    Clone data independent of type.
+    Clone data_module independent of type.
 
     Args:
         data (NdarrayTensor): This can be a Pytorch Tensor or numpy array.
 
     Returns:
-        Any: Cloned data object
+        Any: Cloned data_module object
     """
     return copy.deepcopy(data)
 
@@ -100,7 +100,7 @@ def assert_allclose(
     **kwargs,
 ):
     """
-    Assert that types and all values of two data objects are close.
+    Assert that types and all values of two data_module objects are close.
 
     Args:
         actual: Pytorch Tensor or numpy array for comparison.

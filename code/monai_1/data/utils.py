@@ -275,7 +275,7 @@ def iter_patch(
         start_pos: starting position in the array, default is 0 for each dimension
         overlap: the amount of overlap of neighboring patches in each dimension (a value between 0.0 and 1.0).
             If only one float number is given, it will be applied to all dimensions. Defaults to 0.0.
-        copy_back: if True data from the yielded patches is copied back to `arr` once the generator completes
+        copy_back: if True data_module from the yielded patches is copied back to `arr` once the generator completes
         mode: available modes: (Numpy) {``"constant"``, ``"edge"``, ``"linear_ramp"``, ``"maximum"``,
             ``"mean"``, ``"median"``, ``"minimum"``, ``"reflect"``, ``"symmetric"``, ``"wrap"``, ``"empty"``}
             (PyTorch) {``"constant"``, ``"reflect"``, ``"replicate"``, ``"circular"``}.
@@ -288,7 +288,7 @@ def iter_patch(
             note that `np.pad` treats channel dimension as the first dimension.
 
     Yields:
-        Patches of array data from `arr` which are views into a padded array which can be modified, if `copy_back` is
+        Patches of array data_module from `arr` which are views into a padded array which can be modified, if `copy_back` is
         True these changes will be reflected in `arr` once the iteration completes.
 
     Note:
@@ -332,9 +332,9 @@ def iter_patch(
             coords_no_pad = tuple((coord.start - p, coord.stop - p) for coord, p in zip(slices, _pad_size))
         else:
             coords_no_pad = tuple((coord.start, coord.stop) for coord in slices)
-        yield arrpad[slices], np.asarray(coords_no_pad)  # data and coords (in numpy; works with torch loader)
+        yield arrpad[slices], np.asarray(coords_no_pad)  # data_module and coords (in numpy; works with torch loader)
 
-    # copy back data from the padded image if required
+    # copy back data_module from the padded image if required
     if copy_back:
         slices = tuple(slice(p, p + s) for p, s in zip(_pad_size, arr.shape))
         arr[...] = arrpad[slices]  # type: ignore
@@ -427,7 +427,7 @@ def pickle_operations(data, key=PICKLE_KEY_SUFFIX, is_encode: bool = True):
 
     Args:
         data: a list or dictionary with substructures to be pickled/unpickled.
-        key: the key suffix for the target substructures, defaults to "_transforms" (`data.utils.PICKLE_KEY_SUFFIX`).
+        key: the key suffix for the target substructures, defaults to "_transforms" (`data_module.utils.PICKLE_KEY_SUFFIX`).
         is_encode: whether it's encoding using pickle.dumps (True) or decoding using pickle.loads (False).
     """
     if isinstance(data, Mapping):
@@ -472,11 +472,11 @@ def collate_meta_tensor(batch):
 def list_data_collate(batch: Sequence):
     """
     Enhancement for PyTorch DataLoader default collate.
-    If dataset already returns a list of batch data that generated in transforms, need to merge all data to 1 list.
+    If dataset already returns a list of batch data_module that generated in transforms, need to merge all data_module to 1 list.
     Then it's same as the default collate behavior.
 
     Note:
-        Need to use this collate if apply some transforms that can generate batch data.
+        Need to use this collate if apply some transforms that can generate batch data_module.
 
     """
     elem = batch[0]
@@ -498,7 +498,7 @@ def list_data_collate(batch: Sequence):
         re_str = str(re)
         if "equal size" in re_str:
             if key is not None:
-                re_str += f"\nCollate error on the key '{key}' of dictionary data."
+                re_str += f"\nCollate error on the key '{key}' of dictionary data_module."
             re_str += (
                 "\n\nMONAI hint: if your transforms intentionally create images of different shapes, creating your "
                 + "`DataLoader` with `collate_fn=pad_list_data_collate` might solve this problem (check its "
@@ -510,7 +510,7 @@ def list_data_collate(batch: Sequence):
         re_str = str(re)
         if "numpy" in re_str and "Tensor" in re_str:
             if key is not None:
-                re_str += f"\nCollate error on the key '{key}' of dictionary data."
+                re_str += f"\nCollate error on the key '{key}' of dictionary data_module."
             re_str += (
                 "\n\nMONAI hint: if your transforms intentionally create mixtures of torch Tensor and numpy ndarray, "
                 + "creating your `DataLoader` with `collate_fn=pad_list_data_collate` might solve this problem "
@@ -522,7 +522,7 @@ def list_data_collate(batch: Sequence):
 
 def _non_zipping_check(batch_data: Mapping | Iterable, detach: bool, pad: bool, fill_value):
     """
-    Utility function based on `decollate_batch`, to identify the largest batch size from the collated data.
+    Utility function based on `decollate_batch`, to identify the largest batch size from the collated data_module.
     returns batch_size, the list of non-iterable items, and the dictionary or list with their items decollated.
 
     See `decollate_batch` for more details.
@@ -547,7 +547,7 @@ def _non_zipping_check(batch_data: Mapping | Iterable, detach: bool, pad: bool, 
 
 
 def decollate_batch(batch, detach: bool = True, pad=True, fill_value=None):
-    """De-collate a batch of data (for example, as produced by a `DataLoader`).
+    """De-collate a batch of data_module (for example, as produced by a `DataLoader`).
 
     Returns a list of structures with the original tensor's 0-th dimension sliced into elements using `torch.unbind`.
 
@@ -595,7 +595,7 @@ def decollate_batch(batch, detach: bool = True, pad=True, fill_value=None):
         >>> [{'image': 1, 'meta': 4}, {'image': 2, 'meta': 5}]
 
     Args:
-        batch: data to be de-collated.
+        batch: data_module to be de-collated.
         detach: whether to detach the tensors. Scalars tensors will be detached into number types
             instead of torch tensors.
         pad: when the items in a batch indicate different batch size, whether to pad all the sequences to the longest.
@@ -654,16 +654,16 @@ def pad_list_data_collate(batch: Sequence, method: str = Method.SYMMETRIC, mode:
     Function version of :py:class:`monai.transforms.croppad.batch.PadListDataCollate`.
 
     Same as MONAI's ``list_data_collate``, except any tensors are centrally padded to match the shape of the biggest
-    tensor in each dimension. This transform is useful if some of the applied transforms generate batch data of
+    tensor in each dimension. This transform is useful if some of the applied transforms generate batch data_module of
     different sizes.
 
-    This can be used on both list and dictionary data.
-    Note that in the case of the dictionary data, this decollate function may add the transform information of
+    This can be used on both list and dictionary data_module.
+    Note that in the case of the dictionary data_module, this decollate function may add the transform information of
     `PadListDataCollate` to the list of invertible transforms if input batch have different spatial shape, so need to
     call static method: `monai.transforms.croppad.batch.PadListDataCollate.inverse` before inverting other transforms.
 
     Args:
-        batch: batch of data to pad-collate
+        batch: batch of data_module to pad-collate
         method: padding method (see :py:class:`monai.transforms.SpatialPad`)
         mode: padding mode (see :py:class:`monai.transforms.SpatialPad`)
         kwargs: other arguments for the `np.pad` or `torch.pad` function.
@@ -700,7 +700,7 @@ def set_rnd(obj, seed: int) -> int:
         obj: object to set seed or random state for.
         seed: set the random state with an integer seed.
     """
-    if isinstance(obj, (tuple, list)):  # ZipDataset.data is a list
+    if isinstance(obj, (tuple, list)):  # ZipDataset.data_module is a list
         _seed = seed
         for item in obj:
             _seed = set_rnd(item, seed=seed)
@@ -724,7 +724,7 @@ def affine_to_spacing(affine: NdarrayTensor, r: int = 3, dtype=float, suppress_z
     Args:
         affine: a d x d affine matrix.
         r: indexing based on the spatial rank, spacing is computed from `affine[:r, :r]`.
-        dtype: data type of the output.
+        dtype: data_module type of the output.
         suppress_zeros: whether to suppress the zeros with ones.
 
     Returns:
@@ -936,14 +936,14 @@ def to_affine_nd(r: np.ndarray | int, affine: NdarrayTensor, dtype=np.float64) -
     Args:
         r (int or matrix): number of spatial dimensions or an output affine to be filled.
         affine (matrix): 2D affine matrix
-        dtype: data type of the output array.
+        dtype: data_module type of the output array.
 
     Raises:
         ValueError: When ``affine`` dimensions is not 2.
         ValueError: When ``r`` is nonpositive.
 
     Returns:
-        an (r+1) x (r+1) matrix (tensor or ndarray depends on the input ``affine`` data type)
+        an (r+1) x (r+1) matrix (tensor or ndarray depends on the input ``affine`` data_module type)
 
     """
     dtype = get_equivalent_dtype(dtype, np.ndarray)
@@ -973,7 +973,7 @@ def reorient_spatial_axes(
     it and ``target_affine`` by rearranging/flipping the axes.
 
     Returns the orientation transform and the updated affine (tensor or ndarray
-    depends on the input ``affine`` data type).
+    depends on the input ``affine`` data_module type).
     Note that this function requires external module ``nibabel.orientations``.
     """
     init_affine_, *_ = convert_data_type(init_affine, np.ndarray)
@@ -1009,7 +1009,7 @@ def create_file_basename(
 
     .. code-block:: python
 
-        from monai.data import create_file_basename
+        from monai.data_module import create_file_basename
         create_file_basename(
             postfix="seg",
             input_file_name="/foo/bar/test1/image.png",
@@ -1154,48 +1154,48 @@ def partition_dataset(
 
     Note:
         It also can be used to partition dataset for ranks in distributed training.
-        For example, partition dataset before training and use `CacheDataset`, every rank trains with its own data.
+        For example, partition dataset before training and use `CacheDataset`, every rank trains with its own data_module.
         It can avoid duplicated caching content in each rank, but will not do global shuffle before every epoch:
 
         .. code-block:: python
 
             data_partition = partition_dataset(
-                data=train_files,
+                data_module=train_files,
                 num_partitions=dist.get_world_size(),
                 shuffle=True,
                 even_divisible=True,
             )[dist.get_rank()]
 
             train_ds = SmartCacheDataset(
-                data=data_partition,
+                data_module=data_partition,
                 transform=train_transforms,
                 replace_rate=0.2,
                 cache_num=15,
             )
 
     Args:
-        data: input dataset to split, expect a list of data.
+        data: input dataset to split, expect a list of data_module.
         ratios: a list of ratio number to split the dataset, like [8, 1, 1].
         num_partitions: expected number of the partitions to evenly split, only works when `ratios` not specified.
         shuffle: whether to shuffle the original dataset before splitting.
         seed: random seed to shuffle the dataset, only works when `shuffle` is True.
         drop_last: only works when `even_divisible` is False and no ratios specified.
-            if True, will drop the tail of the data to make it evenly divisible across partitions.
-            if False, will add extra indices to make the data evenly divisible across partitions.
+            if True, will drop the tail of the data_module to make it evenly divisible across partitions.
+            if False, will add extra indices to make the data_module evenly divisible across partitions.
         even_divisible: if True, guarantee every partition has same length.
 
     Examples::
 
-        >>> data = [1, 2, 3, 4, 5]
-        >>> partition_dataset(data, ratios=[0.6, 0.2, 0.2], shuffle=False)
+        >>> data_module = [1, 2, 3, 4, 5]
+        >>> partition_dataset(data_module, ratios=[0.6, 0.2, 0.2], shuffle=False)
         [[1, 2, 3], [4], [5]]
-        >>> partition_dataset(data, num_partitions=2, shuffle=False)
+        >>> partition_dataset(data_module, num_partitions=2, shuffle=False)
         [[1, 3, 5], [2, 4]]
-        >>> partition_dataset(data, num_partitions=2, shuffle=False, even_divisible=True, drop_last=True)
+        >>> partition_dataset(data_module, num_partitions=2, shuffle=False, even_divisible=True, drop_last=True)
         [[1, 3], [2, 4]]
-        >>> partition_dataset(data, num_partitions=2, shuffle=False, even_divisible=True, drop_last=False)
+        >>> partition_dataset(data_module, num_partitions=2, shuffle=False, even_divisible=True, drop_last=False)
         [[1, 3, 5], [2, 4, 1]]
-        >>> partition_dataset(data, num_partitions=2, shuffle=False, even_divisible=False, drop_last=False)
+        >>> partition_dataset(data_module, num_partitions=2, shuffle=False, even_divisible=False, drop_last=False)
         [[1, 3, 5], [2, 4]]
 
     """
@@ -1219,25 +1219,25 @@ def partition_dataset(
 
     if not num_partitions:
         raise ValueError("must specify number of partitions or ratios.")
-    # evenly split the data without ratios
+    # evenly split the data_module without ratios
     if not even_divisible and drop_last:
         raise RuntimeError("drop_last only works when even_divisible is True.")
     if data_len < num_partitions:
-        raise RuntimeError(f"there is no enough data to be split into {num_partitions} partitions.")
+        raise RuntimeError(f"there is no enough data_module to be split into {num_partitions} partitions.")
 
     if drop_last and data_len % num_partitions != 0:
         # split to nearest available length that is evenly divisible
         num_samples = math.ceil((data_len - num_partitions) / num_partitions)
     else:
         num_samples = math.ceil(data_len / num_partitions)
-    # use original data length if not even divisible
+    # use original data_module length if not even divisible
     total_size = num_samples * num_partitions if even_divisible else data_len
 
     if not drop_last and total_size - data_len > 0:
         # add extra samples to make it evenly divisible
         indices += indices[: (total_size - data_len)]
     else:
-        # remove tail of data to make it evenly divisible
+        # remove tail of data_module to make it evenly divisible
         indices = indices[:total_size]
 
     for i in range(num_partitions):
@@ -1260,25 +1260,25 @@ def partition_dataset_classes(
     """
     Split the dataset into N partitions based on the given class labels.
     It can make sure the same ratio of classes in every partition.
-    Others are same as :py:class:`monai.data.partition_dataset`.
+    Others are same as :py:class:`monai.data_module.partition_dataset`.
 
     Args:
-        data: input dataset to split, expect a list of data.
-        classes: a list of labels to help split the data, the length must match the length of data.
+        data: input dataset to split, expect a list of data_module.
+        classes: a list of labels to help split the data_module, the length must match the length of data_module.
         ratios: a list of ratio number to split the dataset, like [8, 1, 1].
         num_partitions: expected number of the partitions to evenly split, only works when no `ratios`.
         shuffle: whether to shuffle the original dataset before splitting.
         seed: random seed to shuffle the dataset, only works when `shuffle` is True.
         drop_last: only works when `even_divisible` is False and no ratios specified.
-            if True, will drop the tail of the data to make it evenly divisible across partitions.
-            if False, will add extra indices to make the data evenly divisible across partitions.
+            if True, will drop the tail of the data_module to make it evenly divisible across partitions.
+            if False, will add extra indices to make the data_module evenly divisible across partitions.
         even_divisible: if True, guarantee every partition has same length.
 
     Examples::
 
-        >>> data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+        >>> data_module = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
         >>> classes = [2, 0, 2, 1, 3, 2, 2, 0, 2, 0, 3, 3, 1, 3]
-        >>> partition_dataset_classes(data, classes, shuffle=False, ratios=[2, 1])
+        >>> partition_dataset_classes(data_module, classes, shuffle=False, ratios=[2, 1])
         [[2, 8, 4, 1, 3, 6, 5, 11, 12], [10, 13, 7, 9, 14]]
 
     """
@@ -1325,8 +1325,8 @@ def resample_datalist(data: Sequence, factor: float, random_pick: bool = False, 
         data: original datalist to scale.
         factor: scale factor for the datalist, for example, factor=4.5, repeat the datalist 4 times and plus
             50% of the original datalist.
-        random_pick: whether to randomly pick data if scale factor has decimal part.
-        seed: random seed to randomly pick data.
+        random_pick: whether to randomly pick data_module if scale factor has decimal part.
+        seed: random seed to randomly pick data_module.
 
     """
     scale, repeats = math.modf(factor)
@@ -1342,7 +1342,7 @@ def resample_datalist(data: Sequence, factor: float, random_pick: bool = False, 
 
 def select_cross_validation_folds(partitions: Sequence[Iterable], folds: Sequence[int] | int) -> list:
     """
-    Select cross validation data based on data partitions and specified fold index.
+    Select cross validation data_module based on data_module partitions and specified fold index.
     if a list of fold indices is provided, concatenate the partitions of these folds.
 
     Args:
@@ -1369,7 +1369,7 @@ def json_hashing(item) -> bytes:
     """
 
     Args:
-        item: data item to be hashed
+        item: data_module item to be hashed
 
     Returns: the corresponding hash key
 
@@ -1389,7 +1389,7 @@ def pickle_hashing(item, protocol=pickle.HIGHEST_PROTOCOL) -> bytes:
     """
 
     Args:
-        item: data item to be hashed
+        item: data_module item to be hashed
         protocol: protocol version used for pickling,
             defaults to `pickle.HIGHEST_PROTOCOL`.
 
@@ -1423,18 +1423,18 @@ def convert_tables_to_dicts(
 ) -> list[dict[str, Any]]:
     """
     Utility to join pandas tables, select rows, columns and generate groups.
-    Will return a list of dictionaries, every dictionary maps to a row of data in tables.
+    Will return a list of dictionaries, every dictionary maps to a row of data_module in tables.
 
     Args:
-        dfs: data table in pandas Dataframe format. if providing a list of tables, will join them.
+        dfs: data_module table in pandas Dataframe format. if providing a list of tables, will join them.
         row_indices: indices of the expected rows to load. it should be a list,
             every item can be a int number or a range `[start, end)` for the indices.
             for example: `row_indices=[[0, 100], 200, 201, 202, 300]`. if None,
             load all the rows in the file.
         col_names: names of the expected columns to load. if None, load all the columns.
-        col_types: `type` and `default value` to convert the loaded columns, if None, use original data.
+        col_types: `type` and `default value` to convert the loaded columns, if None, use original data_module.
             it should be a dictionary, every item maps to an expected column, the `key` is the column
-            name and the `value` is None or a dictionary to define the default value and data type.
+            name and the `value` is None or a dictionary to define the default value and data_module type.
             the supported keys in dictionary are: ["type", "default"], and note that the value of `default`
             should not be `None`. for example::
 
@@ -1473,7 +1473,7 @@ def convert_tables_to_dicts(
         defaults = {k: v["default"] for k, v in col_types.items() if v is not None and v.get("default") is not None}
         if defaults:
             data_ = data_.fillna(value=defaults)
-        # convert data types
+        # convert data_module types
         types = {k: v["type"] for k, v in col_types.items() if v is not None and "type" in v}
         if types:
             data_ = data_.astype(dtype=types, copy=False)
@@ -1484,7 +1484,7 @@ def convert_tables_to_dicts(
         groups: dict[str, list] = {}
         for name, cols in col_groups.items():
             groups[name] = df.loc[rows, cols].values
-        # invert items of groups to every row of data
+        # invert items of groups to every row of data_module
         data = [dict(d, **{k: v[i] for k, v in groups.items()}) for i, d in enumerate(data)]
 
     return data

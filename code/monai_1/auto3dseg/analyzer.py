@@ -58,7 +58,7 @@ __all__ = [
 class Analyzer(MapTransform, ABC):
     """
     The Analyzer component is a base class. Other classes inherit this class will provide a callable
-    with the same class name and produces one pre-formatted dictionary for the input data. The format
+    with the same class name and produces one pre-formatted dictionary for the input data_module. The format
     is pre-defined by the init function of the class that inherit this base class. Function operations
     can also be registered before the runtime of the callable.
 
@@ -135,7 +135,7 @@ class Analyzer(MapTransform, ABC):
 
         Args:
             func: Operation sub-class object that represents statistical operations. The func object
-                should have a `data` dictionary which stores the statistical operation information.
+                should have a `data_module` dictionary which stores the statistical operation information.
                 For some operations (ImageStats for example), it may also contain the data_addon
                 property, which is part of the update process.
 
@@ -176,7 +176,7 @@ class ImageStats(Analyzer):
     Analyzer to extract image stats properties for each case(image).
 
     Args:
-        image_key: the key to find image data in the callable function input (data)
+        image_key: the key to find image data_module in the callable function input (data_module)
 
     Examples:
 
@@ -184,7 +184,7 @@ class ImageStats(Analyzer):
 
         import numpy as np
         from monai.auto3dseg import ImageStats
-        from monai.data import MetaTensor
+        from monai.data_module import MetaTensor
 
         input = {}
         input['image'] = np.random.rand(1,30,30,30)
@@ -193,7 +193,7 @@ class ImageStats(Analyzer):
         print(analyzer(input)["image_stats"])
 
     Notes:
-        if the image data is NumPy array, the spacing stats will be [1.0] * `ndims` of the array,
+        if the image data_module is NumPy array, the spacing stats will be [1.0] * `ndims` of the array,
         where the `ndims` is the lesser value between the image dimension and 3.
 
     """
@@ -278,8 +278,8 @@ class FgImageStats(Analyzer):
     Analyzer to extract foreground label properties for each case(image and label).
 
     Args:
-        image_key: the key to find image data in the callable function input (data)
-        label_key: the key to find label data in the callable function input (data)
+        image_key: the key to find image data_module in the callable function input (data_module)
+        label_key: the key to find label data_module in the callable function input (data_module)
 
     Examples:
 
@@ -359,8 +359,8 @@ class LabelStats(Analyzer):
     Analyzer to extract label stats properties for each case(image and label).
 
     Args:
-        image_key: the key to find image data in the callable function input (data)
-        label_key: the key to find label data in the callable function input (data)
+        image_key: the key to find image data_module in the callable function input (data_module)
+        label_key: the key to find label data_module in the callable function input (data_module)
         do_ccp: performs connected component analysis. Default is True.
 
     Examples:
@@ -588,7 +588,7 @@ class ImageStatsSumm(Analyzer):
             raise ValueError(f"Callable {self.__class__} input list is empty")
 
         if self.stats_name not in data[0]:
-            raise KeyError(f"{self.stats_name} is not in input data")
+            raise KeyError(f"{self.stats_name} is not in input data_module")
 
         report = deepcopy(self.get_report_format())
 
@@ -662,7 +662,7 @@ class FgImageStatsSumm(Analyzer):
             raise ValueError(f"Callable {self.__class__} input list is empty")
 
         if self.stats_name not in data[0]:
-            raise KeyError(f"{self.stats_name} is not in input data.")
+            raise KeyError(f"{self.stats_name} is not in input data_module.")
 
         report = deepcopy(self.get_report_format())
         intst_str = ImageStatsKeys.INTENSITY
@@ -746,7 +746,7 @@ class LabelStatsSumm(Analyzer):
             raise ValueError(f"Callable {self.__class__} input list is empty")
 
         if self.stats_name not in data[0]:
-            raise KeyError(f"{self.stats_name} is not in input data")
+            raise KeyError(f"{self.stats_name} is not in input data_module")
 
         report = deepcopy(self.get_report_format())
         # unique class ID
@@ -811,7 +811,7 @@ class LabelStatsSumm(Analyzer):
 class FilenameStats(Analyzer):
     """
     This class finds the file path for the loaded image/label and writes the info
-    into the data pipeline as a monai transforms.
+    into the data_module pipeline as a monai transforms.
 
     Args:
         key: the key to fetch the filename (for example, "image", "label").
@@ -827,7 +827,7 @@ class FilenameStats(Analyzer):
         d = dict(data)
 
         if self.key:  # when there is no (label) file, key can be None
-            if self.key not in d:  # check whether image/label is in the data
+            if self.key not in d:  # check whether image/label is in the data_module
                 raise ValueError(f"Data with key {self.key} is missing.")
             if not isinstance(d[self.key], MetaTensor):
                 raise ValueError(f"Value type of {self.key} is not MetaTensor.")
@@ -845,7 +845,7 @@ class ImageHistogram(Analyzer):
     Analyzer to compute intensity histogram.
 
     Args:
-        image_key: the key to find image data in the callable function input (data)
+        image_key: the key to find image data_module in the callable function input (data_module)
         hist_bins: list of positive integers (one for each channel) for setting the number of bins used to
             compute the histogram. Defaults to [100].
         hist_range: list of lists of two floats (one for each channel) setting the intensity range to
@@ -1008,7 +1008,7 @@ class ImageHistogramSumm(Analyzer):
             raise ValueError(f"Callable {self.__class__} input list is empty")
 
         if self.stats_name not in data[0]:
-            raise KeyError(f"{self.stats_name} is not in input data")
+            raise KeyError(f"{self.stats_name} is not in input data_module")
 
         summ_histogram: dict = {}
 

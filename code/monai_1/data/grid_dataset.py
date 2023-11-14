@@ -30,7 +30,7 @@ __all__ = ["PatchDataset", "GridPatchDataset", "PatchIter", "PatchIterd"]
 class PatchIter:
     """
     Return a patch generator with predefined properties such as `patch_size`.
-    Typically used with :py:class:`monai.data.GridPatchDataset`.
+    Typically used with :py:class:`monai.data_module.GridPatchDataset`.
 
     """
 
@@ -89,9 +89,9 @@ class PatchIter:
 
 class PatchIterd:
     """
-    Dictionary-based wrapper of :py:class:`monai.data.PatchIter`.
-    Return a patch generator for dictionary data and the coordinate, Typically used
-    with :py:class:`monai.data.GridPatchDataset`.
+    Dictionary-based wrapper of :py:class:`monai.data_module.PatchIter`.
+    Return a patch generator for dictionary data_module and the coordinate, Typically used
+    with :py:class:`monai.data_module.GridPatchDataset`.
     Suppose all the expected fields specified by `keys` have same shape.
 
     Args:
@@ -135,7 +135,7 @@ class PatchIterd:
         for patch in zip(*[self.patch_iter(d[key]) for key in self.keys]):
             coords = patch[0][1]  # use the coordinate of the first item
             ret = {k: v[0] for k, v in zip(self.keys, patch)}
-            # fill in the extra keys with unmodified data
+            # fill in the extra keys with unmodified data_module
             for k in set(d.keys()).difference(set(self.keys)):
                 ret[k] = deepcopy(d[k])
             # also store the `coordinate`, `spatial shape of original image`, `start position` in the dictionary
@@ -147,14 +147,14 @@ class PatchIterd:
 
 class GridPatchDataset(IterableDataset):
     """
-    Yields patches from data read from an image dataset.
+    Yields patches from data_module read from an image dataset.
     Typically used with `PatchIter` or `PatchIterd` so that the patches are chosen in a contiguous grid sampling scheme.
 
      .. code-block:: python
 
         import numpy as np
 
-        from monai.data import GridPatchDataset, DataLoader, PatchIter, RandShiftIntensity
+        from monai.data_module import GridPatchDataset, DataLoader, PatchIter, RandShiftIntensity
 
         # image-level dataset
         images = [np.arange(16, dtype=float).reshape(1, 4, 4),
@@ -165,7 +165,7 @@ class GridPatchDataset(IterableDataset):
         patch_intensity = RandShiftIntensity(offsets=1.0, prob=1.0)
 
         # construct the dataset
-        ds = GridPatchDataset(data=images,
+        ds = GridPatchDataset(data_module=images,
                               patch_iter=patch_iter,
                               transform=patch_intensity)
         # use the grid patch dataset
@@ -178,11 +178,11 @@ class GridPatchDataset(IterableDataset):
         #                          [[0, 1], [2, 4], [0, 2]]])
 
     Args:
-        data: the data source to read image data from.
+        data: the data_module source to read image data_module from.
         patch_iter: converts an input image (item from dataset) into a iterable of image patches.
             `patch_iter(dataset[idx])` must yield a tuple: (patches, coordinates).
-            see also: :py:class:`monai.data.PatchIter` or :py:class:`monai.data.PatchIterd`.
-        transform: a callable data transform operates on the patches.
+            see also: :py:class:`monai.data_module.PatchIter` or :py:class:`monai.data_module.PatchIterd`.
+        transform: a callable data_module transform operates on the patches.
         with_coordinates: whether to yield the coordinates of each patch, default to `True`.
 
     """
@@ -222,7 +222,7 @@ class PatchDataset(Dataset):
 
         import numpy as np
 
-        from monai.data import PatchDataset, DataLoader
+        from monai.data_module import PatchDataset, DataLoader
         from monai.transforms import RandSpatialCropSamples, RandShiftIntensity
 
         # image dataset

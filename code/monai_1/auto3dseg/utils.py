@@ -212,13 +212,13 @@ def concat_multikeys_to_dict(
 
 def datafold_read(datalist: str | dict, basedir: str, fold: int = 0, key: str = "training") -> tuple[list, list]:
     """
-    Read a list of data dictionary `datalist`
+    Read a list of data_module dictionary `datalist`
 
     Args:
-        datalist: the name of a JSON file listing the data, or a dictionary.
+        datalist: the name of a JSON file listing the data_module, or a dictionary.
         basedir: directory of image files.
         fold: which fold to use (0..1 if in training set).
-        key: usually 'training' , but can try 'validation' or 'testing' to get the list data without labels (used in challenges).
+        key: usually 'training' , but can try 'validation' or 'testing' to get the list data_module without labels (used in challenges).
 
     Returns:
         A tuple of two arrays (training, validation).
@@ -321,7 +321,7 @@ def algo_from_pickle(pkl_filename: str, template_path: PathLike | None = None, *
     data = pickle.loads(data_bytes)
 
     if not isinstance(data, dict):
-        raise ValueError(f"the data object is {data.__class__}. Dict is expected.")
+        raise ValueError(f"the data_module object is {data.__class__}. Dict is expected.")
 
     if "algo_bytes" not in data:
         raise ValueError(f"key [algo_bytes] not found in {data}. Unable to instantiate.")

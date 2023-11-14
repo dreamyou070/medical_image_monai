@@ -38,13 +38,13 @@ class PatchWSIDataset(Dataset):
         data: the list of input samples including image, location, and label (see the note below for more details).
         patch_size: the size of patch to be extracted from the whole slide image.
         patch_level: the level at which the patches to be extracted (default to 0).
-        transform: transforms to be executed on input data.
+        transform: transforms to be executed on input data_module.
         include_label: whether to load and include labels in the output
         center_location: whether the input location information is the position of the center of the patch
-        additional_meta_keys: the list of keys for items to be copied to the output metadata from the input data
+        additional_meta_keys: the list of keys for items to be copied to the output metadata from the input data_module
         reader: the module to be used for loading whole slide imaging. If `reader` is
 
-            - a string, it defines the backend of `monai.data.WSIReader`. Defaults to cuCIM.
+            - a string, it defines the backend of `monai.data_module.WSIReader`. Defaults to cuCIM.
             - a class (inherited from `BaseWSIReader`), it is initialized and set as wsi_reader.
             - an instance of a class inherited from `BaseWSIReader`, it is set as the wsi_reader.
 
@@ -55,7 +55,7 @@ class PatchWSIDataset(Dataset):
         {"image": MetaTensor, "label": torch.Tensor}
 
     Note:
-        The input data has the following form as an example:
+        The input data_module has the following form as an example:
 
         .. code-block:: python
 
@@ -148,7 +148,7 @@ class PatchWSIDataset(Dataset):
         return self.wsi_reader.get_data(wsi=wsi_obj, location=location, size=size, level=level)
 
     def _transform(self, index: int):
-        # Get a single entry of data
+        # Get a single entry of data_module
         sample: dict = self.data[index]
 
         # Extract patch image and associated metadata
@@ -184,13 +184,13 @@ class SlidingPatchWSIDataset(Randomizable, PatchWSIDataset):
         offset: the offset of image to extract patches (the starting position of the upper left patch).
         offset_limits: if offset is set to "random", a tuple of integers defining the lower and upper limit of the
             random offset for all dimensions, or a tuple of tuples that defines the limits for each dimension.
-        transform: transforms to be executed on input data.
+        transform: transforms to be executed on input data_module.
         include_label: whether to load and include labels in the output
         center_location: whether the input location information is the position of the center of the patch
-        additional_meta_keys: the list of keys for items to be copied to the output metadata from the input data
+        additional_meta_keys: the list of keys for items to be copied to the output metadata from the input data_module
         reader: the module to be used for loading whole slide imaging. Defaults to cuCIM. If `reader` is
 
-            - a string, it defines the backend of `monai.data.WSIReader`.
+            - a string, it defines the backend of `monai.data_module.WSIReader`.
             - a class (inherited from `BaseWSIReader`), it is initialized and set as wsi_reader,
             - an instance of a class inherited from `BaseWSIReader`, it is set as the wsi_reader.
 
@@ -198,7 +198,7 @@ class SlidingPatchWSIDataset(Randomizable, PatchWSIDataset):
         kwargs: additional arguments to pass to `WSIReader` or provided whole slide reader class
 
     Note:
-        The input data has the following form as an example:
+        The input data_module has the following form as an example:
 
         .. code-block:: python
 
@@ -328,20 +328,20 @@ class MaskedPatchWSIDataset(PatchWSIDataset):
         patch_size: the size of patch to be extracted from the whole slide image.
         patch_level: the level at which the patches to be extracted (default to 0).
         mask_level: the resolution level at which the mask is created.
-        transform: transforms to be executed on input data.
+        transform: transforms to be executed on input data_module.
         include_label: whether to load and include labels in the output
         center_location: whether the input location information is the position of the center of the patch
-        additional_meta_keys: the list of keys for items to be copied to the output metadata from the input data
+        additional_meta_keys: the list of keys for items to be copied to the output metadata from the input data_module
         reader: the module to be used for loading whole slide imaging. Defaults to cuCIM. If `reader` is
 
-            - a string, it defines the backend of `monai.data.WSIReader`.
+            - a string, it defines the backend of `monai.data_module.WSIReader`.
             - a class (inherited from `BaseWSIReader`), it is initialized and set as wsi_reader,
             - an instance of a class inherited from `BaseWSIReader`, it is set as the wsi_reader.
 
         kwargs: additional arguments to pass to `WSIReader` or provided whole slide reader class
 
     Note:
-        The input data has the following form as an example:
+        The input data_module has the following form as an example:
 
         .. code-block:: python
 

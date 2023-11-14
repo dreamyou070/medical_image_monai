@@ -56,7 +56,7 @@ class Interaction:
 
     def __call__(self, engine: SupervisedTrainer | SupervisedEvaluator, batchdata: dict[str, torch.Tensor]) -> dict:
         if batchdata is None:
-            raise ValueError("Must provide batch data for current iteration.")
+            raise ValueError("Must provide batch data_module for current iteration.")
 
         for j in range(self.max_interactions):
             inputs, _ = engine.prepare_batch(batchdata)
@@ -76,7 +76,7 @@ class Interaction:
 
             batchdata.update({CommonKeys.PRED: predictions})
 
-            # decollate batch data to execute click transforms
+            # decollate batch data_module to execute click transforms
             batchdata_list = decollate_batch(batchdata, detach=True)
             for i in range(len(batchdata_list)):
                 batchdata_list[i][self.key_probability] = (

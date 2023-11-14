@@ -72,7 +72,7 @@ def register_writer(ext_name, *im_writers):
 
     .. code-block:: python
 
-        from monai.data import register_writer
+        from monai.data_module import register_writer
         # `MyWriter` must implement `ImageWriter` interface
         register_writer("nii", MyWriter)
 
@@ -128,20 +128,20 @@ class ImageWriter:
 
     Main aspects to be considered are:
 
-        - dimensionality of the data array, arrangements of spatial dimensions and channel/time dimensions
+        - dimensionality of the data_module array, arrangements of spatial dimensions and channel/time dimensions
             - ``convert_to_channel_last()``
-        - metadata of the current affine and output affine, the data array should be converted accordingly
+        - metadata of the current affine and output affine, the data_module array should be converted accordingly
             - ``get_meta_info()``
             - ``resample_if_needed()``
-        - data type handling of the output image (as part of ``resample_if_needed()``)
+        - data_module type handling of the output image (as part of ``resample_if_needed()``)
 
     Subclasses of this class should implement the backend-specific functions:
 
-        - ``set_data_array()`` to set the data array (input must be numpy array or torch tensor)
-            - this method sets the backend object's data part
+        - ``set_data_array()`` to set the data_module array (input must be numpy array or torch tensor)
+            - this method sets the backend object's data_module part
         - ``set_metadata()`` to set the metadata and output affine
             - this method sets the metadata including affine handling and image resampling
-        - backend-specific data object ``create_backend_obj()``
+        - backend-specific data_module object ``create_backend_obj()``
         - backend-specific writing function ``write()``
 
     The primary usage of subclasses of ``ImageWriter`` is:
@@ -165,12 +165,12 @@ class ImageWriter:
 
     The ``metadata`` could optionally have the following keys:
 
-        - ``'original_affine'``: for data original affine, it will be the
+        - ``'original_affine'``: for data_module original affine, it will be the
             affine of the output object, defaulting to an identity matrix.
-        - ``'affine'``: it should specify the current data affine, defaulting to an identity matrix.
-        - ``'spatial_shape'``: for data output spatial shape.
+        - ``'affine'``: it should specify the current data_module affine, defaulting to an identity matrix.
+        - ``'spatial_shape'``: for data_module output spatial shape.
 
-    When ``metadata`` is specified, the saver will may resample data from the space defined by
+    When ``metadata`` is specified, the saver will may resample data_module from the space defined by
     `"affine"` to the space defined by `"original_affine"`, for more details, please refer to the
     ``resample_if_needed`` method.
     """
@@ -199,7 +199,7 @@ class ImageWriter:
     @classmethod
     def create_backend_obj(cls, data_array: NdarrayOrTensor, **kwargs) -> np.ndarray:
         """
-        Subclass should implement this method to return a backend-specific data representation object.
+        Subclass should implement this method to return a backend-specific data_module representation object.
         This method is used by ``cls.write`` and the input ``data_array`` is assumed 'channel-last'.
         """
         return convert_data_type(data_array, np.ndarray)[0]
@@ -230,10 +230,10 @@ class ImageWriter:
         respectively. When saving multiple time steps or multiple channels,
         time and/or modality axes should be appended after the first three
         dimensions. For example, shape of 2D eight-class segmentation
-        probabilities to be saved could be `(64, 64, 1, 8)`. Also, data in
+        probabilities to be saved could be `(64, 64, 1, 8)`. Also, data_module in
         shape `(64, 64, 8)` or `(64, 64, 8, 1)` will be considered as a
         single-channel 3D image. The ``convert_to_channel_last`` method can be
-        used to convert the data to the format described here.
+        used to convert the data_module to the format described here.
 
         Note that the shape of the resampled ``data_array`` may subject to some
         rounding errors. For example, resampling a 20x20 pixel image from pixel
@@ -242,10 +242,10 @@ class ImageWriter:
         2.0)-mm to (3.0, 3.0)-mm space will output a 14x14-pixel image, where
         the image shape is rounded from 13.333x13.333 pixels. In this case
         ``output_spatial_shape`` could be specified so that this function
-        writes image data to a designated shape.
+        writes image data_module to a designated shape.
 
         Args:
-            data_array: input data array to be converted.
+            data_array: input data_module array to be converted.
             affine: the current affine of ``data_array``. Defaults to identity
             target_affine: the designated affine of ``data_array``.
                 The actual output affine might be different from this value due to precision changes.
@@ -261,9 +261,9 @@ class ImageWriter:
                 See also: https://pytorch.org/docs/stable/nn.functional.html#grid-sample
             align_corners: boolean option of ``grid_sample`` to handle the corner convention.
                 See also: https://pytorch.org/docs/stable/nn.functional.html#grid-sample
-            dtype: data type for resampling computation. Defaults to
-                ``np.float64`` for best precision. If ``None``, use the data type of input data.
-                The output data type of this method is always ``np.float32``.
+            dtype: data_module type for resampling computation. Defaults to
+                ``np.float64`` for best precision. If ``None``, use the data_module type of input data_module.
+                The output data_module type of this method is always ``np.float32``.
         """
         orig_type = type(data_array)
         data_array = convert_to_tensor(data_array, track_meta=True)
@@ -290,7 +290,7 @@ class ImageWriter:
         contiguous: bool = False,
     ):
         """
-        Rearrange the data array axes to make the `channel_dim`-th dim the last
+        Rearrange the data_module array axes to make the `channel_dim`-th dim the last
         dimension and ensure there are ``spatial_ndim`` number of spatial
         dimensions.
 
@@ -298,8 +298,8 @@ class ImageWriter:
         applied to remove any trailing singleton dimensions.
 
         Args:
-            data: input data to be converted to "channel-last" format.
-            channel_dim: specifies the channel axes of the data array to move to the last.
+            data: input data_module to be converted to "channel-last" format.
+            channel_dim: specifies the channel axes of the data_module array to move to the last.
                 ``None`` indicates no channel dimension, a new axis will be appended as the channel dimension.
                 a sequence of integers indicates multiple non-spatial dimensions.
             squeeze_end_dims: if ``True``, any trailing singleton dimensions will be removed (after the channel
@@ -310,7 +310,7 @@ class ImageWriter:
                 spatial dimensions as the input.
             contiguous: if ``True``, the output will be contiguous.
         """
-        # change data to "channel last" format
+        # change data_module to "channel last" format
         if channel_dim is not None:
             _chns = ensure_tuple(channel_dim)
             data = moveaxis(data, _chns, tuple(range(-len(_chns), 0)))
@@ -318,7 +318,7 @@ class ImageWriter:
             data = data[..., None]
         # To ensure at least ``spatial_ndim`` number of spatial dims
         if spatial_ndim:
-            while len(data.shape) < spatial_ndim + 1:  # assuming the data has spatial + channel dims
+            while len(data.shape) < spatial_ndim + 1:  # assuming the data_module has spatial + channel dims
                 data = data[..., None, :]
             while len(data.shape) > spatial_ndim + 1:
                 data = data[..., 0, :]
@@ -346,12 +346,12 @@ class ImageWriter:
 @require_pkg(pkg_name="itk")
 class ITKWriter(ImageWriter):
     """
-    Write data and metadata into files on disk using ITK-python.
+    Write data_module and metadata into files on disk using ITK-python.
 
     .. code-block:: python
 
         import numpy as np
-        from monai.data import ITKWriter
+        from monai.data_module import ITKWriter
 
         np_data = np.arange(48).reshape(3, 4, 4)
 
@@ -376,7 +376,7 @@ class ITKWriter(ImageWriter):
     def __init__(self, output_dtype: DtypeLike = np.float32, affine_lps_to_ras: bool | None = True, **kwargs):
         """
         Args:
-            output_dtype: output data type.
+            output_dtype: output data_module type.
             affine_lps_to_ras: whether to convert the affine matrix from "LPS" to "RAS". Defaults to ``True``.
                 Set to ``True`` to be consistent with ``NibabelWriter``,
                 otherwise the affine matrix is assumed already in the ITK convention.
@@ -400,9 +400,9 @@ class ITKWriter(ImageWriter):
         Convert ``data_array`` into 'channel-last' numpy ndarray.
 
         Args:
-            data_array: input data array with the channel dimension specified by ``channel_dim``.
-            channel_dim: channel dimension of the data array. Defaults to 0.
-                ``None`` indicates data without any channel dimension.
+            data_array: input data_module array with the channel dimension specified by ``channel_dim``.
+            channel_dim: channel dimension of the data_module array. Defaults to 0.
+                ``None`` indicates data_module without any channel dimension.
             squeeze_end_dims: if ``True``, any trailing singleton dimensions will be removed.
             kwargs: keyword arguments passed to ``self.convert_to_channel_last``,
                 currently support ``spatial_ndim`` and ``contiguous``, defauting to ``3`` and ``False`` respectively.
@@ -415,7 +415,7 @@ class ITKWriter(ImageWriter):
             spatial_ndim=kwargs.pop("spatial_ndim", 3),
             contiguous=kwargs.pop("contiguous", True),
         )
-        self.channel_dim = -1  # in most cases, the data is set to channel last
+        self.channel_dim = -1  # in most cases, the data_module is set to channel last
         if squeeze_end_dims and n_chns <= 1:  # num_channel==1 squeezed
             self.channel_dim = None
         if not squeeze_end_dims and n_chns < 1:  # originally no channel and convert_to_channel_last added a channel
@@ -429,7 +429,7 @@ class ITKWriter(ImageWriter):
         Args:
             meta_dict: a metadata dictionary for affine, original affine and spatial shape information.
                 Optional keys are ``"spatial_shape"``, ``"affine"``, ``"original_affine"``.
-            resample: if ``True``, the data will be resampled to the original affine (specified in ``meta_dict``).
+            resample: if ``True``, the data_module will be resampled to the original affine (specified in ``meta_dict``).
             options: keyword arguments passed to ``self.resample_if_needed``,
                 currently support ``mode``, ``padding_mode``, ``align_corners``, and ``dtype``,
                 defaulting to ``bilinear``, ``border``, ``False``, and ``np.float64`` respectively.
@@ -489,10 +489,10 @@ class ITKWriter(ImageWriter):
         Create an ITK object from ``data_array``. This method assumes a 'channel-last' ``data_array``.
 
         Args:
-            data_array: input data array.
-            channel_dim: channel dimension of the data array. This is used to create a Vector Image if it is not ``None``.
-            affine: affine matrix of the data array. This is used to compute `spacing`, `direction` and `origin`.
-            dtype: output data type.
+            data_array: input data_module array.
+            channel_dim: channel dimension of the data_module array. This is used to create a Vector Image if it is not ``None``.
+            affine: affine matrix of the data_module array. This is used to compute `spacing`, `direction` and `origin`.
+            dtype: output data_module type.
             affine_lps_to_ras: whether to convert the affine matrix from "LPS" to "RAS". Defaults to ``True``.
                 Set to ``True`` to be consistent with ``NibabelWriter``,
                 otherwise the affine matrix is assumed already in the ITK convention.
@@ -533,12 +533,12 @@ class ITKWriter(ImageWriter):
 @require_pkg(pkg_name="nibabel")
 class NibabelWriter(ImageWriter):
     """
-    Write data and metadata into files on disk using Nibabel.
+    Write data_module and metadata into files on disk using Nibabel.
 
     .. code-block:: python
 
         import numpy as np
-        from monai.data import NibabelWriter
+        from monai.data_module import NibabelWriter
 
         np_data = np.arange(48).reshape(3, 4, 4)
         writer = NibabelWriter()
@@ -554,7 +554,7 @@ class NibabelWriter(ImageWriter):
     def __init__(self, output_dtype: DtypeLike = np.float32, **kwargs):
         """
         Args:
-            output_dtype: output data type.
+            output_dtype: output data_module type.
             kwargs: keyword arguments passed to ``ImageWriter``.
 
         The constructor will create ``self.output_dtype`` internally.
@@ -570,9 +570,9 @@ class NibabelWriter(ImageWriter):
         Convert ``data_array`` into 'channel-last' numpy ndarray.
 
         Args:
-            data_array: input data array with the channel dimension specified by ``channel_dim``.
-            channel_dim: channel dimension of the data array. Defaults to 0.
-                ``None`` indicates data without any channel dimension.
+            data_array: input data_module array with the channel dimension specified by ``channel_dim``.
+            channel_dim: channel dimension of the data_module array. Defaults to 0.
+                ``None`` indicates data_module without any channel dimension.
             squeeze_end_dims: if ``True``, any trailing singleton dimensions will be removed.
             kwargs: keyword arguments passed to ``self.convert_to_channel_last``,
                 currently support ``spatial_ndim``, defauting to ``3``.
@@ -591,7 +591,7 @@ class NibabelWriter(ImageWriter):
         Args:
             meta_dict: a metadata dictionary for affine, original affine and spatial shape information.
                 Optional keys are ``"spatial_shape"``, ``"affine"``, ``"original_affine"``.
-            resample: if ``True``, the data will be resampled to the original affine (specified in ``meta_dict``).
+            resample: if ``True``, the data_module will be resampled to the original affine (specified in ``meta_dict``).
             options: keyword arguments passed to ``self.resample_if_needed``,
                 currently support ``mode``, ``padding_mode``, ``align_corners``, and ``dtype``,
                 defaulting to ``bilinear``, ``border``, ``False``, and ``np.float64`` respectively.
@@ -645,9 +645,9 @@ class NibabelWriter(ImageWriter):
         Create an Nifti1Image object from ``data_array``. This method assumes a 'channel-last' ``data_array``.
 
         Args:
-            data_array: input data array.
-            affine: affine matrix of the data array.
-            dtype: output data type.
+            data_array: input data_module array.
+            affine: affine matrix of the data_module array.
+            dtype: output data_module type.
             kwargs: keyword arguments. Current ``nib.nifti1.Nifti1Image`` will read
                 ``header``, ``extra``, ``file_map`` from this dictionary.
 
@@ -674,7 +674,7 @@ class NibabelWriter(ImageWriter):
 @require_pkg(pkg_name="PIL")
 class PILWriter(ImageWriter):
     """
-    Write image data into files on disk using pillow.
+    Write image data_module into files on disk using pillow.
 
     It's based on the Image module in PIL library:
     https://pillow.readthedocs.io/en/stable/reference/Image.html
@@ -682,7 +682,7 @@ class PILWriter(ImageWriter):
     .. code-block:: python
 
         import numpy as np
-        from monai.data import PILWriter
+        from monai.data_module import PILWriter
 
         np_data = np.arange(48).reshape(3, 4, 4)
         writer = PILWriter(np.uint8)
@@ -699,10 +699,10 @@ class PILWriter(ImageWriter):
     ):
         """
         Args:
-            output_dtype: output data type.
-            channel_dim: channel dimension of the data array. Defaults to 0.
-                ``None`` indicates data without any channel dimension.
-            scale: {``255``, ``65535``} postprocess data by clipping to [0, 1] and scaling
+            output_dtype: output data_module type.
+            channel_dim: channel dimension of the data_module array. Defaults to 0.
+                ``None`` indicates data_module without any channel dimension.
+            scale: {``255``, ``65535``} postprocess data_module by clipping to [0, 1] and scaling
                 [0, 255] (uint8) or [0, 65535] (uint16). Default is None to disable scaling.
             kwargs: keyword arguments passed to ``ImageWriter``.
         """
@@ -720,11 +720,11 @@ class PILWriter(ImageWriter):
         Convert ``data_array`` into 'channel-last' numpy ndarray.
 
         Args:
-            data_array: input data array with the channel dimension specified by ``channel_dim``.
-            channel_dim: channel dimension of the data array. Defaults to 0.
-                ``None`` indicates data without any channel dimension.
+            data_array: input data_module array with the channel dimension specified by ``channel_dim``.
+            channel_dim: channel dimension of the data_module array. Defaults to 0.
+                ``None`` indicates data_module without any channel dimension.
             squeeze_end_dims: if ``True``, any trailing singleton dimensions will be removed.
-            contiguous: if ``True``, the data array will be converted to a contiguous array. Default is ``False``.
+            contiguous: if ``True``, the data_module array will be converted to a contiguous array. Default is ``False``.
             kwargs: keyword arguments passed to ``self.convert_to_channel_last``,
                 currently support ``spatial_ndim``, defauting to ``2``.
         """
@@ -743,7 +743,7 @@ class PILWriter(ImageWriter):
         Args:
             meta_dict: a metadata dictionary for affine, original affine and spatial shape information.
                 Optional key is ``"spatial_shape"``.
-            resample: if ``True``, the data will be resampled to the spatial shape specified in ``meta_dict``.
+            resample: if ``True``, the data_module will be resampled to the spatial shape specified in ``meta_dict``.
             options: keyword arguments passed to ``self.resample_if_needed``,
                 currently support ``mode``, defaulting to ``bicubic``.
         """
@@ -795,7 +795,7 @@ class PILWriter(ImageWriter):
         """
         Resample ``data_array`` to ``output_spatial_shape`` if needed.
         Args:
-            data_array: input data array. This method assumes the 'channel-last' format.
+            data_array: input data_module array. This method assumes the 'channel-last' format.
             output_spatial_shape: output spatial shape.
             mode: interpolation mode, default is ``InterpolateMode.BICUBIC``.
         """
@@ -831,11 +831,11 @@ class PILWriter(ImageWriter):
         Create a PIL object from ``data_array``.
 
         Args:
-            data_array: input data array.
-            dtype: output data type.
-            scale: {``255``, ``65535``} postprocess data by clipping to [0, 1] and scaling
+            data_array: input data_module array.
+            dtype: output data_module type.
+            scale: {``255``, ``65535``} postprocess data_module by clipping to [0, 1] and scaling
                 [0, 255] (uint8) or [0, 65535] (uint16). Default is None to disable scaling.
-            reverse_indexing: if ``True``, the data array's first two dimensions will be swapped.
+            reverse_indexing: if ``True``, the data_module array's first two dimensions will be swapped.
             kwargs: keyword arguments. Currently ``PILImage.fromarray`` will read
                 ``image_mode`` from this dictionary, defaults to ``None``.
 
@@ -845,8 +845,8 @@ class PILWriter(ImageWriter):
         """
         data: np.ndarray = super().create_backend_obj(data_array)
         if scale:
-            # scale the data to be in an integer range
-            data = np.clip(data, 0.0, 1.0)  # png writer only can scale data in range [0, 1]
+            # scale the data_module to be in an integer range
+            data = np.clip(data, 0.0, 1.0)  # png writer only can scale data_module in range [0, 1]
 
             if scale == np.iinfo(np.uint8).max:
                 data = (scale * data).astype(np.uint8, copy=False)

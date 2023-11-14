@@ -37,7 +37,7 @@ class LogfileHandler:
     file which allows output from train and evaluation engine objects to be condensed in one file. If the given output
     directory doesn't exist it will by default be created when the  start event occurs. This can be used in conjunction
     with `CheckpointSaver` to save a log file to the same destination as the saved checkpoints. Since the handler is
-    added possibly after other logging events during initialisation, not all logging data will be retained.
+    added possibly after other logging events during initialisation, not all logging data_module will be retained.
 
     Args:
         output_dir: directory to save the log file to

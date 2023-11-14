@@ -69,7 +69,7 @@ PPRINT_CONFIG_N = 5
 def update_kwargs(args: str | dict | None = None, ignore_none: bool = True, **kwargs: Any) -> dict:
     """
     Update the `args` dictionary with the input `kwargs`.
-    For dict data, recursively update the content based on the keys.
+    For dict data_module, recursively update the content based on the keys.
 
     Example::
 
@@ -135,14 +135,14 @@ def _get_var_names(expr: str) -> list[str]:
 
 def _get_fake_spatial_shape(shape: Sequence[str | int], p: int = 1, n: int = 1, any: int = 1) -> tuple:
     """
-    Get spatial shape for fake data according to the specified shape pattern.
+    Get spatial shape for fake data_module according to the specified shape pattern.
     It supports `int` number and `string` with formats like: "32", "32 * n", "32 ** p", "32 ** p *n".
 
     Args:
         shape: specified pattern for the spatial shape.
-        p: power factor to generate fake data shape if dim of expected shape is "x**p", default to 1.
-        p: multiply factor to generate fake data shape if dim of expected shape is "x*n", default to 1.
-        any: specified size to generate fake data shape if dim of expected shape is "*", default to 1.
+        p: power factor to generate fake data_module shape if dim of expected shape is "x**p", default to 1.
+        p: multiply factor to generate fake data_module shape if dim of expected shape is "x*n", default to 1.
+        any: specified size to generate fake data_module shape if dim of expected shape is "*", default to 1.
 
     """
     ret = []
@@ -312,14 +312,14 @@ def download(
             https://catalog.ngc.nvidia.com/models?filters=&orderBy=scoreDESC&query=monai.
         version: version name of the target bundle to download, like: "0.1.0". If `None`, will download
             the latest version.
-        bundle_dir: target directory to store the downloaded data.
+        bundle_dir: target directory to store the downloaded data_module.
             Default is `bundle` subfolder under `torch.hub.get_dir()`.
         source: storage location name. This argument is used when `url` is `None`.
             In default, the value is achieved from the environment variable BUNDLE_DOWNLOAD_SRC, and
             it should be "ngc", "monaihosting" or "github".
         repo: repo name. This argument is used when `url` is `None` and `source` is "github".
             If used, it should be in the form of "repo_owner/repo_name/release_tag".
-        url: url to download the data. If not `None`, data will be downloaded directly
+        url: url to download the data_module. If not `None`, data_module will be downloaded directly
             and `source` will not be checked.
             If `name` is `None`, filename is determined by `monai.apps.utils._basename(url)`.
         remove_prefix: This argument is used when `source` is "ngc". Currently, all ngc bundles
@@ -471,7 +471,7 @@ def load(
             return an instantiated network that loaded the weights.
         3. If `load_ts_module` is `True`, return a triple that include a TorchScript module,
             the corresponding metadata dict, and extra files dict.
-            please check `monai.data.load_net_with_metadata` for more details.
+            please check `monai.data_module.load_net_with_metadata` for more details.
         4. If `return_state_dict` is True, return model weights, only used for compatibility
             when `model` and `net_name` are all `None`.
 
@@ -739,11 +739,11 @@ def run(
         python -m monai.bundle run --net %/path/to/another.json ...
 
         # Override config values with part content of another config file:
-        python -m monai.bundle run --net %/data/other.json#net_arg ...
+        python -m monai.bundle run --net %/data_module/other.json#net_arg ...
 
         # Set default args of `run` in a JSON / YAML file, help to record and simplify the command line.
         # Other args still can override the default args at runtime:
-        python -m monai.bundle run --args_file "/workspace/data/args.json" --config_file <config path>
+        python -m monai.bundle run --args_file "/workspace/data_module/args.json" --config_file <config path>
 
     Args:
         run_id: ID name of the expected config expression to run, default to "run".
@@ -769,7 +769,7 @@ def run(
         args_file: a JSON or YAML file to provide default values for `run_id`, `meta_file`,
             `config_file`, `logging`, and override pairs. so that the command line inputs can be simplified.
         override: id-value pairs to override or add the corresponding config content.
-            e.g. ``--net#input_chns 42``, ``--net %/data/other.json#net_arg``.
+            e.g. ``--net#input_chns 42``, ``--net %/data_module/other.json#net_arg``.
 
     """
 
@@ -893,9 +893,9 @@ def _get_net_io_info(parser: ConfigParser | None = None, prefix: str = "_meta_#n
     Returns:
         input_channels: the channel number of the `image` input.
         input_spatial_shape: the spatial shape of the `image` input.
-        input_dtype: the data type of the `image` input.
+        input_dtype: the data_module type of the `image` input.
         output_channels: the channel number of the output.
-        output_dtype: the data type of the output.
+        output_dtype: the data_module type of the output.
     """
     if not isinstance(parser, ConfigParser):
         raise AttributeError(f"Parameter parser should be a ConfigParser, got {type(parser)}.")
@@ -943,8 +943,8 @@ def verify_net_in_out(
     **override: Any,
 ) -> None:
     """
-    Verify the input and output data shape and data type of network defined in the metadata.
-    Will test with fake Tensor data according to the required data shape in `metadata`.
+    Verify the input and output data_module shape and data_module type of network defined in the metadata.
+    Will test with fake Tensor data_module according to the required data_module shape in `metadata`.
 
     Typical usage examples:
 
@@ -959,9 +959,9 @@ def verify_net_in_out(
         config_file: filepath of the config file to get network definition, if `None`, must be provided in `args_file`.
             if it is a list of file paths, the content of them will be merged.
         device: target device to run the network forward computation, if None, prefer to "cuda" if existing.
-        p: power factor to generate fake data shape if dim of expected shape is "x**p", default to 1.
-        n: multiply factor to generate fake data shape if dim of expected shape is "x*n", default to 1.
-        any: specified size to generate fake data shape if dim of expected shape is "*", default to 1.
+        p: power factor to generate fake data_module shape if dim of expected shape is "x**p", default to 1.
+        n: multiply factor to generate fake data_module shape if dim of expected shape is "x*n", default to 1.
+        any: specified size to generate fake data_module shape if dim of expected shape is "*", default to 1.
         extra_forward_args: a dictionary that contains other args for the forward function of the network.
             Default to an empty dictionary.
         args_file: a JSON or YAML file to provide default values for `net_id`, `meta_file`, `config_file`,
@@ -1028,8 +1028,8 @@ def verify_net_in_out(
         if output.shape[1] != output_channels:
             raise ValueError(f"output channel number `{output.shape[1]}` doesn't match: `{output_channels}`.")
         if output.dtype != output_dtype:
-            raise ValueError(f"dtype of output data `{output.dtype}` doesn't match: {output_dtype}.")
-    logger.info("data shape of network is verified with no error.")
+            raise ValueError(f"dtype of output data_module `{output.dtype}` doesn't match: {output_dtype}.")
+    logger.info("data_module shape of network is verified with no error.")
 
 
 def _export(
@@ -1366,7 +1366,7 @@ def trt_export(
 
     When exporting through the first way, some models suffer from the slowdown problem, since Torch-TensorRT
     may only convert a little part of the PyTorch model to the TensorRT engine. However when exporting through
-    the second way, some Python data structures like `dict` are not supported. And some TorchScript models are
+    the second way, some Python data_module structures like `dict` are not supported. And some TorchScript models are
     not supported by the ONNX if exported through `torch.jit.script`.
 
     Typical usage examples:
@@ -1529,7 +1529,7 @@ def init_bundle(
         ckpt_file: optional checkpoint file to copy into bundle
         network: if given instead of ckpt_file this network's weights will be stored in bundle
         dataset_license: if `True`, a default license file called "data_license.txt" will be produced. This
-            file is required if there are any license conditions stated for data your bundle uses.
+            file is required if there are any license conditions stated for data_module your bundle uses.
         metadata_str: optional metadata string to write to bundle, if not given a default will be used.
         inference_str: optional inference string to write to bundle, if not given a default will be used.
     """

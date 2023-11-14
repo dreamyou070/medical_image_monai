@@ -42,7 +42,7 @@ class _BatchInverseDataset(Dataset):
             data = PadListDataCollate.inverse(data)
 
         if not isinstance(self.invertible_transform, InvertibleTransform):
-            warnings.warn("transform is not invertible, can't invert transform for the input data.")
+            warnings.warn("transform is not invertible, can't invert transform for the input data_module.")
             return data
         return self.invertible_transform.inverse(data)
 
@@ -52,7 +52,7 @@ class _BatchInverseDataset(Dataset):
 
 class BatchInverseTransform(Transform):
     """
-    Perform inverse on a batch of data. This is useful if you have inferred a batch of images and want to invert
+    Perform inverse on a batch of data_module. This is useful if you have inferred a batch of images and want to invert
     them all.
     """
 
@@ -68,14 +68,14 @@ class BatchInverseTransform(Transform):
     ) -> None:
         """
         Args:
-            transform: a callable data transform on input data.
-            loader: data loader used to run `transforms` and generate the batch of data.
-            collate_fn: how to collate data after inverse transformations.
+            transform: a callable data_module transform on input data_module.
+            loader: data_module loader used to run `transforms` and generate the batch of data_module.
+            collate_fn: how to collate data_module after inverse transformations.
                 default won't do any collation, so the output will be a list of size batch size.
-            num_workers: number of workers when run data loader for inverse transforms,
+            num_workers: number of workers when run data_module loader for inverse transforms,
                 default to 0 as only run 1 iteration and multi-processing may be even slower.
                 if the transforms are really slow, set num_workers for multi-processing.
-                if set to `None`, use the `num_workers` of the transform data loader.
+                if set to `None`, use the `num_workers` of the transform data_module loader.
             detach: whether to detach the tensors. Scalars tensors will be detached into number types
                 instead of torch tensors.
             pad_batch: when the items in a batch indicate different batch size,
@@ -112,9 +112,9 @@ class BatchInverseTransform(Transform):
 
 class Decollated(MapTransform):
     """
-    Decollate a batch of data. If input is a dictionary, it also supports to only decollate specified keys.
+    Decollate a batch of data_module. If input is a dictionary, it also supports to only decollate specified keys.
     Note that unlike most MapTransforms, it will delete the other keys that are not specified.
-    if `keys=None`, it will decollate all the data in the input.
+    if `keys=None`, it will decollate all the data_module in the input.
     It replicates the scalar values to every item of the decollated list.
 
     Args:
@@ -150,7 +150,7 @@ class Decollated(MapTransform):
             d = data
         else:
             if not isinstance(data, dict):
-                raise TypeError("input data is not a dictionary, but specified keys to decollate.")
+                raise TypeError("input data_module is not a dictionary, but specified keys to decollate.")
             d = {}
             for key in self.key_iterator(data):
                 d[key] = data[key]

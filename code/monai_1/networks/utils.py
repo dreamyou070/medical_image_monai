@@ -153,7 +153,7 @@ def one_hot(labels: torch.Tensor, num_classes: int, dtype: torch.dtype = torch.f
             converted into integers `labels.long()`.
         num_classes: number of output channels, the corresponding length of `labels[dim]` will be converted to
             `num_classes` from `1`.
-        dtype: the data type of the output one_hot label.
+        dtype: the data_module type of the output one_hot label.
         dim: the dimension to be converted to `num_classes` channels from `1` channel, should be non-negative number.
 
     Example:
@@ -201,7 +201,7 @@ def predict_segmentation(logits: torch.Tensor, mutually_exclusive: bool = False,
     logits has shape `BCHW[D]`.
 
     Args:
-        logits: raw data of model output.
+        logits: raw data_module of model output.
         mutually_exclusive: if True, `logits` will be converted into a binary matrix using
             a combination of argmax, which is suitable for multi-classes task. Defaults to False.
         threshold: thresholding the prediction values if multi-labels task.
@@ -234,7 +234,7 @@ def normalize_transform(
     Args:
         shape: input spatial shape, a sequence of integers.
         device: device on which the returned affine will be allocated.
-        dtype: data type of the returned affine
+        dtype: data_module type of the returned affine
         align_corners: if True, consider -1 and 1 to refer to the centers of the
             corner pixels rather than the image corners.
             See also: https://pytorch.org/docs/stable/nn.functional.html#torch.nn.functional.grid_sample
@@ -460,7 +460,7 @@ def train_mode(*nets: nn.Module):
 def get_state_dict(obj: torch.nn.Module | Mapping):
     """
     Get the state dict of input object if has `state_dict`, otherwise, return object directly.
-    For data parallel model, automatically convert it to regular model first.
+    For data_module parallel model, automatically convert it to regular model first.
 
     Args:
         obj: input object to check and get the state_dict.
@@ -558,9 +558,9 @@ def copy_model_state(
 
 def save_state(src: torch.nn.Module | dict, path: PathLike, **kwargs):
     """
-    Save the state dict of input source data with PyTorch `save`.
+    Save the state dict of input source data_module with PyTorch `save`.
     It can save `nn.Module`, `state_dict`, a dictionary of `nn.Module` or `state_dict`.
-    And automatically convert the data parallel module to regular module.
+    And automatically convert the data_module parallel module to regular module.
     For example::
 
         save_state(net, path)
@@ -572,7 +572,7 @@ def save_state(src: torch.nn.Module | dict, path: PathLike, **kwargs):
     Refer to: https://pytorch.org/ignite/v0.4.8/generated/ignite.handlers.DiskSaver.html.
 
     Args:
-        src: input data to save, can be `nn.Module`, `state_dict`, a dictionary of `nn.Module` or `state_dict`.
+        src: input data_module to save, can be `nn.Module`, `state_dict`, a dictionary of `nn.Module` or `state_dict`.
         path: target file path to save the input object.
         kwargs: other args for the `save_obj` except for the `obj` and `path`.
             default `func` is `torch.save()`, details of the args:
@@ -613,7 +613,7 @@ def convert_to_onnx(
 
     Args:
         model: source PyTorch model to save.
-        inputs: input sample data used by pytorch.onnx.export. It is also used in ONNX model verification.
+        inputs: input sample data_module used by pytorch.onnx.export. It is also used in ONNX model verification.
         input_names: optional input names of the ONNX model.
         output_names: optional output names of the ONNX model.
         opset_version: version of the (ai.onnx) opset to target. Must be >= 7 and not exceed
@@ -725,7 +725,7 @@ def convert_to_torchscript(
 ):
     """
     Utility to convert a model into TorchScript model and save to file,
-    with optional input / output data verification.
+    with optional input / output data_module verification.
 
     Args:
         model: source PyTorch model to save.
@@ -735,7 +735,7 @@ def convert_to_torchscript(
             for more details: https://pytorch.org/docs/stable/generated/torch.jit.save.html.
         verify: whether to verify the input and output of TorchScript model.
             if `filename_or_obj` is not None, load the saved TorchScript model and verify.
-        inputs: input test data to verify model, should be a sequence of data, every item maps to a argument
+        inputs: input test data_module to verify model, should be a sequence of data_module, every item maps to a argument
             of `model()` function.
         device: target device to verify the model, if None, use CUDA if available.
         rtol: the relative tolerance when comparing the outputs of PyTorch model and TorchScript model.
@@ -749,7 +749,7 @@ def convert_to_torchscript(
     with torch.no_grad():
         if use_trace:
             if inputs is None:
-                raise ValueError("Missing input data for tracing convert.")
+                raise ValueError("Missing input data_module for tracing convert.")
             script_module = torch.jit.trace(model, example_inputs=inputs, **kwargs)
         else:
             script_module = torch.jit.script(model, **kwargs)
@@ -760,7 +760,7 @@ def convert_to_torchscript(
         if device is None:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if inputs is None:
-            raise ValueError("Missing input data for verification.")
+            raise ValueError("Missing input data_module for verification.")
 
         inputs = [i.to(device) if isinstance(i, torch.Tensor) else i for i in inputs]
         ts_model = torch.jit.load(filename_or_obj) if filename_or_obj is not None else script_module
@@ -872,7 +872,7 @@ def convert_to_trt(
     **kwargs,
 ):
     """
-    Utility to export a model into a TensorRT engine-based TorchScript model with optional input / output data verification.
+    Utility to export a model into a TensorRT engine-based TorchScript model with optional input / output data_module verification.
 
     There are two ways to export a model:
     1, Torch-TensorRT way: PyTorch module ---> TorchScript module ---> TensorRT engine-based TorchScript.
@@ -881,7 +881,7 @@ def convert_to_trt(
 
     When exporting through the first way, some models suffer from the slowdown problem, since Torch-TensorRT
     may only convert a little part of the PyTorch model to the TensorRT engine. However when exporting through
-    the second way, some Python data structures like `dict` are not supported. And some TorchScript models are
+    the second way, some Python data_module structures like `dict` are not supported. And some TorchScript models are
     not supported by the ONNX if exported through `torch.jit.script`.
 
     Args:
@@ -990,7 +990,7 @@ def convert_to_trt(
     # verify the outputs between the TensorRT model and PyTorch model
     if verify:
         if inputs is None:
-            raise ValueError("Missing input data for verification.")
+            raise ValueError("Missing input data_module for verification.")
 
         trt_model = torch.jit.load(filename_or_obj) if filename_or_obj is not None else trt_model
 
