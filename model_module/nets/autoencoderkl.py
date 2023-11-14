@@ -31,10 +31,8 @@ class Upsample(nn.Module):
     def __init__(self, spatial_dims: int, in_channels: int, use_convtranspose: bool) -> None:
         super().__init__()
         if use_convtranspose:
-            self.conv = Convolution(
-                spatial_dims=spatial_dims,
-                in_channels=in_channels,
-                out_channels=in_channels,
+            self.conv = Convolution(spatial_dims=spatial_dims, in_channels=in_channels,
+                                    out_channels=in_channels,
                 strides=2,
                 kernel_size=3,
                 padding=1,
@@ -73,27 +71,21 @@ class Upsample(nn.Module):
         return x
 
 class Downsample(nn.Module):
-    """
-    Convolution-based downsampling layer.
-
+    """ Convolution-based downsampling layer.
     Args:
         spatial_dims: number of spatial dimensions (1D, 2D, 3D).
-        in_channels: number of input channels.
-    """
+        in_channels: number of input channels.    """
 
     def __init__(self, spatial_dims: int, in_channels: int) -> None:
         super().__init__()
         self.pad = (0, 1) * spatial_dims
-
-        self.conv = Convolution(
-            spatial_dims=spatial_dims,
-            in_channels=in_channels,
-            out_channels=in_channels,
-            strides=2,
-            kernel_size=3,
-            padding=0,
-            conv_only=True,
-        )
+        self.conv = Convolution(spatial_dims=spatial_dims,
+                                in_channels=in_channels,
+                                out_channels=in_channels,
+                                strides=2,
+                                kernel_size=3,
+                                padding=0,
+                                conv_only=True,)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = nn.functional.pad(x, self.pad, mode="constant", value=0.0)
@@ -102,9 +94,7 @@ class Downsample(nn.Module):
 
 class ResBlock(nn.Module):
     """
-    Residual block consisting of a cascade of 2 convolutions + activation + normalisation block, and a
-    residual connection between input and output.
-
+    a cascade of 2 convolutions + activation + normalisation block, and a residual connection between input and output.
     Args:
         spatial_dims: number of spatial dimensions (1D, 2D, 3D).
         in_channels: input channels to the layer.
@@ -114,44 +104,20 @@ class ResBlock(nn.Module):
         out_channels: number of output channels.
     """
 
-    def __init__(
-        self, spatial_dims: int, in_channels: int, norm_num_groups: int, norm_eps: float, out_channels: int
-    ) -> None:
+    def __init__(self, spatial_dims: int, in_channels: int, norm_num_groups: int, norm_eps: float, out_channels: int) -> None:
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = in_channels if out_channels is None else out_channels
-
         self.norm1 = nn.GroupNorm(num_groups=norm_num_groups, num_channels=in_channels, eps=norm_eps, affine=True)
-        self.conv1 = Convolution(
-            spatial_dims=spatial_dims,
-            in_channels=self.in_channels,
-            out_channels=self.out_channels,
-            strides=1,
-            kernel_size=3,
-            padding=1,
-            conv_only=True,
-        )
+        self.conv1 = Convolution(spatial_dims=spatial_dims,in_channels=self.in_channels,out_channels=self.out_channels,
+                                 strides=1,kernel_size=3,padding=1,conv_only=True,)
         self.norm2 = nn.GroupNorm(num_groups=norm_num_groups, num_channels=out_channels, eps=norm_eps, affine=True)
-        self.conv2 = Convolution(
-            spatial_dims=spatial_dims,
-            in_channels=self.out_channels,
-            out_channels=self.out_channels,
-            strides=1,
-            kernel_size=3,
-            padding=1,
-            conv_only=True,
-        )
+        self.conv2 = Convolution(spatial_dims=spatial_dims,in_channels=self.out_channels,out_channels=self.out_channels,
+                                 strides=1,kernel_size=3,padding=1,conv_only=True,)
 
         if self.in_channels != self.out_channels:
-            self.nin_shortcut = Convolution(
-                spatial_dims=spatial_dims,
-                in_channels=self.in_channels,
-                out_channels=self.out_channels,
-                strides=1,
-                kernel_size=1,
-                padding=0,
-                conv_only=True,
-            )
+            self.nin_shortcut = Convolution(spatial_dims=spatial_dims,in_channels=self.in_channels,out_channels=self.out_channels,
+                                            strides=1,kernel_size=1,padding=0,conv_only=True,)
         else:
             self.nin_shortcut = nn.Identity()
 
@@ -160,14 +126,11 @@ class ResBlock(nn.Module):
         h = self.norm1(h)
         h = F.silu(h)
         h = self.conv1(h)
-
         h = self.norm2(h)
         h = F.silu(h)
         h = self.conv2(h)
-
         if self.in_channels != self.out_channels:
             x = self.nin_shortcut(x)
-
         return x + h
 
 class AttentionBlock(nn.Module):
@@ -331,6 +294,8 @@ class Encoder(nn.Module):
             is_final_block = i == len(num_channels) - 1
 
             for _ in range(self.num_res_blocks[i]):
+                # -----------------------------------------------------------------------------------------------------------------------------------------------
+                # three times of ResBlock
                 blocks.append(ResBlock(spatial_dims=spatial_dims,
                                        in_channels=input_channel,
                                        norm_num_groups=norm_num_groups,
@@ -344,7 +309,9 @@ class Encoder(nn.Module):
                                                  norm_eps=norm_eps,
                                                  use_flash_attention=use_flash_attention,))
             if not is_final_block:
-                blocks.append(Downsample(spatial_dims=spatial_dims, in_channels=input_channel))
+
+                blocks.append(Downsample(spatial_dims=spatial_dims,
+                                         in_channels=input_channel))
 
         # ------------------------------------------------------------------------------------------------------------------------------------------------------
         # Non-local attention block
