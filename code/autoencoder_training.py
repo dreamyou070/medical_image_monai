@@ -2,12 +2,13 @@ from monai.config import print_config
 from utils import set_determinism
 from data_module import get_transform, SYDataset, SYDataLoader
 import os
-from monai.utils import first, set_determinism
+from monai.utils import first
+from utils.set_seed import set_determinism
 import argparse
 import torch
 from generative.losses.adversarial_loss import PatchAdversarialLoss
 from generative.losses.perceptual import PerceptualLoss
-from generative.networks.nets import AutoencoderKL, DiffusionModelUNet, PatchDiscriminator
+from model_module.nets import AutoencoderKL, DiffusionModelUNet, PatchDiscriminator
 from tqdm import tqdm
 from torch.cuda.amp import GradScaler, autocast
 import torch.nn.functional as F
