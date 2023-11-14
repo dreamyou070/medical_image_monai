@@ -53,7 +53,7 @@ def main(args) :
                                               scheduler=scheduler,
                                               save_intermediates=True,
                                               intermediate_steps=100,
-                                              autoencoder_model=autoencoderkl, )
+                                              autoencoder_model=autoencoderkl,)
     print(f' (2.3) save')
     from matplotlib import pyplot as plt
     decoded_images = []
