@@ -71,7 +71,7 @@ def main(args):
     kl_weight = 1e-6
     n_epochs = 100
     autoencoder_warm_up_n_epochs = 10
-    """
+    
     for epoch in range(n_epochs):
         print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
@@ -144,10 +144,10 @@ def main(args):
                                       "disc_loss": disc_epoch_loss / (step + 1), })
     
         
-        epoch_recon_losses.append(epoch_loss / (step + 1))
-        epoch_gen_losses.append(gen_epoch_loss / (step + 1))
-        epoch_disc_losses.append(disc_epoch_loss / (step + 1))
-
+        #epoch_recon_losses.append(epoch_loss / (step + 1))
+        #epoch_gen_losses.append(gen_epoch_loss / (step + 1))
+        #epoch_disc_losses.append(disc_epoch_loss / (step + 1))
+        """
         if (epoch + 1) % val_interval == 0:
             autoencoderkl.eval()
             val_loss = 0
@@ -164,10 +164,10 @@ def main(args):
             val_loss /= val_step
             val_recon_losses.append(val_loss)
             print(f"epoch {epoch + 1} val loss: {val_loss:.4f}")
-            
+        """
         # ------------------------------------------------------------------------------------------------------------
         print(f' model saving ... ')
-        model_save_dir = os.path.join(args.model_save_baic_dir, 'model')
+        model_save_dir = os.path.join(args.model_save_basic_dir, 'vae_model_20231114')
         os.makedirs(model_save_dir, exist_ok=True)
         save_obj = {'model': autoencoderkl.state_dict(),}
         torch.save(save_obj, os.path.join(model_save_dir, f'vae_checkpoint_{epoch+1}.pth'))
@@ -176,7 +176,7 @@ def main(args):
     del discriminator
     del perceptual_loss
     torch.cuda.empty_cache()
-    """
+    
     print(f'step 4. unet training')
     unet = DiffusionModelUNet(
         spatial_dims=2,
@@ -186,7 +186,6 @@ def main(args):
         num_channels=(128, 256, 512),
         attention_levels=(False, True, True),
         num_head_channels=(0, 256, 512),)
-
     scheduler = DDPMScheduler(num_train_timesteps=1000, schedule="linear_beta", beta_start=0.0015, beta_end=0.0195)
 
 
@@ -272,8 +271,18 @@ def main(args):
             plt.imshow(decoded[0, 0].detach().cpu(), vmin=0, vmax=1, cmap="gray")
             plt.tight_layout()
             plt.axis("off")
-            os.makedirs(args.save_base_folder, exist_ok=True)
-            plt.savefig(os.path.join(args.save_base_folder, f'epoch_{epoch+1}'))
+            infer_save_basic_dir = os.path.join(args.model_save_basic_dir, 'unet_inference_20231114')
+            os.makedirs(infer_save_basic_dir)
+            plt.savefig(os.path.join(infer_save_basic_dir, f'epoch_{epoch+1}'))
+
+        # save model
+        print(f' model saving ... ')
+        model_save_dir = os.path.join(args.model_save_basic_dir, 'unet_model_20231114')
+        os.makedirs(model_save_dir, exist_ok=True)
+        save_obj = {'model': unet.state_dict(), }
+        torch.save(save_obj, os.path.join(model_save_dir, f'unet_checkpoint_{epoch + 1}.pth'))
+
+
     progress_bar.close()
 
 
@@ -292,8 +301,8 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default='cuda:1')
 
     # step 5. saving autoencoder model
-    parser.add_argument("--model_save_baic_dir", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result/vae_model')
+    parser.add_argument("--model_save_basic_dir", type=str,
+                        default='/data7/sooyeon/medical_image/experiment_result')
     parser.add_argument("--save_base_folder", type=str,
                         default='/data7/sooyeon/medical_image/experiment_result/unet_training_inference')
 
