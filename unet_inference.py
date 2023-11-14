@@ -65,7 +65,7 @@ def main(args) :
     plt.style.use("default")
     plt.imshow(chain[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
     plt.tight_layout()
-    plt.savefig("test_3.jpg")
+    plt.savefig("test_40_20.jpg")
 
 
 if __name__ == '__main__' :
