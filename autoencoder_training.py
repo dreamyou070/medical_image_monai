@@ -98,7 +98,8 @@ def main(args):
                 loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
                 # ------------------------------------------------------------------------------------------------------------
                 # (3) generator loss
-                if epoch > autoencoder_warm_up_n_epochs:
+                #if epoch > autoencoder_warm_up_n_epochs:
+                if epoch > 0 :
                     # ---------------------------------------------------------------------------------------------------------
                     # there are five length from the output of discriminator
                     # if i choose just the last one, that is the final result
