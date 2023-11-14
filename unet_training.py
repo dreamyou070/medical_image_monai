@@ -117,7 +117,7 @@ if __name__ == "__main__":
     parser.add_argument('--device', type=str, default='cuda:0')
     # step 1. load dataset
     parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L')
-    parser.add_argument("--image_size", type=str, default='160,84')
+    parser.add_argument("--image_size", type=str, default='160,80')
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument('--autoencoder_pretrained_dir', type=str, default='/data7/sooyeon/medical_image/experiment_result/vae_model/checkpoint_100.pth')
     args = parser.parse_args()
