@@ -6,9 +6,8 @@ from monai.utils import first
 from utils.set_seed import set_determinism
 import argparse
 import torch
-from generative.losses.adversarial_loss import PatchAdversarialLoss
-from generative.losses.perceptual import PerceptualLoss
-from model_module.nets import AutoencoderKL, DiffusionModelUNet, PatchDiscriminator
+from model_module.nets import AutoencoderKL, PatchDiscriminator
+from loss_module import PatchAdversarialLoss, PerceptualLoss
 from tqdm import tqdm
 from torch.cuda.amp import GradScaler, autocast
 import torch.nn.functional as F
@@ -41,23 +40,21 @@ def main(args):
     print(f'\n step 3. pretrain autoencoder model')
     print(f' (3.0) device')
     device = torch.device("cuda")
-    print(f' (3.1) vae(autoencoder)')
-    autoencoderkl = AutoencoderKL(spatial_dims=2, in_channels=1, out_channels=1,
-                                  num_channels=(128, 128, 256), latent_channels=3, num_res_blocks=2,
-                                  attention_levels=(False, False, False),
-                                  with_encoder_nonlocal_attn=False, with_decoder_nonlocal_attn=False, ).to(device)
-    encoder = autoencoderkl.encoder
-    num_res_blocks = encoder.num_res_blocks
-    print(f'num_res_blocks : {num_res_blocks}')
-    decoder = autoencoderkl.decoder
-
+    print(f' (3.1) generator (vae autoencoder)')
+    # autoencoder is like a generator
+    autoencoderkl = AutoencoderKL(spatial_dims=2, in_channels=1, out_channels=1, num_channels=(128, 128, 256), latent_channels=3, num_res_blocks=2,
+                                  attention_levels=(False, False, False), with_encoder_nonlocal_attn=False, with_decoder_nonlocal_attn=False, ).to(device)
+    #encoder = autoencoderkl.encoder
+    #num_res_blocks = encoder.num_res_blocks # [2,2,2]
+    #decoder = autoencoderkl.decoder
 
     print(f' (3.2) discriminator')
-    discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,
-                                       in_channels=1, out_channels=1).to(device)
+    # what is PatchDiscriminator ?
+    discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,  in_channels=1, out_channels=1).to(device)
 
     print(f' (3.3) perceptual_loss')
-    perceptual_loss = PerceptualLoss(spatial_dims=2, network_type="alex").to(device)
+    perceptual_loss = PerceptualLoss(spatial_dims=2,
+                                     network_type="alex").to(device)
     perceptual_weight = 0.001
 
     print(f' (3.4) patch adversarial loss')
@@ -98,22 +95,44 @@ def main(args):
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
                 reconstruction, z_mu, z_sigma = autoencoderkl(images)
+
                 # ------------------------------------------------------------------------------------------------------------
                 # (1.1) reconstruction loss (L1)
-                recons_loss = F.l1_loss(reconstruction.float(), images.float())
+                recons_loss = F.l1_loss(reconstruction.float(),
+                                        images.float())
+
                 # ------------------------------------------------------------------------------------------------------------
-                # (1.2) preceptual loss
-                p_loss = perceptual_loss(reconstruction.float(), images.float())
+                # (1.2) preceptual loss (it measure following perceptual loss function)
+                p_loss = perceptual_loss(reconstruction.float(),
+                                         images.float())
+
                 # ------------------------------------------------------------------------------------------------------------
                 # (1.3) KL loss
-                kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
+                print(f'z_mu shape : {z_mu.shape} | z_mu : {z_mu}')
+
+                b = z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1
+                a = torch.sum(b, dim=[1, 2, 3])
+                kl_loss = 0.5 * a
                 kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
                 # ------------------------------------------------------------------------------------------------------------
                 # (2) total loss
                 loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
+
+                # ------------------------------------------------------------------------------------------------------------
+                # (3) generator loss
                 if epoch > autoencoder_warm_up_n_epochs:
+                    # ---------------------------------------------------------------------------------------------------------
+                    # there are five length from the output of discriminator
+                    # if i choose just the last one, that is the final result
+                    print(f'input to the discriminator : {reconstruction.shape}')
                     logits_fake = discriminator(reconstruction.contiguous().float())[-1]
-                    generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
+                    print(f'output of the discriminator : {logits_fake.shape}')
+
+                    # logits_fake is not from the generator but it is real
+                    # therefore it should be True
+                    generator_loss = adv_loss(logits_fake,
+                                              target_is_real=True,
+                                              for_discriminator=False)
                     loss_g += adv_weight * generator_loss
             scaler_g.scale(loss_g).backward()
             scaler_g.step(optimizer_g)
@@ -124,10 +143,16 @@ def main(args):
             if epoch > autoencoder_warm_up_n_epochs:
                 with autocast(enabled=True):
                     optimizer_d.zero_grad(set_to_none=True)
-                    logits_fake = discriminator(reconstruction.contiguous().detach())[-1]
-                    loss_d_fake = adv_loss(logits_fake, target_is_real=False, for_discriminator=True)
-                    logits_real = discriminator(images.contiguous().detach())[-1]
-                    loss_d_real = adv_loss(logits_real, target_is_real=True, for_discriminator=True)
+                    # logits_fake = discriminator(reconstruction.contiguous().detach())[-1]
+                    loss_d_fake = adv_loss(discriminator(reconstruction.contiguous().detach())[-1],
+                                           target_is_real=False,
+                                           for_discriminator=True)
+
+                    #logits_real = discriminator(images.contiguous().detach())[-1]
+                    loss_d_real = adv_loss(discriminator(images.contiguous().detach())[-1],
+                                           target_is_real=True,
+                                           for_discriminator=True)
+
                     discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
                     loss_d = adv_weight * discriminator_loss
                 scaler_d.scale(loss_d).backward()
@@ -163,12 +188,14 @@ def main(args):
             val_recon_losses.append(val_loss)
             print(f"epoch {epoch + 1} val loss: {val_loss:.4f}")
             """
+        """
         # ------------------------------------------------------------------------------------------------------------
         print(f' model saving ... ')
         model_save_dir = os.path.join(args.model_save_baic_dir, 'model')
         os.makedirs(model_save_dir, exist_ok=True)
         save_obj = {'model': autoencoderkl.state_dict(),}
         torch.save(save_obj, os.path.join(model_save_dir, f'vae_checkpoint_{epoch+1}.pth'))
+        """
     progress_bar.close()
     del discriminator
     del perceptual_loss
