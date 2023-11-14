@@ -47,7 +47,7 @@ def main(args) :
     print(f' (2.2) sampling')
     with torch.no_grad():
         batch_num = 1
-        init_noise = torch.randn((batch_num, unet_inchannel, 20, 40)).to(device)
+        init_noise = torch.randn((batch_num, unet_inchannel, 160, 80)).to(device)
         image, intermediates = pipeline.sample(input_noise=init_noise,
                                               diffusion_model=unet,
                                               scheduler=scheduler,
