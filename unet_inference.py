@@ -22,8 +22,9 @@ def main(args) :
     msg = autoencoderkl.load_state_dict(state_dict, strict=False)
 
     print(f' (1.2) unet')
+    unet_inchannel = 3
     unet = DiffusionModelUNet(spatial_dims=2,
-                              in_channels=3,
+                              in_channels=unet_inchannel,
                               out_channels=3,
                               num_res_blocks=2,
                               num_channels=(128, 256, 512),
@@ -40,23 +41,20 @@ def main(args) :
 
     print(f' \n step 2. inference')
     print(f' (2.1) pipeline')
-    scale_factor
+    scale_factor = 0.6565468907356262
     pipeline = LatentDiffusionInferer(scheduler,
                                       scale_factor=scale_factor)
-    set_determinism(args.seed)
-
-    print(f' (1.3) scheduler')
-    noise = torch.randn((1, 3, 16, 16))
-    noise = noise.to(device)
-
+    print(f' (2.2) sampling')
     with torch.no_grad():
-        image, intermediates = inferer.sample(input_noise=noise,
+        batch_num = 1
+        init_noise = torch.randn((batch_num, unet_inchannel, 40, 20)).to(device)
+        image, intermediates = pipeline.sample(input_noise=init_noise,
                                               diffusion_model=unet,
                                               scheduler=scheduler,
                                               save_intermediates=True,
                                               intermediate_steps=100,
                                               autoencoder_model=autoencoderkl,)
-
+        
 if __name__ == '__main__' :
     parser = argparse.ArgumentParser()
     # step 0. device

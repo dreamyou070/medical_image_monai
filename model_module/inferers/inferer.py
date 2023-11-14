@@ -51,8 +51,7 @@ class DiffusionInferer(Inferer):
         return prediction
 
     @torch.no_grad()
-    def sample(
-        self,
+    def sample(self,
         input_noise: torch.Tensor,
         diffusion_model: Callable[..., torch.Tensor],
         scheduler: Callable[..., torch.Tensor] | None = None,
