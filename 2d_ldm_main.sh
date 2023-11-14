@@ -1,1 +1,0 @@
-python 2d_ldm_main.py
