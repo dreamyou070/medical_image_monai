@@ -54,7 +54,10 @@ def main(args) :
                                               save_intermediates=True,
                                               intermediate_steps=100,
                                               autoencoder_model=autoencoderkl,)
-        
+    print(f' (2.3) save')
+    print(f'  - type(image) : {type(image)}')
+    print(f'  - image shape : {image.shape}')
+
 if __name__ == '__main__' :
     parser = argparse.ArgumentParser()
     # step 0. device

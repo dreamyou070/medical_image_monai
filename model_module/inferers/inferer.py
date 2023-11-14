@@ -82,8 +82,7 @@ class DiffusionInferer(Inferer):
                 )
             else:
                 model_output = diffusion_model(
-                    image, timesteps=torch.Tensor((t,)).to(input_noise.device), context=conditioning
-                )
+                    image, timesteps=torch.Tensor((t,)).to(input_noise.device), context=conditioning )
 
             # 2. compute previous image: x_t -> x_t-1
             image, _ = scheduler.step(model_output, t, image)
