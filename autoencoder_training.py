@@ -51,7 +51,6 @@ def main(args):
     print(f' (3.2) discriminator')
     # what is PatchDiscriminator ?
     discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,  in_channels=1, out_channels=1).to(device)
-
     print(f' (3.3) perceptual_loss')
     perceptual_loss = PerceptualLoss(spatial_dims=2,
                                      network_type="alex").to(device)
@@ -72,15 +71,7 @@ def main(args):
     print(f'step 4. training (takes about one hour)')
     kl_weight = 1e-6
     n_epochs = 100
-    val_interval = 10
     autoencoder_warm_up_n_epochs = 10
-    epoch_recon_losses = []
-    epoch_gen_losses = []
-    epoch_disc_losses = []
-    val_recon_losses = []
-    intermediary_images = []
-    num_example_images = 4
-
     for epoch in range(n_epochs):
         print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
@@ -95,29 +86,16 @@ def main(args):
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
                 reconstruction, z_mu, z_sigma = autoencoderkl(images)
-
                 # ------------------------------------------------------------------------------------------------------------
                 # (1.1) reconstruction loss (L1)
-                recons_loss = F.l1_loss(reconstruction.float(),
-                                        images.float())
-
-                # ------------------------------------------------------------------------------------------------------------
+                recons_loss = F.l1_loss(reconstruction.float(),images.float())
                 # (1.2) preceptual loss (it measure following perceptual loss function)
-                p_loss = perceptual_loss(reconstruction.float(),
-                                         images.float())
-
-                # ------------------------------------------------------------------------------------------------------------
+                p_loss = perceptual_loss(reconstruction.float(), images.float())
                 # (1.3) KL loss
-                print(f'z_mu shape : {z_mu.shape} | z_mu : {z_mu}')
-
-                b = z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1
-                a = torch.sum(b, dim=[1, 2, 3])
-                kl_loss = 0.5 * a
+                kl_loss = 0.5 * (torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3]))
                 kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
-                # ------------------------------------------------------------------------------------------------------------
                 # (2) total loss
                 loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
-
                 # ------------------------------------------------------------------------------------------------------------
                 # (3) generator loss
                 if epoch > autoencoder_warm_up_n_epochs:
@@ -125,8 +103,12 @@ def main(args):
                     # there are five length from the output of discriminator
                     # if i choose just the last one, that is the final result
                     print(f'input to the discriminator : {reconstruction.shape}')
-                    logits_fake = discriminator(reconstruction.contiguous().float())[-1]
-                    print(f'output of the discriminator : {logits_fake.shape}')
+                    discrimator_output = discriminator(reconstruction.contiguous().float())
+                    face_1 = discrimator_output[-4]
+                    face_2 = discrimator_output[-3]
+                    face_3 = discrimator_output[-2]
+                    logits_fake = discrimator_output[-1]
+                    print(f'face_1 : {face_1.shape} face_2 : {face_2.shape} face_3 : {face_3.shape} logits_fake : {logits_fake.shape}')
 
                     # logits_fake is not from the generator but it is real
                     # therefore it should be True
