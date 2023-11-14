@@ -84,8 +84,7 @@ def main(args) :
         for step, batch in progress_bar:
             # ------------------------------------------------------------------------------------------------
             # image = [Batch=64, channel=1, W=1600, H=800] -> after compression, [Batch=64, channel=3, W=160, H=80]
-            images = batch["image"].to(device) # [64,1,160,80]
-            print(f'\nimage : {images.shape}')
+            images = batch["image"].to(device)         # [64,1,160,80]
             optimizer.zero_grad(set_to_none=True)
             with autocast(enabled=True):
                 # ------------------------------------------------------------------------------------------------
@@ -94,7 +93,6 @@ def main(args) :
                 z = autoencoderkl.sampling(z_mu, z_sigma)
                 # 2) get random noise
                 noise = torch.randn_like(z).to(device) # [64,3,40,20]
-                print(f'noise : {noise.shape}')
                 # 3) timestep condition
                 timesteps = torch.randint(0, inferer.scheduler.num_train_timesteps, (z.shape[0],), device=z.device).long()
                 # 4) noise prediction (prediction = diffusion_model(x=noisy_image, timesteps=timesteps, context=condition))

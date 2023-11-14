@@ -18,8 +18,9 @@ def main(args) :
                                   with_encoder_nonlocal_attn=False, with_decoder_nonlocal_attn=False, )
     autoencoderkl = autoencoderkl.to(device)
     autoencoderkl.eval()
-    state_dict = torch.load(args.autoencoder_pretrained_dir, map_location='cpu')['model']
-    msg = autoencoderkl.load_state_dict(state_dict, strict=False)
+    msg = autoencoderkl.load_state_dict(torch.load(args.autoencoder_pretrained_dir, map_location='cpu')['model'],
+                                        strict=True)
+    print(f' autoencoder msg : {msg}')
 
     print(f' (1.2) unet')
     unet_inchannel = 3
@@ -32,8 +33,9 @@ def main(args) :
                               num_head_channels=(0, 256, 512), )
     unet = unet.to(device)
     unet.eval()
-    unet_state_dict = torch.load(args.unet_pretrained_dir, map_location='cpu')['model']
-    msg = unet.load_state_dict(unet_state_dict, strict=False)
+    msg = unet.load_state_dict(torch.load(args.unet_pretrained_dir, map_location='cpu')['model'],
+                               strict=True)
+    print(f' unet msg : {msg}')
 
     print(f' (1.3) scheduler')
     scheduler = DDPMScheduler(num_train_timesteps=1000, schedule="linear_beta", beta_start=0.0015, beta_end=0.0195)
@@ -50,10 +52,10 @@ def main(args) :
         init_noise = torch.randn((batch_num, unet_inchannel, 40, 20)).to(device)
         image, intermediates = pipeline.sample(input_noise=init_noise,
                                                diffusion_model=unet,
-                                              scheduler=scheduler,
-                                              save_intermediates=True,
-                                              intermediate_steps=100,
-                                              autoencoder_model=autoencoderkl,)
+                                               scheduler=scheduler,
+                                               save_intermediates=True,
+                                               intermediate_steps=100,
+                                               autoencoder_model=autoencoderkl,)
     print(f' (2.3) save')
     from matplotlib import pyplot as plt
     decoded_images = []
