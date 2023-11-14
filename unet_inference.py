@@ -56,6 +56,7 @@ def main(args) :
                                                autoencoder_model=autoencoderkl,)
     print(f' (2.3) save')
     from matplotlib import pyplot as plt
+    """
     decoded_images = []
     for image in intermediates:
         with torch.no_grad():
@@ -66,6 +67,13 @@ def main(args) :
     plt.imshow(chain[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
     plt.tight_layout()
     plt.savefig("test_scaling_factor_0.18215.jpg")
+    
+    org_img_ = val_ds[idx]['image']
+    """
+    org_img = image.squeeze().to('cpu')
+    plt.imshow(org_img, cmap='gray')
+    plt.savefig('test.png')
+    plt.close()
 
 
 if __name__ == '__main__' :
