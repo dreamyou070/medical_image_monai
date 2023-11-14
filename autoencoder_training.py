@@ -183,7 +183,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
 
     # step 2. dataset and dataloader
-    parser.add_argument("--data_folder", type=str, default='../experiment/dental/Radiographs_L')
+    parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L')
     parser.add_argument("--image_size", type=str, default='160,84')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
