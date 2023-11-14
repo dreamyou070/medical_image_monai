@@ -41,7 +41,7 @@ def main(args) :
 
     print(f' \n step 2. inference')
     print(f' (2.1) pipeline')
-    scale_factor = 0.6565468907356262
+    scale_factor = 0.8
     pipeline = LatentDiffusionInferer(scheduler,
                                       scale_factor=scale_factor)
     print(f' (2.2) sampling')
@@ -49,7 +49,7 @@ def main(args) :
         batch_num = 1
         init_noise = torch.randn((batch_num, unet_inchannel, 40, 20)).to(device)
         image, intermediates = pipeline.sample(input_noise=init_noise,
-                                              diffusion_model=unet,
+                                               diffusion_model=unet,
                                               scheduler=scheduler,
                                               save_intermediates=True,
                                               intermediate_steps=100,
@@ -65,7 +65,7 @@ def main(args) :
     plt.style.use("default")
     plt.imshow(chain[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
     plt.tight_layout()
-    plt.savefig("test_40_20.jpg")
+    plt.savefig("test_scaling_factor_0.8.jpg")
 
 
 if __name__ == '__main__' :
