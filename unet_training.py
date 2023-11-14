@@ -84,6 +84,9 @@ def main(args) :
             images = batch["image"].to(device)
             optimizer.zero_grad(set_to_none=True)
             with autocast(enabled=True):
+
+                # ------------------------------------------------------------------------------------------------
+                # 1) auto encoder : [Batch, output channel =3 , 160/f, 84/f] # / 4
                 z_mu, z_sigma = autoencoderkl.encode(images)
                 z = autoencoderkl.sampling(z_mu, z_sigma)
                 print(f'autoencoder output : {z.shape}')
@@ -113,7 +116,7 @@ if __name__ == "__main__":
     parser.add_argument('--device', type=str, default='cuda:0')
     # step 1. load dataset
     parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L')
-    parser.add_argument("--image_size", type=str, default='160,84')
+    parser.add_argument("--image_size", type=str, default='64,64')
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument('--autoencoder_pretrained_dir', type=str, default='/data7/sooyeon/medical_image/experiment_result/vae_model/checkpoint_100.pth')
     args = parser.parse_args()
