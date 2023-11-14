@@ -55,8 +55,8 @@ def main(args) :
                                               intermediate_steps=100,
                                               autoencoder_model=autoencoderkl,)
     # image = [Batch =1, channel=1, w=160, h=80]
-    decoded_img = autoencoderkl.decode_stage_2_outputs(image)
-        
+    decoded_img = autoencoderkl.decode_stage_2_outputs(image )
+
     """
     print(f' (2.3) save')
     from matplotlib import pyplot as plt
