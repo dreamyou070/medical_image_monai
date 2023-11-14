@@ -82,13 +82,20 @@ def main(args) :
         progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=70)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
+            # ------------------------------------------------------------------------------------------------
+            # image = [Batch=64, channel=1, W=1600, H=800]
             images = batch["image"].to(device)
+            print(f'images : {images.shape}')
             optimizer.zero_grad(set_to_none=True)
             with autocast(enabled=True):
                 # ------------------------------------------------------------------------------------------------
-                # 1) auto encoder : [Batch, output channel =3 , 160/f, 84/f] # / 4
+                # 1) auto encoder : [Batch, output channel =3 , 1600/f, 800/f] # / 4
                 z_mu, z_sigma = autoencoderkl.encode(images)
+                print(f'z_mu : {z_mu.shape}')
                 z = autoencoderkl.sampling(z_mu, z_sigma)
+
+
+
                 # 2) get random noise
                 noise = torch.randn_like(z).to(device)
                 # 3) timestep condition
@@ -109,13 +116,13 @@ def main(args) :
             epoch_loss += loss.item()
         # ------------------------------------------------------------------------------------------------
         # (3) unet saving
-        print(f' model saving ... ')
-        model_save_dir = os.path.join(args.model_save_baic_dir, 'unet_model')
-        os.makedirs(model_save_dir, exist_ok=True)
-        save_obj = {'model': unet.state_dict(), }
-        torch.save(save_obj, os.path.join(model_save_dir, f'unet_checkpoint_{epoch + 1}.pth'))
-        progress_bar.set_postfix({"loss": epoch_loss / (step + 1)})
-        epoch_losses.append(epoch_loss / (step + 1))
+        #print(f' model saving ... ')
+        #model_save_dir = os.path.join(args.model_save_baic_dir, 'unet_model')
+        #os.makedirs(model_save_dir, exist_ok=True)
+        #save_obj = {'model': unet.state_dict(), }
+        #torch.save(save_obj, os.path.join(model_save_dir, f'unet_checkpoint_{epoch + 1}.pth'))
+        #progress_bar.set_postfix({"loss": epoch_loss / (step + 1)})
+        #epoch_losses.append(epoch_loss / (step + 1))
         # ------------------------------------------------------------------------------------------------
         # saving unet model
     progress_bar.close()
