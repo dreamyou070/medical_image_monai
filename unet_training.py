@@ -83,19 +83,14 @@ def main(args) :
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
             # ------------------------------------------------------------------------------------------------
-            # image = [Batch=64, channel=1, W=1600, H=800]
+            # image = [Batch=64, channel=1, W=1600, H=800] -> after compression, [Batch=64, channel=3, W=160, H=80]
             images = batch["image"].to(device)
-            print(f'images : {images.shape}')
             optimizer.zero_grad(set_to_none=True)
             with autocast(enabled=True):
                 # ------------------------------------------------------------------------------------------------
-                # 1) auto encoder : [Batch, output channel =3 , 1600/f, 800/f] # / 4
+                # 1) auto encoder : [Batch, output channel =3 , 160/f, 80/f] f = 4
                 z_mu, z_sigma = autoencoderkl.encode(images)
-                print(f'z_mu : {z_mu.shape}')
                 z = autoencoderkl.sampling(z_mu, z_sigma)
-
-
-
                 # 2) get random noise
                 noise = torch.randn_like(z).to(device)
                 # 3) timestep condition
