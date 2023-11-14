@@ -3,8 +3,10 @@ from model_module.nets import AutoencoderKL, DiffusionModelUNet, PatchDiscrimina
 from data_module import get_transform, SYDataset, SYDataLoader
 from model_module.schedulers import DDPMScheduler
 from model_module.inferers import LatentDiffusionInferer
-from torch.cuda.amp import autocast
+from torch.cuda.amp import GradScaler, autocast
 from utils.check import first
+from tqdm import tqdm
+import torch.nn.functional as F
 
 def main(args) :
 
@@ -49,6 +51,7 @@ def main(args) :
                               num_res_blocks=2,num_channels=(128, 256, 512),
                               attention_levels=(False, True, True),
                               num_head_channels=(0, 256, 512),)
+    unet = unet.to(device)
     print(f' (3.3) scheduler')
     scheduler = DDPMScheduler(num_train_timesteps=1000, schedule="linear_beta", beta_start=0.0015, beta_end=0.0195)
 
@@ -63,6 +66,41 @@ def main(args) :
     inferer = LatentDiffusionInferer(scheduler, scale_factor=scale_factor)
 
     print(f' \n step 6. Training Diffusion Unet Model')
+    print(f' (6.1) optimizer')
+    optimizer = torch.optim.Adam(unet.parameters(), lr=1e-4)
+
+    n_epochs = 200
+    val_interval = 40
+    epoch_losses = []
+    val_losses = []
+    scaler = GradScaler()
+    for epoch in range(n_epochs):
+        unet.train()
+        autoencoderkl.eval()
+        epoch_loss = 0
+        progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=70)
+        progress_bar.set_description(f"Epoch {epoch}")
+        for step, batch in progress_bar:
+            images = batch["image"].to(device)
+            optimizer.zero_grad(set_to_none=True)
+            with autocast(enabled=True):
+                z_mu, z_sigma = autoencoderkl.encode(images)
+                z = autoencoderkl.sampling(z_mu, z_sigma)
+                noise = torch.randn_like(z).to(device)
+                timesteps = torch.randint(0, inferer.scheduler.num_train_timesteps, (z.shape[0],),
+                                          device=z.device).long()
+                noise_pred = inferer(inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps,
+                                     autoencoder_model=autoencoderkl)
+                loss = F.mse_loss(noise_pred.float(), noise.float())
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+            epoch_loss += loss.item()
+            progress_bar.set_postfix({"loss": epoch_loss / (step + 1)})
+        epoch_losses.append(epoch_loss / (step + 1))
+        # ------------------------------------------------------------------------------------------------
+        # saving unet model
+    progress_bar.close()
 
 
 
