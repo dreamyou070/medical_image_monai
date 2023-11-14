@@ -20,7 +20,6 @@ def main(args) :
     autoencoderkl.eval()
     msg = autoencoderkl.load_state_dict(torch.load(args.autoencoder_pretrained_dir, map_location='cpu')['model'],
                                         strict=True)
-    print(f' autoencoder msg : {msg}')
 
     print(f' (1.2) unet')
     unet_inchannel = 3
@@ -35,7 +34,6 @@ def main(args) :
     unet.eval()
     msg = unet.load_state_dict(torch.load(args.unet_pretrained_dir, map_location='cpu')['model'],
                                strict=True)
-    print(f' unet msg : {msg}')
 
     print(f' (1.3) scheduler')
     scheduler = DDPMScheduler(num_train_timesteps=1000, schedule="linear_beta", beta_start=0.0015, beta_end=0.0195)
@@ -43,7 +41,7 @@ def main(args) :
 
     print(f' \n step 2. inference')
     print(f' (2.1) pipeline')
-    scale_factor = 0.8
+    scale_factor = 0.18215
     pipeline = LatentDiffusionInferer(scheduler,
                                       scale_factor=scale_factor)
     print(f' (2.2) sampling')
@@ -67,7 +65,7 @@ def main(args) :
     plt.style.use("default")
     plt.imshow(chain[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
     plt.tight_layout()
-    plt.savefig("test_scaling_factor_0.8.jpg")
+    plt.savefig("test_scaling_factor_0.18215.jpg")
 
 
 if __name__ == '__main__' :
