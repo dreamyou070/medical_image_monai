@@ -1,52 +1,17 @@
-# Copyright (c) MONAI Consortium
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#     http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# =========================================================================
-# Adapted from https://github.com/huggingface/diffusers
-# which has the following license:
-# https://github.com/huggingface/diffusers/blob/main/LICENSE
-#
-# Copyright 2022 UC Berkeley Team and The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# =========================================================================
-
 from __future__ import annotations
-
 import importlib.util
 import math
 from collections.abc import Sequence
-
 import torch
 import torch.nn.functional as F
 from monai.networks.blocks import Convolution, MLPBlock
 from monai.networks.layers.factories import Pool
 from monai.utils import ensure_tuple_rep
 from torch import nn
-
 # To install xformers, use pip install xformers==0.0.16rc401
 if importlib.util.find_spec("xformers") is not None:
     import xformers
     import xformers.ops
-
     has_xformers = True
 else:
     xformers = None
@@ -1644,31 +1609,6 @@ def get_up_block(
 
 
 class DiffusionModelUNet(nn.Module):
-    """
-    Unet network with timestep embedding and attention mechanisms for conditioning based on
-    Rombach et al. "High-Resolution Image Synthesis with Latent Diffusion Models" https://arxiv.org/abs/2112.10752
-    and Pinaya et al. "Brain Imaging Generation with Latent Diffusion Models" https://arxiv.org/abs/2209.07162
-
-    Args:
-        spatial_dims: number of spatial dimensions.
-        in_channels: number of input channels.
-        out_channels: number of output channels.
-        num_res_blocks: number of residual blocks (see ResnetBlock) per level.
-        num_channels: tuple of block output channels.
-        attention_levels: list of levels to add attention.
-        norm_num_groups: number of groups for the normalization.
-        norm_eps: epsilon for the normalization.
-        resblock_updown: if True use residual blocks for up/downsampling.
-        num_head_channels: number of channels in each attention head.
-        with_conditioning: if True add spatial transformers to perform conditioning.
-        transformer_num_layers: number of layers of Transformer blocks to use.
-        cross_attention_dim: number of context dimensions to use.
-        num_class_embeds: if specified (as an int), then this model will be class-conditional with `num_class_embeds`
-        classes.
-        upcast_attention: if True, upcast attention operations to full precision.
-        use_flash_attention: if True, use flash attention for a memory efficient attention mechanism.
-        dropout_cattn: if different from zero, this will be the dropout value for the cross-attention layers
-    """
 
     def __init__(
         self,
@@ -1863,35 +1803,18 @@ class DiffusionModelUNet(nn.Module):
                     strides=1,
                     kernel_size=3,
                     padding=1,
-                    conv_only=True,
-                )
-            ),
-        )
+                    conv_only=True,)),)
 
-    def forward(
-        self,
-        x: torch.Tensor,
-        timesteps: torch.Tensor,
-        context: torch.Tensor | None = None,
-        class_labels: torch.Tensor | None = None,
-        down_block_additional_residuals: tuple[torch.Tensor] | None = None,
-        mid_block_additional_residual: torch.Tensor | None = None,
-    ) -> torch.Tensor:
-        """
-        Args:
-            x: input tensor (N, C, SpatialDims).
-            timesteps: timestep tensor (N,).
-            context: context tensor (N, 1, ContextDim).
-            class_labels: context tensor (N, ).
-            down_block_additional_residuals: additional residual tensors for down blocks (N, C, FeatureMapsDims).
-            mid_block_additional_residual: additional residual tensor for mid block (N, C, FeatureMapsDims).
-        """
-        # 1. time
+    def forward(self,
+                x: torch.Tensor,                     # noise latent
+                timesteps: torch.Tensor,             # timestep
+                context: torch.Tensor | None = None, # non context
+                class_labels: torch.Tensor | None = None,
+                down_block_additional_residuals: tuple[torch.Tensor] | None = None,
+                mid_block_additional_residual: torch.Tensor | None = None,) -> torch.Tensor:
+
+        # 1. time embedding
         t_emb = get_timestep_embedding(timesteps, self.block_out_channels[0])
-
-        # timesteps does not contain any weights and will always return f32 tensors
-        # but time_embedding might actually be running in fp16. so we need to cast here.
-        # there might be better ways to encapsulate this.
         t_emb = t_emb.to(dtype=x.dtype)
         emb = self.time_embed(t_emb)
 
@@ -1914,13 +1837,10 @@ class DiffusionModelUNet(nn.Module):
             h, res_samples = downsample_block(hidden_states=h, temb=emb, context=context)
             for residual in res_samples:
                 down_block_res_samples.append(residual)
-
         # Additional residual conections for Controlnets
         if down_block_additional_residuals is not None:
             new_down_block_res_samples = ()
-            for down_block_res_sample, down_block_additional_residual in zip(
-                down_block_res_samples, down_block_additional_residuals
-            ):
+            for down_block_res_sample, down_block_additional_residual in zip(down_block_res_samples, down_block_additional_residuals):
                 down_block_res_sample = down_block_res_sample + down_block_additional_residual
                 new_down_block_res_samples += (down_block_res_sample,)
 
@@ -1938,10 +1858,8 @@ class DiffusionModelUNet(nn.Module):
             res_samples = down_block_res_samples[-len(upsample_block.resnets) :]
             down_block_res_samples = down_block_res_samples[: -len(upsample_block.resnets)]
             h = upsample_block(hidden_states=h, res_hidden_states_list=res_samples, temb=emb, context=context)
-
         # 7. output block
         h = self.out(h)
-
         return h
 
 

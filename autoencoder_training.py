@@ -41,25 +41,16 @@ def main(args):
     print(f' (3.0) device')
     device = torch.device("cuda")
     print(f' (3.1) generator (vae autoencoder)')
-    # autoencoder is like a generator
     autoencoderkl = AutoencoderKL(spatial_dims=2, in_channels=1, out_channels=1, num_channels=(128, 128, 256), latent_channels=3, num_res_blocks=2,
                                   attention_levels=(False, False, False), with_encoder_nonlocal_attn=False, with_decoder_nonlocal_attn=False, ).to(device)
-    #encoder = autoencoderkl.encoder
-    #num_res_blocks = encoder.num_res_blocks # [2,2,2]
-    #decoder = autoencoderkl.decoder
-
     print(f' (3.2) discriminator')
-    # what is PatchDiscriminator ?
     discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,  in_channels=1, out_channels=1).to(device)
     print(f' (3.3) perceptual_loss')
-    perceptual_loss = PerceptualLoss(spatial_dims=2,
-                                     network_type="alex").to(device)
+    perceptual_loss = PerceptualLoss(spatial_dims=2,network_type="alex").to(device)
     perceptual_weight = 0.001
-
     print(f' (3.4) patch adversarial loss')
     adv_loss = PatchAdversarialLoss(criterion="least_squares")
     adv_weight = 0.01
-
     print(f' (3.5) optimizer (for generator and discriminator)')
     optimizer_g = torch.optim.Adam(autoencoderkl.parameters(), lr=1e-4)
     optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=5e-4)
@@ -98,51 +89,42 @@ def main(args):
                 loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
                 # ------------------------------------------------------------------------------------------------------------
                 # (3) generator loss
-                #if epoch > autoencoder_warm_up_n_epochs:
-                if epoch > 0 :
+                if epoch > autoencoder_warm_up_n_epochs:
                     # ---------------------------------------------------------------------------------------------------------
-                    # there are five length from the output of discriminator
-                    # if i choose just the last one, that is the final result
-                    print(f'input to the discriminator : {reconstruction.shape}')
+                    # there are five length from the output of discriminator, if i choose just the last one, that is the final result
+                    # logits_fake = [Batch, 1, /8 -2 , /8 -2] (This show multi scale discriminator, that is patch....)
+                    # 생성자를 학습시키기 위한 것
+                    # 생성자가 판별한 이미지가 마치 real 인 것처럼 판정이 나야 한다. 즉, 생성자가 생성한 이미지 input 은 target 으로 True 가 되어야 하고,
+                    # 이는 생성자를 학습하기 위한 것이므로, for_discriminator 는 False 로 한다.
                     discrimator_output = discriminator(reconstruction.contiguous().float())
-                    face_1 = discrimator_output[-4]
-                    face_2 = discrimator_output[-3]
-                    face_3 = discrimator_output[-2]
                     logits_fake = discrimator_output[-1]
-                    print(f'face_1 : {face_1.shape} face_2 : {face_2.shape} face_3 : {face_3.shape} logits_fake : {logits_fake.shape}')
-
-                    # logits_fake is not from the generator but it is real
-                    # therefore it should be True
-                    generator_loss = adv_loss(logits_fake,
-                                              target_is_real=True,
-                                              for_discriminator=False)
+                    generator_loss = adv_loss(logits_fake,target_is_real=True,for_discriminator=False)
                     loss_g += adv_weight * generator_loss
             scaler_g.scale(loss_g).backward()
             scaler_g.step(optimizer_g)
             scaler_g.update()
-
             # ------------------------------------------------------------------------------------------------------------
             # (3) discriminator training
             if epoch > autoencoder_warm_up_n_epochs:
                 with autocast(enabled=True):
+                    # 구분자를 학습시키기 위한 것
                     optimizer_d.zero_grad(set_to_none=True)
-                    # logits_fake = discriminator(reconstruction.contiguous().detach())[-1]
-                    loss_d_fake = adv_loss(discriminator(reconstruction.contiguous().detach())[-1],
-                                           target_is_real=False,
-                                           for_discriminator=True)
-
-                    #logits_real = discriminator(images.contiguous().detach())[-1]
-                    loss_d_real = adv_loss(discriminator(images.contiguous().detach())[-1],
-                                           target_is_real=True,
-                                           for_discriminator=True)
-
+                    # ---------------------------------------------------------------------------------------------------------------------
+                    # reconstruction.contiguous().detach() 를 discriminator 은 가짜라고 판별해야 한다
+                    # 즉 target 은 가짜이므로, target_is_real 은 False 가 되어야 한다.
+                    # 구분자를 학습시키기 위한 것이므로 for_discriminator 는 True 로 한다.
+                    loss_d_fake = adv_loss(discriminator(reconstruction.contiguous().detach())[-1], target_is_real=False,for_discriminator=True)
+                    # ---------------------------------------------------------------------------------------------------------------------
+                    # discriminator 가 real 을 real 이라고 판별해야 한다.\
+                    # 즉, target 은 real 이므로, target_is_real 은 True 가 되어야 한다.
+                    # 구분자를 학습시키기 위한 것이므로 for_discriminator 는 True 로 한다.
+                    loss_d_real = adv_loss(discriminator(images.contiguous().detach())[-1],target_is_real=True,for_discriminator=True)
                     discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
                     loss_d = adv_weight * discriminator_loss
                 scaler_d.scale(loss_d).backward()
                 scaler_d.step(optimizer_d)
                 scaler_d.update()
             epoch_loss += recons_loss.item()
-
             if epoch > autoencoder_warm_up_n_epochs:
                 gen_epoch_loss += generator_loss.item()
                 disc_epoch_loss += discriminator_loss.item()

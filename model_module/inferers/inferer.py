@@ -26,35 +26,28 @@ class DiffusionInferer(Inferer):
         Inferer.__init__(self)
         self.scheduler = scheduler
 
-    def __call__(
-        self,
-        inputs: torch.Tensor,
-        diffusion_model: Callable[..., torch.Tensor],
-        noise: torch.Tensor,
-        timesteps: torch.Tensor,
-        condition: torch.Tensor | None = None,
-        mode: str = "crossattn",
-    ) -> torch.Tensor:
-        """
-        Implements the forward pass for a supervised training iteration.
+    def __call__(self, inputs: torch.Tensor, # latent
+                 diffusion_model: Callable[..., torch.Tensor], # unet
+                 noise: torch.Tensor,
+                 timesteps: torch.Tensor,
+                 condition: torch.Tensor | None = None,
+                 mode: str = "crossattn",) -> torch.Tensor:
 
-        Args:
-            inputs: Input image to which noise is added.
-            diffusion_model: diffusion model.
-            noise: random noise, of the same shape as the input.
-            timesteps: random timesteps.
-            condition: Conditioning for network input.
-            mode: Conditioning mode for the network.
-        """
+        # original crossattn mode
         if mode not in ["crossattn", "concat"]:
             raise NotImplementedError(f"{mode} condition is not supported")
-
+        # ----------------------------------------------------------------------------------------------------------------
+        # make noise latent
         noisy_image = self.scheduler.add_noise(original_samples=inputs, noise=noise, timesteps=timesteps)
         if mode == "concat":
             noisy_image = torch.cat([noisy_image, condition], dim=1)
             condition = None
-        prediction = diffusion_model(x=noisy_image, timesteps=timesteps, context=condition)
-
+        # ----------------------------------------------------------------------------------------------------------------
+        # unet prediction (unconditional model)
+        prediction = diffusion_model(x=noisy_image,        # input latent
+                                     timesteps=timesteps,  #
+                                     context=condition     # null condition
+                                     )
         return prediction
 
     @torch.no_grad()
@@ -69,17 +62,7 @@ class DiffusionInferer(Inferer):
         mode: str = "crossattn",
         verbose: bool = True,
     ) -> torch.Tensor | tuple[torch.Tensor, list[torch.Tensor]]:
-        """
-        Args:
-            input_noise: random noise, of the same shape as the desired sample.
-            diffusion_model: model to sample from.
-            scheduler: diffusion scheduler. If none provided will use the class attribute scheduler
-            save_intermediates: whether to return intermediates along the sampling change
-            intermediate_steps: if save_intermediates is True, saves every n steps
-            conditioning: Conditioning for network input.
-            mode: Conditioning mode for the network.
-            verbose: if true, prints the progression bar of the sampling process.
-        """
+
         if mode not in ["crossattn", "concat"]:
             raise NotImplementedError(f"{mode} condition is not supported")
 
@@ -125,20 +108,6 @@ class DiffusionInferer(Inferer):
         scaled_input_range: tuple | None = (0, 1),
         verbose: bool = True,
     ) -> torch.Tensor | tuple[torch.Tensor, list[torch.Tensor]]:
-        """
-        Computes the log-likelihoods for an input.
-
-        Args:
-            inputs: input images, NxCxHxW[xD]
-            diffusion_model: model to compute likelihood from
-            scheduler: diffusion scheduler. If none provided will use the class attribute scheduler.
-            save_intermediates: save the intermediate spatial KL maps
-            conditioning: Conditioning for network input.
-            mode: Conditioning mode for the network.
-            original_input_range: the [min,max] intensity range of the input data_module before any scaling was applied.
-            scaled_input_range: the [min,max] intensity range of the input data_module after scaling.
-            verbose: if true, prints the progression bar of the sampling process.
-        """
 
         if not scheduler:
             scheduler = self.scheduler
@@ -283,18 +252,7 @@ class DiffusionInferer(Inferer):
         return log_probs
 
 class LatentDiffusionInferer(DiffusionInferer):
-    """
-    LatentDiffusionInferer takes a stage 1 model (VQVAE or AutoencoderKL), diffusion model, and a scheduler, and can
-    be used to perform a signal forward pass for a training iteration, and sample from the model.
-
-    Args:
-        scheduler: a scheduler to be used in combination with `unet` to denoise the encoded image latents.
-        scale_factor: scale factor to multiply the values of the latent representation before processing it by the
-            second stage.
-        ldm_latent_shape: desired spatial latent space shape. Used if there is a difference in the autoencoder model's latent shape.
-        autoencoder_latent_shape:  autoencoder_latent_shape: autoencoder spatial latent space shape. Used if there is a difference between the autoencoder's latent shape and the DM shape.
-    """
-
+    """ in general diffusion model, scale factor is 0.18215 (scaling factor is factor * latent -> unet) """
     def __init__(self,
                  scheduler: nn.Module,
                  scale_factor: float = 1.0,
@@ -303,52 +261,39 @@ class LatentDiffusionInferer(DiffusionInferer):
         super().__init__(scheduler=scheduler)
         self.scale_factor = scale_factor
         if (ldm_latent_shape is None) ^ (autoencoder_latent_shape is None):
-            raise ValueError("If ldm_latent_shape is None, autoencoder_latent_shape must be None"
-                             "and vice versa.")
+            # ^ args means XOR
+            raise ValueError("If ldm_latent_shape is None, autoencoder_latent_shape must be None and vice versa.")
         self.ldm_latent_shape = ldm_latent_shape
         self.autoencoder_latent_shape = autoencoder_latent_shape
         if self.ldm_latent_shape is not None:
             self.ldm_resizer = SpatialPad(spatial_size=[-1,]+self.ldm_latent_shape)
             self.autoencoder_resizer = CenterSpatialCrop(roi_size=[-1,]+self.autoencoder_latent_shape)
 
-    def __call__(
-        self,
-        inputs: torch.Tensor,
-        autoencoder_model: Callable[..., torch.Tensor],
-        diffusion_model: Callable[..., torch.Tensor],
-        noise: torch.Tensor,
-        timesteps: torch.Tensor,
-        condition: torch.Tensor | None = None,
-        mode: str = "crossattn",
-    ) -> torch.Tensor:
-        """
-        Implements the forward pass for a supervised training iteration.
+    def __call__(self, inputs: torch.Tensor,
+                 autoencoder_model: Callable[..., torch.Tensor],
+                 diffusion_model: Callable[..., torch.Tensor],
+                 noise: torch.Tensor,
+                 timesteps: torch.Tensor,
+                 condition: torch.Tensor | None = None,
+                 mode: str = "crossattn",) -> torch.Tensor:
 
-        Args:
-            inputs: input image to which the latent representation will be extracted and noise is added.
-            autoencoder_model: first stage model.
-            diffusion_model: diffusion model.
-            noise: random noise, of the same shape as the latent representation.
-            timesteps: random timesteps.
-            condition: conditioning for network input.
-            mode: Conditioning mode for the network.
-        """
+
+        # ----------------------------------------------------------------------------------------------------
+        # input of the latent
         with torch.no_grad():
-            latent = autoencoder_model.encode_stage_2_inputs(inputs) * self.scale_factor
-
+            latent = autoencoder_model.encode_stage_2_inputs(inputs)
+            latent = latent * self.scale_factor
         if self.ldm_latent_shape is not None:
             latent = self.ldm_resizer(latent)
 
-        prediction = super().__call__(
-            inputs=latent,
-            diffusion_model=diffusion_model,
-            noise=noise,
-            timesteps=timesteps,
-            condition=condition,
-            mode=mode,
-        )
-
+        prediction = super().__call__(inputs=latent,
+                                      diffusion_model=diffusion_model, # unet
+                                      noise=noise,
+                                      timesteps=timesteps,
+                                      condition=condition,
+                                      mode=mode,)
         return prediction
+
 
     @torch.no_grad()
     def sample(

@@ -59,11 +59,12 @@ def main(args) :
     print(f' \n step 4. scaling factor')
     with torch.no_grad():
         with autocast(enabled=True):
+            # ------------------------------------------------------------------------------------------------
+            # result of sampling (of first image, that is the first latent)
             z = autoencoderkl.encode_stage_2_inputs(check_data["image"].to(device))
     scale_factor = 1 / torch.std(z)
-    print(f"  scaling factor set to {scale_factor}")
 
-    print(f' \n step 5. infererence scheduler')
+    print(f' \n step 5. infererence scheduler pipeline')
     inferer = LatentDiffusionInferer(scheduler, scale_factor=scale_factor)
 
     print(f' \n step 6. Training Diffusion Unet Model')
@@ -71,9 +72,7 @@ def main(args) :
     optimizer = torch.optim.Adam(unet.parameters(), lr=1e-4)
 
     n_epochs = 200
-    val_interval = 40
     epoch_losses = []
-    val_losses = []
     scaler = GradScaler()
     for epoch in range(n_epochs):
         unet.train()
@@ -93,9 +92,9 @@ def main(args) :
                 noise = torch.randn_like(z).to(device)
                 # 3) timestep condition
                 timesteps = torch.randint(0, inferer.scheduler.num_train_timesteps, (z.shape[0],), device=z.device).long()
-                # 4) noise prediction
-                noise_pred = inferer(inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps,
-                                     autoencoder_model=autoencoderkl)
+                # 4) noise prediction (prediction = diffusion_model(x=noisy_image, timesteps=timesteps, context=condition))
+                # how can be without context?
+                noise_pred = inferer(inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps, autoencoder_model=autoencoderkl)
                 # ------------------------------------------------------------------------------------------------
                 # (2) VLB Loss
                 loss = F.mse_loss(noise_pred.float(), noise.float())
