@@ -12,7 +12,7 @@ def main(args) :
     device = torch.device(args.device)
 
     print(f' \n step 1. make empty model')
-    autoencoderkl = AutoencoderKL(spatial_dims=2,in_channels=1,out_channels=1,
+    autoencoderkl = AutoencoderKL(spatial_dims=2, in_channels=1,out_channels=1,
                                   num_channels=(128, 128, 256),latent_channels=3,
                                   num_res_blocks=2,attention_levels=(False, False, False),
                                   with_encoder_nonlocal_attn=False,with_decoder_nonlocal_attn=False,)
@@ -35,7 +35,6 @@ def main(args) :
     random_idx = np.random.randint(0, len(val_ds), size=inference_num)
     recon_img_list = []
     for idx in random_idx :
-
         fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
         # ------------------------------------------------------------------------------------------------
         # org shape is [1615,840]
@@ -57,7 +56,9 @@ def main(args) :
             ax[1].set_title('reconstruction')
             ax[1].axis("off")
             print(f'org_img_.shape : {org_img_.shape} / reconstructions.shape : {reconstructions.shape}')
-            plt.savefig(f'./reconstructions_{idx}.png')
+            save_dir = os.path.join(args.save_base, 'vae_inference_check')
+            os.makedirs(save_dir, exist_ok=True)
+            plt.savefig(os.path.join(save_dir, f'reconstructions_{idx}.png'))
             plt.close()
 
 
@@ -69,9 +70,12 @@ if __name__ == '__main__':
     # step 1.
     parser.add_argument('--infer_num', type=int, default=5)
     # step 2. model loading
-    parser.add_argument('--pretrained_dir', type=str, default='/data7/sooyeon/medical_image/model/checkpoint_100.pth')
+    parser.add_argument('--pretrained_dir', type=str,
+                        default='/data7/sooyeon/medical_image/experiment_result/vae_model/vae_checkpoint_100.pth')
     # step 3. get original image for reconstruct
     parser.add_argument("--data_folder", type=str, default='../experiment/dental/Radiographs_L')
     parser.add_argument("--inference_num", type=int, default=5)
+    parser.add_argument("--save_base", type=str,
+                        default='/data7/sooyeon/medical_image/experiment_result')
     args = parser.parse_args()
     main(args)
