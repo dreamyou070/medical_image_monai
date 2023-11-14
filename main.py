@@ -235,7 +235,7 @@ def main(args):
             epoch_loss += loss.item()
 
             progress_bar.set_postfix({"loss": epoch_loss / (step + 1)})
-        epoch_losses.append(epoch_loss / (step + 1))
+        #epoch_losses.append(epoch_loss / (step + 1))
 
         if (epoch + 1) % val_interval == 0:
             unet.eval()
@@ -243,11 +243,9 @@ def main(args):
             with torch.no_grad():
                 for val_step, batch in enumerate(val_loader, start=1):
                     images = batch["image"].to(device)
-
                     with autocast(enabled=True):
                         z_mu, z_sigma = autoencoderkl.encode(images)
                         z = autoencoderkl.sampling(z_mu, z_sigma)
-
                         noise = torch.randn_like(z).to(device)
                         timesteps = torch.randint(
                             0, inferer.scheduler.num_train_timesteps, (z.shape[0],), device=z.device
@@ -261,7 +259,7 @@ def main(args):
                         loss = F.mse_loss(noise_pred.float(), noise.float())
                     val_loss += loss.item()
             val_loss /= val_step
-            val_losses.append(val_loss)
+            #val_losses.append(val_loss)
             print(f"Epoch {epoch} val loss: {val_loss:.4f}")
             # Sampling image during training
             z = torch.randn((1, 3, 16, 16))
