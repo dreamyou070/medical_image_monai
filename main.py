@@ -223,23 +223,19 @@ def main(args):
                 noise = torch.randn_like(z).to(device)
                 timesteps = torch.randint(0, inferer.scheduler.num_train_timesteps, (z.shape[0],),
                                           device=z.device).long()
-                noise_pred = inferer(
-                    inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps,
-                    autoencoder_model=autoencoderkl
-                )
+                noise_pred = inferer(inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps,
+                                     autoencoder_model=autoencoderkl)
                 loss = F.mse_loss(noise_pred.float(), noise.float())
-
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
-
             epoch_loss += loss.item()
-
             progress_bar.set_postfix({"loss": epoch_loss / (step + 1)})
         #epoch_losses.append(epoch_loss / (step + 1))
 
         if (epoch + 1) % val_interval == 0:
             unet.eval()
+            autoencoderkl.eval()
             val_loss = 0
             with torch.no_grad():
                 for val_step, batch in enumerate(val_loader, start=1):
@@ -249,8 +245,7 @@ def main(args):
                         z = autoencoderkl.sampling(z_mu, z_sigma)
                         noise = torch.randn_like(z).to(device)
                         timesteps = torch.randint(
-                            0, inferer.scheduler.num_train_timesteps, (z.shape[0],), device=z.device
-                        ).long()
+                            0, inferer.scheduler.num_train_timesteps, (z.shape[0],), device=z.device).long()
                         noise_pred = inferer(
                             inputs=images,
                             diffusion_model=unet,
