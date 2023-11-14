@@ -263,7 +263,7 @@ def main(args):
             #val_losses.append(val_loss)
             print(f"Epoch {epoch} val loss: {val_loss:.4f}")
             # Sampling image during training
-            z = torch.randn((1, 3, 16, 16))
+            z = torch.randn((1, 3, 40, 20))
             z = z.to(device)
             scheduler.set_timesteps(num_inference_steps=1000)
             with autocast(enabled=True):
