@@ -64,7 +64,6 @@ class DiffusionInferer(Inferer):
 
         if mode not in ["crossattn", "concat"]:
             raise NotImplementedError(f"{mode} condition is not supported")
-
         if not scheduler:
             scheduler = self.scheduler
         image = input_noise
@@ -78,21 +77,20 @@ class DiffusionInferer(Inferer):
             if mode == "concat":
                 model_input = torch.cat([image, conditioning], dim=1)
                 model_output = diffusion_model(
-                    model_input, timesteps=torch.Tensor((t,)).to(input_noise.device), context=None
-                )
+                    model_input, timesteps=torch.Tensor((t,)).to(input_noise.device), context=None)
             else:
-                model_output = diffusion_model(
-                    image, timesteps=torch.Tensor((t,)).to(input_noise.device), context=conditioning )
-
+                model_output = diffusion_model(image,
+                                               timesteps=torch.Tensor((t,)).to(input_noise.device), context=conditioning )
             # 2. compute previous image: x_t -> x_t-1
+            # latent
             image, _ = scheduler.step(model_output, t, image)
             if save_intermediates and t % intermediate_steps == 0:
                 intermediates.append(image)
+
         if save_intermediates:
             return image, intermediates
         else:
             return image
-
     @torch.no_grad()
     def get_likelihood(
         self,

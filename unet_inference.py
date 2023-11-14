@@ -54,6 +54,8 @@ def main(args) :
                                               save_intermediates=True,
                                               intermediate_steps=100,
                                               autoencoder_model=autoencoderkl,)
+    print(f'image : {image.shape}')
+    """
     print(f' (2.3) save')
     from matplotlib import pyplot as plt
     decoded_images = []
@@ -66,6 +68,7 @@ def main(args) :
     plt.imshow(chain[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
     plt.tight_layout()
     plt.savefig("test.jpg")
+    """
 
 if __name__ == '__main__' :
     parser = argparse.ArgumentParser()
