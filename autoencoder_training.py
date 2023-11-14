@@ -134,13 +134,14 @@ def main(args):
                 scaler_d.step(optimizer_d)
                 scaler_d.update()
             epoch_loss += recons_loss.item()
+
             if epoch > autoencoder_warm_up_n_epochs:
                 gen_epoch_loss += generator_loss.item()
                 disc_epoch_loss += discriminator_loss.item()
             progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1),
                                       "gen_loss": gen_epoch_loss / (step + 1),
                                       "disc_loss": disc_epoch_loss / (step + 1),})
-        
+        """
         epoch_recon_losses.append(epoch_loss / (step + 1))
         epoch_gen_losses.append(gen_epoch_loss / (step + 1))
         epoch_disc_losses.append(disc_epoch_loss / (step + 1))
@@ -161,7 +162,7 @@ def main(args):
             val_loss /= val_step
             val_recon_losses.append(val_loss)
             print(f"epoch {epoch + 1} val loss: {val_loss:.4f}")
-        
+            """
         # ------------------------------------------------------------------------------------------------------------
         print(f' model saving ... ')
         model_save_dir = os.path.join(args.model_save_baic_dir, 'model')
