@@ -62,7 +62,7 @@ def main(args) :
     print(f' \n step 5. infererence scheduler')
     inferer = LatentDiffusionInferer(scheduler, scale_factor=scale_factor)
 
-    print(f' \n step 6. Training Diffusion Unet Model' )
+    print(f' \n step 6. Training Diffusion Unet Model')
 
 
 
