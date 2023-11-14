@@ -120,7 +120,7 @@ def main(args) :
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # step 1. device
-    parser.add_argument('--device', type=str, default='cuda:0')
+    parser.add_argument('--device', type=str, default='cuda:1')
     # step 1. load dataset
     parser.add_argument("--data_folder", type=str,
                         default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L')
