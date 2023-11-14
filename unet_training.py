@@ -103,14 +103,14 @@ def main(args) :
             scaler.step(optimizer)
             scaler.update()
             epoch_loss += loss.item()
-            # ------------------------------------------------------------------------------------------------
-            # (3) unet saving
-            print(f' model saving ... ')
-            model_save_dir = os.path.join(args.model_save_baic_dir, 'unet_model')
-            os.makedirs(model_save_dir, exist_ok=True)
-            save_obj = {'model': unet.state_dict(), }
-            torch.save(save_obj, os.path.join(model_save_dir, f'unet_checkpoint_{epoch + 1}.pth'))
-            progress_bar.set_postfix({"loss": epoch_loss / (step + 1)})
+        # ------------------------------------------------------------------------------------------------
+        # (3) unet saving
+        print(f' model saving ... ')
+        model_save_dir = os.path.join(args.model_save_baic_dir, 'unet_model')
+        os.makedirs(model_save_dir, exist_ok=True)
+        save_obj = {'model': unet.state_dict(), }
+        torch.save(save_obj, os.path.join(model_save_dir, f'unet_checkpoint_{epoch + 1}.pth'))
+        progress_bar.set_postfix({"loss": epoch_loss / (step + 1)})
         epoch_losses.append(epoch_loss / (step + 1))
         # ------------------------------------------------------------------------------------------------
         # saving unet model
