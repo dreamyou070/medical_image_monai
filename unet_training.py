@@ -85,23 +85,31 @@ def main(args) :
             images = batch["image"].to(device)
             optimizer.zero_grad(set_to_none=True)
             with autocast(enabled=True):
-
                 # ------------------------------------------------------------------------------------------------
                 # 1) auto encoder : [Batch, output channel =3 , 160/f, 84/f] # / 4
                 z_mu, z_sigma = autoencoderkl.encode(images)
                 z = autoencoderkl.sampling(z_mu, z_sigma)
-                print(f'autoencoder output : {z.shape}')
+                # 2) get random noise
                 noise = torch.randn_like(z).to(device)
-                timesteps = torch.randint(0, inferer.scheduler.num_train_timesteps, (z.shape[0],),
-                                          device=z.device).long()
-                noise_pred = inferer(inputs=images,
-                                     diffusion_model=unet, noise=noise, timesteps=timesteps,
+                # 3) timestep condition
+                timesteps = torch.randint(0, inferer.scheduler.num_train_timesteps, (z.shape[0],), device=z.device).long()
+                # 4) noise prediction
+                noise_pred = inferer(inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps,
                                      autoencoder_model=autoencoderkl)
+                # ------------------------------------------------------------------------------------------------
+                # (2) VLB Loss
                 loss = F.mse_loss(noise_pred.float(), noise.float())
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
             epoch_loss += loss.item()
+            # ------------------------------------------------------------------------------------------------
+            # (3) unet saving
+            print(f' model saving ... ')
+            model_save_dir = os.path.join(args.model_save_baic_dir, 'unet_model')
+            os.makedirs(model_save_dir, exist_ok=True)
+            save_obj = {'model': unet.state_dict(), }
+            torch.save(save_obj, os.path.join(model_save_dir, f'unet_checkpoint_{epoch + 1}.pth'))
             progress_bar.set_postfix({"loss": epoch_loss / (step + 1)})
         epoch_losses.append(epoch_loss / (step + 1))
         # ------------------------------------------------------------------------------------------------
@@ -120,5 +128,8 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument('--autoencoder_pretrained_dir', type=str,
                         default='/data7/sooyeon/medical_image/experiment_result/vae_model/checkpoint_100.pth')
+    parser.add_argument('--model_save_baic_dir', type=str,
+                        default='/data7/sooyeon/medical_image/experiment_result')
+
     args = parser.parse_args()
     main(args)
