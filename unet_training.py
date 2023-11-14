@@ -48,7 +48,8 @@ def main(args) :
     unet = DiffusionModelUNet(spatial_dims=2,
                               in_channels=3,
                               out_channels=3,
-                              num_res_blocks=2,num_channels=(128, 256, 512),
+                              num_res_blocks=2,
+                              num_channels=(128, 256, 512),
                               attention_levels=(False, True, True),
                               num_head_channels=(0, 256, 512),)
     unet = unet.to(device)

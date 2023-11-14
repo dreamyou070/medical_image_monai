@@ -7,8 +7,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from monai.networks.blocks import Convolution
 from monai.utils import ensure_tuple_rep
-
-# To install xformers, use pip install xformers==0.0.16rc401
 if importlib.util.find_spec("xformers") is not None:
     import xformers
     import xformers.ops
@@ -18,12 +16,7 @@ else:
     xformers = None
     has_xformers = False
 
-# TODO: Use MONAI's optional_import
-# from monai.utils import optional_import
-# xformers, has_xformers = optional_import("xformers.ops", name="xformers")
-
 __all__ = ["AutoencoderKL"]
-
 
 class Upsample(nn.Module):
     """
@@ -79,7 +72,6 @@ class Upsample(nn.Module):
         x = self.conv(x)
         return x
 
-
 class Downsample(nn.Module):
     """
     Convolution-based downsampling layer.
@@ -107,7 +99,6 @@ class Downsample(nn.Module):
         x = nn.functional.pad(x, self.pad, mode="constant", value=0.0)
         x = self.conv(x)
         return x
-
 
 class ResBlock(nn.Module):
     """
@@ -298,20 +289,6 @@ class AttentionBlock(nn.Module):
         return x + residual
 
 class Encoder(nn.Module):
-    """
-    Convolutional cascade that downsamples the image into a spatial latent space.
-    Args:
-        spatial_dims: number of spatial dimensions (1D, 2D, 3D).
-        in_channels: number of input channels.
-        num_channels: sequence of block output channels.
-        out_channels: number of channels in the bottom layer (latent space) of the autoencoder.
-        num_res_blocks: number of residual blocks (see ResBlock) per level.
-        norm_num_groups: number of groups for the GroupNorm layers, num_channels must be divisible by this number.
-        norm_eps: epsilon for the normalization.
-        attention_levels: indicate which level from num_channels contain an attention block.
-        with_nonlocal_attn: if True use non-local attention block.
-        use_flash_attention: if True, use flash attention for a memory efficient attention mechanism.
-    """
 
     def __init__(
         self,
@@ -352,6 +329,7 @@ class Encoder(nn.Module):
             input_channel = output_channel
             output_channel = num_channels[i]
             is_final_block = i == len(num_channels) - 1
+
             for _ in range(self.num_res_blocks[i]):
                 blocks.append(ResBlock(spatial_dims=spatial_dims,
                                        in_channels=input_channel,
@@ -368,6 +346,7 @@ class Encoder(nn.Module):
             if not is_final_block:
                 blocks.append(Downsample(spatial_dims=spatial_dims, in_channels=input_channel))
 
+        # ------------------------------------------------------------------------------------------------------------------------------------------------------
         # Non-local attention block
         if with_nonlocal_attn is True:
             blocks.append(ResBlock(spatial_dims=spatial_dims,in_channels=num_channels[-1],
@@ -376,9 +355,12 @@ class Encoder(nn.Module):
                                          norm_num_groups=norm_num_groups,norm_eps=norm_eps,use_flash_attention=use_flash_attention,))
             blocks.append(ResBlock(spatial_dims=spatial_dims, in_channels=num_channels[-1],
                                    norm_num_groups=norm_num_groups, norm_eps=norm_eps, out_channels=num_channels[-1],))
+        # ------------------------------------------------------------------------------------------------------------------------------------------------------
         # Normalise and convert to latent size
         blocks.append(nn.GroupNorm(num_groups=norm_num_groups, num_channels=num_channels[-1], eps=norm_eps, affine=True))
-        blocks.append(Convolution(spatial_dims=self.spatial_dims,in_channels=num_channels[-1],out_channels=out_channels,
+        blocks.append(Convolution(spatial_dims=self.spatial_dims,
+                                  in_channels=num_channels[-1],
+                                  out_channels=out_channels,
                                   strides=1,kernel_size=3,padding=1,conv_only=True,))
         self.blocks = nn.ModuleList(blocks)
 
@@ -531,61 +513,7 @@ class Decoder(nn.Module):
             x = block(x)
         return x
 
-"""
-autoencoderkl = AutoencoderKL(spatial_dims=2,
-                                  in_channels=1,
-                                  out_channels=1,
-                                  num_channels=(128, 128, 256),
-                                  latent_channels=3,
-                                  num_res_blocks=2,
-                                  attention_levels=(False, False, False),
-                                  with_encoder_nonlocal_attn=False,
-                                  with_decoder_nonlocal_attn=False,)
-
-self.encoder = Encoder(spatial_dims=2,
-                       in_channels=1,
-                       num_channels=(128,128,256),
-                       out_channels=3,
-                       num_res_blocks=2,
-                       norm_num_groups=32,
-                       norm_eps=1e-6,
-                       attention_levels=(False, False, False),
-                       with_nonlocal_attn=False,
-                       use_flash_attention=False,)
-self.decoder = Decoder(spatial_dims=2,
-                       num_channels=(128,128,256),
-                       in_channels=3,
-                       out_channels=1,
-                       num_res_blocks=2,
-                       norm_num_groups=32,
-                       norm_eps=1e-6,
-                       attention_levels=(False, False, False),
-                       with_nonlocal_attn=False,
-                       use_flash_attention=False,
-                       use_convtranspose=False,)
-"""
 class AutoencoderKL(nn.Module):
-    """
-    Autoencoder model with KL-regularized latent space based on
-    Rombach et al. "High-Resolution Image Synthesis with Latent Diffusion Models" https://arxiv.org/abs/2112.10752
-    and Pinaya et al. "Brain Imaging Generation with Latent Diffusion Models" https://arxiv.org/abs/2209.07162
-
-    Args:
-        spatial_dims: number of spatial dimensions (1D, 2D, 3D).
-        in_channels: number of input channels.
-        out_channels: number of output channels.
-        num_res_blocks: number of residual blocks (see ResBlock) per level.
-        num_channels: sequence of block output channels.
-        attention_levels: sequence of levels to add attention.
-        latent_channels: latent embedding dimension.
-        norm_num_groups: number of groups for the GroupNorm layers, num_channels must be divisible by this number.
-        norm_eps: epsilon for the normalization.
-        with_encoder_nonlocal_attn: if True use non-local attention block in the encoder.
-        with_decoder_nonlocal_attn: if True use non-local attention block in the decoder.
-        use_flash_attention: if True, use flash attention for a memory efficient attention mechanism.
-        use_checkpointing: if True, use activation checkpointing to save memory.
-        use_convtranspose: if True, use ConvTranspose to upsample feature maps in decoder.
-    """
 
     def __init__(
         self,
@@ -605,47 +533,43 @@ class AutoencoderKL(nn.Module):
         use_convtranspose: bool = False,
     ) -> None:
         super().__init__()
-
         # All number of channels should be multiple of num_groups
         if any((out_channel % norm_num_groups) != 0 for out_channel in num_channels):
             raise ValueError("AutoencoderKL expects all num_channels being multiple of norm_num_groups")
-
         if len(num_channels) != len(attention_levels):
             raise ValueError("AutoencoderKL expects num_channels being same size of attention_levels")
-
         if isinstance(num_res_blocks, int):
             num_res_blocks = ensure_tuple_rep(num_res_blocks, len(num_channels))
-
         if len(num_res_blocks) != len(num_channels):
-            raise ValueError(
-                "`num_res_blocks` should be a single integer or a tuple of integers with the same length as "
+            raise ValueError("`num_res_blocks` should be a single integer or a tuple of integers with the same length as "
                 "`num_channels`.")
-
         if use_flash_attention is True and not torch.cuda.is_available():
             raise ValueError(
                 "torch.cuda.is_available() should be True but is False. Flash attention is only available for GPU.")
-
+        # ---------------------------------------------------------------------------------------------------------------------------------------
+        # 1) Encoder
         self.encoder = Encoder(spatial_dims=spatial_dims,in_channels=in_channels,num_channels=num_channels,
                                out_channels=latent_channels,num_res_blocks=num_res_blocks,norm_num_groups=norm_num_groups,
                                norm_eps=norm_eps,attention_levels=attention_levels,with_nonlocal_attn=with_encoder_nonlocal_attn,
                                use_flash_attention=use_flash_attention,)
+        self.quant_conv_mu = Convolution(spatial_dims=spatial_dims, in_channels=latent_channels,
+                                         out_channels=latent_channels, strides=1, kernel_size=1, padding=0,conv_only=True, )
+        self.quant_conv_log_sigma = Convolution(spatial_dims=spatial_dims, in_channels=latent_channels,out_channels=latent_channels,
+                                                strides=1, kernel_size=1, padding=0, conv_only=True, )
+        # ---------------------------------------------------------------------------------------------------------------------------------------
+        # 2) Decoder
         self.decoder = Decoder(spatial_dims=spatial_dims,num_channels=num_channels,in_channels=latent_channels,
                                out_channels=out_channels,num_res_blocks=num_res_blocks,norm_num_groups=norm_num_groups,
                                norm_eps=norm_eps,attention_levels=attention_levels,with_nonlocal_attn=with_decoder_nonlocal_attn,
                                use_flash_attention=use_flash_attention,use_convtranspose=use_convtranspose,)
-        self.quant_conv_mu = Convolution(spatial_dims=spatial_dims,in_channels=latent_channels,
-                                         out_channels=latent_channels,strides=1,kernel_size=1,
-                                         padding=0,conv_only=True,)
-        self.quant_conv_log_sigma = Convolution(spatial_dims=spatial_dims,in_channels=latent_channels,out_channels=latent_channels,
-                                                strides=1,kernel_size=1,padding=0,conv_only=True,)
-        self.post_quant_conv = Convolution(spatial_dims=spatial_dims,in_channels=latent_channels,out_channels=latent_channels,
-                                           strides=1,kernel_size=1,padding=0,conv_only=True,)
+        self.post_quant_conv = Convolution(spatial_dims=spatial_dims, in_channels=latent_channels,out_channels=latent_channels,
+                                           strides=1, kernel_size=1, padding=0, conv_only=True, )
+        # ---------------------------------------------------------------------------------------------------------------------------------------
+        # 3) Else
         self.latent_channels = latent_channels
         self.use_checkpointing = use_checkpointing
 
     def encode(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """ Forwards an image through the spatial encoder, obtaining the latent mean and sigma representations.
-        Args: x: BxCx[SPATIAL DIMS] tensor """
         if self.use_checkpointing:
             h = torch.utils.checkpoint.checkpoint(self.encoder, x, use_reentrant=False)
         else:
@@ -676,15 +600,6 @@ class AutoencoderKL(nn.Module):
         return reconstruction
 
     def decode(self, z: torch.Tensor) -> torch.Tensor:
-        """
-        Based on a latent space sample, forwards it through the Decoder.
-
-        Args:
-            z: Bx[Z_CHANNELS]x[LATENT SPACE SHAPE]
-
-        Returns:
-            decoded image tensor
-        """
         z = self.post_quant_conv(z)
         if self.use_checkpointing:
             dec = torch.utils.checkpoint.checkpoint(self.decoder, z, use_reentrant=False)

@@ -13,7 +13,6 @@ from tqdm import tqdm
 from torch.cuda.amp import GradScaler, autocast
 import torch.nn.functional as F
 
-
 def main(args):
 
     print(f'\n step 1. print version and set seed')
@@ -39,18 +38,6 @@ def main(args):
     print(f' (2.2.2) val dataloader')
     val_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
 
-    """
-    print(f' (2.1.3) visualise examples from the training set')
-    print(f' (2.1.3.1) get first datas')
-    check_data = first(train_loader)
-    vis_num_images = args.vis_num_images
-    fig, ax = plt.subplots(nrows=1, ncols=vis_num_images)
-    for image_n in range(vis_num_images):
-        ax[image_n].imshow(check_data["image"][image_n, 0, :, :], cmap="gray")
-        ax[image_n].axis("off")
-    plt.show()
-    """
-
     print(f'\n step 3. pretrain autoencoder model')
     print(f' (3.0) device')
     device = torch.device("cuda")
@@ -59,6 +46,11 @@ def main(args):
                                   num_channels=(128, 128, 256), latent_channels=3, num_res_blocks=2,
                                   attention_levels=(False, False, False),
                                   with_encoder_nonlocal_attn=False, with_decoder_nonlocal_attn=False, ).to(device)
+    encoder = autoencoderkl.encoder
+    num_res_blocks = encoder.num_res_blocks
+    print(f'num_res_blocks : {num_res_blocks}')
+    decoder = autoencoderkl.decoder
+    """
 
     print(f' (3.2) discriminator')
     discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,
@@ -148,7 +140,7 @@ def main(args):
             progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1),
                                       "gen_loss": gen_epoch_loss / (step + 1),
                                       "disc_loss": disc_epoch_loss / (step + 1),})
-        """
+        
         epoch_recon_losses.append(epoch_loss / (step + 1))
         epoch_gen_losses.append(gen_epoch_loss / (step + 1))
         epoch_disc_losses.append(disc_epoch_loss / (step + 1))
@@ -169,7 +161,7 @@ def main(args):
             val_loss /= val_step
             val_recon_losses.append(val_loss)
             print(f"epoch {epoch + 1} val loss: {val_loss:.4f}")
-        """
+        
         # ------------------------------------------------------------------------------------------------------------
         print(f' model saving ... ')
         model_save_dir = os.path.join(args.model_save_baic_dir, 'model')
@@ -181,7 +173,7 @@ def main(args):
     del discriminator
     del perceptual_loss
     torch.cuda.empty_cache()
-
+    """
 
 
 if __name__ == "__main__":
