@@ -38,7 +38,10 @@ class DiffusionInferer(Inferer):
             raise NotImplementedError(f"{mode} condition is not supported")
         # ----------------------------------------------------------------------------------------------------------------
         # make noise latent
-        noisy_image = self.scheduler.add_noise(original_samples=inputs, noise=noise, timesteps=timesteps)
+        noisy_image = self.scheduler.add_noise(original_samples=inputs,
+                                               noise=noise,
+                                               timesteps=timesteps)
+        print(f'noisy_image.shape : {noisy_image.shape}')
         if mode == "concat":
             noisy_image = torch.cat([noisy_image, condition], dim=1)
             condition = None
