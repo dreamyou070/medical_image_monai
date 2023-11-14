@@ -71,6 +71,7 @@ def main(args):
     kl_weight = 1e-6
     n_epochs = 100
     autoencoder_warm_up_n_epochs = 10
+    """
     for epoch in range(n_epochs):
         print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
@@ -141,7 +142,8 @@ def main(args):
             progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1),
                                       "gen_loss": gen_epoch_loss / (step + 1),
                                       "disc_loss": disc_epoch_loss / (step + 1), })
-        """
+    
+        
         epoch_recon_losses.append(epoch_loss / (step + 1))
         epoch_gen_losses.append(gen_epoch_loss / (step + 1))
         epoch_disc_losses.append(disc_epoch_loss / (step + 1))
@@ -162,20 +164,19 @@ def main(args):
             val_loss /= val_step
             val_recon_losses.append(val_loss)
             print(f"epoch {epoch + 1} val loss: {val_loss:.4f}")
-            """
-        """
+            
         # ------------------------------------------------------------------------------------------------------------
         print(f' model saving ... ')
         model_save_dir = os.path.join(args.model_save_baic_dir, 'model')
         os.makedirs(model_save_dir, exist_ok=True)
         save_obj = {'model': autoencoderkl.state_dict(),}
         torch.save(save_obj, os.path.join(model_save_dir, f'vae_checkpoint_{epoch+1}.pth'))
-        """
+        
     progress_bar.close()
     del discriminator
     del perceptual_loss
     torch.cuda.empty_cache()
-
+    """
     print(f'step 4. unet training')
     unet = DiffusionModelUNet(
         spatial_dims=2,
