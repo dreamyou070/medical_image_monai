@@ -63,6 +63,7 @@ def main(args) :
             # result of sampling (of first image, that is the first latent)
             z = autoencoderkl.encode_stage_2_inputs(check_data["image"].to(device))
     scale_factor = 1 / torch.std(z)
+    print(f'scale_factor : {scale_factor}')
 
     print(f' \n step 5. infererence scheduler pipeline')
     inferer = LatentDiffusionInferer(scheduler, scale_factor=scale_factor)
