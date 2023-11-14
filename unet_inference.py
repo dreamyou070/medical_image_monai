@@ -53,7 +53,7 @@ def main(args) :
                                               scheduler=scheduler,
                                               save_intermediates=True,
                                               intermediate_steps=100,
-                                              autoencoder_model=autoencoderkl,)
+                                              autoencoder_model=autoencoderkl, )
     print(f' (2.3) save')
     from matplotlib import pyplot as plt
     decoded_images = []
@@ -65,7 +65,7 @@ def main(args) :
     plt.style.use("default")
     plt.imshow(chain[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
     plt.tight_layout()
-    plt.savefig("test_2.jpg")
+    plt.savefig("test_3.jpg")
 
 
 if __name__ == '__main__' :
