@@ -95,10 +95,14 @@ def main(args) :
                 timesteps = torch.randint(0, inferer.scheduler.num_train_timesteps, (z.shape[0],), device=z.device).long()
                 # 4) noise prediction (prediction = diffusion_model(x=noisy_image, timesteps=timesteps, context=condition))
                 # how can be without context?
-                noise_pred = inferer(inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps, autoencoder_model=autoencoderkl)
+                noise_pred = inferer(inputs=images, # batch, 1, W, H
+                                     diffusion_model=unet,
+                                     noise=noise,
+                                     timesteps=timesteps, autoencoder_model=autoencoderkl)
                 # ------------------------------------------------------------------------------------------------
                 # (2) VLB Loss
-                loss = F.mse_loss(noise_pred.float(), noise.float())
+                loss = F.mse_loss(noise_pred.float(),
+                                  noise.float())
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()

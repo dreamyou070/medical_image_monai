@@ -47,17 +47,13 @@ def main(args) :
     print(f' (2.2) sampling')
     with torch.no_grad():
         batch_num = 1
-        init_noise = torch.randn((batch_num, unet_inchannel, 40, 20)).to(device)
+        init_noise = torch.randn((batch_num, unet_inchannel, 20, 40)).to(device)
         image, intermediates = pipeline.sample(input_noise=init_noise,
                                               diffusion_model=unet,
                                               scheduler=scheduler,
                                               save_intermediates=True,
                                               intermediate_steps=100,
                                               autoencoder_model=autoencoderkl,)
-    # image = [Batch =1, channel=1, w=160, h=80]
-    decoded_img = autoencoderkl.decode_stage_2_outputs(image )
-
-    """
     print(f' (2.3) save')
     from matplotlib import pyplot as plt
     decoded_images = []
@@ -69,8 +65,8 @@ def main(args) :
     plt.style.use("default")
     plt.imshow(chain[0, 0].cpu(), vmin=0, vmax=1, cmap="gray")
     plt.tight_layout()
-    plt.savefig("test.jpg")
-    """
+    plt.savefig("test_2.jpg")
+
 
 if __name__ == '__main__' :
     parser = argparse.ArgumentParser()

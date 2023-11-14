@@ -46,8 +46,7 @@ class DiffusionInferer(Inferer):
         # unet prediction (unconditional model)
         prediction = diffusion_model(x=noisy_image,        # input latent
                                      timesteps=timesteps,  #
-                                     context=condition     # null condition
-                                     )
+                                     context=condition )
         return prediction
 
     @torch.no_grad()
@@ -79,10 +78,11 @@ class DiffusionInferer(Inferer):
                 model_output = diffusion_model(
                     model_input, timesteps=torch.Tensor((t,)).to(input_noise.device), context=None)
             else:
+                # noise
                 model_output = diffusion_model(image,
                                                timesteps=torch.Tensor((t,)).to(input_noise.device), context=conditioning )
             # 2. compute previous image: x_t -> x_t-1
-            # latent
+            # inference next image
             image, _ = scheduler.step(model_output, t, image)
             if save_intermediates and t % intermediate_steps == 0:
                 intermediates.append(image)
