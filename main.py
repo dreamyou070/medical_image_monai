@@ -170,7 +170,7 @@ def main(args):
         model_save_dir = os.path.join(args.model_save_basic_dir, 'vae_model_20231114')
         os.makedirs(model_save_dir, exist_ok=True)
         save_obj = {'model': autoencoderkl.state_dict(),}
-        torch.save(save_obj, os.path.join(model_save_dir, f'vae_checkpoint_{epoch+1}.pth'))
+        torch.save(save_obj, os.path.join(model_save_dir, f'vae_checkpoint_{epoch+1}.pth') )
         
     progress_bar.close()
     del discriminator
