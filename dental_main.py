@@ -64,7 +64,6 @@ def get_scheduler(args, optimizer):
                              num_training_steps=num_training_steps,
                              num_cycles=num_cycles,
                              **lr_scheduler_kwargs, )
-
     if name == SchedulerType.POLYNOMIAL:
         return schedule_func(optimizer, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps,
                              power=power,
