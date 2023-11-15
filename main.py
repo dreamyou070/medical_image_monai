@@ -216,9 +216,7 @@ def main(args):
 
     unet = unet.to(device)
     n_epochs = 500
-    val_interval = 1
-    epoch_losses = []
-    val_losses = []
+    val_interval = 40
     scaler = GradScaler()
     global_step = 0
     for epoch in range(n_epochs):
@@ -245,7 +243,7 @@ def main(args):
             scaler.step(optimizer)
             scaler.update()
             epoch_loss += loss.item()
-            loss_dict["loss/step_loss"] = loss.item()
+            loss_dict["loss/unet_step_loss"] = loss.item()
             wandb.log(loss_dict)
             progress_bar.set_postfix({"loss": epoch_loss / (step + 1)})
         #epoch_losses.append(epoch_loss / (step + 1))
