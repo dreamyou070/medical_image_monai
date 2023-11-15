@@ -23,14 +23,15 @@ from diffusers.optimization import SchedulerType, TYPE_TO_SCHEDULER_FUNCTION
 import math
 
 
-def get_scheduler(args, optimizer, max_train_steps):
+def get_scheduler(args, optimizer):
+
     # scheduler name
     name = args.lr_scheduler
     num_warmup_steps = args.lr_warmup_steps
     power = args.lr_scheduler_power
     num_cycles = args.lr_scheduler_num_cycles
     lr_scheduler_kwargs = {}  # get custom lr_scheduler kwargs
-    num_training_steps =
+    num_training_steps = args.max_train_steps
 
     def wrap_check_needless_num_warmup_steps(return_vals):
         if num_warmup_steps is not None and num_warmup_steps != 0:
