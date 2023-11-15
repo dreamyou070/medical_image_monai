@@ -54,7 +54,7 @@ def main(args) :
             ax[1].set_title('reconstruction')
             ax[1].axis("off")
             print(f'org_img_.shape : {org_img_.shape} / reconstructions.shape : {reconstructions.shape}')
-            save_dir = os.path.join(args.save_base, 'vae_inference_check')
+            save_dir = os.path.join(args.save_base, 'vae_inference_check_odd')
             os.makedirs(save_dir, exist_ok=True)
             plt.savefig(os.path.join(save_dir, f'reconstructions_{idx}.png'))
             plt.close()
@@ -72,7 +72,7 @@ if __name__ == '__main__':
                         default='/data7/sooyeon/medical_image/experiment_result_dental_image_square_preprocessing_20231115/vae_model_20231114/vae_checkpoint_100.pth')
     # step 3. get original image for reconstruct
     parser.add_argument("--data_folder", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L_normal')
+                        default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L_odd')
     parser.add_argument("--inference_num", type=int, default=5)
     parser.add_argument("--save_base", type=str,
                         default='/data7/sooyeon/medical_image/experiment_result_dental_image_square_preprocessing_20231115')
