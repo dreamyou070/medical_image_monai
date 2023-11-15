@@ -16,19 +16,28 @@ from data_module import get_transform, SYDataset, SYDataLoader
 from model_module.schedulers import DDPMScheduler
 from model_module.inferers import LatentDiffusionInferer
 import matplotlib.pyplot as plt
+import wandb
 
 def main(args):
-    print(f'\n step 1. print version and set seed')
+
+    print(f'\n step 1. wandb login')
+    wandb.login(key=args.wandb_api_key)
+    wandb.init(project=args.wandb_project_name,
+               name=args.wandb_run_name)
+
+    print(f'\n step 2. print version and set seed')
     print_config()
     set_determinism(args.seed)
 
-    print(f'\n step 2. dataset and dataloader')
-    total_datas = os.listdir(args.data_folder)
+    print(f'\n step 3. dataset and dataloader')
+    total_norm_datas = os.listdir(args.norm_data_folder)
+    total_ood_datase = os.listdir(args.ood_data_folder)
     print(f' (2.0) data_module transform')
     train_transforms, val_transforms = get_transform(args.image_size)
+
     print(f' (2.1.1) train dataset')
-    train_num = int(0.9 * len(total_datas))
-    train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
+    train_num = int(0.9 * len(total_norm_datas))
+    train_datas, val_datas = total_norm_datas[:train_num], total_norm_datas[train_num:]
     train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas]
     train_ds = SYDataset(data=train_datalist, transform=train_transforms)
     print(f' (2.1.2) train dataloader')
@@ -37,6 +46,7 @@ def main(args):
     check_data = first(train_loader)
 
     print(f' (2.2.1) val dataset')
+    val_datas.extend(total_ood_datase)
     val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
     val_ds = SYDataset(data=val_datalist, transform=val_transforms)
     print(f' (2.2.2) val dataloader')
@@ -47,8 +57,7 @@ def main(args):
     device = torch.device("cuda")
     print(f' (3.1) generator (vae autoencoder)')
     autoencoderkl = AutoencoderKL(spatial_dims=2, in_channels=1, out_channels=1, num_channels=(128, 128, 256),
-                                  latent_channels=3, num_res_blocks=2,
-                                  attention_levels=(False, False, False), with_encoder_nonlocal_attn=False,
+                                  latent_channels=3, num_res_blocks=2, attention_levels=(False, False, False), with_encoder_nonlocal_attn=False,
                                   with_decoder_nonlocal_attn=False, ).to(device)
     print(f' (3.2) discriminator')
     discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64, in_channels=1,
@@ -67,11 +76,11 @@ def main(args):
     scaler_g = torch.cuda.amp.GradScaler()
     scaler_d = torch.cuda.amp.GradScaler()
 
-    print(f'step 4. training (takes about one hour)')
+    print(f'step 4. VAE Training')
     kl_weight = 1e-6
     n_epochs = 100
     autoencoder_warm_up_n_epochs = 10
-    
+    """
     for epoch in range(n_epochs):
         print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
@@ -147,7 +156,7 @@ def main(args):
         #epoch_recon_losses.append(epoch_loss / (step + 1))
         #epoch_gen_losses.append(gen_epoch_loss / (step + 1))
         #epoch_disc_losses.append(disc_epoch_loss / (step + 1))
-        """
+        
         if (epoch + 1) % val_interval == 0:
             autoencoderkl.eval()
             val_loss = 0
@@ -164,7 +173,7 @@ def main(args):
             val_loss /= val_step
             val_recon_losses.append(val_loss)
             print(f"epoch {epoch + 1} val loss: {val_loss:.4f}")
-        """
+        
         # ------------------------------------------------------------------------------------------------------------
         print(f' model saving ... ')
         if epoch > 90 :
@@ -177,7 +186,12 @@ def main(args):
     del discriminator
     del perceptual_loss
     torch.cuda.empty_cache()
-    
+    """
+    autoencoderkl = autoencoderkl.to(device)
+    autoencoderkl.eval()
+    state_dict = torch.load(args.autoencoder_pretrained_dir, map_location='cpu')['model']
+    msg = autoencoderkl.load_state_dict(state_dict, strict=False)
+
     print(f'step 4. unet training')
     unet = DiffusionModelUNet(spatial_dims=2,
                               in_channels=3,
@@ -187,8 +201,6 @@ def main(args):
                               attention_levels=(False, True, True),
                               num_head_channels=(0, 256, 512),)
     scheduler = DDPMScheduler(num_train_timesteps=1000, schedule="linear_beta", beta_start=0.0015, beta_end=0.0195)
-
-
     with torch.no_grad():
         with autocast(enabled=True):
             z = autoencoderkl.encode_stage_2_inputs(check_data["image"].to(device))
@@ -202,11 +214,11 @@ def main(args):
 
     unet = unet.to(device)
     n_epochs = 500
-    val_interval = 40
+    val_interval = 1
     epoch_losses = []
     val_losses = []
     scaler = GradScaler()
-
+    global_step = 0
     for epoch in range(n_epochs):
         unet.train()
         autoencoderkl.eval()
@@ -216,6 +228,7 @@ def main(args):
         for step, batch in progress_bar:
             images = batch["image"].to(device)
             optimizer.zero_grad(set_to_none=True)
+            loss_dict = {}
             with autocast(enabled=True):
                 z_mu, z_sigma = autoencoderkl.encode(images)
                 z = autoencoderkl.sampling(z_mu, z_sigma)
@@ -225,13 +238,16 @@ def main(args):
                 noise_pred = inferer(inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps,
                                      autoencoder_model=autoencoderkl)
                 loss = F.mse_loss(noise_pred.float(), noise.float())
+            global_step += 1
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
             epoch_loss += loss.item()
+            loss_dict["loss/step_loss"] = loss
             progress_bar.set_postfix({"loss": epoch_loss / (step + 1)})
         #epoch_losses.append(epoch_loss / (step + 1))
-
+        loss_dict["loss/epoch_loss"] = loss
+        wandb.log(loss_dict)
         if (epoch + 1) % val_interval == 0:
             unet.eval()
             autoencoderkl.eval()
@@ -244,40 +260,32 @@ def main(args):
                         z_mu, z_sigma = autoencoderkl.encode(images)
                         z = autoencoderkl.sampling(z_mu, z_sigma)
                         noise = torch.randn_like(z).to(device)
-                        timesteps = torch.randint(
-                            0, inferer.scheduler.num_train_timesteps, (z.shape[0],), device=z.device).long()
-                        noise_pred = inferer(
-                            inputs=images,
-                            diffusion_model=unet,
-                            noise=noise,
-                            timesteps=timesteps,
-                            autoencoder_model=autoencoderkl,)
+                        timesteps = torch.randint(0, inferer.scheduler.num_train_timesteps, (z.shape[0],), device=z.device).long()
+                        noise_pred = inferer(inputs=images,
+                                             diffusion_model=unet,
+                                             noise=noise,
+                                             timesteps=timesteps,
+                                             autoencoder_model=autoencoderkl,)
                         loss = F.mse_loss(noise_pred.float(), noise.float())
                     val_loss += loss.item()
             val_loss /= val_step
             """
-
-            #val_losses.append(val_loss)
-            #print(f"Epoch {epoch} val loss: {val_loss:.4f}")
-            # Sampling image during training
-            #z = torch.randn((1, 3, 40, 20))
             z = torch.randn((1, 3, 16, 16))
             z = z.to(device)
             scheduler.set_timesteps(num_inference_steps=1000)
             with autocast(enabled=True):
-                decoded = inferer.sample(
-                    input_noise=z, diffusion_model=unet, scheduler=scheduler, autoencoder_model=autoencoderkl)
-
+                generated_image = inferer.sample(input_noise=z, diffusion_model=unet, scheduler=scheduler,
+                                         autoencoder_model=autoencoderkl,
+                                         save_intermediates=False)
             plt.figure(figsize=(2, 2))
             plt.style.use("default")
-            plt.imshow(decoded[0, 0].detach().cpu(), vmin=0, vmax=1, cmap="gray")
+            plt.imshow(generated_image.detach().cpu(), vmin=0, vmax=1, cmap="gray")
             plt.tight_layout()
             plt.axis("off")
             infer_save_basic_dir = os.path.join(args.model_save_basic_dir, 'unet_inference_20231114')
             os.makedirs(infer_save_basic_dir, exist_ok=True)
             plt.savefig(os.path.join(infer_save_basic_dir, f'epoch_{epoch+1}'))
             plt.close()
-
         # save model
         print(f' model saving ... ')
         if epoch > 150 :
@@ -291,24 +299,29 @@ def main(args):
 
 
 if __name__ == "__main__":
+
     parser = argparse.ArgumentParser()
-
-    # step 1. print version and set seed
+    # step 1. wandb login
+    parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
+    parser.add_argument("--wandb_project_name", type=str, default='dental_experiment')
+    parser.add_argument("--wandb_run_name", type=str, default='squared_image_unet_training')
+    # step 2. print version and set seed
     parser.add_argument("--seed", type=int, default=42)
-
-    # step 2. dataset and dataloader
-    parser.add_argument("--data_folder", type=str,
+    # step 3. dataset and dataloader
+    parser.add_argument("--norm_data_folder", type=str,
                         default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L_normal')
-    #parser.add_argument("--data_folder", type=str,
-    #                    default='/data7/sooyeon/medical_image/experiment_data/MedNIST/Hand')
+    parser.add_argument("--ood_data_folder", type=str,
+                        default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L_ood')
     parser.add_argument("--image_size", type=str, default='64,64')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda:1')
-
+    parser.add_argument("--autoencoder_pretrained_dir", type=str,
+                        default='/data7/sooyeon/medical_image/experiment_result_dental_image_square_preprocessing_20231115/vae_model_20231114/vae_checkpoint_100.pth')
     # step 5. saving autoencoder model
     parser.add_argument("--model_save_basic_dir", type=str,
                         default='/data7/sooyeon/medical_image/experiment_result_dental_image_square_preprocessing_20231115')
 
     args = parser.parse_args()
     main(args)
+
