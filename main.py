@@ -281,16 +281,22 @@ def main(args):
                                          save_intermediates=False)
 
             print(f' generated_image.shape : {generated_image.shape}')
-
             plt.figure(figsize=(2, 2))
             plt.style.use("default")
-            plt.imshow(generated_image.detach().squeeze().cpu(), vmin=0, vmax=1, cmap="gray")
+            torch_img = generated_image.detach().squeeze().cpu()
+            plt.imshow(torch_img, vmin=0, vmax=1, cmap="gray")
             plt.tight_layout()
             plt.axis("off")
             infer_save_basic_dir = os.path.join(args.model_save_basic_dir, 'unet_inference_20231114')
             os.makedirs(infer_save_basic_dir, exist_ok=True)
-            plt.savefig(os.path.join(infer_save_basic_dir, f'epoch_{epoch+1}'))
+            plt.savefig(os.path.join(infer_save_basic_dir, f'epoch_{epoch+1}.png'))
             plt.close()
+
+            # pil_img
+            from torchvision import transforms
+            pil_img = transforms.ToPILImage()(torch_img)
+            pil_dir = os.path.join(infer_save_basic_dir, f'epoch_{epoch+1}_pil.png')
+            pil_img.save(pil_dir)
         # save model
         print(f' model saving ... ')
         if epoch > 150 :
