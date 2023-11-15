@@ -31,14 +31,14 @@ def main(args):
 
     print(f'\n step 3. dataset and dataloader')
     total_norm_datas = os.listdir(args.norm_data_folder)
-    total_ood_datase = os.listdir(args.ood_data_folder)
+    total_ood_datas = os.listdir(args.ood_data_folder)
     print(f' (2.0) data_module transform')
     train_transforms, val_transforms = get_transform(args.image_size)
 
     print(f' (2.1.1) train dataset')
     train_num = int(0.9 * len(total_norm_datas))
     train_datas, val_datas = total_norm_datas[:train_num], total_norm_datas[train_num:]
-    train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas]
+    train_datalist = [{"image": os.path.join(args.norm_data_folder, train_data)} for train_data in train_datas]
     train_ds = SYDataset(data=train_datalist, transform=train_transforms)
     print(f' (2.1.2) train dataloader')
     train_loader = SYDataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4,
@@ -46,8 +46,9 @@ def main(args):
     check_data = first(train_loader)
 
     print(f' (2.2.1) val dataset')
-    val_datas.extend(total_ood_datase)
-    val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
+    norm_val_datalist = [{"image": os.path.join(args.norm_folder, val_data)} for val_data in val_datas]
+    ood_val_datalist = [{"image": os.path.join(args.ood_folder, val_data)} for val_data in total_ood_datas]
+    val_datalist = norm_val_datalist + ood_val_datalist
     val_ds = SYDataset(data=val_datalist, transform=val_transforms)
     print(f' (2.2.2) val dataloader')
     val_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
