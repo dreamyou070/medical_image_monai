@@ -297,6 +297,7 @@ def main(args):
             torch_img = generated_image.detach().squeeze().cpu()
             pil_img = torch_transforms.ToPILImage()(torch_img)
             infer_save_basic_dir = os.path.join(args.model_save_basic_dir, 'unet_inference_20231115')
+            os.makedirs(infer_save_basic_dir, exist_ok=True)
             pil_dir = os.path.join(infer_save_basic_dir, f'epoch_{epoch+1}_pil.png')
             pil_img.save(pil_dir)
             # ------------------- wandb save image ------------------- #
