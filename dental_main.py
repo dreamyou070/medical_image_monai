@@ -403,8 +403,6 @@ if __name__ == "__main__":
     parser.add_argument("--lr_warmup_steps", type=int, default=120)
     parser.add_argument("--lr_scheduler_power", type=float, default=1,
                         help="Polynomial power for polynomial scheduler", )
-    parser.add_argument("--lr_scheduler_power", type=float, default=1,
-                        help="Polynomial power for polynomial scheduler", )
     parser.add_argument("--lr_scheduler_num_cycles", type=int, default=1,
                         help="Number of restarts for cosine scheduler with restarts", )
 
