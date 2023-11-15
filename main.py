@@ -167,10 +167,11 @@ def main(args):
         """
         # ------------------------------------------------------------------------------------------------------------
         print(f' model saving ... ')
-        model_save_dir = os.path.join(args.model_save_basic_dir, 'vae_model_20231114')
-        os.makedirs(model_save_dir, exist_ok=True)
-        save_obj = {'model': autoencoderkl.state_dict(),}
-        torch.save(save_obj, os.path.join(model_save_dir, f'vae_checkpoint_{epoch+1}.pth') )
+        if epoch > 90 :
+            model_save_dir = os.path.join(args.model_save_basic_dir, 'vae_model_20231114')
+            os.makedirs(model_save_dir, exist_ok=True)
+            save_obj = {'model': autoencoderkl.state_dict(),}
+            torch.save(save_obj, os.path.join(model_save_dir, f'vae_checkpoint_{epoch+1}.pth') )
         
     progress_bar.close()
     del discriminator
@@ -200,7 +201,7 @@ def main(args):
     optimizer = torch.optim.Adam(unet.parameters(), lr=1e-4)
 
     unet = unet.to(device)
-    n_epochs = 200
+    n_epochs = 500
     val_interval = 40
     epoch_losses = []
     val_losses = []
@@ -260,7 +261,7 @@ def main(args):
             #print(f"Epoch {epoch} val loss: {val_loss:.4f}")
             # Sampling image during training
             #z = torch.randn((1, 3, 40, 20))
-            z = torch.randn((1, 3, 400, 400))
+            z = torch.randn((1, 3, 16, 16))
             z = z.to(device)
             scheduler.set_timesteps(num_inference_steps=1000)
             with autocast(enabled=True):
@@ -279,10 +280,11 @@ def main(args):
 
         # save model
         print(f' model saving ... ')
-        model_save_dir = os.path.join(args.model_save_basic_dir, 'unet_model_20231114')
-        os.makedirs(model_save_dir, exist_ok=True)
-        save_obj = {'model': unet.state_dict(), }
-        torch.save(save_obj, os.path.join(model_save_dir, f'unet_checkpoint_{epoch + 1}.pth'))
+        if epoch > 150 :
+            model_save_dir = os.path.join(args.model_save_basic_dir, 'unet_model_20231114')
+            os.makedirs(model_save_dir, exist_ok=True)
+            save_obj = {'model': unet.state_dict(), }
+            torch.save(save_obj, os.path.join(model_save_dir, f'unet_checkpoint_{epoch + 1}.pth'))
 
 
     progress_bar.close()
@@ -299,14 +301,14 @@ if __name__ == "__main__":
                         default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L_normal')
     #parser.add_argument("--data_folder", type=str,
     #                    default='/data7/sooyeon/medical_image/experiment_data/MedNIST/Hand')
-    parser.add_argument("--image_size", type=str, default='80,80')
+    parser.add_argument("--image_size", type=str, default='64,64')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda:1')
 
     # step 5. saving autoencoder model
     parser.add_argument("--model_save_basic_dir", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result_dental_square')
+                        default='/data7/sooyeon/medical_image/experiment_result_dental_image_square_preprocessing_20231115')
 
     args = parser.parse_args()
     main(args)
