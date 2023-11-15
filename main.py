@@ -82,7 +82,7 @@ def main(args):
     kl_weight = 1e-6
     n_epochs = 100
     autoencoder_warm_up_n_epochs = 10
-    """
+
     for epoch in range(n_epochs):
         print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
@@ -158,7 +158,7 @@ def main(args):
         #epoch_recon_losses.append(epoch_loss / (step + 1))
         #epoch_gen_losses.append(gen_epoch_loss / (step + 1))
         #epoch_disc_losses.append(disc_epoch_loss / (step + 1))
-        
+        """
         if (epoch + 1) % val_interval == 0:
             autoencoderkl.eval()
             val_loss = 0
@@ -175,14 +175,14 @@ def main(args):
             val_loss /= val_step
             val_recon_losses.append(val_loss)
             print(f"epoch {epoch + 1} val loss: {val_loss:.4f}")
-        
+        """
         # ------------------------------------------------------------------------------------------------------------
         print(f' model saving ... ')
-        if epoch > 90 :
-            model_save_dir = os.path.join(args.model_save_basic_dir, 'vae_model_20231114')
-            os.makedirs(model_save_dir, exist_ok=True)
+        if epoch == 99 :
+            #model_save_dir = os.path.join(args.model_save_basic_dir, 'vae_model_20231114')
+            #os.makedirs(model_save_dir, exist_ok=True)
             save_obj = {'model': autoencoderkl.state_dict(),}
-            torch.save(save_obj, os.path.join(model_save_dir, f'vae_checkpoint_{epoch+1}.pth') )
+            torch.save(save_obj, os.path.join(args.model_save_basic_dir, f'vae_checkpoint_{epoch+1}.pth') )
         
     progress_bar.close()
     del discriminator
@@ -193,7 +193,7 @@ def main(args):
     autoencoderkl.eval()
     state_dict = torch.load(args.autoencoder_pretrained_dir, map_location='cpu')['model']
     msg = autoencoderkl.load_state_dict(state_dict, strict=False)
-
+    """
     print(f'step 4. unet training')
     unet = DiffusionModelUNet(spatial_dims=2,
                               in_channels=3,
@@ -318,7 +318,7 @@ if __name__ == "__main__":
     # step 1. wandb login
     parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
     parser.add_argument("--wandb_project_name", type=str, default='dental_experiment')
-    parser.add_argument("--wandb_run_name", type=str, default='hand_training)
+    parser.add_argument("--wandb_run_name", type=str, default='hand_training')
     
     # step 2. print version and set seed
     parser.add_argument("--seed", type=int, default=42)
@@ -336,7 +336,7 @@ if __name__ == "__main__":
                         default='/data7/sooyeon/medical_image/experiment_result_dental_image_square_preprocessing_20231115/vae_model/vae_checkpoint_100.pth')
     # step 5. saving autoencoder model
     parser.add_argument("--model_save_basic_dir", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result_dental_image_square_preprocessing_20231115')
+                        default='/data7/sooyeon/medical_image/experiment_result_hand')
 
     args = parser.parse_args()
     main(args)
