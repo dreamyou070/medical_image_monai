@@ -279,9 +279,12 @@ def main(args):
                 generated_image = inferer.sample(input_noise=z, diffusion_model=unet, scheduler=scheduler,
                                          autoencoder_model=autoencoderkl,
                                          save_intermediates=False)
+
+            print(f' generated_image.shape : {generated_image.shape}')
+
             plt.figure(figsize=(2, 2))
             plt.style.use("default")
-            plt.imshow(generated_image.detach().cpu(), vmin=0, vmax=1, cmap="gray")
+            plt.imshow(generated_image.detach().squeeze().cpu(), vmin=0, vmax=1, cmap="gray")
             plt.tight_layout()
             plt.axis("off")
             infer_save_basic_dir = os.path.join(args.model_save_basic_dir, 'unet_inference_20231114')
