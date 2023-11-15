@@ -260,7 +260,8 @@ def main(args):
             #val_losses.append(val_loss)
             #print(f"Epoch {epoch} val loss: {val_loss:.4f}")
             # Sampling image during training
-            z = torch.randn((1, 3, 40, 20))
+            #z = torch.randn((1, 3, 40, 20))
+            z = torch.randn((1, 3, 16, 16))
             z = z.to(device)
             scheduler.set_timesteps(num_inference_steps=1000)
             with autocast(enabled=True):
@@ -295,18 +296,18 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
 
     # step 2. dataset and dataloader
+    #parser.add_argument("--data_folder", type=str,
+    #                    default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L')
     parser.add_argument("--data_folder", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L')
-    parser.add_argument("--image_size", type=str, default='160,80')
+                        default='/data7/sooyeon/medical_image/experiment_data/MedNIST/Hand')
+    parser.add_argument("--image_size", type=str, default='64,64')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda:1')
 
     # step 5. saving autoencoder model
     parser.add_argument("--model_save_basic_dir", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result')
-    parser.add_argument("--save_base_folder", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result/unet_training_inference')
+                        default='/data7/sooyeon/medical_image/experiment_result_hand')
 
     args = parser.parse_args()
     main(args)
