@@ -6,6 +6,7 @@ from monai.utils import first
 from utils.set_seed import set_determinism
 import argparse
 import torch
+import torchvision.transforms as torch_transforms
 from model_module.nets import AutoencoderKL, PatchDiscriminator
 from loss_module import PatchAdversarialLoss, PerceptualLoss
 from tqdm import tqdm
@@ -279,7 +280,7 @@ def main(args):
                 generated_image = inferer.sample(input_noise=z, diffusion_model=unet, scheduler=scheduler,
                                          autoencoder_model=autoencoderkl,
                                          save_intermediates=False)
-
+            """
             print(f' generated_image.shape : {generated_image.shape}')
             plt.figure(figsize=(2, 2))
             plt.style.use("default")
@@ -291,21 +292,22 @@ def main(args):
             os.makedirs(infer_save_basic_dir, exist_ok=True)
             plt.savefig(os.path.join(infer_save_basic_dir, f'epoch_{epoch+1}.png'))
             plt.close()
-
-            # pil_img
-            from torchvision import transforms
-            pil_img = transforms.ToPILImage()(torch_img)
+            """
+            # ------------------- save image ------------------- #
+            torch_img = generated_image.detach().squeeze().cpu()
+            pil_img = torch_transforms.ToPILImage()(torch_img)
+            infer_save_basic_dir = os.path.join(args.model_save_basic_dir, 'unet_inference_20231115')
             pil_dir = os.path.join(infer_save_basic_dir, f'epoch_{epoch+1}_pil.png')
             pil_img.save(pil_dir)
+            # ------------------- wandb save image ------------------- #
+            wandb.log({wandb.Image(pil_img, caption=f"epoch : {epoch+1}"),})
         # save model
         print(f' model saving ... ')
         if epoch > 150 :
-            model_save_dir = os.path.join(args.model_save_basic_dir, 'unet_model_20231114')
+            model_save_dir = os.path.join(args.model_save_basic_dir, 'unet_model_20231115')
             os.makedirs(model_save_dir, exist_ok=True)
             save_obj = {'model': unet.state_dict(), }
             torch.save(save_obj, os.path.join(model_save_dir, f'unet_checkpoint_{epoch + 1}.pth'))
-
-
     progress_bar.close()
 
 
