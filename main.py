@@ -46,8 +46,8 @@ def main(args):
     check_data = first(train_loader)
 
     print(f' (2.2.1) val dataset')
-    norm_val_datalist = [{"image": os.path.join(args.norm_folder, val_data)} for val_data in val_datas]
-    ood_val_datalist = [{"image": os.path.join(args.ood_folder, val_data)} for val_data in total_ood_datas]
+    norm_val_datalist = [{"image": os.path.join(args.norm_data_folder, val_data)} for val_data in val_datas]
+    ood_val_datalist = [{"image": os.path.join(args.ood_data_folder, val_data)} for val_data in total_ood_datas]
     val_datalist = norm_val_datalist + ood_val_datalist
     val_ds = SYDataset(data=val_datalist, transform=val_transforms)
     print(f' (2.2.2) val dataloader')
