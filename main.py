@@ -256,6 +256,7 @@ def main(args):
                     val_loss += loss.item()
             val_loss /= val_step
             """
+            
             #val_losses.append(val_loss)
             #print(f"Epoch {epoch} val loss: {val_loss:.4f}")
             # Sampling image during training
@@ -274,6 +275,7 @@ def main(args):
             infer_save_basic_dir = os.path.join(args.model_save_basic_dir, 'unet_inference_20231114')
             os.makedirs(infer_save_basic_dir)
             plt.savefig(os.path.join(infer_save_basic_dir, f'epoch_{epoch+1}'))
+            plt.close()
 
         # save model
         print(f' model saving ... ')
