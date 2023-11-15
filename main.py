@@ -27,7 +27,7 @@ def main(args):
     print(f' (2.0) data_module transform')
     train_transforms, val_transforms = get_transform(args.image_size)
     print(f' (2.1.1) train dataset')
-    train_num = int(0.7 * len(total_datas))
+    train_num = int(0.9 * len(total_datas))
     train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
     train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas]
     train_ds = SYDataset(data=train_datalist, transform=train_transforms)
@@ -178,14 +178,13 @@ def main(args):
     torch.cuda.empty_cache()
     
     print(f'step 4. unet training')
-    unet = DiffusionModelUNet(
-        spatial_dims=2,
-        in_channels=3,
-        out_channels=3,
-        num_res_blocks=2,
-        num_channels=(128, 256, 512),
-        attention_levels=(False, True, True),
-        num_head_channels=(0, 256, 512),)
+    unet = DiffusionModelUNet(spatial_dims=2,
+                              in_channels=3,
+                              out_channels=3,
+                              num_res_blocks=2,
+                              num_channels=(128, 256, 512),
+                              attention_levels=(False, True, True),
+                              num_head_channels=(0, 256, 512),)
     scheduler = DDPMScheduler(num_train_timesteps=1000, schedule="linear_beta", beta_start=0.0015, beta_end=0.0195)
 
 
@@ -261,7 +260,7 @@ def main(args):
             #print(f"Epoch {epoch} val loss: {val_loss:.4f}")
             # Sampling image during training
             #z = torch.randn((1, 3, 40, 20))
-            z = torch.randn((1, 3, 16, 16))
+            z = torch.randn((1, 3, 400, 400))
             z = z.to(device)
             scheduler.set_timesteps(num_inference_steps=1000)
             with autocast(enabled=True):
@@ -296,18 +295,18 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
 
     # step 2. dataset and dataloader
-    #parser.add_argument("--data_folder", type=str,
-    #                    default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L')
     parser.add_argument("--data_folder", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_data/MedNIST/Hand')
-    parser.add_argument("--image_size", type=str, default='64,64')
+                        default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L_normal')
+    #parser.add_argument("--data_folder", type=str,
+    #                    default='/data7/sooyeon/medical_image/experiment_data/MedNIST/Hand')
+    parser.add_argument("--image_size", type=str, default='1600,1600')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda:1')
 
     # step 5. saving autoencoder model
     parser.add_argument("--model_save_basic_dir", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result_hand')
+                        default='/data7/sooyeon/medical_image/experiment_result_dental_square')
 
     args = parser.parse_args()
     main(args)
