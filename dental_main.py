@@ -405,7 +405,6 @@ if __name__ == "__main__":
                         help="Polynomial power for polynomial scheduler", )
     parser.add_argument("--lr_scheduler_num_cycles", type=int, default=1,
                         help="Number of restarts for cosine scheduler with restarts", )
-
     args = parser.parse_args()
     main(args)
 
