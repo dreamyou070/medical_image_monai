@@ -304,7 +304,7 @@ def main(args):
         # save model
         print(f' model saving ... ')
         if epoch > 150 :
-            model_save_dir = os.path.join(args.model_save_basic_dir, 'unet_model_20231115')
+            model_save_dir = os.path.join(args.model_save_basic_dir, 'unet_model')
             os.makedirs(model_save_dir, exist_ok=True)
             save_obj = {'model': unet.state_dict(), }
             torch.save(save_obj, os.path.join(model_save_dir, f'unet_checkpoint_{epoch + 1}.pth'))
@@ -330,7 +330,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda:1')
     parser.add_argument("--autoencoder_pretrained_dir", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result_dental_image_square_preprocessing_20231115/vae_model_20231114/vae_checkpoint_100.pth')
+                        default='/data7/sooyeon/medical_image/experiment_result_dental_image_square_preprocessing_20231115/vae_model/vae_checkpoint_100.pth')
     # step 5. saving autoencoder model
     parser.add_argument("--model_save_basic_dir", type=str,
                         default='/data7/sooyeon/medical_image/experiment_result_dental_image_square_preprocessing_20231115')
