@@ -69,12 +69,12 @@ if __name__ == '__main__':
     parser.add_argument('--infer_num', type=int, default=5)
     # step 2. model loading
     parser.add_argument('--pretrained_dir', type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result/vae_model/vae_checkpoint_100.pth')
+                        default='/data7/sooyeon/medical_image/experiment_result_dental_image_square_preprocessing_20231115/vae_model_20231114/vae_checkpoint_100.pth')
     # step 3. get original image for reconstruct
     parser.add_argument("--data_folder", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L')
+                        default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L_normal')
     parser.add_argument("--inference_num", type=int, default=5)
     parser.add_argument("--save_base", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result')
+                        default='/data7/sooyeon/medical_image/experiment_result_dental_image_square_preprocessing_20231115')
     args = parser.parse_args()
     main(args)
