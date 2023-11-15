@@ -301,7 +301,9 @@ def main(args):
             pil_dir = os.path.join(infer_save_basic_dir, f'epoch_{epoch+1}_pil.png')
             pil_img.save(pil_dir)
             # ------------------- wandb save image ------------------- #
-            wandb.log({wandb.Image(pil_img, caption=f"epoch : {epoch+1}"),})
+            loading_image = wandb.Image(pil_img, caption=f"epoch : {epoch + 1}")
+            wandb.log({"inference": loading_image})
+
         # save model
         print(f' model saving ... ')
         if epoch > 150 :
