@@ -318,14 +318,16 @@ if __name__ == "__main__":
     # step 1. wandb login
     parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
     parser.add_argument("--wandb_project_name", type=str, default='dental_experiment')
-    parser.add_argument("--wandb_run_name", type=str, default='squared_image_unet_training')
+    parser.add_argument("--wandb_run_name", type=str, default='hand_training)
+    
     # step 2. print version and set seed
     parser.add_argument("--seed", type=int, default=42)
+    
     # step 3. dataset and dataloader
     parser.add_argument("--norm_data_folder", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L_normal')
+                        default='/data7/sooyeon/medical_image/experiment_data/MedNIST/Hand')
     parser.add_argument("--ood_data_folder", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L_ood')
+                        default='/data7/sooyeon/medical_image/experiment_data/MedNIST/Hand')
     parser.add_argument("--image_size", type=str, default='64,64')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
