@@ -381,7 +381,6 @@ if __name__ == "__main__":
 
     # step 2. print version and set seed
     parser.add_argument("--seed", type=int, default=42)
-
     # step 3. dataset and dataloader
     parser.add_argument("--norm_data_folder", type=str,
                         default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L_normal')
