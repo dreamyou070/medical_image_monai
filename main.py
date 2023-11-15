@@ -244,11 +244,12 @@ def main(args):
             scaler.step(optimizer)
             scaler.update()
             epoch_loss += loss.item()
-            loss_dict["loss/step_loss"] = loss
+            loss_dict["loss/step_loss"] = loss.item()
+            wandb.log(loss_dict)
             progress_bar.set_postfix({"loss": epoch_loss / (step + 1)})
         #epoch_losses.append(epoch_loss / (step + 1))
-        loss_dict["loss/epoch_loss"] = loss
-        wandb.log(loss_dict)
+        #loss_dict["loss/epoch_loss"] = loss
+
         if (epoch + 1) % val_interval == 0:
             unet.eval()
             autoencoderkl.eval()
