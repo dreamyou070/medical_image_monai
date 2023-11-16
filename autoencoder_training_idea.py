@@ -163,11 +163,13 @@ def main(args):
         if (epoch + 1) % val_interval == 0:
             autoencoderkl.eval()
             for val_step, batch in enumerate(val_loader, start=1):
+
                 normal_info = batch['normal']
                 normal_index = torch.where(normal_info == 1)
                 ood_index = torch.where(normal_info != 1)
 
-                img_info = batch['image_info']['image']
+                img_info = batch['image_info']['image'].to(device)
+                weight_dtype = img_info.dtype
                 normal_img_info = img_info[normal_index]
                 ood_img_info = img_info[ood_index]
 
@@ -177,9 +179,11 @@ def main(args):
 
                 for norm_img in normal_img_info :
                     with torch.no_grad():
-                        recon_img, z_mu, z_sigma = autoencoderkl(norm_img)
+                        recon_img, z_mu, z_sigma = autoencoderkl(normal_img_info)
                         print(f'normal_img_info : {norm_img.shape}')
                         print(f'recon_img : {recon_img.shape}')
+
+
 
 
 
