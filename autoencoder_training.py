@@ -58,11 +58,12 @@ def main(args):
     print(f' (3.6) mixed precision (for generator and discriminator)')
     scaler_g = torch.cuda.amp.GradScaler()
     scaler_d = torch.cuda.amp.GradScaler()
-
+    print(f'\n step 5. loss function')
+    mse_loss = torch.nn.MSELoss(reduction='mean')
     print(f'step 4. training (takes about one hour)')
     kl_weight = 1e-6
     n_epochs = 100
-    autoencoder_warm_up_n_epochs = 10
+    autoencoder_warm_up_n_epochs = 0
     for epoch in range(n_epochs):
         print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
@@ -100,6 +101,13 @@ def main(args):
                     generator_loss = adv_loss(logits_fake,
                                               target_is_real=True,
                                               for_discriminator=False)
+                    logits_fake_target = torch.ones_like(logits_fake)
+                    generator_loss_manual = torch.mean(torch.stack([mse_loss(logits_fake.float(),
+                                                                      logits_fake_target.float())]))
+                    print(f'[gen] auto generator loss : {generator_loss}')
+                    print(f'[gen] manual generator loss : {generator_loss_manual}')
+
+
                     loss_g += adv_weight * generator_loss
             scaler_g.scale(loss_g).backward()
             scaler_g.step(optimizer_g)
@@ -115,11 +123,26 @@ def main(args):
                     # 즉 target 은 가짜이므로, target_is_real 은 False 가 되어야 한다.
                     # 구분자를 학습시키기 위한 것이므로 for_discriminator 는 True 로 한다.
                     loss_d_fake = adv_loss(discriminator(reconstruction.contiguous().detach())[-1], target_is_real=False,for_discriminator=True)
+
+                    manual_loss_d_fake = torch.mean(torch.stack([mse_loss(discriminator(reconstruction.contiguous().detach())[-1].float(),
+                                                                             torch.zeros_like(loss_d_fake).float())]))
+                    print(f'[des] auto loss_d_fake : {loss_d_fake}')
+                    print(f'[des] manual loss_d_fake : {manual_loss_d_fake}')
+
                     # ---------------------------------------------------------------------------------------------------------------------
                     # discriminator 가 real 을 real 이라고 판별해야 한다.\
                     # 즉, target 은 real 이므로, target_is_real 은 True 가 되어야 한다.
                     # 구분자를 학습시키기 위한 것이므로 for_discriminator 는 True 로 한다.
                     loss_d_real = adv_loss(discriminator(images.contiguous().detach())[-1],target_is_real=True,for_discriminator=True)
+
+                    manual_loss_d_real = torch.mean(torch.stack([mse_loss(discriminator(images.contiguous().detach())[-1].float(),
+                                                                          torch.ones_like(loss_d_fake).float())]))
+                    print(f'[des] auto loss_d_real : {loss_d_real}')
+                    print(f'[des] manual loss_d_real : {manual_loss_d_real}')
+
+
+
+
                     discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
                     loss_d = adv_weight * discriminator_loss
                 scaler_d.scale(loss_d).backward()
@@ -175,7 +198,7 @@ if __name__ == "__main__":
 
     # step 2. dataset and dataloader
     parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L')
-    parser.add_argument("--image_size", type=str, default='160,80')
+    parser.add_argument("--image_size", type=str, default='64,64')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda:1')
