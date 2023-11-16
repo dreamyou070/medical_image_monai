@@ -147,8 +147,8 @@ def main(args):
                     # -----------------------------------------------------------------------------------------------------
                     # ood image adversarial loss
                     ood_reconstruction, z_mu, z_sigma = autoencoderkl(ood_img_info)
-                    recon_attn = ood_reconstruction.contiguous().float()
-                    ood_generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(),
+                    ood_recon_attn = discriminator(ood_reconstruction.contiguous().float())[-1]
+                    ood_generator_loss = torch.mean(torch.stack([mse_loss(ood_recon_attn.float(),
                                                                           ood_mask_info.contiguous().float())]))
                     loss_g += adv_weight * ood_generator_loss
                     loss_dict["loss/adversarial_ood_generator_loss"] = generator_loss.item()
