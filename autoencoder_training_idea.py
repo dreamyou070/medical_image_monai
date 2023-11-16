@@ -133,13 +133,11 @@ def main(args):
                     generator_loss = adv_loss(discriminator(reconstruction.contiguous().float())[-1],
                                               target_is_real=True,
                                               for_discriminator=False)
-                    print(f'adv loss : {generator_loss}')
-
 
                     recon_attn = discriminator(reconstruction.contiguous().float())[-1]
                     recon_attn_target = torch.ones(size=recon_attn.shape)
-                    generator_loss = mse_loss(recon_attn.float(), recon_attn.float())
-                    print(f'recon_attn : {recon_attn}')
+                    recon_loss = torch.mean(torch.stack(mse_loss(recon_attn.float(), recon_attn.float())))
+                    print(f'adv loss : {generator_loss} : recon_attn : {recon_loss}')
 
 
 

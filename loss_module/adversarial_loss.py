@@ -98,6 +98,7 @@ class PatchAdversarialLoss(_Loss):
 
         if (self.criterion == AdversarialCriterions.BCE.value or self.criterion == AdversarialCriterions.LEAST_SQUARE.value):
             loss = self.loss_fct(input, target)
+            print(f'in forward_singel, loss : {loss}')
             return loss
 
         elif self.criterion == AdversarialCriterions.HINGE.value:
