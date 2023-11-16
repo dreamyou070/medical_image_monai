@@ -10,7 +10,7 @@ from data_module.load_image import LoadImaged
 from data_module.ensure_channel_first import EnsureChannelFirstd
 from data_module.scaling import ScaleIntensityRanged
 from data_module.affine_transferling import RandAffined
-
+import os
 from monai.utils import min_version, optional_import
 from monai import transforms
 import warnings
@@ -71,6 +71,47 @@ def val_transform():
                                          transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0,
                                                                          b_min=0.0, b_max=1.0, clip=True), ])
     return val_transforms
+
+class SYDataset_masking(_TorchDataset):
+
+    def __init__(self,
+                 data: Sequence,
+                 transform: Callable | None = None,
+                 base_mask_dir : str = None,
+                 image_size = 64,) -> None:
+
+        self.data = data # list of datas
+        self.transform: Any = transform
+        self.reverse_indexing = True
+        self.image_size = image_size
+        self.base_mask_dir = base_mask_dir
+
+    def __len__(self) -> int:
+        return len(self.data)
+
+    def data_transform(self, index: int):
+
+        data_i = self.data[index]
+        preprocessed_data = apply_transform(self.transform, data_i)
+        return preprocessed_data
+
+    def __getitem__(self, index: int | slice | Sequence[int]):
+
+        if isinstance(index, slice):
+            start, stop, step = index.indices(len(self))
+            indices = range(start, stop, step)
+            return Subset(dataset=self, indices=indices)
+
+        if isinstance(index, collections.abc.Sequence):
+            return Subset(dataset=self, indices=index)
+
+        data_dir = self.data[index]['image']
+        parent, net_name = os.path.split(data_dir)
+        mask_dir = os.path.join(self.base_mask_dir, net_name)
+
+
+        return self.data_transform(index), mask_dir
+
 class SYDataset(_TorchDataset):
 
     def __init__(self,

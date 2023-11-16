@@ -79,21 +79,16 @@ class PatchAdversarialLoss(_Loss):
             if self.criterion != AdversarialCriterions.HINGE.value:
                 trg_attention_tensor = self.get_target_tensor(disc_out, target_is_real)
                 target_.append(trg_attention_tensor)
-                if target_is_real == False :
-                    print(f'target_is_real == False (zero) : {trg_attention_tensor}')
             else:
                 target_.append(self.get_zero_tensor(disc_out))
 
         # Loss calculation
         loss = []
         for disc_ind, disc_out in enumerate(input):
-
             if self.activation is not None:
                 disc_out = self.activation(disc_out)
-
             if self.criterion == AdversarialCriterions.HINGE.value and not target_is_real:
                 loss_ = self.forward_single(-disc_out, target_[disc_ind])
-
             else:
                 loss_ = self.forward_single(disc_out, target_[disc_ind])
             loss.append(loss_)
@@ -111,9 +106,6 @@ class PatchAdversarialLoss(_Loss):
                        target: torch.FloatTensor) -> torch.Tensor | None:
 
         if (self.criterion == AdversarialCriterions.BCE.value or self.criterion == AdversarialCriterions.LEAST_SQUARE.value):
-            # self.loss_fct .. ?
-            # self.loss_fct = torch.nn.MSELoss(reduction=reduction)
-            # mse loss
             return self.loss_fct(input, target)
 
         elif self.criterion == AdversarialCriterions.HINGE.value:
