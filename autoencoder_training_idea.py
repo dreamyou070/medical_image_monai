@@ -23,10 +23,10 @@ def main(args):
     data_base_dir = os.path.join(args.data_folder, 'original')
     base_mask_dir = os.path.join(args.data_folder, 'mask')
     total_datas = os.listdir(data_base_dir)
-    train_transforms, val_transforms = get_transform(args.image_size)
+    train_transforms, val_transforms = get_transform(data_base_dir)
     train_num = int(0.7 * len(total_datas))
     train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
-    train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas]
+    train_datalist = [{"image": os.path.join(data_base_dir, train_data)} for train_data in train_datas]
     train_ds = SYDataset_masking(data=train_datalist,
                                  transform=train_transforms,
                                  base_mask_dir = base_mask_dir)
@@ -37,7 +37,7 @@ def main(args):
     check_data = first(train_loader)
 
     print(f' (2.2.1) normal val dataset and dataloader')
-    val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
+    val_datalist = [{"image": os.path.join(data_base_dir, val_data)} for val_data in val_datas]
     val_ds = SYDataset_masking(data=val_datalist, transform=val_transforms)
     norm_val_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
     for i, batch in train_loader :
