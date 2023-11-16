@@ -95,8 +95,8 @@ class PatchAdversarialLoss(_Loss):
                 loss_ = self.forward_single(-disc_out, target_[disc_ind])
 
             else:
-                print(f'calculate loss here')
                 loss_ = self.forward_single(disc_out, target_[disc_ind])
+                print(f'None loss? : {loss_}')
             loss.append(loss_)
 
         if loss is not None:
@@ -107,14 +107,16 @@ class PatchAdversarialLoss(_Loss):
 
         return loss
 
-    def forward_single(self, input: torch.FloatTensor, target: torch.FloatTensor) -> torch.Tensor | None:
-        if (
-            self.criterion == AdversarialCriterions.BCE.value
-            or self.criterion == AdversarialCriterions.LEAST_SQUARE.value
-        ):
+    def forward_single(self,
+                       input: torch.FloatTensor,
+                       target: torch.FloatTensor) -> torch.Tensor | None:
+
+        if (self.criterion == AdversarialCriterions.BCE.value or self.criterion == AdversarialCriterions.LEAST_SQUARE.value):
             return self.loss_fct(input, target)
+
         elif self.criterion == AdversarialCriterions.HINGE.value:
             minval = torch.min(input - 1, self.get_zero_tensor(input))
             return -torch.mean(minval)
+
         else:
             return None
