@@ -19,7 +19,6 @@ class PatchAdversarialLoss(_Loss):
                  reduction: LossReduction | str = LossReduction.MEAN,
                  criterion: str = AdversarialCriterions.LEAST_SQUARE.value, # criterion="least_squares"
                  no_activation_leastsq: bool = False,) -> None:
-        print(f'reduction: {reduction}')
         super().__init__(reduction=LossReduction(reduction).value)
         if criterion.lower() not in [m.value for m in AdversarialCriterions]:
             raise ValueError("Unrecognised criterion entered for Adversarial Loss. Must be one in: %s"
@@ -70,7 +69,12 @@ class PatchAdversarialLoss(_Loss):
         target_ = []
         for i, disc_out in enumerate(input):
             if self.criterion != AdversarialCriterions.HINGE.value:
+                # ----------------------------------------------------------------------------------------
+                # trg_attention_tensor
                 trg_attention_tensor = self.get_target_tensor(disc_out, target_is_real)
+                print(f'trg_attention_tensor : {trg_attention_tensor}')
+                print(f'trg_attention_tensor : {trg_attention_tensor.shape}')
+
                 target_.append(trg_attention_tensor)
             else:
                 target_.append(self.get_zero_tensor(disc_out))
@@ -81,11 +85,14 @@ class PatchAdversarialLoss(_Loss):
             if self.criterion == AdversarialCriterions.HINGE.value and not target_is_real:
                 loss_ = self.forward_single(-disc_out, target_[disc_ind])
             else:
+                #
+                print('Calculate Loss Here')
                 loss_ = self.forward_single(disc_out, target_[disc_ind])
             loss.append(loss_)
 
         if loss is not None:
             if self.reduction == LossReduction.MEAN.value:
+                print('MEAN THE VALUE')
                 loss = torch.mean(torch.stack(loss))
             elif self.reduction == LossReduction.SUM.value:
                 loss = torch.sum(torch.stack(loss))
