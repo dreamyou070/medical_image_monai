@@ -99,14 +99,14 @@ def main(args):
 
             mask_info = batch['mask']
             masked_img_info = img_info * mask_info.unsqueeze(1)
-            #masked_img_info = masked_img_info.to(weight_dtype)
+            masked_img_info = masked_img_info.to(weight_dtype)
             # 0black = 0 -> 1 ->
             #normal_mask_info = mask_info[normal_index]
             #ood_mask_info = mask_info[ood_index]
-
+            masked_img_info = img_info * masked_img_info
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
-                reconstruction, z_mu, z_sigma = autoencoderkl(normal_info)
+                reconstruction, z_mu, z_sigma = autoencoderkl(img_info)
                 #recons_loss = F.l1_loss(reconstruction.float(), masked_img_info.float())
                 #p_loss = perceptual_loss(reconstruction.float(), masked_img_info.float())
                 kl_loss = 0.5 * (torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3]))
