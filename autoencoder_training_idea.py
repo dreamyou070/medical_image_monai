@@ -40,7 +40,7 @@ def main(args):
     val_datalist = [{"image": os.path.join(data_base_dir, val_data)} for val_data in val_datas]
     val_ds = SYDataset_masking(data=val_datalist, transform=val_transforms)
     norm_val_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
-    for i, batch in train_loader :
+    for i, batch in enumerate(train_loader) :
         img_info = batch['image_info']
         mask_info = batch['mask']
         normal_info = batch['nonrmal']
