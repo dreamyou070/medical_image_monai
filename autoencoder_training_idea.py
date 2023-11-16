@@ -116,8 +116,7 @@ def main(args):
             normal_img_info = img_info[normal_index]
             ood_img_info = img_info[ood_index]
 
-            mask_info = batch['mask'].to(device, weight_dtype)
-            mask_info = mask_info.unsqueeze(1)
+            mask_info = batch['mask'].to(device, weight_dtype).unsqueeze(1)
             normal_mask_info = mask_info[normal_index]
             ood_mask_info = mask_info[ood_index]
 
@@ -137,13 +136,16 @@ def main(args):
                 loss_dict["loss/kl_loss"] = kl_loss.item()
                 loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
                 if epoch > autoencoder_warm_up_n_epochs:
+                    # -----------------------------------------------------------------------------------------------------
+                    # normal image adversarial loss
                     recon_attn = discriminator(reconstruction.contiguous().float())[-1]
-                    recon_attn_target = torch.ones(size=recon_attn.shape)
+                    recon_attn_target = discriminator(normal_mask_info.contiguous().float())[-1]
                     generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(),
                                                                       recon_attn_target.float())]))
                     loss_g += adv_weight * generator_loss
                     loss_dict["loss/adversarial_normal_generator_loss"] = generator_loss.item()
-
+                    # -----------------------------------------------------------------------------------------------------
+                    # ood image adversarial loss
                     ood_reconstruction, z_mu, z_sigma = autoencoderkl(ood_img_info)
                     recon_attn = discriminator(ood_reconstruction.contiguous().float())[-1]
                     recon_attn_target = discriminator(ood_mask_info.contiguous().float())[-1]
