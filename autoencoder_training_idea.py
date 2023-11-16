@@ -200,10 +200,10 @@ def main(args):
                         buf.seek(0)
                         pil = Image.open(buf)
                         w,h = pil.size
-                        loading_image = wandb.Image(pil.resize((w*8, h*8)), caption=f"epoch : {epoch + 1}")
-                        wandb.log({"Normal Image": loading_image})
+                        wandb.log({f"epoch : {epoch + 1}" :
+                                       wandb.Image(pil.resize((w*8, h*8)), caption=caption)})
                         plt.close()
-                        
+
 
 
 if __name__ == "__main__":
