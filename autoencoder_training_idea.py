@@ -152,47 +152,58 @@ def main(args):
         if (epoch + 1) % val_interval == 0:
             autoencoderkl.eval()
             for val_step, batch in enumerate(val_loader, start=1):
+
                 normal_info = batch['normal']
                 normal_index = torch.where(normal_info == 1)
                 ood_index = torch.where(normal_info != 1)
+
                 img_info = batch['image_info']['image'].to(device)
                 weight_dtype = img_info.dtype
                 normal_img_info = img_info[normal_index]
                 ood_img_info = img_info[ood_index]
 
-                mask_info = batch['mask']
-                normal_mask_info = mask_info[normal_index]
-                ood_mask_info = mask_info[ood_index]
+                mask_info = batch['mask'].to(device, weight_dtype)
+                mask_info = mask_info.unsqueeze(1)
+                masked_img_info = img_info * mask_info
 
                 with torch.no_grad():
-                    recon_img, z_mu, z_sigma = autoencoderkl(normal_img_info)
+                    recon_img, z_mu, z_sigma = autoencoderkl(img_info)
                     batch, channel, width, height = recon_img.shape
                     index = 0
                     for normal_img, recon_img_ in zip(normal_img_info, recon_img) :
-                        fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
+                        is_normal = normal_info[index]
+                        if is_normal == 1 :
+                            caption = 'Normal Image'
+                        else :
+                            caption = 'OOD Image'
+
+                        fig, ax = plt.subplots(nrows=1, ncols=3, sharey=True)
 
                         origin = torch.reshape(normal_img, (width, height)).T
                         ax[0].imshow(origin.cpu(), cmap="gray")
+                        ax[0].set_title('original')
                         ax[0].axis("off")
 
-                        recon  = torch.reshape(recon_img_, (width, height)).T
-                        ax[1].imshow(recon.cpu(), cmap='gray')
+                        masked_img = torch.reshape(masked_img_info[index], (width, height)).T
+                        ax[1].imshow(masked_img.cpu(), cmap="gray")
+                        ax[1].set_title('masked image')
                         ax[1].axis("off")
-                        plt.savefig(os.path.join(inf_save_basic_dir, f'epoch_{epoch + 1}_{index}.png'))
 
+                        recon  = torch.reshape(recon_img_, (width, height)).T
+                        ax[2].imshow(recon.cpu(), cmap='gray')
+                        ax[2].set_title('recon image')
+                        ax[2].axis("off")
+
+                        plt.savefig(os.path.join(inf_save_basic_dir, f'epoch_{epoch + 1}_{index}.png'))
                         buf = io.BytesIO()
                         fig.savefig(buf)
                         buf.seek(0)
-                        loading_image = wandb.Image(Image.open(buf), caption=f"epoch : {epoch + 1}")
-                        wandb.log({"inference": loading_image})
+                        pil = Image.open(buf)
+                        w,h = pil.size
+                        loading_image = wandb.Image(pil.resize((w*8, h*8)), caption=f"epoch : {epoch + 1}")
+                        wandb.log({"Normal Image": loading_image})
                         plt.close()
-
-
-                        # ------------------- save image ------------------- #
-                        #reconstructions = torch.reshape(recon_img, (width, height)).T  # height, width
-                        #reconstructions = reconstructions.detach().squeeze().cpu()
-                        #pil_recon = torch_transforms.ToPILImage()(reconstructions)
-                        #pil_recon.save(os.path.join(inf_save_basic_dir, f'epoch_{epoch + 1}_recon.png'))
+                        
 
 
 if __name__ == "__main__":
