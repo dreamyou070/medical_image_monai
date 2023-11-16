@@ -39,13 +39,16 @@ class PatchAdversarialLoss(_Loss):
             if no_activation_leastsq:
                 self.activation = None
             else:
-                self.activation = get_act_layer(name=("LEAKYRELU", {"negative_slope": 0.05}))
+                self.activation = get_act_layer(name=("LEAKYRELU",
+                                                      {"negative_slope": 0.05}))
+
             self.loss_fct = torch.nn.MSELoss(reduction=reduction)
 
         self.criterion = criterion
         self.reduction = reduction
 
-    def get_target_tensor(self, input: torch.FloatTensor, target_is_real: bool) -> torch.Tensor:
+    def get_target_tensor(self, input: torch.FloatTensor,
+                          target_is_real: bool) -> torch.Tensor:
         filling_label = self.real_label if target_is_real else self.fake_label
         label_tensor = torch.tensor(1).fill_(filling_label).type(input.type()).to(input[0].device)
         label_tensor.requires_grad_(False)
@@ -69,7 +72,6 @@ class PatchAdversarialLoss(_Loss):
         target_ = []
         for i, disc_out in enumerate(input):
             if self.criterion != AdversarialCriterions.HINGE.value:
-                # ----------------------------------------------------------------------------------------
                 # trg_attention_tensor
                 trg_attention_tensor = self.get_target_tensor(disc_out, target_is_real)
                 target_.append(trg_attention_tensor)
@@ -77,9 +79,13 @@ class PatchAdversarialLoss(_Loss):
                 target_.append(self.get_zero_tensor(disc_out))
         loss = []
         for disc_ind, disc_out in enumerate(input):
+
             if self.activation is not None:
+                print(f'does self.activation?? ')
                 disc_out = self.activation(disc_out)
+
             if self.criterion == AdversarialCriterions.HINGE.value and not target_is_real:
+
                 loss_ = self.forward_single(-disc_out, target_[disc_ind])
             else:
                 # ----------------------------------------------------------------------------------------
