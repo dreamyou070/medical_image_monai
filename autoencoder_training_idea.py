@@ -11,6 +11,7 @@ from loss_module import PatchAdversarialLoss, PerceptualLoss
 from tqdm import tqdm
 from torch.cuda.amp import GradScaler, autocast
 import torch.nn.functional as F
+import torchvision.transforms as torch_transforms
 
 
 def main(args):
@@ -78,7 +79,10 @@ def main(args):
     #weight_dtype = autoencoderkl.dtype#encoder.weight.dtype
     #text_encoder.to(dtype=weight_dtype)
 
-
+    save_basic_dir = args.save_basic_dir
+    os.makedirs(save_basic_dir, exist_ok=True)
+    inf_save_basic_dir = os.path.join(args.save_basic_dir, 'inference_20231115')
+    os.makedirs(inf_save_basic_dir, exist_ok=True)
     for epoch in range(n_epochs):
         print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
@@ -179,24 +183,20 @@ def main(args):
 
                 for norm_img in normal_img_info :
                     with torch.no_grad():
+                        # batch, channel, height, width (64)
                         recon_img, z_mu, z_sigma = autoencoderkl(normal_img_info)
-                        print(f'normal_img_info : {norm_img.shape}')
-                        print(f'recon_img : {recon_img.shape}')
+                        batch, channel, width, height = recon_img.shape
+                        # ------------------- save image ------------------- #
+                        normal_origins = torch.reshape(normal_mask_info, (width, height)).T  # height, width
+                        normal_origins = normal_origins.detach().squeeze().cpu()
+                        pil_normal = torch_transforms.ToPILImage()(normal_origins)
+                        pil_normal.save(os.path.join(inf_save_basic_dir, f'epoch_{epoch + 1}_normal.png'))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                        # ------------------- save image ------------------- #
+                        reconstructions = torch.reshape(recon_img, (width, height)).T  # height, width
+                        reconstructions = reconstructions.detach().squeeze().cpu()
+                        pil_recon = torch_transforms.ToPILImage()(reconstructions)
+                        pil_recon.save(os.path.join(inf_save_basic_dir, f'epoch_{epoch + 1}_recon.png'))
 
 
 if __name__ == "__main__":
@@ -216,8 +216,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda:4')
     # step 5. saving autoencoder model
-    parser.add_argument("--model_save_baic_dir", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result_idea_20231116/vae_model')
-
+    parser.add_argument("--save_basic_dir", type=str,
+                        default='/data7/sooyeon/medical_image/experiment_result_idea_20231116')
     args = parser.parse_args()
     main(args)
