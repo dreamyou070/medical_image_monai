@@ -193,7 +193,7 @@ if __name__ == "__main__":
                         default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L_normal_lowres')
     parser.add_argument("--ood_data_folder", type=str,
                         default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L_ood_lowres')
-    parser.add_argument("--image_size", type=str, default='160,80')
+    parser.add_argument("--image_size", type=str, default='64,64')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda:4')
