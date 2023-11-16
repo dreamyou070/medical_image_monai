@@ -11,7 +11,7 @@ from loss_module import PatchAdversarialLoss, PerceptualLoss
 from tqdm import tqdm
 from torch.cuda.amp import GradScaler, autocast
 import torch.nn.functional as F
-
+import time
 def main(args):
 
     print(f'\n step 1. print version and set seed')
@@ -101,11 +101,14 @@ def main(args):
                     generator_loss = adv_loss(logits_fake,
                                               target_is_real=True,
                                               for_discriminator=False)
+
+
                     logits_fake_target = torch.ones_like(logits_fake)
                     generator_loss_manual = torch.mean(torch.stack([mse_loss(logits_fake.float(),
-                                                                      logits_fake_target.float())]))
+                                                                             logits_fake_target.float())]))
                     print(f'[gen] auto generator loss : {generator_loss}')
                     print(f'[gen] manual generator loss : {generator_loss_manual}')
+                    time.sleep(300)
 
 
                     loss_g += adv_weight * generator_loss
