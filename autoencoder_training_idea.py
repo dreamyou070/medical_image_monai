@@ -34,7 +34,7 @@ def main(args):
     base_mask_dir = os.path.join(args.data_folder, 'mask')
     total_datas = os.listdir(data_base_dir)
     train_transforms, val_transforms = get_transform(args.image_size)
-    train_num = int(0.7 * len(total_datas))
+    train_num = int(0.8 * len(total_datas))
     train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
     train_datalist = [{"image": os.path.join(data_base_dir, train_data)} for train_data in train_datas]
     train_ds = SYDataset_masking(data=train_datalist,transform=train_transforms,base_mask_dir = base_mask_dir)
@@ -157,17 +157,14 @@ def main(args):
 
                 normal_info = batch['normal']
                 img_info = batch['image_info']['image'].to(device)
-                mask_info = batch['mask'].to(device, img_info.dtype)
-                print(f'mask_info : {mask_info.shape}')
                 mask_info = batch['mask'].to(device, img_info.dtype).unsqueeze(1)
-                print(f'mask_info : {mask_info.shape}')
                 masked_img_info = img_info * mask_info
-                """
+
                 with torch.no_grad():
-                    recon_img, z_mu, z_sigma = autoencoderkl(img_info)
-                    batch, channel, width, height = recon_img.shape
+                    recon_info, z_mu, z_sigma = autoencoderkl(img_info)
+                    batch, channel, width, height = recon_info.shape
                     index = 0
-                    for img_info_, recon_img_ in zip(img_info, recon_img) :
+                    for img_, masked_img_, recon_ in zip(img_info, masked_img_info, recon_info) :
                         is_normal = normal_info[index]
                         if is_normal == 1 :
                             caption = 'Normal Image'
@@ -177,19 +174,23 @@ def main(args):
                             ood_num += 1
                         if (is_normal == 1 and norm_num < max_norm) or (is_normal != 1 and ood_num < max_ood):
                             fig, ax = plt.subplots(nrows=1, ncols=3, sharey=True)
-                            origin = torch.reshape(img_info_, (width, height)).T
-                            ax[0].imshow(origin.cpu(), cmap="gray")
+
+                            ax[0].imshow(torch.reshape(img_, (width, height)).T.cpu(), cmap="gray")
                             ax[0].set_title('original')
                             ax[0].axis("off")
-                            masked_img = torch.reshape(masked_img_info[index], (width, height)).T
-                            ax[1].imshow(masked_img.cpu(), cmap="gray")
+
+                            ax[1].imshow(torch.reshape(masked_img_, (width, height)).T.cpu(), cmap="gray")
                             ax[1].set_title('masked image')
                             ax[1].axis("off")
-                            recon  = torch.reshape(recon_img_, (width, height)).T
-                            ax[2].imshow(recon.cpu(), cmap='gray')
+
+                            ax[2].imshow(torch.reshape(recon_, (width, height)).T.cpu(), cmap='gray')
                             ax[2].set_title('recon image')
                             ax[2].axis("off")
+
+                            fig.suptitle(caption)
                             plt.savefig(os.path.join(inf_save_basic_dir, f'{caption}_epoch_{epoch + 1}_{index}.png'))
+                            index += 1
+
                             buf = io.BytesIO()
                             fig.savefig(buf)
                             buf.seek(0)
@@ -197,8 +198,6 @@ def main(args):
                             w,h = pil.size
                             wandb.log({f"epoch : {epoch + 1} index : {index} : " : wandb.Image(pil.resize((w*32, h*32)), caption=caption)})
                             plt.close()
-                """
-
 
 if __name__ == "__main__":
 
