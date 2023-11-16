@@ -72,7 +72,7 @@ def main(args):
     adv_loss = PatchAdversarialLoss(criterion="least_squares")
     adv_weight = 0.01
 
-    
+
 
     print(f'\n step 5. optimizer')
     optimizer_g = torch.optim.Adam(autoencoderkl.parameters(), lr=1e-4)
@@ -137,7 +137,7 @@ def main(args):
 
 
                     recon_attn = discriminator(reconstruction.contiguous().float())[-1]
-                    recon_attn_target = torch.ones(shape=recon_attn.shape, device=device)
+                    recon_attn_target = torch.ones(size=recon_attn.shape)
                     generator_loss = mse_loss(recon_attn.float(), recon_attn.float())
                     print(f'recon_attn : {recon_attn}')
 
