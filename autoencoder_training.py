@@ -101,6 +101,8 @@ def main(args):
                     generator_loss = adv_loss(logits_fake,
                                               target_is_real=True,
                                               for_discriminator=False)
+                    activation = adv_loss.activation
+                    print(f'adv_loss.activation : {activation}')
 
 
                     logits_fake_target = torch.ones_like(logits_fake).float()
