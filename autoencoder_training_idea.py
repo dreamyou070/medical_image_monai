@@ -61,7 +61,7 @@ def main(args):
     perceptual_weight = 0.001
     print(f' (3.4) patch adversarial loss')
     adv_loss = PatchAdversarialLoss(criterion="least_squares")
-    
+
     adv_weight = 0.01
     print(f' (3.5) optimizer (for generator and discriminator)')
     optimizer_g = torch.optim.Adam(autoencoderkl.parameters(), lr=1e-4)
