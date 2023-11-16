@@ -99,7 +99,7 @@ def main(args):
 
             mask_info = batch['mask']
             masked_img_info = img_info * mask_info.unsqueeze(1)
-            masked_img_info = masked_img_info.to(weight_dtype)
+            masked_img_info = masked_img_info.to(device, weight_dtype)
             # 0black = 0 -> 1 ->
             #normal_mask_info = mask_info[normal_index]
             #ood_mask_info = mask_info[ood_index]
