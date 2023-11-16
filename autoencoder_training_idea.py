@@ -73,7 +73,7 @@ def main(args):
     n_epochs = 100
     val_interval = 1
     autoencoder_warm_up_n_epochs = 10
-    weight_dtype = autoencoderkl.dtype#encoder.weight.dtype
+    #weight_dtype = autoencoderkl.dtype#encoder.weight.dtype
     #text_encoder.to(dtype=weight_dtype)
 
 
@@ -89,6 +89,7 @@ def main(args):
         for step, batch in progress_bar:
 
             normal_info = batch['nonrmal']
+            weight_dtype = normal_info.dtype
             normal_index = torch.where(normal_info == 1)
             ood_index = torch.where(normal_info != 1)
 
@@ -98,27 +99,27 @@ def main(args):
 
             mask_info = batch['mask']
             masked_img_info = img_info * mask_info.unsqueeze(1)
-            masked_img_info = masked_img_info.to(weight_dtype)
+            #masked_img_info = masked_img_info.to(weight_dtype)
             # 0black = 0 -> 1 ->
             #normal_mask_info = mask_info[normal_index]
             #ood_mask_info = mask_info[ood_index]
 
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
-                reconstruction, z_mu, z_sigma = autoencoderkl(masked_img_info)
-                recons_loss = F.l1_loss(reconstruction.float(), masked_img_info.float())
-                p_loss = perceptual_loss(reconstruction.float(), masked_img_info.float())
+                reconstruction, z_mu, z_sigma = autoencoderkl(normal_info)
+                #recons_loss = F.l1_loss(reconstruction.float(), masked_img_info.float())
+                #p_loss = perceptual_loss(reconstruction.float(), masked_img_info.float())
                 kl_loss = 0.5 * (torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3]))
                 kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
-                loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
+                #loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
                 if epoch > autoencoder_warm_up_n_epochs:
                     discrimator_output = discriminator(reconstruction.contiguous().float())
                     logits_fake = discrimator_output[-1]
                     generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
-                    loss_g += adv_weight * generator_loss
-            scaler_g.scale(loss_g).backward()
-            scaler_g.step(optimizer_g)
-            scaler_g.update()
+                    #loss_g += adv_weight * generator_loss
+            #scaler_g.scale(loss_g).backward()
+            #scaler_g.step(optimizer_g)
+            #scaler_g.update()
             # ------------------------------------------------------------------------------------------------------------
             # (3) discriminator training
             if epoch > autoencoder_warm_up_n_epochs:
@@ -142,7 +143,7 @@ def main(args):
                 scaler_d.scale(loss_d).backward()
                 scaler_d.step(optimizer_d)
                 scaler_d.update()
-            epoch_loss += recons_loss.item()
+            #epoch_loss += recons_loss.item()
             if epoch > autoencoder_warm_up_n_epochs:
                 gen_epoch_loss += generator_loss.item()
                 disc_epoch_loss += discriminator_loss.item()
