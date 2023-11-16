@@ -88,54 +88,62 @@ def main(args):
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
 
-            normal_info = batch['nonrmal']
+            normal_info = batch['normal']
             normal_index = torch.where(normal_info == 1)
             ood_index = torch.where(normal_info != 1)
 
             img_info = batch['image_info']['image'].to(device)
             weight_dtype = img_info.dtype
-            #normal_img_info = img_info[normal_index]
-            #ood_img_info = img_info[ood_index]
+            normal_img_info = img_info[normal_index]
+            ood_img_info = img_info[ood_index]
 
             mask_info = batch['mask'].to(device, weight_dtype)
-            masked_img_info = img_info * mask_info.unsqueeze(1)
+            mask_info = mask_info.unsqueeze(1)
+            masked_img_info = img_info * mask_info
             # 0black = 0 -> 1 ->
-            #normal_mask_info = mask_info[normal_index]
-            #ood_mask_info = mask_info[ood_index]
+            normal_mask_info = mask_info[normal_index]
+            ood_mask_info = mask_info[ood_index]
+
             masked_img_info = img_info * masked_img_info
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
-                reconstruction, z_mu, z_sigma = autoencoderkl(img_info)
-                #recons_loss = F.l1_loss(reconstruction.float(), masked_img_info.float())
-                #p_loss = perceptual_loss(reconstruction.float(), masked_img_info.float())
+                reconstruction, z_mu, z_sigma = autoencoderkl(masked_img_info)
+                recons_loss = F.l1_loss(reconstruction.float(),
+                                        img_info.float())
+                                        #masked_img_info.float())
+                p_loss = perceptual_loss(reconstruction.float(),
+                                         img_info.float())
+                                         # masked_img_info.float())
                 kl_loss = 0.5 * (torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3]))
                 kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
-                #loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
+                loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
                 if epoch > autoencoder_warm_up_n_epochs:
                     discrimator_output = discriminator(reconstruction.contiguous().float())
                     logits_fake = discrimator_output[-1]
                     generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
-                    #loss_g += adv_weight * generator_loss
-            #scaler_g.scale(loss_g).backward()
-            #scaler_g.step(optimizer_g)
-            #scaler_g.update()
+                    loss_g += adv_weight * generator_loss
+            scaler_g.scale(loss_g).backward()
+            scaler_g.step(optimizer_g)
+            scaler_g.update()
             # ------------------------------------------------------------------------------------------------------------
             # (3) discriminator training
             if epoch > autoencoder_warm_up_n_epochs:
                 with autocast(enabled=True):
-                    # 구분자를 학습시키기 위한 것
+                    # make smart discriminator
                     optimizer_d.zero_grad(set_to_none=True)
                     # ---------------------------------------------------------------------------------------------------------------------
                     # reconstruction.contiguous().detach() 를 discriminator 은 가짜라고 판별해야 한다
                     # 즉 target 은 가짜이므로, target_is_real 은 False 가 되어야 한다.
                     # 구분자를 학습시키기 위한 것이므로 for_discriminator 는 True 로 한다.
                     loss_d_fake = adv_loss(discriminator(reconstruction.contiguous().detach())[-1],
-                                           target_is_real=False, for_discriminator=True)
+                                           target_is_real=False,
+                                           for_discriminator=True)
                     # ---------------------------------------------------------------------------------------------------------------------
                     # discriminator 가 real 을 real 이라고 판별해야 한다.\
                     # 즉, target 은 real 이므로, target_is_real 은 True 가 되어야 한다.
                     # 구분자를 학습시키기 위한 것이므로 for_discriminator 는 True 로 한다.
-                    loss_d_real = adv_loss(discriminator(masked_img_info.contiguous().detach())[-1], target_is_real=True,
+                    loss_d_real = adv_loss(discriminator(img_info.contiguous().detach())[-1],
+                                           target_is_real=True,
                                            for_discriminator=True)
                     discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
                     loss_d = adv_weight * discriminator_loss
@@ -153,7 +161,7 @@ def main(args):
         if (epoch + 1) % val_interval == 0:
             autoencoderkl.eval()
             for val_step, batch in enumerate(val_loader, start=1):
-                normal_info = batch['nonrmal']
+                normal_info = batch['normal']
                 normal_index = torch.where(normal_info == 1)
                 ood_index = torch.where(normal_info != 1)
 

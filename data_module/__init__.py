@@ -118,7 +118,7 @@ class SYDataset_masking(_TorchDataset):
             normal = False
         mask_torch = torch.from_numpy(mask_np)
         data_dict['image_info'] = self.data_transform(index)
-        data_dict['nonrmal'] = int(normal)
+        data_dict['normal'] = int(normal)
         data_dict['mask'] = torch.where(mask_torch == 0, 1, 0)
 
         return data_dict
