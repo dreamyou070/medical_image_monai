@@ -187,16 +187,17 @@ def main(args):
                         recon_img, z_mu, z_sigma = autoencoderkl(normal_img_info)
                         batch, channel, width, height = recon_img.shape
                         # ------------------- save image ------------------- #
-                        normal_origins = torch.reshape(normal_mask_info, (width, height)).T  # height, width
-                        normal_origins = normal_origins.detach().squeeze().cpu()
-                        pil_normal = torch_transforms.ToPILImage()(normal_origins)
-                        pil_normal.save(os.path.join(inf_save_basic_dir, f'epoch_{epoch + 1}_normal.png'))
+                        for i in range(batch):
+                            normal_origins = torch.reshape(normal_mask_info[i], (width, height)).T
+                            normal_origins = normal_origins.detach().squeeze().cpu()
+                            pil_normal = torch_transforms.ToPILImage()(normal_origins)
+                            pil_normal.save(os.path.join(inf_save_basic_dir, f'epoch_{epoch + 1}_normal.png'))
 
                         # ------------------- save image ------------------- #
-                        reconstructions = torch.reshape(recon_img, (width, height)).T  # height, width
-                        reconstructions = reconstructions.detach().squeeze().cpu()
-                        pil_recon = torch_transforms.ToPILImage()(reconstructions)
-                        pil_recon.save(os.path.join(inf_save_basic_dir, f'epoch_{epoch + 1}_recon.png'))
+                        #reconstructions = torch.reshape(recon_img, (width, height)).T  # height, width
+                        #reconstructions = reconstructions.detach().squeeze().cpu()
+                        #pil_recon = torch_transforms.ToPILImage()(reconstructions)
+                        #pil_recon.save(os.path.join(inf_save_basic_dir, f'epoch_{epoch + 1}_recon.png'))
 
 
 if __name__ == "__main__":
