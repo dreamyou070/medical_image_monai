@@ -151,6 +151,8 @@ def main(args):
         # -------------------------------------------------------------------------------------------------------------------------------
         if (epoch + 1) % val_interval == 0:
             autoencoderkl.eval()
+            max_norm, max_ood = 4, 4
+            norm_num, ood_num = 0 , 0
             for val_step, batch in enumerate(val_loader, start=1):
 
                 normal_info = batch['normal']
@@ -174,35 +176,32 @@ def main(args):
                         is_normal = normal_info[index]
                         if is_normal == 1 :
                             caption = 'Normal Image'
+                            norm_num += 1
                         else :
                             caption = 'OOD Image'
-
-                        fig, ax = plt.subplots(nrows=1, ncols=3, sharey=True)
-
-                        origin = torch.reshape(normal_img, (width, height)).T
-                        ax[0].imshow(origin.cpu(), cmap="gray")
-                        ax[0].set_title('original')
-                        ax[0].axis("off")
-
-                        masked_img = torch.reshape(masked_img_info[index], (width, height)).T
-                        ax[1].imshow(masked_img.cpu(), cmap="gray")
-                        ax[1].set_title('masked image')
-                        ax[1].axis("off")
-
-                        recon  = torch.reshape(recon_img_, (width, height)).T
-                        ax[2].imshow(recon.cpu(), cmap='gray')
-                        ax[2].set_title('recon image')
-                        ax[2].axis("off")
-
-                        plt.savefig(os.path.join(inf_save_basic_dir, f'epoch_{epoch + 1}_{index}.png'))
-                        buf = io.BytesIO()
-                        fig.savefig(buf)
-                        buf.seek(0)
-                        pil = Image.open(buf)
-                        w,h = pil.size
-                        wandb.log({f"epoch : {epoch + 1}" :
-                                       wandb.Image(pil.resize((w*8, h*8)), caption=caption)})
-                        plt.close()
+                            ood_num += 1
+                        if (is_normal == 1 and norm_num < max_norm) or (is_normal != 1 and ood_num < max_ood):
+                            fig, ax = plt.subplots(nrows=1, ncols=3, sharey=True)
+                            origin = torch.reshape(normal_img, (width, height)).T
+                            ax[0].imshow(origin.cpu(), cmap="gray")
+                            ax[0].set_title('original')
+                            ax[0].axis("off")
+                            masked_img = torch.reshape(masked_img_info[index], (width, height)).T
+                            ax[1].imshow(masked_img.cpu(), cmap="gray")
+                            ax[1].set_title('masked image')
+                            ax[1].axis("off")
+                            recon  = torch.reshape(recon_img_, (width, height)).T
+                            ax[2].imshow(recon.cpu(), cmap='gray')
+                            ax[2].set_title('recon image')
+                            ax[2].axis("off")
+                            plt.savefig(os.path.join(inf_save_basic_dir, f'{caption}_epoch_{epoch + 1}_{index}.png'))
+                            buf = io.BytesIO()
+                            fig.savefig(buf)
+                            buf.seek(0)
+                            pil = Image.open(buf)
+                            w,h = pil.size
+                            wandb.log({f"epoch : {epoch + 1}" : wandb.Image(pil.resize((w*32, h*32)), caption=caption)})
+                            plt.close()
 
 
 
