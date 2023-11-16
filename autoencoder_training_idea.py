@@ -89,11 +89,11 @@ def main(args):
         for step, batch in progress_bar:
 
             normal_info = batch['nonrmal']
-            weight_dtype = normal_info.dtype
             normal_index = torch.where(normal_info == 1)
             ood_index = torch.where(normal_info != 1)
 
-            img_info = batch['image_info']['image']
+            img_info = batch['image_info']['image'].to(device)
+            weight_dtype = img_info.dtype
             #normal_img_info = img_info[normal_index]
             #ood_img_info = img_info[ood_index]
 
