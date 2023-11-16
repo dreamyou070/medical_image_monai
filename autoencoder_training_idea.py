@@ -67,10 +67,6 @@ def main(args):
     optimizer_g = torch.optim.Adam(autoencoderkl.parameters(), lr=1e-4)
     optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=5e-4)
 
-    #print(f' (3.6) mixed precision (for generator and discriminator)')
-    #scaler_g = torch.cuda.amp.GradScaler()
-    #scaler_d = torch.cuda.amp.GradScaler()
-
     print(f'step 6. Training')
     kl_weight = 1e-6
     n_epochs = 100
@@ -81,6 +77,7 @@ def main(args):
     os.makedirs(save_basic_dir, exist_ok=True)
     inf_save_basic_dir = os.path.join(args.save_basic_dir, 'inference_20231115')
     os.makedirs(inf_save_basic_dir, exist_ok=True)
+
     for epoch in range(n_epochs):
         print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
@@ -91,7 +88,6 @@ def main(args):
         progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=110)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
-
             normal_info = batch['normal']
             normal_index = torch.where(normal_info == 1)
             ood_index = torch.where(normal_info != 1)
@@ -111,31 +107,39 @@ def main(args):
             masked_img_info = img_info * masked_img_info
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
+                loss_dict = {}
                 reconstruction, z_mu, z_sigma = autoencoderkl(masked_img_info)
                 recons_loss = F.l1_loss(reconstruction.float(),
                                         img_info.float())
                                         #masked_img_info.float())
+                loss_dict["loss/recons_loss"] = recons_loss.item()
                 p_loss = perceptual_loss(reconstruction.float(),
                                          img_info.float())
                                          # masked_img_info.float())
+                loss_dict["loss/perceptual_loss"] = p_loss.item()
                 kl_loss = 0.5 * (torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3]))
                 kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
+                loss_dict["loss/kl_loss"] = kl_loss.item()
                 loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
                 if epoch > autoencoder_warm_up_n_epochs:
-                    discrimator_output = discriminator(reconstruction.contiguous().float())
-                    logits_fake = discrimator_output[-1]
-                    generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
+                    generator_loss = adv_loss(discriminator(reconstruction.contiguous().float())[-1],
+                                              target_is_real=True, for_discriminator=False)
                     loss_g += adv_weight * generator_loss
+                    loss_dict["loss/adversarial_generator_loss"] = generator_loss.item()
             loss_g.backward()
             optimizer_g.step()
             # ------------------------------------------------------------------------------------------------------------
             # (3) discriminator training
             if epoch > autoencoder_warm_up_n_epochs:
                 with autocast(enabled=True):
-                    # make smart discriminator
                     optimizer_d.zero_grad(set_to_none=True)
-                    loss_d_fake = adv_loss(discriminator(reconstruction.contiguous().detach())[-1],target_is_real=False,for_discriminator=True)
-                    loss_d_real = adv_loss(discriminator(img_info.contiguous().detach())[-1],target_is_real=True,for_discriminator=True)
+
+                    loss_d_fake = adv_loss(discriminator(reconstruction.contiguous().detach())[-1],
+                                           target_is_real=False,for_discriminator=True)
+                    loss_dict["loss/adversarial_discriminator_recon_loss"] = loss_d_fake.item()
+                    loss_d_real = adv_loss(discriminator(img_info.contiguous().detach())[-1],
+                                           target_is_real=True,for_discriminator=True)
+                    loss_dict["loss/adversarial_discriminator_real_loss"] = loss_d_fake.item()
                     discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
                     loss_d = adv_weight * discriminator_loss
                 loss_d.backward()
@@ -147,12 +151,12 @@ def main(args):
             progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1),
                                       "gen_loss": gen_epoch_loss / (step + 1),
                                       "disc_loss": disc_epoch_loss / (step + 1), })
-
+            wandb.log(loss_dict)
         # -------------------------------------------------------------------------------------------------------------------------------
         if (epoch + 1) % val_interval == 0:
             autoencoderkl.eval()
             max_norm, max_ood = 4, 4
-            norm_num, ood_num = 0 , 0
+            norm_num, ood_num = 0, 0
             for val_step, batch in enumerate(val_loader, start=1):
 
                 normal_info = batch['normal']
