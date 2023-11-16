@@ -16,25 +16,8 @@ class AdversarialCriterions(StrEnum):
 
 
 class PatchAdversarialLoss(_Loss):
-    """
-    Calculates an adversarial loss on a Patch Discriminator or a Multi-scale Patch Discriminator.
-    Warning: due to the possibility of using different criterions, the output of the discrimination
-    mustn't be passed to a final activation layer. That is taken care of internally within the loss.
-
-    Args:
-        reduction: {``"none"``, ``"mean"``, ``"sum"``} Specifies the reduction to apply to the output.
-        Defaults to ``"mean"``.
-        - ``"none"``: no reduction will be applied.
-        - ``"mean"``: the sum of the output will be divided by the number of elements in the output.
-        - ``"sum"``: the output will be summed.
-        criterion: which criterion (hinge, least_squares or bce) you want to use on the discriminators outputs.
-        Depending on the criterion, a different activation layer will be used. Make sure you don't run the outputs
-        through an activation layer prior to calling the loss.
-        no_activation_leastsq: if True, the activation layer in the case of least-squares is removed.
-    """
-
-    def __init__(self,
-                 reduction: LossReduction | str = LossReduction.MEAN,
+    """"""
+    def __init__(self, reduction: LossReduction | str = LossReduction.MEAN,
                  criterion: str = AdversarialCriterions.LEAST_SQUARE.value, # criterion="least_squares"
                  no_activation_leastsq: bool = False,) -> None:
         super().__init__(reduction=LossReduction(reduction).value)
@@ -88,34 +71,19 @@ class PatchAdversarialLoss(_Loss):
         zero_label_tensor.requires_grad_(False)
         return zero_label_tensor.expand_as(input)
 
-    def forward(
-        self, input: torch.FloatTensor | list, target_is_real: bool, for_discriminator: bool
-    ) -> torch.Tensor | list[torch.Tensor]:
-        """
-
-        Args:
-            input: output of Multi-Scale Patch Discriminator or Patch Discriminator; being a list of
-            tensors or a tensor; they shouldn't have gone through an activation layer.
-            target_is_real: whereas the input corresponds to discriminator output for real or fake images
-            for_discriminator: whereas this is being calculated for discriminator or generator loss. In the last
-            case, target_is_real is set to True, as the generator wants the input to be dimmed as real.
-        Returns: if reduction is None, returns a list with the loss tensors of each discriminator if multi-scale
-        discriminator is active, or the loss tensor if there is just one discriminator. Otherwise, it returns the
-        summed or mean loss over the tensor and discriminator/s.
-
-        """
-
+    def forward(self,
+                input: torch.FloatTensor | list,
+                target_is_real: bool,
+                for_discriminator: bool) -> torch.Tensor | list[torch.Tensor]:
         if not for_discriminator and not target_is_real:
             target_is_real = True  # With generator, we always want this to be true!
-            warnings.warn(
-                "Variable target_is_real has been set to False, but for_discriminator is set"
-                "to False. To optimise a generator, target_is_real must be set to True."
-            )
-
+            warnings.warn("Variable target_is_real has been set to False, but for_discriminator is set"
+                          "to False. To optimise a generator, target_is_real must be set to True.")
         if type(input) is not list:
             input = [input]
         target_ = []
         for _, disc_out in enumerate(input):
+            print('(maybe every batch) disc_out', disc_out.shape)
             if self.criterion != AdversarialCriterions.HINGE.value:
                 target_.append(self.get_target_tensor(disc_out, target_is_real))
             else:

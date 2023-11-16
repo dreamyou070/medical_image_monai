@@ -61,6 +61,7 @@ def main(args):
     perceptual_weight = 0.001
     print(f' (3.4) patch adversarial loss')
     adv_loss = PatchAdversarialLoss(criterion="least_squares")
+    
     adv_weight = 0.01
     print(f' (3.5) optimizer (for generator and discriminator)')
     optimizer_g = torch.optim.Adam(autoencoderkl.parameters(), lr=1e-4)
@@ -110,8 +111,9 @@ def main(args):
                     discrimator_output = discriminator(reconstruction.contiguous().float())
                     logits_fake = discrimator_output[-1]
                     print(f'shape of logits_fake : {logits_fake.shape}')
-
-                    generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
+                    # how does adversarial loss do...
+                    generator_loss = adv_loss(logits_fake,
+                                              target_is_real=True, for_discriminator=False)
                     loss_g += adv_weight * generator_loss
             scaler_g.scale(loss_g).backward()
             scaler_g.step(optimizer_g)
