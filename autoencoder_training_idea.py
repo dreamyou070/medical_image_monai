@@ -41,8 +41,12 @@ def main(args):
     val_ds = SYDataset_masking(data=val_datalist, transform=val_transforms)
     norm_val_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
     for i, batch in train_loader :
-        print(batch)
+        img_info = batch['image_info']
+        mask_info = batch['mask']
+        normal_info = batch['nonrmal']
+        print(f'normal_info : {normal_info}')
         break
+
 
 
 if __name__ == "__main__":

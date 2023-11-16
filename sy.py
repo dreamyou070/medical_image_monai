@@ -1,5 +1,5 @@
 import torch
+import numpy as np
+normal = True
 
-a = torch.tensor(1).fill_(10.0)
-print(a)
-#label_tensor = torch.tensor(1).fill_(filling_label).type(input.type()).to(input[0].device)
+print(normal_index)

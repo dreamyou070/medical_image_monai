@@ -19,7 +19,7 @@ from torch.utils.data import DataLoader as _TorchDataLoader
 from torch.utils.data import Dataset
 from monai.data.meta_obj import get_track_meta
 from monai.data.utils import list_data_collate, set_rnd, worker_init_fn
-
+from PIL import Image
 if TYPE_CHECKING:
     has_tqdm = True
 else:
@@ -97,6 +97,8 @@ class SYDataset_masking(_TorchDataset):
 
     def __getitem__(self, index: int | slice | Sequence[int]):
 
+        data_dict = {}
+
         if isinstance(index, slice):
             start, stop, step = index.indices(len(self))
             indices = range(start, stop, step)
@@ -108,9 +110,17 @@ class SYDataset_masking(_TorchDataset):
         data_dir = self.data[index]['image']
         parent, net_name = os.path.split(data_dir)
         mask_dir = os.path.join(self.base_mask_dir, net_name)
+        mask_pil = Image.open(mask_dir)
+        mask_np = np.array(mask_pil)
 
-
-        return self.data_transform(index), mask_dir
+        criterion = np.sum(mask_np)
+        normal = True
+        if criterion > 0 :
+            normal = False
+        data_dict['image_info'] = self.data_transform(index)
+        data_dict['mask'] = torch.from_numpy(mask_np)
+        data_dict['nonrmal'] = int(normal)
+        return data_dict
 
 class SYDataset(_TorchDataset):
 
