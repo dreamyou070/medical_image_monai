@@ -103,8 +103,10 @@ def main(args):
                                               for_discriminator=False)
 
 
-                    logits_fake_target = torch.ones_like(logits_fake)
-                    loss = mse_loss(logits_fake.float(),logits_fake_target.float())
+                    logits_fake_target = torch.ones_like(logits_fake).float()
+                    print(f'logits_fake_target : {logits_fake_target}')
+                    loss = [mse_loss(logits_fake.float(),
+                                     logits_fake_target)]
                     generator_loss_manual = torch.mean(torch.stack(loss))
 
                     print(f'[gen] auto generator loss : {generator_loss}')

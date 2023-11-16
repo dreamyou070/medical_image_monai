@@ -72,9 +72,6 @@ class PatchAdversarialLoss(_Loss):
                 # ----------------------------------------------------------------------------------------
                 # trg_attention_tensor
                 trg_attention_tensor = self.get_target_tensor(disc_out, target_is_real)
-                print(f'trg_attention_tensor : {trg_attention_tensor}')
-                print(f'trg_attention_tensor : {trg_attention_tensor.shape}')
-
                 target_.append(trg_attention_tensor)
             else:
                 target_.append(self.get_zero_tensor(disc_out))
@@ -85,15 +82,15 @@ class PatchAdversarialLoss(_Loss):
             if self.criterion == AdversarialCriterions.HINGE.value and not target_is_real:
                 loss_ = self.forward_single(-disc_out, target_[disc_ind])
             else:
-                #
-                print('Calculate Loss Here')
-                loss_ = self.forward_single(disc_out, target_[disc_ind])
+                # ----------------------------------------------------------------------------------------
+                # ----------------------------------------------------------------------------------------
+                # ----------------------------------------------------------------------------------------
+                loss_ = self.forward_single(disc_out,
+                                            target_[disc_ind])
             loss.append(loss_)
 
         if loss is not None:
-            print(f'len of loss : {len(loss)}')
             if self.reduction == LossReduction.MEAN.value:
-                print('MEAN THE VALUE')
                 loss = torch.mean(torch.stack(loss))
             elif self.reduction == LossReduction.SUM.value:
                 loss = torch.sum(torch.stack(loss))
@@ -105,6 +102,8 @@ class PatchAdversarialLoss(_Loss):
                        target: torch.FloatTensor) -> torch.Tensor | None:
 
         if (self.criterion == AdversarialCriterions.BCE.value or self.criterion == AdversarialCriterions.LEAST_SQUARE.value):
+            print(f'target : {target}')
+            print(f'target : {target.shape}')
             loss = self.loss_fct(input, target)
             return loss
 
