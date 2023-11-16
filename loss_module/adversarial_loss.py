@@ -79,10 +79,11 @@ class PatchAdversarialLoss(_Loss):
             target_is_real = True  # With generator, we always want this to be true!
             warnings.warn("Variable target_is_real has been set to False, but for_discriminator is set"
                           "to False. To optimise a generator, target_is_real must be set to True.")
+        print(f'input to the loss function: {input.shape}')
         if type(input) is not list:
             input = [input]
         target_ = []
-        print(f'input to the loss function: {input.shape}')
+
         for _, disc_out in enumerate(input):
             print('(maybe every batch) disc_out', disc_out.shape)
             if self.criterion != AdversarialCriterions.HINGE.value:
