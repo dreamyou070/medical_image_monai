@@ -188,9 +188,10 @@ def main(args):
                             ax[2].axis("off")
 
                             fig.suptitle(caption)
-                            plt.savefig(os.path.join(inf_save_basic_dir, f'{caption}_epoch_{epoch + 1}_{index}.png'))
+                            fig_save_dir = os.path.join(inf_save_basic_dir, f'epoch_{epoch + 1}')
+                            os.makedirs(fig_save_dir, exist_ok=True)
+                            plt.savefig(os.path.join(fig_save_dir, f'{caption}_epoch_{epoch + 1}_{index}.png'))
                             index += 1
-
                             buf = io.BytesIO()
                             fig.savefig(buf)
                             buf.seek(0)
@@ -198,6 +199,13 @@ def main(args):
                             w,h = pil.size
                             wandb.log({f"epoch : {epoch + 1} index : {index} : " : wandb.Image(pil.resize((w*32, h*32)), caption=caption)})
                             plt.close()
+        # -------------------------------------------------------------------------------------------------------------------------------
+        # model save
+        if epoch > args.model_save_num :
+            model_save_dir = os.path.join(inf_save_basic_dir, 'vae_model')
+            os.makedirs(model_save_dir, exist_ok=True)
+            torch.save({'model': autoencoderkl.state_dict(), },
+                       os.path.join(model_save_dir, f'vae_checkpoint_{epoch + 1}.pth'))
 
 if __name__ == "__main__":
 
@@ -223,11 +231,13 @@ if __name__ == "__main__":
     # step 6. Training
     parser.add_argument("--kl_weight", type=float, default=1e-6)
     parser.add_argument("--n_epochs",  type=int, default=100)
-    parser.add_argument("--val_interval", type=int, default=1)
+    parser.add_argument("--val_interval", type=int, default=20)
     parser.add_argument("--autoencoder_warm_up_n_epochs", type=int, default=1)
 
     # step 7. saving autoencoder model
     parser.add_argument("--save_basic_dir", type=str,
                         default='/data7/sooyeon/medical_image/experiment_result_idea_20231116')
+    parser.add_argument("--model_save_num", type=int,
+                        default=90)
     args = parser.parse_args()
     main(args)
