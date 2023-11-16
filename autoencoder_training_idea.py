@@ -23,7 +23,7 @@ def main(args):
     data_base_dir = os.path.join(args.data_folder, 'original')
     base_mask_dir = os.path.join(args.data_folder, 'mask')
     total_datas = os.listdir(data_base_dir)
-    train_transforms, val_transforms = get_transform(data_base_dir)
+    train_transforms, val_transforms = get_transform(args.image_size)
     train_num = int(0.7 * len(total_datas))
     train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
     train_datalist = [{"image": os.path.join(data_base_dir, train_data)} for train_data in train_datas]
@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--ood_data_folder", type=str,
                         default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L_ood_lowres')
-    parser.add_argument("--image_size", type=str, default=64)
+    parser.add_argument("--image_size", type=str, default='64,64')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--device", type=str, default='cuda:4')
