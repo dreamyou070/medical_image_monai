@@ -102,8 +102,8 @@ class PatchAdversarialLoss(_Loss):
                        target: torch.FloatTensor) -> torch.Tensor | None:
 
         if (self.criterion == AdversarialCriterions.BCE.value or self.criterion == AdversarialCriterions.LEAST_SQUARE.value):
-            print(f'target : {target}')
-            print(f'target : {target.shape}')
+            print(f'in forward single, inpurt : {input}')
+            print(f'self.loss_fct : {self.loss_fct}')
             loss = self.loss_fct(input, target)
             return loss
 
