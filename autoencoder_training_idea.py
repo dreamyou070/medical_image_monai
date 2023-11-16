@@ -203,14 +203,14 @@ def main(args):
             for val_step, batch in enumerate(val_loader, start=1):
                 normal_info = batch['normal']
                 img_info = batch['image_info']['image'].to(device)
-                mask_info = batch['mask'].to(device, img_info.dtype).unsqueeze(1)
-                masked_img_info = img_info * mask_info
+                #mask_info = batch['mask'].to(device, img_info.dtype).unsqueeze(1)
+                #masked_img_info = img_info * mask_info
 
                 with torch.no_grad():
                     recon_info, z_mu, z_sigma = autoencoderkl(img_info)
                     batch, channel, width, height = recon_info.shape
                     index = 0
-                    for img_, masked_img_, recon_ in zip(img_info, masked_img_info, recon_info) :
+                    for img_, recon_ in zip(img_info, recon_info) :
                         is_normal = normal_info[index]
                         if is_normal == 1 :
                             caption = 'Normal Image'
@@ -219,19 +219,19 @@ def main(args):
                             caption = 'OOD Image'
                             ood_num += 1
                         if (is_normal == 1 and norm_num < max_norm) or (is_normal != 1 and ood_num < max_ood):
-                            fig, ax = plt.subplots(nrows=1, ncols=3, sharey=True)
+                            fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
 
                             ax[0].imshow(torch.reshape(img_, (width, height)).T.cpu(), cmap="gray")
                             ax[0].set_title('original')
                             ax[0].axis("off")
 
-                            ax[1].imshow(torch.reshape(masked_img_, (width, height)).T.cpu(), cmap="gray")
-                            ax[1].set_title('masked image')
-                            ax[1].axis("off")
+                            #ax[1].imshow(torch.reshape(masked_img_, (width, height)).T.cpu(), cmap="gray")
+                            #ax[1].set_title('masked image')
+                            #ax[1].axis("off")
 
-                            ax[2].imshow(torch.reshape(recon_, (width, height)).T.cpu(), cmap='gray')
-                            ax[2].set_title('recon image')
-                            ax[2].axis("off")
+                            ax[1].imshow(torch.reshape(recon_, (width, height)).T.cpu(), cmap='gray')
+                            ax[1].set_title('recon image')
+                            ax[1].axis("off")
 
                             fig.suptitle(caption)
                             fig_save_dir = os.path.join(inf_save_basic_dir, f'epoch_{epoch + 1}')
