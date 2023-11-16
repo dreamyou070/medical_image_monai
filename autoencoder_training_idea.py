@@ -86,7 +86,7 @@ def main(args):
 
     print(f'step 6. Training')
     kl_weight = 1e-6
-    n_epochs = 100
+    n_epochs = args.n_epochs
     autoencoder_warm_up_n_epochs = args.autoencoder_warm_up_n_epochs
 
     save_basic_dir = args.save_basic_dir
@@ -285,5 +285,6 @@ if __name__ == "__main__":
     parser.add_argument("--save_basic_dir", type=str,
                         default='/data7/sooyeon/medical_image/experiment_result_idea_20231116')
     parser.add_argument("--model_save_num", type=int, default=90)
+    parser.add_argument("--n_epochs", type=int, default=100)
     args = parser.parse_args()
     main(args)
