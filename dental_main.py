@@ -377,7 +377,7 @@ if __name__ == "__main__":
     # step 1. wandb login
     parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
     parser.add_argument("--wandb_project_name", type=str, default='dental_experiment')
-    parser.add_argument("--wandb_run_name", type=str, default='hand_training')
+    parser.add_argument("--wandb_run_name", type=str, default='dental_training_with_high_repeat')
 
     # step 2. print version and set seed
     parser.add_argument("--seed", type=int, default=42)
