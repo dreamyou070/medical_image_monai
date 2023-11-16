@@ -56,7 +56,11 @@ def main(args):
 
 
         mask_info = batch['mask']
+        normal_mask_info = mask_info[normal_index]
+        ood_mask_info = mask_info[ood_index]
         print(f'mask_info : {mask_info.shape}')
+        print(f'normal_mask_info : {normal_mask_info.shape}')
+        print(f'ood_mask_info : {ood_mask_info.shape}')
         #print(f'normal_img_info : {normal_img_info}')
         break
 
