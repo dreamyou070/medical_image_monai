@@ -80,7 +80,7 @@ class PatchAdversarialLoss(_Loss):
                 trg_attention_tensor = self.get_target_tensor(disc_out, target_is_real)
                 target_.append(trg_attention_tensor)
                 if target_is_real == False :
-                    print(f'target_is_real == False (zero) : {target_is_real}')
+                    print(f'target_is_real == False (zero) : {trg_attention_tensor}')
             else:
                 target_.append(self.get_zero_tensor(disc_out))
 
@@ -96,7 +96,6 @@ class PatchAdversarialLoss(_Loss):
 
             else:
                 loss_ = self.forward_single(disc_out, target_[disc_ind])
-                print(f'None loss? : {loss_}')
             loss.append(loss_)
 
         if loss is not None:
