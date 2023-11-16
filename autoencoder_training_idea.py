@@ -41,18 +41,24 @@ def main(args):
     val_ds = SYDataset_masking(data=val_datalist, transform=val_transforms)
     norm_val_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
     for i, batch in enumerate(train_loader) :
-        img_info = batch['image_info']['image']
 
-        mask_info = batch['mask']
         normal_info = batch['nonrmal']
         normal_index = torch.where(normal_info == 1)
-       # normal_img_info = img_info[normal_index]
-        print(f'normal_info : {normal_info}')
+        ood_index = torch.where(normal_info != 1)
         print(f'normal_index : {normal_index}')
-        print(f'img_info : {img_info.shape}')
+
+
+        img_info = batch['image_info']['image']
+        normal_img_info = img_info[normal_index]
+        ood_img_info = img_info[ood_index]
+        print(f'normal_img_info : {normal_img_info.shape}')
+        print(f'ood_img_info : {ood_img_info.shape}')
+
+
+        mask_info = batch['mask']
+        print(f'mask_info : {mask_info}')
         #print(f'normal_img_info : {normal_img_info}')
         break
-
 
 
 if __name__ == "__main__":
