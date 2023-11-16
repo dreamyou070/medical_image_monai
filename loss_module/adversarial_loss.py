@@ -1,7 +1,5 @@
 from __future__ import annotations
-
 import warnings
-
 import torch
 from monai.networks.layers.utils import get_act_layer
 from monai.utils import LossReduction
@@ -112,6 +110,10 @@ class PatchAdversarialLoss(_Loss):
                        target: torch.FloatTensor) -> torch.Tensor | None:
 
         if (self.criterion == AdversarialCriterions.BCE.value or self.criterion == AdversarialCriterions.LEAST_SQUARE.value):
+            # self.loss_fct .. ?
+            # self.loss_fct = torch.nn.MSELoss(reduction=reduction)
+            # mse loss
+            print(f'target (all 1 tensor) : {target}')
             return self.loss_fct(input, target)
 
         elif self.criterion == AdversarialCriterions.HINGE.value:
