@@ -83,9 +83,8 @@ class PatchAdversarialLoss(_Loss):
         if type(input) is not list:
             input = [input]
         target_ = []
-
-        for _, disc_out in enumerate(input):
-            print('(maybe every batch) disc_out', disc_out.shape)
+        for i, disc_out in enumerate(input):
+            print(f'i : {i}')
             if self.criterion != AdversarialCriterions.HINGE.value:
                 target_.append(self.get_target_tensor(disc_out, target_is_real))
             else:
