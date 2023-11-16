@@ -41,7 +41,7 @@ def main(args):
     val_ds = SYDataset_masking(data=val_datalist, transform=val_transforms)
     norm_val_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
     for i, batch in enumerate(train_loader) :
-        img_info = batch['image_info']
+        img_info = batch['image_info']['image']
 
         mask_info = batch['mask']
         normal_info = batch['nonrmal']
@@ -49,7 +49,7 @@ def main(args):
        # normal_img_info = img_info[normal_index]
         print(f'normal_info : {normal_info}')
         print(f'normal_index : {normal_index}')
-        print(f'img_info : {img_info.keys()}')
+        print(f'img_info : {img_info.shape}')
         #print(f'normal_img_info : {normal_img_info}')
         break
 
