@@ -139,7 +139,7 @@ def main(args):
                     # -----------------------------------------------------------------------------------------------------
                     # normal image adversarial loss
                     recon_attn = discriminator(reconstruction.contiguous().float())[-1]
-                    recon_attn_target = discriminator(normal_mask_info.contiguous().float())[-1]
+                    recon_attn_target = normal_mask_info.contiguous().float()
                     generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(),
                                                                       recon_attn_target.float())]))
                     loss_g += adv_weight * generator_loss
@@ -147,19 +147,24 @@ def main(args):
                     # -----------------------------------------------------------------------------------------------------
                     # ood image adversarial loss
                     ood_reconstruction, z_mu, z_sigma = autoencoderkl(ood_img_info)
-                    recon_attn = discriminator(ood_reconstruction.contiguous().float())[-1]
+                    recon_attn = ood_reconstruction.contiguous().float()
                     recon_attn_target = discriminator(ood_mask_info.contiguous().float())[-1]
                     ood_generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(), recon_attn_target.float())]))
                     loss_g += adv_weight * ood_generator_loss
                     loss_dict["loss/adversarial_ood_generator_loss"] = generator_loss.item()
             loss_g.backward()
             optimizer_g.step()
-    """
+            """
             # ------------------------------------------------------------------------------------------------------------
             # (3) discriminator training
             if epoch > autoencoder_warm_up_n_epochs:
                 with autocast(enabled=True):
                     optimizer_d.zero_grad(set_to_none=True)
+                    # -----------------------------------------------------------------------------------------------------
+                    # 1) real normal
+                    normal_img_attn     = discriminator(normal_img_info.contiguous().float())[-1]
+                    normal_img_attn_trg = discriminator(normal_img_info.contiguous().float())[-1]
+
 
                     loss_d_fake = adv_loss(discriminator(reconstruction.contiguous().detach())[-1],
                                            target_is_real=False,for_discriminator=True)
