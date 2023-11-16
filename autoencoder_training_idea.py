@@ -14,6 +14,8 @@ import torch.nn.functional as F
 import torchvision.transforms as torch_transforms
 import wandb
 import matplotlib.pyplot as plt
+from PIL import Image
+import io
 
 
 def main(args):
@@ -176,8 +178,14 @@ def main(args):
                         recon  = torch.reshape(recon_img_, (width, height)).T
                         ax[1].imshow(recon.cpu(), cmap='gray')
                         ax[1].axis("off")
-
                         plt.savefig(os.path.join(inf_save_basic_dir, f'epoch_{epoch + 1}_{index}.png'))
+
+                        buf = io.BytesIO()
+                        fig.savefig(buf)
+                        buf.seek(0)
+                        loading_image = wandb.Image(Image.open(buf), caption=f"epoch : {epoch + 1}")
+                        wandb.log({"inference": loading_image})
+                        plt.close()
 
 
                         # ------------------- save image ------------------- #
