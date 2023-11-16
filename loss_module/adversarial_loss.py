@@ -27,12 +27,15 @@ class PatchAdversarialLoss(_Loss):
         # Depending on the criterion, a different activation layer is used.
         self.real_label = 1.0
         self.fake_label = 0.0
+
         if criterion == AdversarialCriterions.BCE.value:
             self.activation = get_act_layer("SIGMOID")
             self.loss_fct = torch.nn.BCELoss(reduction=reduction)
+
         elif criterion == AdversarialCriterions.HINGE.value:
             self.activation = get_act_layer("TANH")
             self.fake_label = -1.0
+
         elif criterion == AdversarialCriterions.LEAST_SQUARE.value:
             if no_activation_leastsq:
                 self.activation = None
@@ -77,8 +80,6 @@ class PatchAdversarialLoss(_Loss):
         for i, disc_out in enumerate(input):
             if self.criterion != AdversarialCriterions.HINGE.value:
                 trg_attention_tensor = self.get_target_tensor(disc_out, target_is_real)
-                print(f'trg_attention_tensor.shape (64,1,6,6) : {trg_attention_tensor.shape}')
-                print(f'trg_attention_tensor (all 1) : {trg_attention_tensor}')
                 target_.append(trg_attention_tensor)
             else:
                 target_.append(self.get_zero_tensor(disc_out))
@@ -86,11 +87,15 @@ class PatchAdversarialLoss(_Loss):
         # Loss calculation
         loss = []
         for disc_ind, disc_out in enumerate(input):
+
             if self.activation is not None:
                 disc_out = self.activation(disc_out)
+
             if self.criterion == AdversarialCriterions.HINGE.value and not target_is_real:
                 loss_ = self.forward_single(-disc_out, target_[disc_ind])
+
             else:
+                print(f'calculate loss here')
                 loss_ = self.forward_single(disc_out, target_[disc_ind])
             loss.append(loss_)
 
