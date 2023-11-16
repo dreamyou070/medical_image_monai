@@ -73,6 +73,7 @@ def main(args):
     n_epochs = 100
     val_interval = 1
     autoencoder_warm_up_n_epochs = 10
+    weight_dtype = autoencoderkl.encoder.weight.dtype
     for epoch in range(n_epochs):
         print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
@@ -94,7 +95,7 @@ def main(args):
 
             mask_info = batch['mask']
             masked_img_info = img_info * mask_info.unsqueeze(1)
-            masked_img_info = masked_img_info.to(img_info.dtype)
+            masked_img_info = masked_img_info.to(weight_dtype)
             # 0black = 0 -> 1 ->
             #normal_mask_info = mask_info[normal_index]
             #ood_mask_info = mask_info[ood_index]
