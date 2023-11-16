@@ -44,6 +44,7 @@ def main(args):
     train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
     train_datalist = [{"image": os.path.join(data_base_dir, train_data)} for train_data in train_datas]
     train_ds = SYDataset_masking(data=train_datalist,transform=train_transforms,base_mask_dir = base_mask_dir)
+
     print(f' (3.1) train dataloader')
     train_loader = SYDataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4,persistent_workers=True)
     print(f' (3.2) validdataloader')
@@ -55,12 +56,14 @@ def main(args):
     print(f'\n step 4. model')
     device = torch.device("cuda")
     print(f' (5.1) generator (vae autoencoder)')
-    autoencoderkl = AutoencoderKL(spatial_dims=2, in_channels=1, out_channels=1, num_channels=(128, 128, 256),
+    autoencoderkl = AutoencoderKL(spatial_dims=2,
+                                  in_channels=1, out_channels=1, num_channels=(128, 128, 256),
                                   latent_channels=3, num_res_blocks=2,
                                   attention_levels=(False, False, False), with_encoder_nonlocal_attn=False,
                                   with_decoder_nonlocal_attn=False, ).to(device)
     print(f' (5.2) discriminator')
-    discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64, in_channels=1,
+    discriminator = PatchDiscriminator(spatial_dims=2,
+                                       num_layers_d=3, num_channels=64, in_channels=1,
                                        out_channels=1).to(device)
     print(f' (5.3) perceptual_loss')
     perceptual_loss = PerceptualLoss(spatial_dims=2, network_type="alex").to(device)
@@ -68,6 +71,10 @@ def main(args):
     print(f' (5.4) patch adversarial loss')
     adv_loss = PatchAdversarialLoss(criterion="least_squares")
     adv_weight = 0.01
+
+    mse_loss = torch.nn.MSELoss()
+
+
 
     print(f'\n step 5. optimizer')
     optimizer_g = torch.optim.Adam(autoencoderkl.parameters(), lr=1e-4)
@@ -82,8 +89,9 @@ def main(args):
     os.makedirs(save_basic_dir, exist_ok=True)
     inf_save_basic_dir = os.path.join(args.save_basic_dir, 'inference_20231115')
     os.makedirs(inf_save_basic_dir, exist_ok=True)
-
+    """
     for epoch in range(n_epochs):
+
         print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
         discriminator.train()
@@ -92,7 +100,9 @@ def main(args):
         disc_epoch_loss = 0
         progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=110)
         progress_bar.set_description(f"Epoch {epoch}")
+
         for step, batch in progress_bar:
+
             normal_info = batch['normal']
             normal_index = torch.where(normal_info == 1)
             ood_index = torch.where(normal_info != 1)
@@ -104,23 +114,18 @@ def main(args):
 
             mask_info = batch['mask'].to(device, weight_dtype)
             mask_info = mask_info.unsqueeze(1)
-            masked_img_info = img_info * mask_info
-            # 0black = 0 -> 1 ->
             normal_mask_info = mask_info[normal_index]
             ood_mask_info = mask_info[ood_index]
 
-            masked_img_info = img_info * masked_img_info
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
                 loss_dict = {}
-                reconstruction, z_mu, z_sigma = autoencoderkl(masked_img_info)
-                recons_loss = F.l1_loss(reconstruction.float(),
-                                        img_info.float())
-                                        #masked_img_info.float())
+                # -----------------------------------------------------------------------------------------------------
+                # autoencoder must reconstruct the normal image
+                reconstruction, z_mu, z_sigma = autoencoderkl(normal_img_info)
+                recons_loss = F.l1_loss(reconstruction.float(),normal_img_info.float())
                 loss_dict["loss/recons_loss"] = recons_loss.item()
-                p_loss = perceptual_loss(reconstruction.float(),
-                                         img_info.float())
-                                         # masked_img_info.float())
+                p_loss = perceptual_loss(reconstruction.float(),normal_img_info)
                 loss_dict["loss/perceptual_loss"] = p_loss.item()
                 kl_loss = 0.5 * (torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3]))
                 kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
@@ -129,10 +134,50 @@ def main(args):
                 if epoch > autoencoder_warm_up_n_epochs:
                     generator_loss = adv_loss(discriminator(reconstruction.contiguous().float())[-1],
                                               target_is_real=True, for_discriminator=False)
+
+
+
+
+
                     loss_g += adv_weight * generator_loss
                     loss_dict["loss/adversarial_generator_loss"] = generator_loss.item()
             loss_g.backward()
             optimizer_g.step()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             # ------------------------------------------------------------------------------------------------------------
             # (3) discriminator training
             if epoch > autoencoder_warm_up_n_epochs:
@@ -215,7 +260,8 @@ def main(args):
             os.makedirs(model_save_dir, exist_ok=True)
             torch.save({'model': autoencoderkl.state_dict(), },
                        os.path.join(model_save_dir, f'vae_checkpoint_{epoch + 1}.pth'))
-
+    """
+    
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()

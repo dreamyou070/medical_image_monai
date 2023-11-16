@@ -20,12 +20,6 @@ __all__ = ["RandAffineD","RandAffineDict",]
 
 
 class RandAffined(RandomizableTransform, MapTransform, InvertibleTransform, LazyTransform):
-    """
-    Dictionary-based wrapper of :py:class:`monai.transforms.RandAffine`.
-
-    This transform is capable of lazy execution. See the :ref:`Lazy Resampling topic<lazy_resampling>`
-    for more information.
-    """
 
     backend = RandAffine.backend
 

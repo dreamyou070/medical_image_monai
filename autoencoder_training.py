@@ -96,9 +96,10 @@ def main(args):
                     # 생성자를 학습시키기 위한 것
                     # 생성자가 판별한 이미지가 마치 real 인 것처럼 판정이 나야 한다. 즉, 생성자가 생성한 이미지 input 은 target 으로 True 가 되어야 하고,
                     # 이는 생성자를 학습하기 위한 것이므로, for_discriminator 는 False 로 한다.
-                    discrimator_output = discriminator(reconstruction.contiguous().float())
-                    logits_fake = discrimator_output[-1]
-                    generator_loss = adv_loss(logits_fake,target_is_real=True,for_discriminator=False)
+                    logits_fake = discriminator(reconstruction.contiguous().float())[-1]
+                    generator_loss = adv_loss(logits_fake,
+                                              target_is_real=True,
+                                              for_discriminator=False)
                     loss_g += adv_weight * generator_loss
             scaler_g.scale(loss_g).backward()
             scaler_g.step(optimizer_g)

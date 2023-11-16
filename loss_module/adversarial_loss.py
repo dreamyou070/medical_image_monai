@@ -14,10 +14,12 @@ class AdversarialCriterions(StrEnum):
 
 
 class PatchAdversarialLoss(_Loss):
-    """"""
-    def __init__(self, reduction: LossReduction | str = LossReduction.MEAN,
+
+    def __init__(self,
+                 reduction: LossReduction | str = LossReduction.MEAN,
                  criterion: str = AdversarialCriterions.LEAST_SQUARE.value, # criterion="least_squares"
                  no_activation_leastsq: bool = False,) -> None:
+        print(f'reduction: {reduction}')
         super().__init__(reduction=LossReduction(reduction).value)
         if criterion.lower() not in [m.value for m in AdversarialCriterions]:
             raise ValueError("Unrecognised criterion entered for Adversarial Loss. Must be one in: %s"
@@ -45,21 +47,12 @@ class PatchAdversarialLoss(_Loss):
         self.reduction = reduction
 
     def get_target_tensor(self, input: torch.FloatTensor, target_is_real: bool) -> torch.Tensor:
-
         filling_label = self.real_label if target_is_real else self.fake_label
         label_tensor = torch.tensor(1).fill_(filling_label).type(input.type()).to(input[0].device)
         label_tensor.requires_grad_(False)
         return label_tensor.expand_as(input)
 
     def get_zero_tensor(self, input: torch.FloatTensor) -> torch.Tensor:
-        """
-        Gets a zero tensor.
-
-        Args:
-            input: tensor which shape you want the zeros tensor to correspond to.
-        Returns:
-        """
-
         zero_label_tensor = torch.tensor(0).type(input[0].type()).to(input[0].device)
         zero_label_tensor.requires_grad_(False)
         return zero_label_tensor.expand_as(input)
@@ -70,10 +63,10 @@ class PatchAdversarialLoss(_Loss):
                 for_discriminator: bool) -> torch.Tensor | list[torch.Tensor]:
         if not for_discriminator and not target_is_real:
             target_is_real = True  # With generator, we always want this to be true!
-            warnings.warn("Variable target_is_real has been set to False, but for_discriminator is set"
-                          "to False. To optimise a generator, target_is_real must be set to True.")
+            warnings.warn("Variable target_is_real has been set to False, but for_discriminator is set to False. To optimise a generator, target_is_real must be set to True.")
         if type(input) is not list:
             input = [input]
+
         target_ = []
         for i, disc_out in enumerate(input):
             if self.criterion != AdversarialCriterions.HINGE.value:
@@ -81,8 +74,6 @@ class PatchAdversarialLoss(_Loss):
                 target_.append(trg_attention_tensor)
             else:
                 target_.append(self.get_zero_tensor(disc_out))
-
-        # Loss calculation
         loss = []
         for disc_ind, disc_out in enumerate(input):
             if self.activation is not None:
@@ -106,7 +97,8 @@ class PatchAdversarialLoss(_Loss):
                        target: torch.FloatTensor) -> torch.Tensor | None:
 
         if (self.criterion == AdversarialCriterions.BCE.value or self.criterion == AdversarialCriterions.LEAST_SQUARE.value):
-            return self.loss_fct(input, target)
+            loss = self.loss_fct(input, target)
+            return loss
 
         elif self.criterion == AdversarialCriterions.HINGE.value:
             minval = torch.min(input - 1, self.get_zero_tensor(input))
