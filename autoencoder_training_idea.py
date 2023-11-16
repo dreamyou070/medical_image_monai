@@ -92,7 +92,7 @@ def main(args):
             #normal_img_info = img_info[normal_index]
             #ood_img_info = img_info[ood_index]
 
-            mask_info = batch['mask']
+            mask_info = batch['mask'].to(norm_info.dtype)
             #normal_mask_info = mask_info[normal_index]
             #ood_mask_info = mask_info[ood_index]
             masked_img_info = img_info * mask_info.unsqueeze(1)
