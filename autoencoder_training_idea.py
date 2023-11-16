@@ -89,6 +89,7 @@ def main(args):
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
                 reconstruction, z_mu, z_sigma = autoencoderkl(images)
+                print(f'reconstruction.shape (64,1,64,64): {reconstruction.shape}')
                 # ------------------------------------------------------------------------------------------------------------
                 # (1.1) reconstruction loss (L1)
                 recons_loss = F.l1_loss(reconstruction.float(), images.float())
@@ -109,8 +110,7 @@ def main(args):
                     # 생성자가 판별한 이미지가 마치 real 인 것처럼 판정이 나야 한다. 즉, 생성자가 생성한 이미지 input 은 target 으로 True 가 되어야 하고,
                     # 이는 생성자를 학습하기 위한 것이므로, for_discriminator 는 False 로 한다.
                     discrimator_output = discriminator(reconstruction.contiguous().float())
-                    logits_fake = discrimator_output[-1]
-                    print(f'shape of logits_fake : {logits_fake.shape}')
+                    logits_fake = discrimator_output[-1] # one or zero
                     # how does adversarial loss do...
                     generator_loss = adv_loss(logits_fake,
                                               target_is_real=True,
@@ -129,14 +129,23 @@ def main(args):
                     # reconstruction.contiguous().detach() 를 discriminator 은 가짜라고 판별해야 한다
                     # 즉 target 은 가짜이므로, target_is_real 은 False 가 되어야 한다.
                     # 구분자를 학습시키기 위한 것이므로 for_discriminator 는 True 로 한다.
-                    loss_d_fake = adv_loss(discriminator(reconstruction.contiguous().detach())[-1],
-                                           target_is_real=True,
+
+
+                    discriminator_result = discriminator(reconstruction.contiguous().detach())[-1]
+
+
+                    loss_d_fake = adv_loss(discriminator_result,
+                                           target_is_real=False,
                                            for_discriminator=True)
+
+                    print(f'shape of logits_fake : {logits_fake.shape}')
+
                     # ---------------------------------------------------------------------------------------------------------------------
                     # discriminator 가 real 을 real 이라고 판별해야 한다.\
                     # 즉, target 은 real 이므로, target_is_real 은 True 가 되어야 한다.
                     # 구분자를 학습시키기 위한 것이므로 for_discriminator 는 True 로 한다.
-                    loss_d_real = adv_loss(discriminator(images.contiguous().detach())[-1], target_is_real=True,
+                    loss_d_real = adv_loss(discriminator(images.contiguous().detach())[-1],
+                                           target_is_real=True,
                                            for_discriminator=True)
                     discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
                     loss_d = adv_weight * discriminator_loss

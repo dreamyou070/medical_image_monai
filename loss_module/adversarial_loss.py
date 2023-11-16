@@ -113,7 +113,6 @@ class PatchAdversarialLoss(_Loss):
             # self.loss_fct .. ?
             # self.loss_fct = torch.nn.MSELoss(reduction=reduction)
             # mse loss
-            print(f'target (all 1 tensor) : {target}')
             return self.loss_fct(input, target)
 
         elif self.criterion == AdversarialCriterions.HINGE.value:
