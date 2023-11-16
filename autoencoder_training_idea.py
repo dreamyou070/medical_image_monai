@@ -42,13 +42,14 @@ def main(args):
     norm_val_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
     for i, batch in enumerate(train_loader) :
         img_info = batch['image_info']
+
         mask_info = batch['mask']
         normal_info = batch['nonrmal']
         normal_index = torch.where(normal_info == 1)
        # normal_img_info = img_info[normal_index]
         print(f'normal_info : {normal_info}')
         print(f'normal_index : {normal_index}')
-        print(f'img_info : {img_info}')
+        print(f'img_info : {img_info.keys()}')
         #print(f'normal_img_info : {normal_img_info}')
         break
 
