@@ -136,7 +136,7 @@ def main(args):
 
                     recon_attn = discriminator(reconstruction.contiguous().float())[-1]
                     recon_attn_target = torch.ones(size=recon_attn.shape)
-                    recon_loss = torch.mean(torch.stack(mse_loss(recon_attn.float(), recon_attn.float())))
+                    recon_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(), recon_attn.float())]))
                     print(f'adv loss : {generator_loss} : recon_attn : {recon_loss}')
 
 
