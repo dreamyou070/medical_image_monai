@@ -16,7 +16,7 @@ import wandb
 import matplotlib.pyplot as plt
 from PIL import Image
 import io
-
+import json
 
 def main(args):
 
@@ -28,6 +28,12 @@ def main(args):
     print(f'\n step 2. print version and set seed')
     print_config()
     set_determinism(args.seed)
+
+    print(f'\n confiv_save')
+    os.makedirs(args.save_basic_dir, exist_ok=True)
+    with open(os.path.join(args.save_basic_dir, 'config.json'), 'w') as f:
+        json.dump(vars(args), f, indent=4)
+
 
     print(f'\n step 3. dataset and dataloader')
     data_base_dir = os.path.join(args.data_folder, 'original')
@@ -70,7 +76,6 @@ def main(args):
     print(f'step 6. Training')
     kl_weight = 1e-6
     n_epochs = 100
-    val_interval = 1
     autoencoder_warm_up_n_epochs = 10
 
     save_basic_dir = args.save_basic_dir
@@ -153,7 +158,7 @@ def main(args):
                                       "disc_loss": disc_epoch_loss / (step + 1), })
             wandb.log(loss_dict)
         # -------------------------------------------------------------------------------------------------------------------------------
-        if (epoch + 1) % val_interval == 0:
+        if (epoch + 1) % args.val_interval == 0:
             autoencoderkl.eval()
             max_norm, max_ood = 4, 4
             norm_num, ood_num = 0, 0
@@ -241,7 +246,6 @@ if __name__ == "__main__":
     # step 7. saving autoencoder model
     parser.add_argument("--save_basic_dir", type=str,
                         default='/data7/sooyeon/medical_image/experiment_result_idea_20231116')
-    parser.add_argument("--model_save_num", type=int,
-                        default=90)
+    parser.add_argument("--model_save_num", type=int, default=90)
     args = parser.parse_args()
     main(args)
