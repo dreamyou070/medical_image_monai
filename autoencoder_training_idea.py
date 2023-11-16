@@ -94,7 +94,7 @@ def main(args):
 
             mask_info = batch['mask'].to(autoencoderkl.dtype)
             masked_img_info = img_info * mask_info.unsqueeze(1)
-            masked_img_info = masked_img_info.to(autoencoderkl.dtype)
+            masked_img_info = masked_img_info.to(img_info.dtype)
             # 0black = 0 -> 1 ->
             #normal_mask_info = mask_info[normal_index]
             #ood_mask_info = mask_info[ood_index]
