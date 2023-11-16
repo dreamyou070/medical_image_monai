@@ -195,7 +195,7 @@ if __name__ == "__main__":
     parser.add_argument("--image_size", type=str, default='160,80')
     parser.add_argument("--vis_num_images", type=int, default=3)
     parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--device", type=str, default='cuda:1')
+    parser.add_argument("--device", type=str, default='cuda:4')
     # step 5. saving autoencoder model
     parser.add_argument("--model_save_baic_dir", type=str,
                         default='/data7/sooyeon/medical_image/experiment_result_idea_20231116/vae_model')
