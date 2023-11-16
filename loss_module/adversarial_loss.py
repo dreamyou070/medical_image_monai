@@ -44,15 +44,7 @@ class PatchAdversarialLoss(_Loss):
         self.reduction = reduction
 
     def get_target_tensor(self, input: torch.FloatTensor, target_is_real: bool) -> torch.Tensor:
-        """
-        Gets the ground truth tensor for the discriminator depending on whether the input is real or fake.
 
-        Args:
-            input: input tensor from the discriminator (output of discriminator, or output of one of the multi-scale
-            discriminator). This is used to match the shape.
-            target_is_real: whether the input is real or wannabe-real (1s) or fake (0s).
-        Returns:
-        """
         filling_label = self.real_label if target_is_real else self.fake_label
         label_tensor = torch.tensor(1).fill_(filling_label).type(input.type()).to(input[0].device)
         label_tensor.requires_grad_(False)
@@ -79,14 +71,15 @@ class PatchAdversarialLoss(_Loss):
             target_is_real = True  # With generator, we always want this to be true!
             warnings.warn("Variable target_is_real has been set to False, but for_discriminator is set"
                           "to False. To optimise a generator, target_is_real must be set to True.")
-        print(f'input to the loss function: {input.shape}')
         if type(input) is not list:
             input = [input]
         target_ = []
         for i, disc_out in enumerate(input):
-            print(f'i : {i}')
             if self.criterion != AdversarialCriterions.HINGE.value:
-                target_.append(self.get_target_tensor(disc_out, target_is_real))
+                trg_attention_tensor = self.get_target_tensor(disc_out, target_is_real)
+                print(f'trg_attention_tensor.shape (64,1,6,6) : {trg_attention_tensor.shape}')
+                print(f'trg_attention_tensor (all 1) : {trg_attention_tensor}')
+                target_.append(trg_attention_tensor)
             else:
                 target_.append(self.get_zero_tensor(disc_out))
 

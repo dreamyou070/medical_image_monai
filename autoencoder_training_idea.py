@@ -113,7 +113,8 @@ def main(args):
                     print(f'shape of logits_fake : {logits_fake.shape}')
                     # how does adversarial loss do...
                     generator_loss = adv_loss(logits_fake,
-                                              target_is_real=True, for_discriminator=False)
+                                              target_is_real=True,
+                                              for_discriminator=False)
                     loss_g += adv_weight * generator_loss
             scaler_g.scale(loss_g).backward()
             scaler_g.step(optimizer_g)
