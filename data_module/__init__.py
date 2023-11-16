@@ -116,7 +116,7 @@ class SYDataset_masking(_TorchDataset):
         normal = True
         if criterion > 0 :
             normal = False
-        w,h = mask_pil.shape
+        w,h = mask_pil.size
         resized_masK_pil = mask_pil.resize((int(w/4) - 2, int(h/4) - 2))
         resized_masK_np = np.array(resized_masK_pil)
         data_dict['image_info'] = self.data_transform(index)
