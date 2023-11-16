@@ -102,13 +102,12 @@ def main(args):
                                               target_is_real=True,
                                               for_discriminator=False)
                     activation = adv_loss.activation
+                    from monai.networks.layers.utils import get_act_layer
+                    input_activation = get_act_layer(name=("LEAKYRELU",{"negative_slope": 0.05}))
+                    activated_logits_fake = input_activation(logits_fake.float())
                     print(f'adv_loss.activation : {activation}')
-
-
                     logits_fake_target = torch.ones_like(logits_fake).float()
-                    print(f'logits_fake_target : {logits_fake_target}')
-                    print(f'logits_fake.float() : {logits_fake.float()}')
-                    loss = [mse_loss(logits_fake.float(),
+                    loss = [mse_loss(activated_logits_fake,
                                      logits_fake_target)]
                     generator_loss_manual = torch.mean(torch.stack(loss))
 
