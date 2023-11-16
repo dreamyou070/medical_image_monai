@@ -157,9 +157,12 @@ def main(args):
 
                 normal_info = batch['normal']
                 img_info = batch['image_info']['image'].to(device)
+                mask_info = batch['mask'].to(device, img_info.dtype)
+                print(f'mask_info : {mask_info.shape}')
                 mask_info = batch['mask'].to(device, img_info.dtype).unsqueeze(1)
+                print(f'mask_info : {mask_info.shape}')
                 masked_img_info = img_info * mask_info
-
+                """
                 with torch.no_grad():
                     recon_img, z_mu, z_sigma = autoencoderkl(img_info)
                     batch, channel, width, height = recon_img.shape
@@ -194,7 +197,7 @@ def main(args):
                             w,h = pil.size
                             wandb.log({f"epoch : {epoch + 1} index : {index} : " : wandb.Image(pil.resize((w*32, h*32)), caption=caption)})
                             plt.close()
-
+                """
 
 
 if __name__ == "__main__":
