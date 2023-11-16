@@ -156,23 +156,15 @@ def main(args):
             for val_step, batch in enumerate(val_loader, start=1):
 
                 normal_info = batch['normal']
-                normal_index = torch.where(normal_info == 1)
-                ood_index = torch.where(normal_info != 1)
-
                 img_info = batch['image_info']['image'].to(device)
-                weight_dtype = img_info.dtype
-                normal_img_info = img_info[normal_index]
-                ood_img_info = img_info[ood_index]
-
-                mask_info = batch['mask'].to(device, weight_dtype)
-                mask_info = mask_info.unsqueeze(1)
+                mask_info = batch['mask'].to(device, img_info.dtype).unsqueeze(1)
                 masked_img_info = img_info * mask_info
 
                 with torch.no_grad():
                     recon_img, z_mu, z_sigma = autoencoderkl(img_info)
                     batch, channel, width, height = recon_img.shape
                     index = 0
-                    for normal_img, recon_img_ in zip(normal_img_info, recon_img) :
+                    for img_info_, recon_img_ in zip(img_info, recon_img) :
                         is_normal = normal_info[index]
                         if is_normal == 1 :
                             caption = 'Normal Image'
@@ -182,7 +174,7 @@ def main(args):
                             ood_num += 1
                         if (is_normal == 1 and norm_num < max_norm) or (is_normal != 1 and ood_num < max_ood):
                             fig, ax = plt.subplots(nrows=1, ncols=3, sharey=True)
-                            origin = torch.reshape(normal_img, (width, height)).T
+                            origin = torch.reshape(img_info_, (width, height)).T
                             ax[0].imshow(origin.cpu(), cmap="gray")
                             ax[0].set_title('original')
                             ax[0].axis("off")
@@ -200,7 +192,7 @@ def main(args):
                             buf.seek(0)
                             pil = Image.open(buf)
                             w,h = pil.size
-                            wandb.log({f"epoch : {epoch + 1}" : wandb.Image(pil.resize((w*32, h*32)), caption=caption)})
+                            wandb.log({f"epoch : {epoch + 1} index : {index} : " : wandb.Image(pil.resize((w*32, h*32)), caption=caption)})
                             plt.close()
 
 
