@@ -121,7 +121,9 @@ def main(args):
                 # -----------------------------------------------------------------------------------------------------
                 # autoencoder must reconstruct the normal image
                 reconstruction, z_mu, z_sigma = autoencoderkl(normal_img_info)
-                recons_loss = F.l1_loss(reconstruction.float(),normal_img_info.float())
+                print(f'z_mu.shape : {z_mu.shape}')
+                recons_loss = F.l1_loss(reconstruction.float(),
+                                        normal_img_info.float())
                 loss_dict["loss/recons_loss"] = recons_loss.item()
                 p_loss = perceptual_loss(reconstruction.float(),normal_img_info)
                 loss_dict["loss/perceptual_loss"] = p_loss.item()
@@ -130,24 +132,34 @@ def main(args):
                 loss_dict["loss/kl_loss"] = kl_loss.item()
                 loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
                 if epoch > autoencoder_warm_up_n_epochs:
-                    generator_loss = adv_loss(discriminator(reconstruction.contiguous().float())[-1],
-                                              target_is_real=True,
-                                              for_discriminator=False)
-
                     recon_attn = discriminator(reconstruction.contiguous().float())[-1]
                     recon_attn_target = torch.ones(size=recon_attn.shape)
-                    recon_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(), recon_attn.float())]))
-                    print(f'adv loss : {generator_loss} : recon_attn : {recon_loss}')
-
-
-
-
-
-
+                    generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(), recon_attn.float())]))
                     loss_g += adv_weight * generator_loss
                     loss_dict["loss/adversarial_generator_loss"] = generator_loss.item()
             loss_g.backward()
             optimizer_g.step()
+            # ----------------------------------------------------------------------------------------------------------
+            with autocast(enabled=True):
+                loss_dict = {}
+                # -----------------------------------------------------------------------------------------------------
+                # autoencoder must reconstruct the normal image
+                oob_reconstruction, z_mu, z_sigma = autoencoderkl(ood_img_info)
+                oob_recon_attn = discriminator(oob_reconstruction.contiguous().float())[-1]
+
+
+
+                recon_attn = discriminator(ood_mask_info.contiguous().detach())[-1]
+
+
+                recon_attn_target = torch.ones(size=recon_attn.shape)
+                generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(), recon_attn.float())]))
+                loss_g += adv_weight * generator_loss
+                loss_dict["loss/adversarial_generator_loss"] = generator_loss.item()
+            loss_g.backward()
+            optimizer_g.step()
+
+
 
     """
 

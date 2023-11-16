@@ -119,7 +119,7 @@ class SYDataset_masking(_TorchDataset):
         mask_torch = torch.from_numpy(mask_np)
         data_dict['image_info'] = self.data_transform(index)
         data_dict['normal'] = int(normal)
-        data_dict['mask'] = torch.where(mask_torch == 0, 1, 0)
+        data_dict['mask'] = 1-mask_torch
 
         return data_dict
 
