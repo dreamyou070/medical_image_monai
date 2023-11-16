@@ -91,6 +91,7 @@ class PatchAdversarialLoss(_Loss):
             loss.append(loss_)
 
         if loss is not None:
+            print(f'len of loss : {len(loss)}')
             if self.reduction == LossReduction.MEAN.value:
                 print('MEAN THE VALUE')
                 loss = torch.mean(torch.stack(loss))
@@ -105,7 +106,6 @@ class PatchAdversarialLoss(_Loss):
 
         if (self.criterion == AdversarialCriterions.BCE.value or self.criterion == AdversarialCriterions.LEAST_SQUARE.value):
             loss = self.loss_fct(input, target)
-            print(f'in forward_singel, loss : {loss}')
             return loss
 
         elif self.criterion == AdversarialCriterions.HINGE.value:
