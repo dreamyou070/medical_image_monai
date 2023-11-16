@@ -201,7 +201,7 @@ def main(args):
                             buf.seek(0)
                             pil = Image.open(buf)
                             w,h = pil.size
-                            wandb.log({f"epoch : {epoch + 1} index : {index} : " : wandb.Image(pil.resize((w*32, h*32)), caption=caption)})
+                            wandb.log({f"epoch : {epoch + 1} index : {index} : " : wandb.Image(pil.resize((w*4, h*4)), caption=caption)})
                             plt.close()
         # -------------------------------------------------------------------------------------------------------------------------------
         # model save
