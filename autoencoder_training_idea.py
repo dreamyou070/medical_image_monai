@@ -55,16 +55,16 @@ def main(args):
 
     print(f'\n step 4. model')
     device = torch.device("cuda")
-    print(f' (5.1) generator (vae autoencoder)')
-    autoencoderkl = AutoencoderKL(spatial_dims=2,
-                                  in_channels=1, out_channels=1, num_channels=(128, 128, 256),
-                                  latent_channels=3, num_res_blocks=2,
-                                  attention_levels=(False, False, False), with_encoder_nonlocal_attn=False,
+    print(f' (4.1) generator (vae autoencoder)')
+    autoencoderkl = AutoencoderKL(spatial_dims=2, in_channels=1, out_channels=1, num_channels=(128, 128, 256),
+                                  latent_channels=3, num_res_blocks=2, attention_levels=(False, False, False), with_encoder_nonlocal_attn=False,
                                   with_decoder_nonlocal_attn=False, ).to(device)
-    print(f' (5.2) discriminator')
-    discriminator = PatchDiscriminator(spatial_dims=2,
-                                       num_layers_d=3, num_channels=64, in_channels=1,
-                                       out_channels=1).to(device)
+    print(f' (4.2) discriminator')
+    discriminator = PatchDiscriminator(spatial_dims=2,num_layers_d=3, num_channels=64, in_channels=1,out_channels=1).to(device)
+
+    print(f'\n step 5. loss function')
+    mse_loss = torch.nn.MSELoss(reduction='mean')
+
     print(f' (5.3) perceptual_loss')
     perceptual_loss = PerceptualLoss(spatial_dims=2, network_type="alex").to(device)
     perceptual_weight = 0.001
@@ -72,9 +72,7 @@ def main(args):
     adv_loss = PatchAdversarialLoss(criterion="least_squares")
     adv_weight = 0.01
 
-    mse_loss = torch.nn.MSELoss()
-
-
+    
 
     print(f'\n step 5. optimizer')
     optimizer_g = torch.optim.Adam(autoencoderkl.parameters(), lr=1e-4)
@@ -83,13 +81,13 @@ def main(args):
     print(f'step 6. Training')
     kl_weight = 1e-6
     n_epochs = 100
-    autoencoder_warm_up_n_epochs = 10
+    autoencoder_warm_up_n_epochs = args.autoencoder_warm_up_n_epochs
 
     save_basic_dir = args.save_basic_dir
     os.makedirs(save_basic_dir, exist_ok=True)
     inf_save_basic_dir = os.path.join(args.save_basic_dir, 'inference_20231115')
     os.makedirs(inf_save_basic_dir, exist_ok=True)
-    """
+
     for epoch in range(n_epochs):
 
         print(f' epoch {epoch + 1}/{n_epochs}')
@@ -133,7 +131,16 @@ def main(args):
                 loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
                 if epoch > autoencoder_warm_up_n_epochs:
                     generator_loss = adv_loss(discriminator(reconstruction.contiguous().float())[-1],
-                                              target_is_real=True, for_discriminator=False)
+                                              target_is_real=True,
+                                              for_discriminator=False)
+                    print(f'adv loss : {generator_loss}')
+
+
+                    recon_attn = discriminator(reconstruction.contiguous().float())[-1]
+                    recon_attn_target = torch.ones(shape=recon_attn.shape, device=device)
+                    generator_loss = mse_loss(recon_attn.float(), recon_attn.float())
+                    print(f'recon_attn : {recon_attn}')
+
 
 
 
@@ -144,7 +151,7 @@ def main(args):
             loss_g.backward()
             optimizer_g.step()
 
-
+    """
 
 
 
@@ -261,7 +268,7 @@ def main(args):
             torch.save({'model': autoencoderkl.state_dict(), },
                        os.path.join(model_save_dir, f'vae_checkpoint_{epoch + 1}.pth'))
     """
-    
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
