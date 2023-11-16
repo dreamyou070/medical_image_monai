@@ -73,7 +73,7 @@ def main(args):
     print(f'step 4. training (takes about one hour)')
     kl_weight = 1e-6
     n_epochs = 100
-    autoencoder_warm_up_n_epochs = 10
+    autoencoder_warm_up_n_epochs = 0
     for epoch in range(n_epochs):
         print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
