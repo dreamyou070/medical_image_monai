@@ -89,7 +89,6 @@ def main(args):
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
                 reconstruction, z_mu, z_sigma = autoencoderkl(images)
-                print(f'reconstruction.shape (64,1,64,64): {reconstruction.shape}')
                 # ------------------------------------------------------------------------------------------------------------
                 # (1.1) reconstruction loss (L1)
                 recons_loss = F.l1_loss(reconstruction.float(), images.float())

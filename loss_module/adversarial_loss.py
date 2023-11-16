@@ -79,6 +79,8 @@ class PatchAdversarialLoss(_Loss):
             if self.criterion != AdversarialCriterions.HINGE.value:
                 trg_attention_tensor = self.get_target_tensor(disc_out, target_is_real)
                 target_.append(trg_attention_tensor)
+                if target_is_real == False :
+                    print(f'target_is_real == False (zero) : {target_is_real}')
             else:
                 target_.append(self.get_zero_tensor(disc_out))
 
