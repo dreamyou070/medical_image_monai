@@ -112,14 +112,15 @@ class SYDataset_masking(_TorchDataset):
         mask_dir = os.path.join(self.base_mask_dir, net_name)
         mask_pil = Image.open(mask_dir)
         mask_np = np.array(mask_pil)
-
         criterion = np.sum(mask_np)
         normal = True
         if criterion > 0 :
             normal = False
+        mask_torch = torch.from_numpy(mask_np)
         data_dict['image_info'] = self.data_transform(index)
-        data_dict['mask'] = torch.from_numpy(mask_np)
         data_dict['nonrmal'] = int(normal)
+        data_dict['mask'] = torch.where(mask_torch == 0, 1, 0)
+
         return data_dict
 
 class SYDataset(_TorchDataset):
