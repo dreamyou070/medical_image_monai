@@ -44,7 +44,9 @@ def main(args):
         img_info = batch['image_info']
         mask_info = batch['mask']
         normal_info = batch['nonrmal']
+        normal_index = torch.where(normal_info == 1)
         print(f'normal_info : {normal_info}')
+        print(f'normal_index : {normal_index}')
         break
 
 
