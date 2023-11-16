@@ -138,18 +138,19 @@ def main(args):
                 if epoch > autoencoder_warm_up_n_epochs:
                     # -----------------------------------------------------------------------------------------------------
                     # normal image adversarial loss
-                    recon_attn = discriminator(reconstruction.contiguous().float())[-1]
+                    from monai.networks.layers.utils import get_act_layer
+                    input_activation = get_act_layer(name=("LEAKYRELU", {"negative_slope": 0.05}))
+
+                    recon_attn = input_activation(discriminator(reconstruction.contiguous().float())[-1])
                     recon_attn_target = normal_mask_info.contiguous().float()
-                    generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(),
-                                                                      recon_attn_target.float())]))
+                    generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(),recon_attn_target.float())]))
                     loss_g += adv_weight * generator_loss
                     loss_dict["loss/adversarial_normal_generator_loss"] = generator_loss.item()
                     # -----------------------------------------------------------------------------------------------------
                     # ood image adversarial loss
                     ood_reconstruction, z_mu, z_sigma = autoencoderkl(ood_img_info)
-                    ood_recon_attn = discriminator(ood_reconstruction.contiguous().float())[-1]
-                    ood_generator_loss = torch.mean(torch.stack([mse_loss(ood_recon_attn.float(),
-                                                                          ood_mask_info.contiguous().float())]))
+                    ood_recon_attn = input_activation(discriminator(ood_reconstruction.contiguous().float())[-1])
+                    ood_generator_loss = torch.mean(torch.stack([mse_loss(ood_recon_attn.float(),ood_mask_info.contiguous().float())]))
                     loss_g += adv_weight * ood_generator_loss
                     loss_dict["loss/adversarial_ood_generator_loss"] = generator_loss.item()
             loss_g.backward()
@@ -162,27 +163,24 @@ def main(args):
                     optimizer_d.zero_grad(set_to_none=True)
                     # -----------------------------------------------------------------------------------------------------
                     # 1) real normal
-                    normal_img_attn = discriminator(normal_img_info.contiguous().float())[-1]
-                    normal_real_loss = torch.mean(torch.stack([mse_loss(normal_img_attn.float(),
-                                                                        normal_mask_info.contiguous().float())]))
+                    normal_img_attn = input_activation(discriminator(normal_img_info.contiguous().float())[-1])
+                    normal_real_loss = torch.mean(torch.stack([mse_loss(normal_img_attn.float(),normal_mask_info.contiguous().float())]))
                     loss_dict["loss/adversarial_discriminator_normal_real"] = normal_real_loss.item()
                     # -----------------------------------------------------------------------------------------------------
                     # 2) synthesized normal
-                    synthesized_normal_attn = discriminator(reconstruction.contiguous().detach())[-1]
+                    synthesized_normal_attn = input_activation(discriminator(reconstruction.contiguous().detach())[-1])
                     normal_synthesized_loss = torch.mean(torch.stack([mse_loss(synthesized_normal_attn.float(),
                                                                                normal_mask_info.contiguous().float())]))
                     loss_dict["loss/adversarial_discriminator_normal_synthesized"] = normal_synthesized_loss.item()
                     # -----------------------------------------------------------------------------------------------------
                     # 3) real ood
-                    ood_img_attn = discriminator(ood_img_info.contiguous().float())[-1]
-                    ood_real_loss = torch.mean(torch.stack([mse_loss(ood_img_attn.float(),
-                                                                     ood_mask_info.float())]))
+                    ood_img_attn = input_activation(discriminator(ood_img_info.contiguous().float())[-1])
+                    ood_real_loss = torch.mean(torch.stack([mse_loss(ood_img_attn.float(),ood_mask_info.float())]))
                     loss_dict["loss/adversarial_discriminator_ood_real"] = ood_real_loss.item()
                     # -----------------------------------------------------------------------------------------------------
                     # 4) synthesized ood
-                    ood_img_attn = discriminator(ood_reconstruction.contiguous().detach())[-1]
-                    ood_synthesized_loss = torch.mean(torch.stack([mse_loss(ood_img_attn.float(),
-                                                                            ood_mask_info.float())]))
+                    ood_img_attn = input_activation(discriminator(ood_reconstruction.contiguous().detach())[-1])
+                    ood_synthesized_loss = torch.mean(torch.stack([mse_loss(ood_img_attn.float(),ood_mask_info.float())]))
                     loss_dict["loss/adversarial_discriminator_ood_synthesized"] = ood_synthesized_loss.item()
 
                     discriminator_loss = (normal_real_loss + normal_synthesized_loss + ood_real_loss + ood_synthesized_loss) * 0.25
