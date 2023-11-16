@@ -100,6 +100,102 @@ class MultiScalePatchDiscriminator(nn.Sequential):
 
         return out, intermediate_features
 
+class PatchAttentioner(nn.Sequential):
+    def __init__(self,
+                 spatial_dims: int,
+                 num_channels: int,     # 64
+                 in_channels: int,      # 1
+                 out_channels: int = 1, # 1
+                 num_layers_d: int = 3, #
+                 kernel_size: int = 4,
+                 activation: str | tuple = (Act.LEAKYRELU, {"negative_slope": 0.2}),
+                 norm: str | tuple = "BATCH",
+                 bias: bool = False,
+                 padding: int | Sequence[int] = 1,
+                 dropout: float | tuple = 0.0,
+                 last_conv_kernel_size: int | None = None,) -> None:
+        super().__init__()
+        self.num_layers_d = num_layers_d
+        self.num_channels = num_channels
+        if last_conv_kernel_size is None:
+            last_conv_kernel_size = kernel_size
+
+        """
+        discriminator = PatchDiscriminator(spatial_dims=2,
+                                               num_layers_d=3,
+                                               num_channels=64,
+                                               in_channels=1,
+                                               out_channels=1).to(device)
+        """
+
+        # Initial Layer
+        self.add_module("initial_conv",Convolution(spatial_dims=spatial_dims,
+                                                   kernel_size=kernel_size,
+                                                   in_channels=in_channels,    # 1
+                                                   out_channels=num_channels,  #  64
+                                                   act=activation,
+                                                   bias=True,
+                                                   norm=None,
+                                                   dropout=dropout,
+                                                   padding=padding,
+                                                   strides=2,),)
+        input_channels = num_channels
+        output_channels = num_channels * 2
+        # Middle Layer
+        for l_ in range(self.num_layers_d):
+            if l_ == self.num_layers_d - 1: stride = 1
+            else: stride = 2
+            layer = Convolution(spatial_dims=spatial_dims,
+                                kernel_size=kernel_size,
+                                in_channels=input_channels,
+                                out_channels=output_channels,
+                                act=activation,
+                                bias=bias,
+                                norm=norm,
+                                dropout=dropout,
+                                padding=padding,
+                                strides=stride,)
+            self.add_module("%d" % l_, layer)
+            input_channels = output_channels
+            output_channels = output_channels * 2
+        # Final layer
+        self.add_module("final_conv",
+                        Convolution(spatial_dims=spatial_dims,
+                                    kernel_size=last_conv_kernel_size,
+                                    in_channels=input_channels,
+                                    out_channels=out_channels,
+                                    bias=True,
+                                    conv_only=True,
+                                    padding=int((last_conv_kernel_size - 1) / 2),
+                                    dropout=0.0,strides=1,),)
+        self.apply(self.initialise_weights)
+
+    def forward(self, x: torch.Tensor) -> list[torch.Tensor]:
+        """ calculate feature from the x value """
+        out = [x]
+        for submodel in self.children():
+            intermediate_output = submodel(out[-1])
+            out.append(intermediate_output)
+        return out[1:]
+
+    def initialise_weights(self, m: nn.Module) -> None:
+        """
+        Initialise weights of Convolution and BatchNorm layers.
+
+        Args:
+            m: instance of torch.nn.module (or of class inheriting torch.nn.module)
+        """
+        classname = m.__class__.__name__
+        if classname.find("Conv2d") != -1:
+            nn.init.normal_(m.weight.data, 0.0, 0.02)
+        elif classname.find("Conv3d") != -1:
+            nn.init.normal_(m.weight.data, 0.0, 0.02)
+        elif classname.find("Conv1d") != -1:
+            nn.init.normal_(m.weight.data, 0.0, 0.02)
+        elif classname.find("BatchNorm") != -1:
+            nn.init.normal_(m.weight.data, 1.0, 0.02)
+            nn.init.constant_(m.bias.data, 0)
+
 
 class PatchDiscriminator(nn.Sequential):
 

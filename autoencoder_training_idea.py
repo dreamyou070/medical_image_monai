@@ -60,7 +60,13 @@ def main(args):
                                   latent_channels=3, num_res_blocks=2, attention_levels=(False, False, False), with_encoder_nonlocal_attn=False,
                                   with_decoder_nonlocal_attn=False, ).to(device)
     print(f' (4.2) discriminator')
-    discriminator = PatchDiscriminator(spatial_dims=2,num_layers_d=3, num_channels=64, in_channels=1,out_channels=1).to(device)
+    discriminator = PatchDiscriminator(spatial_dims=2,
+                                       num_layers_d=3,
+                                       num_channels=64,
+                                       in_channels=1,
+                                       out_channels=1).to(device)
+
+
 
     print(f'\n step 5. loss function')
     mse_loss = torch.nn.MSELoss(reduction='mean')
@@ -121,7 +127,6 @@ def main(args):
                 # -----------------------------------------------------------------------------------------------------
                 # autoencoder must reconstruct the normal image
                 reconstruction, z_mu, z_sigma = autoencoderkl(normal_img_info)
-                print(f'z_mu.shape : {z_mu.shape}')
                 recons_loss = F.l1_loss(reconstruction.float(),
                                         normal_img_info.float())
                 loss_dict["loss/recons_loss"] = recons_loss.item()
@@ -134,67 +139,20 @@ def main(args):
                 if epoch > autoencoder_warm_up_n_epochs:
                     recon_attn = discriminator(reconstruction.contiguous().float())[-1]
                     recon_attn_target = torch.ones(size=recon_attn.shape)
-                    generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(), recon_attn.float())]))
+                    generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(),
+                                                                      recon_attn_target.float())]))
                     loss_g += adv_weight * generator_loss
-                    loss_dict["loss/adversarial_generator_loss"] = generator_loss.item()
+                    loss_dict["loss/adversarial_normal_generator_loss"] = generator_loss.item()
+
+                    ood_reconstruction, z_mu, z_sigma = autoencoderkl(ood_img_info)
+                    recon_attn = discriminator(ood_reconstruction.contiguous().float())[-1]
+                    recon_attn_target = discriminator(ood_mask_info.contiguous().float())[-1]
+                    ood_generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(), recon_attn_target.float())]))
+                    loss_g += adv_weight * ood_generator_loss
+                    loss_dict["loss/adversarial_ood_generator_loss"] = generator_loss.item()
             loss_g.backward()
             optimizer_g.step()
-            # ----------------------------------------------------------------------------------------------------------
-            with autocast(enabled=True):
-                loss_dict = {}
-                # -----------------------------------------------------------------------------------------------------
-                # autoencoder must reconstruct the normal image
-                oob_reconstruction, z_mu, z_sigma = autoencoderkl(ood_img_info)
-                oob_recon_attn = discriminator(oob_reconstruction.contiguous().float())[-1]
-
-
-
-                recon_attn = discriminator(ood_mask_info.contiguous().detach())[-1]
-
-
-                recon_attn_target = torch.ones(size=recon_attn.shape)
-                generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(), recon_attn.float())]))
-                loss_g += adv_weight * generator_loss
-                loss_dict["loss/adversarial_generator_loss"] = generator_loss.item()
-            loss_g.backward()
-            optimizer_g.step()
-
-
-
     """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             # ------------------------------------------------------------------------------------------------------------
             # (3) discriminator training
             if epoch > autoencoder_warm_up_n_epochs:
