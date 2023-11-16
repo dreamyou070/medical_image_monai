@@ -73,7 +73,10 @@ def main(args):
     n_epochs = 100
     val_interval = 1
     autoencoder_warm_up_n_epochs = 10
-    weight_dtype = autoencoderkl.encoder.weight.dtype
+    weight_dtype = autoencoderkl.dtype#encoder.weight.dtype
+    #text_encoder.to(dtype=weight_dtype)
+
+
     for epoch in range(n_epochs):
         print(f' epoch {epoch + 1}/{n_epochs}')
         autoencoderkl.train()
