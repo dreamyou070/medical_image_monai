@@ -148,13 +148,13 @@ def main(args):
                     # ood image adversarial loss
                     ood_reconstruction, z_mu, z_sigma = autoencoderkl(ood_img_info)
                     recon_attn = ood_reconstruction.contiguous().float()
-                    recon_attn_target = discriminator(ood_mask_info.contiguous().float())[-1]
-                    ood_generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(), recon_attn_target.float())]))
+                    ood_generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(),
+                                                                          ood_mask_info.contiguous().float())]))
                     loss_g += adv_weight * ood_generator_loss
                     loss_dict["loss/adversarial_ood_generator_loss"] = generator_loss.item()
             loss_g.backward()
             optimizer_g.step()
-            """
+
             # ------------------------------------------------------------------------------------------------------------
             # (3) discriminator training
             if epoch > autoencoder_warm_up_n_epochs:
@@ -162,17 +162,30 @@ def main(args):
                     optimizer_d.zero_grad(set_to_none=True)
                     # -----------------------------------------------------------------------------------------------------
                     # 1) real normal
-                    normal_img_attn     = discriminator(normal_img_info.contiguous().float())[-1]
-                    normal_img_attn_trg = discriminator(normal_img_info.contiguous().float())[-1]
+                    normal_img_attn = discriminator(normal_img_info.contiguous().float())[-1]
+                    normal_real_loss = torch.mean(torch.stack([mse_loss(normal_img_attn.float(),
+                                                                        normal_mask_info.contiguous().float())]))
+                    loss_dict["loss/adversarial_discriminator_normal_real"] = normal_real_loss.item()
+                    # -----------------------------------------------------------------------------------------------------
+                    # 2) synthesized normal
+                    synthesized_normal_attn = discriminator(reconstruction.contiguous().detach())[-1]
+                    normal_synthesized_loss = torch.mean(torch.stack([mse_loss(synthesized_normal_attn.float(),
+                                                                               normal_mask_info.contiguous().float())]))
+                    loss_dict["loss/adversarial_discriminator_normal_synthesized"] = normal_synthesized_loss.item()
+                    # -----------------------------------------------------------------------------------------------------
+                    # 3) real ood
+                    ood_img_attn = discriminator(ood_img_info.contiguous().float())[-1]
+                    ood_real_loss = torch.mean(torch.stack([mse_loss(ood_img_attn.float(),
+                                                                     ood_mask_info.float())]))
+                    loss_dict["loss/adversarial_discriminator_ood_real"] = ood_real_loss.item()
+                    # -----------------------------------------------------------------------------------------------------
+                    # 4) synthesized ood
+                    ood_img_attn = discriminator(ood_reconstruction.contiguous().detach())[-1]
+                    ood_synthesized_loss = torch.mean(torch.stack([mse_loss(ood_img_attn.float(),
+                                                                            ood_mask_info.float())]))
+                    loss_dict["loss/adversarial_discriminator_ood_synthesized"] = ood_synthesized_loss.item()
 
-
-                    loss_d_fake = adv_loss(discriminator(reconstruction.contiguous().detach())[-1],
-                                           target_is_real=False,for_discriminator=True)
-                    loss_dict["loss/adversarial_discriminator_recon_loss"] = loss_d_fake.item()
-                    loss_d_real = adv_loss(discriminator(img_info.contiguous().detach())[-1],
-                                           target_is_real=True,for_discriminator=True)
-                    loss_dict["loss/adversarial_discriminator_real_loss"] = loss_d_fake.item()
-                    discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
+                    discriminator_loss = (normal_real_loss + normal_synthesized_loss + ood_real_loss + ood_synthesized_loss) * 0.25
                     loss_d = adv_weight * discriminator_loss
                 loss_d.backward()
                 optimizer_d.step()
@@ -190,7 +203,6 @@ def main(args):
             max_norm, max_ood = 4, 4
             norm_num, ood_num = 0, 0
             for val_step, batch in enumerate(val_loader, start=1):
-
                 normal_info = batch['normal']
                 img_info = batch['image_info']['image'].to(device)
                 mask_info = batch['mask'].to(device, img_info.dtype).unsqueeze(1)
@@ -242,7 +254,7 @@ def main(args):
             os.makedirs(model_save_dir, exist_ok=True)
             torch.save({'model': autoencoderkl.state_dict(), },
                        os.path.join(model_save_dir, f'vae_checkpoint_{epoch + 1}.pth'))
-    """
+
 
 if __name__ == "__main__":
 
