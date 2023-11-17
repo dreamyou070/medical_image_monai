@@ -217,17 +217,17 @@ if __name__ == '__main__' :
     # step 1. wandb login
     parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
     parser.add_argument("--wandb_project_name", type=str, default='dental_experiment')
-    parser.add_argument("--wandb_run_name", type=str, default='dental_20231117_cropped_masked_img')
+    parser.add_argument("--wandb_run_name", type=str, default='dental_20231117_cropped_masked_img_good')
     # step 2. setting
     parser.add_argument("--seed", type=int, default=42)
     # step 3. dataset
-    parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_masked')
+    parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_masked_good')
     parser.add_argument("--img_size", type=str, default='128,128')
     # step 4.
     parser.add_argument("--device", type=str, default='cuda:7')
     # step 6. autoencoder saving
     parser.add_argument("--experiment_basic_dir", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result/dental_20231117_cropped_masked_img')
+                        default='/data7/sooyeon/medical_image/experiment_result/dental_20231117_cropped_masked_img_good')
     # step 6. diffusion training
     parser.add_argument("--unet_training_epochs", type=int, default=300)
     parser.add_argument("--unet_val_interval", type=int, default=40)
