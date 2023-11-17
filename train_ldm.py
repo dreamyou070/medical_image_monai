@@ -165,6 +165,7 @@ def main(args) :
         progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=70)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
+            loss_dict = {}
             images = batch["image"].to(device)
             optimizer.zero_grad(set_to_none=True)
             with autocast(enabled=True):
@@ -178,6 +179,8 @@ def main(args) :
                 # 3) noise predictoin
                 noise_pred = inferer(inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps, autoencoder_model=autoencoderkl)
                 loss = F.mse_loss(noise_pred.float(), noise.float())
+                loss_dict['unet_training_loss'] = loss.item()
+                wandb.log(loss_dict)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -195,7 +198,7 @@ def main(args) :
             # save image -----------------------------------------------------------------------------------------------
             torch_img = decoded.detach().squeeze().cpu()
             pil_img = torch_transforms.ToPILImage()(torch_img)
-            infer_save_basic_dir = os.path.join(experiment_basic_dir, 'unet_inference')
+            infer_save_basic_dir = os.path.join(args.experiment_basic_dir, 'unet_inference')
             os.makedirs(infer_save_basic_dir, exist_ok=True)
             pil_img.save(os.path.join(infer_save_basic_dir, f'unet_generated_epoch_{epoch + 1}_pil.png'))
             # wandb save image -----------------------------------------------------------------------------------------------
