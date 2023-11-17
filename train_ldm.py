@@ -243,7 +243,7 @@ if __name__ == '__main__' :
     parser.add_argument("--seed", type=int, default=42)
     # step 3. dataset
     parser.add_argument("--data_folder", type=str, default='../medical_image/experiment_data/dental/panoramic_data_high/origin')
-    parser.add_argument("--img_size", type=int, default='128,128')
+    parser.add_argument("--img_size", type=str, default='128,128')
     # step 4.
     parser.add_argument("--device", type=str, default='cuda:7')
     # step 6. autoencoder saving
