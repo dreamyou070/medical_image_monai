@@ -9,45 +9,43 @@ from torchvision.models.feature_extraction import create_feature_extractor
 
 class PerceptualLoss(nn.Module):
 
-    def __init__(
-        self,
-        spatial_dims: int,
-        network_type: str = "alex",
-        is_fake_3d: bool = True,
-        fake_3d_ratio: float = 0.5,
-        cache_dir: str | None = None,
-        pretrained: bool = True,
-        pretrained_path: str | None = None,
-        pretrained_state_dict_key: str | None = None,
-    ):
+    def __init__(self,spatial_dims: int,
+                 network_type: str = "alex",
+                 is_fake_3d: bool = True,
+                 fake_3d_ratio: float = 0.5,
+                 cache_dir: str | None = None,
+                 pretrained: bool = True,
+                 pretrained_path: str | None = None,
+                 pretrained_state_dict_key: str | None = None,):
         super().__init__()
 
         if spatial_dims not in [2, 3]:
             raise NotImplementedError("Perceptual loss is implemented only in 2D and 3D.")
 
         if (spatial_dims == 2 or is_fake_3d) and "medicalnet_" in network_type:
-            raise ValueError(
-                "MedicalNet networks are only compatible with ``spatial_dims=3``."
-                "Argument is_fake_3d must be set to False."
-            )
+            raise ValueError("MedicalNet networks are only compatible with ``spatial_dims=3``."
+                "Argument is_fake_3d must be set to False.")
 
         if cache_dir:
             torch.hub.set_dir(cache_dir)
-
+        # ---------------------------------------------------------------------------------------------------------
+        # spatial_dims = 2
         self.spatial_dims = spatial_dims
         if spatial_dims == 3 and is_fake_3d is False:
             self.perceptual_function = MedicalNetPerceptualSimilarity(net=network_type, verbose=False)
         elif "radimagenet_" in network_type:
             self.perceptual_function = RadImageNetPerceptualSimilarity(net=network_type, verbose=False)
         elif network_type == "resnet50":
-            self.perceptual_function = TorchvisionModelPerceptualSimilarity(
-                net=network_type,
-                pretrained=pretrained,
-                pretrained_path=pretrained_path,
-                pretrained_state_dict_key=pretrained_state_dict_key,
-            )
+            self.perceptual_function = TorchvisionModelPerceptualSimilarity(net=network_type,
+                                                                            pretrained=pretrained,
+                                                                            pretrained_path=pretrained_path,
+                                                                            pretrained_state_dict_key=pretrained_state_dict_key,)
+        # ---------------------------------------------------------------------------------------------------------
+        # LPIPS loss
         else:
-            self.perceptual_function = LPIPS(pretrained=pretrained, net=network_type, verbose=False)
+            self.perceptual_function = LPIPS(pretrained=pretrained, # True
+                                             net=network_type,      # alex
+                                             verbose=False)
         self.is_fake_3d = is_fake_3d
         self.fake_3d_ratio = fake_3d_ratio
 

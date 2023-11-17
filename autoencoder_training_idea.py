@@ -72,7 +72,11 @@ def main(args):
     mse_loss = torch.nn.MSELoss(reduction='mean')
 
     print(f' (5.3) perceptual_loss')
-    perceptual_loss = PerceptualLoss(spatial_dims=2, network_type="alex").to(device)
+    perceptual_loss = PerceptualLoss(spatial_dims=2,
+                                     network_type="alex").to(device)
+    perceptual_function = perceptual_loss.perceptual_function
+    print(f'perceptual_function : {perceptual_function}')
+    """
     perceptual_weight = 0.001
     print(f' (5.4) patch adversarial loss')
     adv_loss = PatchAdversarialLoss(criterion="least_squares")
@@ -130,9 +134,9 @@ def main(args):
                 # -----------------------------------------------------------------------------------------------------
                 # autoencoder must reconstruct the normal image
                 reconstruction, z_mu, z_sigma = autoencoderkl(normal_img_info)
-                recons_loss = F.l1_loss(reconstruction.float(),
-                                        normal_img_info.float())
+                recons_loss = F.l1_loss(reconstruction.float(),normal_img_info.float())
                 loss_dict["loss/recons_loss"] = recons_loss.item()
+                # how does the perceptual loss ?
                 p_loss = perceptual_loss(reconstruction.float(),normal_img_info)
                 loss_dict["loss/perceptual_loss"] = p_loss.item()
                 kl_loss = 0.5 * (torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3]))
@@ -255,7 +259,7 @@ def main(args):
             os.makedirs(model_save_dir, exist_ok=True)
             torch.save({'model': autoencoderkl.state_dict(), },
                        os.path.join(model_save_dir, f'vae_checkpoint_{epoch + 1}.pth'))
-
+    """
 
 if __name__ == "__main__":
 
