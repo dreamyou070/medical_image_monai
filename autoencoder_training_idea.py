@@ -75,7 +75,7 @@ def main(args):
     perceptual_loss = PerceptualLoss(spatial_dims=2,
                                      network_type="alex").to(device)
     perceptual_function = perceptual_loss.perceptual_function
-    print(f'perceptual_function : {perceptual_function}')
+    print(f'perceptual_function : {perceptual_function.__class__.__name__}')
     """
     perceptual_weight = 0.001
     print(f' (5.4) patch adversarial loss')
