@@ -143,7 +143,6 @@ def main(args):
                     # -----------------------------------------------------------------------------------------------------
                     # normal image adversarial loss
                     recon_attn = input_activation(discriminator(reconstruction.contiguous().float())[-1])
-                    print(f'recon_attn (batch, 1, 30, 30) : {recon_attn.shape}')
                     # why same size ???
                     recon_attn_target = normal_mask_info.contiguous().float()
                     generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(),
