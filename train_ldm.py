@@ -190,6 +190,7 @@ def main(args) :
         if (epoch + 1) % args.unet_val_interval == 0:
             unet.eval()
             W, H = args.img_size.split(',')[0], args.img_size.split(',')[1]
+            W, H = int(W.strip()), int(H.strip())   
             z = torch.randn((1, 3, int(W/4), int(H/4))).to(device)
             scheduler.set_timesteps(num_inference_steps=1000)
             with autocast(enabled=True):
