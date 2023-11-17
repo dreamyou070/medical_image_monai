@@ -5,7 +5,7 @@ from PIL import Image
 
 def main(args) :
 
-    base_dir = r'../medical_Data/experiment/dental/panoramic_data'
+    base_dir = r'../medical_Data/experiment/dental/panoramic_data_high'
 
     print(f'\n step 1. image check')
     img_base_dir = r'../medical_Data/experiment/dental/Radiographs_L'
@@ -19,14 +19,15 @@ def main(args) :
     for image_name in images :
         image_dir = os.path.join(img_base_dir, image_name)
         pil_image = Image.open(image_dir)
+        W, H = pil_image.size
         pil_image = pil_image.convert('L')
-        pil_image = pil_image.resize((64,64))
+        pil_image = pil_image.resize((H,H))
         pil_image.save(os.path.join(data_save_base_dir, f'{image_name}'))
 
         mask_dir = os.path.join(mask_base_dir, image_name)
         pil_mask = Image.open(mask_dir)
         pil_mask = pil_mask.convert('L')
-        pil_mask = pil_mask.resize((64, 64))
+        pil_mask = pil_mask.resize((H,H))
         pil_mask.save(os.path.join(mask_save_base_dir, f'{image_name}'))
 
 

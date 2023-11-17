@@ -66,8 +66,6 @@ def main(args):
                                        in_channels=1,
                                        out_channels=1).to(device)
 
-
-
     print(f'\n step 5. loss function')
     mse_loss = torch.nn.MSELoss(reduction='mean')
 
@@ -108,10 +106,12 @@ def main(args):
         for step, batch in progress_bar:
 
             normal_info = batch['normal']
+
             normal_index = torch.where(normal_info == 1)
             ood_index = torch.where(normal_info != 1)
 
             img_info = batch['image_info']['image'].to(device)
+            print(f'img_info (Batch 32, Channel 1, 256,256) : {normal_info.shape}')
             weight_dtype = img_info.dtype
             normal_img_info = img_info[normal_index]
             ood_img_info = img_info[ood_index]
@@ -143,7 +143,8 @@ def main(args):
 
                     recon_attn = input_activation(discriminator(reconstruction.contiguous().float())[-1])
                     recon_attn_target = normal_mask_info.contiguous().float()
-                    generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(),recon_attn_target.float())]))
+                    generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(),
+                                                                      recon_attn_target.float())]))
                     loss_g += adv_weight * generator_loss
                     loss_dict["loss/adversarial_normal_generator_loss"] = generator_loss.item()
                     # -----------------------------------------------------------------------------------------------------
