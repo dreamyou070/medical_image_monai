@@ -74,9 +74,9 @@ def main(args):
     print(f' (5.3) perceptual_loss')
     perceptual_loss = PerceptualLoss(spatial_dims=2,
                                      network_type="alex").to(device)
+    # LPIPS(pretrained=True, net=alex, verbose=False)
     perceptual_function = perceptual_loss.perceptual_function
-    print(f'perceptual_function : {perceptual_function.__class__.__name__}')
-    """
+
     perceptual_weight = 0.001
     print(f' (5.4) patch adversarial loss')
     adv_loss = PatchAdversarialLoss(criterion="least_squares")
@@ -259,7 +259,6 @@ def main(args):
             os.makedirs(model_save_dir, exist_ok=True)
             torch.save({'model': autoencoderkl.state_dict(), },
                        os.path.join(model_save_dir, f'vae_checkpoint_{epoch + 1}.pth'))
-    """
 
 if __name__ == "__main__":
 

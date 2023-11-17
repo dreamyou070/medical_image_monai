@@ -205,14 +205,14 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
 
     # step 2. dataset and dataloader
-    parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_L')
-    parser.add_argument("--image_size", type=str, default='64,64')
+    parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_high/origin')
+    parser.add_argument("--image_size", type=str, default='256,256')
     parser.add_argument("--vis_num_images", type=int, default=3)
-    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--device", type=str, default='cuda:1')
 
     # step 5. saving autoencoder model
-    parser.add_argument("--model_save_baic_dir", type=str, default='/data7/sooyeon/medical_image/experiment_result/vae_model')
+    parser.add_argument("--model_save_baic_dir", type=str, default='/data7/sooyeon/medical_image/experiment_result_original_vae/vae_model')
 
     args = parser.parse_args()
     main(args)

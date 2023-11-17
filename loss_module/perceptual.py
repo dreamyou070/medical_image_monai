@@ -86,11 +86,7 @@ class PerceptualLoss(nn.Module):
         return axis_loss
 
     def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            input: the shape should be BNHW[D].
-            target: the shape should be BNHW[D].
-        """
+
         if target.shape != input.shape:
             raise ValueError(f"ground truth has differing shape ({target.shape}) from input ({input.shape})")
 
@@ -102,6 +98,7 @@ class PerceptualLoss(nn.Module):
             loss = loss_sagittal + loss_axial + loss_coronal
         else:
             # 2D and real 3D cases
+            # LPIPS loss
             loss = self.perceptual_function(input, target)
 
         return torch.mean(loss)
