@@ -76,7 +76,7 @@ def main(args) :
     val_recon_losses = []
     intermediary_images = []
     num_example_images = 4
-    """
+
     for epoch in range(n_epochs):
         autoencoderkl.train()
         discriminator.train()
@@ -138,7 +138,7 @@ def main(args) :
     state_dict = torch.load(autoencoder_save_dir,
                             map_location='cpu')['model']
     msg = autoencoderkl.load_state_dict(state_dict, strict=False)
-
+    """
     print(f'\n step 7. make diffusion model')
     unet = DiffusionModelUNet(spatial_dims=2,in_channels=3,out_channels=3,num_res_blocks=2,
                               num_channels=(256, 512, 768),attention_levels=(False, True, True),num_head_channels=(0, 512, 768),)
@@ -190,7 +190,7 @@ def main(args) :
         if (epoch + 1) % args.unet_val_interval == 0:
             unet.eval()
             W, H = args.img_size.split(',')[0], args.img_size.split(',')[1]
-            W, H = int(W.strip()), int(H.strip())   
+            W, H = int(W.strip()), int(H.strip())
             z = torch.randn((1, 3, int(W/4), int(H/4))).to(device)
             scheduler.set_timesteps(num_inference_steps=1000)
             with autocast(enabled=True):
@@ -213,17 +213,17 @@ if __name__ == '__main__' :
     # step 1. wandb login
     parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
     parser.add_argument("--wandb_project_name", type=str, default='dental_experiment')
-    parser.add_argument("--wandb_run_name", type=str, default='dental_total_training')
+    parser.add_argument("--wandb_run_name", type=str, default='dental_20231117_cropped_masked_img')
     # step 2. setting
     parser.add_argument("--seed", type=int, default=42)
     # step 3. dataset
-    parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_high/original')
+    parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_masked')
     parser.add_argument("--img_size", type=str, default='128,128')
     # step 4.
     parser.add_argument("--device", type=str, default='cuda:7')
     # step 6. autoencoder saving
     parser.add_argument("--experiment_basic_dir", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result/dental_20231117_newscript')
+                        default='/data7/sooyeon/medical_image/experiment_result/dental_20231117_cropped_masked_img')
     # step 6. diffusion training
     parser.add_argument("--unet_training_epochs", type=int, default=300)
     parser.add_argument("--unet_val_interval", type=int, default=40)
