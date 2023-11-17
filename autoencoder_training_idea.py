@@ -82,6 +82,9 @@ def main(args):
     optimizer_g = torch.optim.Adam(autoencoderkl.parameters(), lr=1e-4)
     optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=5e-4)
 
+    from monai.networks.layers.utils import get_act_layer
+    input_activation = get_act_layer(name=("LEAKYRELU", {"negative_slope": 0.05}))
+
     print(f'step 6. Training')
     kl_weight = 1e-6
     n_epochs = args.n_epochs
@@ -111,7 +114,6 @@ def main(args):
             ood_index = torch.where(normal_info != 1)
 
             img_info = batch['image_info']['image'].to(device)
-            print(f'img_info (Batch 32, Channel 1, 256,256) : {img_info.shape}')
             weight_dtype = img_info.dtype
             normal_img_info = img_info[normal_index]
             ood_img_info = img_info[ood_index]
@@ -126,6 +128,8 @@ def main(args):
                 # -----------------------------------------------------------------------------------------------------
                 # autoencoder must reconstruct the normal image
                 reconstruction, z_mu, z_sigma = autoencoderkl(normal_img_info)
+                print(f'z_mu (Batch 32, Channel 3, 64, 64) : {z_mu.shape}')
+                print(f'reconstruction (Batch 32, Channel 1, 256, 256) : {reconstruction.shape}')
                 recons_loss = F.l1_loss(reconstruction.float(),
                                         normal_img_info.float())
                 loss_dict["loss/recons_loss"] = recons_loss.item()
@@ -138,10 +142,8 @@ def main(args):
                 if epoch > autoencoder_warm_up_n_epochs:
                     # -----------------------------------------------------------------------------------------------------
                     # normal image adversarial loss
-                    from monai.networks.layers.utils import get_act_layer
-                    input_activation = get_act_layer(name=("LEAKYRELU", {"negative_slope": 0.05}))
-
                     recon_attn = input_activation(discriminator(reconstruction.contiguous().float())[-1])
+                    print(f'recon_attn (batch, 1, 30, 30) : {recon_attn.shape}')
                     recon_attn_target = normal_mask_info.contiguous().float()
                     generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(),
                                                                       recon_attn_target.float())]))
