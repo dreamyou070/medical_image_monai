@@ -111,7 +111,7 @@ def main(args):
             ood_index = torch.where(normal_info != 1)
 
             img_info = batch['image_info']['image'].to(device)
-            print(f'img_info (Batch 32, Channel 1, 256,256) : {normal_info.shape}')
+            print(f'img_info (Batch 32, Channel 1, 256,256) : {img_info.shape}')
             weight_dtype = img_info.dtype
             normal_img_info = img_info[normal_index]
             ood_img_info = img_info[ood_index]
