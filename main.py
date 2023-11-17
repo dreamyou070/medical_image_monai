@@ -21,6 +21,7 @@ import wandb
 
 
 def main(args):
+
     print(f'\n step 1. wandb login')
     wandb.login(key=args.wandb_api_key)
     wandb.init(project=args.wandb_project_name,
