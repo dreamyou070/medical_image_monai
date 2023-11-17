@@ -78,13 +78,14 @@ class SYDataset_masking(_TorchDataset):
                  data: Sequence,
                  transform: Callable | None = None,
                  base_mask_dir : str = None,
-                 image_size = 64,) -> None:
+                 image_size = '256,256') -> None:
 
         self.data = data # list of datas
         self.transform: Any = transform
         self.reverse_indexing = True
         self.image_size = image_size
         self.base_mask_dir = base_mask_dir
+        self.w, self.h = int(image_size.split(',')[0]), int(image_size.split(',')[1])
 
     def __len__(self) -> int:
         return len(self.data)
@@ -116,13 +117,11 @@ class SYDataset_masking(_TorchDataset):
         normal = True
         if criterion > 0 :
             normal = False
-        w,h = mask_pil.size
-        resized_masK_pil = mask_pil.resize((int(w/8) - 2, int(h/8) - 2) )
+        resized_masK_pil = mask_pil.resize((int(self.w/8) - 2, int(self.h/8) - 2) )
         resized_masK_np = np.array(resized_masK_pil)
         data_dict['image_info'] = self.data_transform(index)
         data_dict['normal'] = int(normal)
         data_dict['mask'] = 1-torch.from_numpy(resized_masK_np)
-
         return data_dict
 
 class SYDataset(_TorchDataset):

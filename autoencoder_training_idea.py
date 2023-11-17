@@ -43,13 +43,15 @@ def main(args):
     train_num = int(0.8 * len(total_datas))
     train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
     train_datalist = [{"image": os.path.join(data_base_dir, train_data)} for train_data in train_datas]
-    train_ds = SYDataset_masking(data=train_datalist,transform=train_transforms,base_mask_dir = base_mask_dir)
+    train_ds = SYDataset_masking(data=train_datalist,transform=train_transforms,
+                                 base_mask_dir = base_mask_dir,image_size = args.image_size)
 
     print(f' (3.1) train dataloader')
     train_loader = SYDataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4,persistent_workers=True)
     print(f' (3.2) validdataloader')
     val_datalist = [{"image": os.path.join(data_base_dir, val_data)} for val_data in val_datas]
-    val_ds = SYDataset_masking(data=val_datalist,transform=val_transforms,base_mask_dir = base_mask_dir)
+    val_ds = SYDataset_masking(data=val_datalist,transform=val_transforms,
+                               base_mask_dir = base_mask_dir,image_size = args.image_size)
     val_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, persistent_workers=True)
 
 
@@ -128,8 +130,6 @@ def main(args):
                 # -----------------------------------------------------------------------------------------------------
                 # autoencoder must reconstruct the normal image
                 reconstruction, z_mu, z_sigma = autoencoderkl(normal_img_info)
-                print(f'z_mu (Batch 32, Channel 3, 64, 64) : {z_mu.shape}')
-                print(f'reconstruction (Batch 32, Channel 1, 256, 256) : {reconstruction.shape}')
                 recons_loss = F.l1_loss(reconstruction.float(),
                                         normal_img_info.float())
                 loss_dict["loss/recons_loss"] = recons_loss.item()
@@ -144,6 +144,7 @@ def main(args):
                     # normal image adversarial loss
                     recon_attn = input_activation(discriminator(reconstruction.contiguous().float())[-1])
                     print(f'recon_attn (batch, 1, 30, 30) : {recon_attn.shape}')
+                    # why same size ???
                     recon_attn_target = normal_mask_info.contiguous().float()
                     generator_loss = torch.mean(torch.stack([mse_loss(recon_attn.float(),
                                                                       recon_attn_target.float())]))
