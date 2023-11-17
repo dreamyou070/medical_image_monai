@@ -18,7 +18,9 @@ from generative.losses.adversarial_loss import PatchAdversarialLoss
 from generative.losses.perceptual import PerceptualLoss
 from generative.networks.nets import AutoencoderKL, DiffusionModelUNet, PatchDiscriminator
 from generative.networks.schedulers import DDPMScheduler
+import torchvision.transforms as torch_transforms
 from data_module import get_transform
+
 def main(args) :
 
     print(f'\n step 1. wandb login')
@@ -74,7 +76,7 @@ def main(args) :
     val_recon_losses = []
     intermediary_images = []
     num_example_images = 4
-
+    """
     for epoch in range(n_epochs):
         autoencoderkl.train()
         discriminator.train()
@@ -131,11 +133,16 @@ def main(args) :
     os.makedirs(experiment_basic_dir, exist_ok=True)
     save_obj = {'model': autoencoderkl.state_dict(), }
     torch.save(save_obj, os.path.join(experiment_basic_dir, f'vae_checkpoint_{epoch + 1}.pth'))
+    """
+    autoencoder_save_dir = os.path.join(args.experiment_basic_dir, f'vae_checkpoint_100.pth')
+    state_dict = torch.load(autoencoder_save_dir,
+                            map_location='cpu')['model']
+    msg = autoencoderkl.load_state_dict(state_dict, strict=False)
 
     print(f'\n step 7. make diffusion model')
     unet = DiffusionModelUNet(spatial_dims=2,in_channels=3,out_channels=3,num_res_blocks=2,
                               num_channels=(256, 512, 768),attention_levels=(False, True, True),num_head_channels=(0, 512, 768),)
-    scheduler = DDPMScheduler(num_train_timesteps=1000, schedule="scaled_linear",
+    scheduler = DDPMScheduler(num_train_timesteps=1000, schedule="linear_beta",
                               beta_start=0.0015, beta_end=0.0205)
     with torch.no_grad():
         with autocast(enabled=True):
@@ -144,16 +151,14 @@ def main(args) :
     scale_factor = 1 / torch.std(z)
     inferer = LatentDiffusionInferer(scheduler, scale_factor=scale_factor)
 
+    # -----------------------------------------------------------------------------------------------------------------------------
     print(f'\n step 6. diffusion training')
     optimizer = torch.optim.Adam(unet.parameters(), lr=0.0001)
     unet = unet.to(device)
-    n_epochs = 200
-    val_interval = 40
     epoch_losses = []
     val_losses = []
     scaler = GradScaler()
-    """
-    for epoch in range(n_epochs):
+    for epoch in range(args.unet_training_epochs):
         unet.train()
         autoencoderkl.eval()
         epoch_loss = 0
@@ -163,74 +168,40 @@ def main(args) :
             images = batch["image"].to(device)
             optimizer.zero_grad(set_to_none=True)
             with autocast(enabled=True):
+                # ----------------------------------------------------------------------------------------
+                # 1) image condition
                 z_mu, z_sigma = autoencoderkl.encode(images)
                 z = autoencoderkl.sampling(z_mu, z_sigma)
                 noise = torch.randn_like(z).to(device)
-                timesteps = torch.randint(0, inferer.scheduler.num_train_timesteps, (z.shape[0],),
-                                          device=z.device).long()
-                noise_pred = inferer(
-                    inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps,
-                    autoencoder_model=autoencoderkl
-                )
+                # 2) time condition
+                timesteps = torch.randint(0, inferer.scheduler.num_train_timesteps, (z.shape[0],),device=z.device).long()
+                # 3) noise predictoin
+                noise_pred = inferer(inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps, autoencoder_model=autoencoderkl)
                 loss = F.mse_loss(noise_pred.float(), noise.float())
-
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
-
             epoch_loss += loss.item()
-
             progress_bar.set_postfix({"loss": epoch_loss / (step + 1)})
         epoch_losses.append(epoch_loss / (step + 1))
-
-        if (epoch + 1) % val_interval == 0:
+        if (epoch + 1) % args.unet_val_interval == 0:
             unet.eval()
-            val_loss = 0
-            with torch.no_grad():
-                for val_step, batch in enumerate(val_loader, start=1):
-                    images = batch["image"].to(device)
-
-                    with autocast(enabled=True):
-                        z_mu, z_sigma = autoencoderkl.encode(images)
-                        z = autoencoderkl.sampling(z_mu, z_sigma)
-
-                        noise = torch.randn_like(z).to(device)
-                        timesteps = torch.randint(
-                            0, inferer.scheduler.num_train_timesteps, (z.shape[0],), device=z.device
-                        ).long()
-                        noise_pred = inferer(
-                            inputs=images,
-                            diffusion_model=unet,
-                            noise=noise,
-                            timesteps=timesteps,
-                            autoencoder_model=autoencoderkl,
-                        )
-
-                        loss = F.mse_loss(noise_pred.float(), noise.float())
-
-                    val_loss += loss.item()
-            val_loss /= val_step
-            val_losses.append(val_loss)
-            print(f"Epoch {epoch} val loss: {val_loss:.4f}")
-
-            # Sampling image during training
-            z = torch.randn((1, 3, 16, 16))
-            z = z.to(device)
+            W, H = args.img_size.split(',')[0], args.img_size.split(',')[1]
+            z = torch.randn((1, 3, int(W/4), int(H/4))).to(device)
             scheduler.set_timesteps(num_inference_steps=1000)
             with autocast(enabled=True):
-                decoded = inferer.sample(
-                    input_noise=z, diffusion_model=unet, scheduler=scheduler, autoencoder_model=autoencoderkl
-                )
-
-            plt.figure(figsize=(2, 2))
-            plt.style.use("default")
-            plt.imshow(decoded[0, 0].detach().cpu(), vmin=0, vmax=1, cmap="gray")
-            plt.tight_layout()
-            plt.axis("off")
-            plt.show()
+                decoded = inferer.sample(input_noise=z, diffusion_model=unet, scheduler=scheduler,
+                                         autoencoder_model=autoencoderkl)
+            # save image -----------------------------------------------------------------------------------------------
+            torch_img = decoded.detach().squeeze().cpu()
+            pil_img = torch_transforms.ToPILImage()(torch_img)
+            infer_save_basic_dir = os.path.join(experiment_basic_dir, 'unet_inference')
+            os.makedirs(infer_save_basic_dir, exist_ok=True)
+            pil_img.save(os.path.join(infer_save_basic_dir, f'unet_generated_epoch_{epoch + 1}_pil.png'))
+            # wandb save image -----------------------------------------------------------------------------------------------
+            loading_image = wandb.Image(pil_img, caption=f"epoch : {epoch + 1}")
+            wandb.log({"Unet Generating": loading_image})
     progress_bar.close()
-    """
-
 
 if __name__ == '__main__' :
 
@@ -249,6 +220,9 @@ if __name__ == '__main__' :
     # step 6. autoencoder saving
     parser.add_argument("--experiment_basic_dir", type=str,
                         default='/data7/sooyeon/medical_image/experiment_result/dental_20231117_newscript')
+    # step 6. diffusion training
+    parser.add_argument("--unet_training_epochs", type=int, default=300)
+    parser.add_argument("--unet_val_interval", type=int, default=40)
     args = parser.parse_args()
 
     main(args)
