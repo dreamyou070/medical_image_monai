@@ -329,7 +329,7 @@ def main(args) :
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    ROOT_DIR = "../AnoDDPM/"
+    ROOT_DIR = "../ano_ddpm/"
     for i in ['./model/', "./diffusion-videos/", './diffusion-training-images/']:
         try:
             os.makedirs(i)
