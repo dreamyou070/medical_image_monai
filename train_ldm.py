@@ -161,15 +161,11 @@ def main(args) :
             recon_pil = torch_transforms.ToPILImage()(reconstructions)
         new_image = PIL.Image.new('RGB', (2 * org_pil.size[0], recon_pil.size[1]), (250, 250, 250))
         new_image.paste(org_pil, (0, 0))
-        new_image.paste(recon_pil, (recon_pil[0], 0))
+        new_image.paste(recon_pil, (recon_pil.size[0], 0))
         loading_image = wandb.Image(new_image, caption=f"autokl_val_image_{idx}")
         wandb.log({"Unet Generating": loading_image})
         new_image.save(os.path.join(experiment_basic_dir, f'autoencoderkl_{idx}.png'))
 
-        back_im = im1.copy()
-        back_im.paste(org_pil, (0, 0))
-        back_im.paste(recon_pil, (recon_pil[0], 0))
-        back_im.save('data/dst/rocket_pillow_paste_pos.jpg', quality=95)
 
 
 
