@@ -13,6 +13,7 @@ from monai.utils import first, set_determinism
 from torch.cuda.amp import GradScaler, autocast
 from tqdm import tqdm
 import argparse
+from PIL import Image
 from generative.inferers import LatentDiffusionInferer
 from generative.losses.adversarial_loss import PatchAdversarialLoss
 from generative.losses.perceptual import PerceptualLoss
@@ -74,13 +75,12 @@ def main(args) :
 
     print(f'\n step 6. autoencoder training')
     kl_weight = 1e-6
-    n_epochs = 1
     autoencoder_warm_up_n_epochs = 10
     epoch_recon_losses = []
     epoch_gen_losses = []
     epoch_disc_losses = []
 
-    for epoch in range(n_epochs):
+    for epoch in range(args.autokl_training_epochs):
         autoencoderkl.train()
         discriminator.train()
         epoch_loss = 0
@@ -147,27 +147,25 @@ def main(args) :
     msg = autoencoderkl.load_state_dict(state_dict, strict=False)
     """
     print(f' (6.3) autoencoder inference')
-    inference_num = args.inference_num
-    random_idx = np.random.randint(0, len(val_ds), size=inference_num)
-    recon_img_list = []
+    autoencoder_inference_num = args.autoencoder_inference_num
+    random_idx = np.random.randint(0, len(val_ds), size=autoencoder_inference_num)
     for idx in random_idx:
-        fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
-        # ------------------------------------------------------------------------------------------------
         # org shape is [1615,840]
         org_img_ = val_ds[idx]['image']
         org_pil = torch_transforms.ToPILImage()(org_img_)
-
         with torch.no_grad():
             org_img = org_img_.unsqueeze(0).to(device)  # [channel=1, width, height], torch type
             recon_img, z_mu, z_sigma = autoencoderkl(org_img)
             batch, channel, width, height = recon_img.shape
-            # recon_img = [Batch, Channel=1, Width, Height]
             reconstructions = torch.reshape(recon_img, (width, height)).T  # height, width
-            print(f' - reconstructions : {reconstructions.shape}')
             recon_pil = torch_transforms.ToPILImage()(reconstructions)
+        new_image = Image.new('RGB', (2 * org_pil[0], recon_pil[1]), (250, 250, 250))
+        new_image.paste(org_pil, (0, 0))
+        new_image.paste(recon_pil, (recon_pil[0], 0))
+        loading_image = wandb.Image(new_image, caption=f"autokl_val_image_{idx}")
+        wandb.log({"Unet Generating": loading_image})
+        new_image.save(os.path.join(experiment_basic_dir, f'autoencoderkl_{idx}.png'))
 
-
-    """        
     print(f'\n step 7. make diffusion model')
     unet = DiffusionModelUNet(spatial_dims=2,in_channels=3,out_channels=3,num_res_blocks=2,
                               num_channels=(256, 512, 768),attention_levels=(False, True, True),num_head_channels=(0, 512, 768),)
@@ -181,11 +179,10 @@ def main(args) :
     inferer = LatentDiffusionInferer(scheduler, scale_factor=scale_factor)
 
     # -----------------------------------------------------------------------------------------------------------------------------
-    print(f'\n step 6. diffusion training')
+    print(f'\n step 8. diffusion training')
     optimizer = torch.optim.Adam(unet.parameters(), lr=0.0001)
     unet = unet.to(device)
     epoch_losses = []
-    val_losses = []
     scaler = GradScaler()
     for epoch in range(args.unet_training_epochs):
         unet.train()
@@ -224,13 +221,7 @@ def main(args) :
             z = torch.randn((1, 3, int(W/4), int(H/4))).to(device)
             scheduler.set_timesteps(num_inference_steps=1000)
             with autocast(enabled=True):
-                decoded = inferer.sample(input_noise=z,
-                                         diffusion_model=unet,
-                                         scheduler=scheduler,
-                                         autoencoder_model=autoencoderkl)
-
-
-
+                decoded = inferer.sample(input_noise=z,diffusion_model=unet,scheduler=scheduler,autoencoder_model=autoencoderkl)
             # save image -----------------------------------------------------------------------------------------------
             torch_img = decoded.detach().squeeze().cpu()
             pil_img = torch_transforms.ToPILImage()(torch_img)
@@ -241,7 +232,6 @@ def main(args) :
             loading_image = wandb.Image(pil_img, caption=f"epoch : {epoch + 1}")
             wandb.log({"Unet Generating": loading_image})
     progress_bar.close()
-    """
 
 if __name__ == '__main__' :
 
@@ -257,14 +247,13 @@ if __name__ == '__main__' :
     parser.add_argument("--img_size", type=str, default='64,64')
     # step 4.
     parser.add_argument("--device", type=str, default='cuda:7')
+
     # step 6. autoencoder saving
+    parser.add_argument("--autokl_training_epochs", type=int, default=1)
     parser.add_argument("--experiment_basic_dir", type=str, default='/data7/sooyeon/medical_image/experiment_result/hand_1000_64res')
-    parser.add_argument("--inference_num", type=int,default=5)
-
-
+    parser.add_argument("--autoencoder_inference_num", type=int,default=5)
     # step 6. diffusion training
     parser.add_argument("--unet_training_epochs", type=int, default=300)
     parser.add_argument("--unet_val_interval", type=int, default=40)
     args = parser.parse_args()
-
     main(args)
