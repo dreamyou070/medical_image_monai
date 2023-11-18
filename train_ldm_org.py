@@ -29,10 +29,10 @@ def main(args) :
     set_determinism(args.seed)
 
     print(f' (1.3) save config')
-    experiment_base_dir = args.experiment_basic_dir
-    os.makedirs(experiment_base_dir, exist_ok=True)
+    experiment_basic_dir = args.experiment_basic_dir
+    os.makedirs(args.experiment_basic_dir, exist_ok=True)
     vars_to_save = vars(args)
-    with open(os.path.join(experiment_base_dir, "config.txt"), "w") as f:
+    with open(os.path.join(args.experiment_basic_dir, "config.txt"), "w") as f:
         for key in sorted(vars_to_save.keys()):
             f.write(f"{key}: {vars_to_save[key]}\n")
 
