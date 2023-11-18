@@ -45,7 +45,8 @@ def main(args) :
     check_data = first(train_loader)
 
     val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
-    val_ds = Dataset(data=val_datalist, transform=valid_transforms)
+    val_ds = Dataset(data=val_datalist,
+                     transform=valid_transforms)
     val_loader = DataLoader(val_ds, batch_size=64, shuffle=True, num_workers=4, persistent_workers=True)
 
     print(f'\n step 4. autoencoder')
@@ -157,13 +158,13 @@ def main(args) :
             org_img = org_img_.unsqueeze(0).to(device)  # [channel=1, width, height], torch type
             recon_img, z_mu, z_sigma = autoencoderkl(org_img)
             batch, channel, width, height = recon_img.shape
-            reconstructions = torch.reshape(recon_img, (width, height)).T  # height, width
+            reconstructions = torch.reshape(recon_img, (width, height))#.T  # height, width
             recon_pil = torch_transforms.ToPILImage()(reconstructions)
         new_image = PIL.Image.new('RGB', (2 * org_pil.size[0], recon_pil.size[1]), (250, 250, 250))
         new_image.paste(org_pil, (0, 0))
         new_image.paste(recon_pil, (recon_pil.size[0], 0))
         loading_image = wandb.Image(new_image, caption=f"autokl_val_image_{idx}")
-        wandb.log({"Unet Generating": loading_image})
+        wandb.log({"autoencoder inference": loading_image})
         new_image.save(os.path.join(experiment_basic_dir, f'autoencoderkl_{idx}.png'))
 
 
