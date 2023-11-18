@@ -223,12 +223,12 @@ if __name__ == '__main__' :
     # step 1. wandb login
     parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
     parser.add_argument("--wandb_project_name", type=str, default='dental_experiment')
-    parser.add_argument("--wandb_run_name", type=str, default='hand_1000')
+    parser.add_argument("--wandb_run_name", type=str, default='hand_1000_64res')
     # step 2. setting
     parser.add_argument("--seed", type=int, default=42)
     # step 3. dataset
-    parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/MedNIST/Hand_1000')
-    parser.add_argument("--img_size", type=str, default='128,128')
+    parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/MedNIST/Hand_1000_64res')
+    parser.add_argument("--img_size", type=str, default='64,64')
     # step 4.
     parser.add_argument("--device", type=str, default='cuda:7')
     # step 6. autoencoder saving
