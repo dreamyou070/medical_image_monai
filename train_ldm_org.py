@@ -67,6 +67,7 @@ def main(args) :
                                     with_encoder_nonlocal_attn=False,
                                     with_decoder_nonlocal_attn=False,)
     autoencoderkl = autoencoderkl.to(device)
+    """
     perceptual_loss = PerceptualLoss(spatial_dims=2, network_type="alex")
     perceptual_loss.to(device)
     perceptual_weight = 0.001
@@ -78,7 +79,7 @@ def main(args) :
     optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=5e-4)
     scaler_g = torch.cuda.amp.GradScaler()
     scaler_d = torch.cuda.amp.GradScaler()
-
+    
     print(f' step 4. Autoencoder KL training')
     kl_weight = 1e-6
     n_epochs = 100
@@ -163,6 +164,12 @@ def main(args) :
         loading_image = wandb.Image(new_image, caption=f"autokl_val_image_{idx}")
         wandb.log({"autoencoder inference": loading_image})
         new_image.save(os.path.join(experiment_basic_dir, f'autoencoderkl_{idx}.png'))
+    """
+    autoencoder_save_dir = '/data7/sooyeon/medical_image/experiment_result/hand_with_original_code_1000_64res/vae_checkpoint_100.pth'
+    state_dict = torch.load(autoencoder_save_dir,
+                            map_location='cpu')['model']
+    msg = autoencoderkl.load_state_dict(state_dict, strict=False)
+
 
     print(f' step 8. unet')
     unet = DiffusionModelUNet(spatial_dims=2,
@@ -245,5 +252,6 @@ if __name__ == "__main__":
     parser.add_argument("--data_folder", type=str)
     parser.add_argument("--experiment_basic_dir", type=str, default="experiments")
     parser.add_argument("--autoencoder_inference_num", type=int)
+    parser.add_argument("--unet_val_interval", type=int)
     args = parser.parse_args()
     main(args)
