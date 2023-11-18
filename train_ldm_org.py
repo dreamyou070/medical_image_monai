@@ -254,6 +254,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str)
     parser.add_argument("--data_folder", type=str)
     parser.add_argument("--experiment_basic_dir", type=str, default="experiments")
+    parser.add_argument("--use_original_autoencoder", action='store_true')
     parser.add_argument("--autoencoder_inference_num", type=int)
     # step 4. Autoencoder KL training or loading
     parser.add_argument("--use_pretrained_autoencoder", action = 'store_true')
