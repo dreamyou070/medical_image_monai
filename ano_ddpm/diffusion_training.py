@@ -1,19 +1,5 @@
-
 """
-
-
-
 def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
-
-    Save model final or checkpoint
-    :param final: bool for final vs checkpoint
-    :param unet: unet instance
-    :param optimiser: ADAM optim
-    :param args: model parameters
-    :param ema: ema instance
-    :param loss: loss for checkpoint
-    :param epoch: epoch for checkpoint
-    :return: saved model
 
     if final:
         torch.save(
@@ -37,21 +23,9 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     'loss':                 loss,
                     }, f'{ROOT_DIR}model/diff-params-ARGS={args["arg_num"]}/checkpoint/diff_epoch={epoch}.pt'
                 )
-
-
+"""
+"""
 def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args, save_imgs=False, save_vids=False):
-
-    Saves video & images based on args info
-    :param diffusion: diffusion model instance
-    :param x: x_0 real data value
-    :param est: estimate of the noise at x_t (output of the model)
-    :param noisy: x_t
-    :param epoch:
-    :param row_size: rows for outputs into torchvision.utils.make_grid
-    :param ema: exponential moving average unet for sampling
-    :param save_imgs: bool for saving imgs
-    :param save_vids: bool for saving diffusion videos
-    :return:
 
     try:
         os.makedirs(f'./diffusion-videos/ARGS={args["arg_num"]}')
@@ -109,13 +83,16 @@ import copy
 import sys
 import time
 from random import seed
-#import matplotlib.pyplot as plt
-#from matplotlib import animation
 from torch import optim
 import dataset
 from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule
 from helpers import *
 from UNet import UNetModel
+import torchvision.transforms as torch_transforms
+from monai import transforms
+import numpy  as np
+from monai.data import DataLoader, Dataset
+from monai.utils import first
 
 torch.cuda.empty_cache()
 
@@ -141,6 +118,7 @@ def main(args) :
     if args["channels"] != "":
         in_channels = args["channels"]
 
+    """
     print(f'\n step 4. dataset')
     if args["dataset"].lower() == "cifar":
         training_dataset_loader_, testing_dataset_loader_ = dataset.load_CIFAR10(args, True), dataset.load_CIFAR10(args, False)
@@ -165,6 +143,37 @@ def main(args) :
         training_dataset, testing_dataset = dataset.init_datasets(ROOT_DIR, args)
         training_dataset_loader = dataset.init_dataset_loader(training_dataset, args)
         testing_dataset_loader = dataset.init_dataset_loader(testing_dataset, args)
+    """
+
+
+
+    print(f' step 4. data')
+    train_datas = os.listdir(args['train_data_folder'])
+    val_datas = os.listdir(args['val_data_folder'])
+    train_datalist = [{"image": os.path.join(args['train_data_folder'], train_data)} for train_data in train_datas]
+    image_size = args.image_size
+    train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
+                                           transforms.EnsureChannelFirstd(keys=["image"]),
+                                           transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
+                                           transforms.RandAffined(keys=["image"],
+                                                                  rotate_range=[(-np.pi / 36, np.pi / 36),(-np.pi / 36, np.pi / 36)],
+                                                                  translate_range=[(-1, 1), (-1, 1)],
+                                                                  scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
+                                                                  spatial_size=[image_size, image_size],
+                                                                  padding_mode="zeros",
+                                                                  prob=0.5, ), ])
+    train_ds = Dataset(data=train_datalist, transform=train_transforms)
+    training_dataset_loader = DataLoader(train_ds, batch_size=64, shuffle=True, num_workers=4, persistent_workers=True)
+    check_data = first(training_dataset_loader)
+    # ## Prepare validation set data loader
+    val_datalist = [{"image": os.path.join(args['val_data_folder'], val_data)} for val_data in val_datas]
+    val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
+                                         transforms.EnsureChannelFirstd(keys=["image"]),
+                                         transforms.ScaleIntensityRanged(keys=["image"],
+                                                                         a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
+                                                                         clip=True), ])
+    val_ds = Dataset(data=val_datalist, transform=val_transforms)
+    test_dataset_loader = DataLoader(val_ds, batch_size=64, shuffle=True, num_workers=4, persistent_workers=True)
 
     print(f'\n step 5. resume or not')
     loaded_model = {}
