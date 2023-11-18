@@ -253,12 +253,12 @@ if __name__ == '__main__' :
     # step 2. setting
     parser.add_argument("--seed", type=int, default=42)
     # step 3. dataset
-    parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/MedNIST/Hand_1000_64res')
+    parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/MedNIST/Hand_1000')
     parser.add_argument("--img_size", type=str, default='64,64')
     # step 4.
     parser.add_argument("--device", type=str, default='cuda:7')
     # step 6. autoencoder saving
-    parser.add_argument("--experiment_basic_dir", type=str, default='/data7/sooyeon/medical_image/experiment_result/hand_1000')
+    parser.add_argument("--experiment_basic_dir", type=str, default='/data7/sooyeon/medical_image/experiment_result/hand_1000_64res')
     parser.add_argument("--inference_num", type=int,default=5)
 
 
