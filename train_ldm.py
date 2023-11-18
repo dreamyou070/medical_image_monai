@@ -33,12 +33,19 @@ def main(args) :
 
     print(f'\n step 3. dataset')
     print(f' (3.1) train dataset and dataloader')
-    train_datas = os.listdir(args.data_folder)
-    train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas]
+    total_datas = os.listdir(args.data_folder)
+    train_num = int(0.9 * len(total_datas))
+    train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
+
     train_transforms, valid_transforms = get_transform(args.img_size)
+    train_datalist = [{"image": os.path.join(args.data_folder, train_data)} for train_data in train_datas]
     train_ds = Dataset(data=train_datalist, transform=train_transforms)
     train_loader = DataLoader(train_ds, batch_size=64, shuffle=True, num_workers=4, persistent_workers=True)
     check_data = first(train_loader)
+
+    val_datalist = [{"image": os.path.join(args.data_folder, val_data)} for val_data in val_datas]
+    val_ds = Dataset(data=val_datalist, transform=valid_transforms)
+    val_loader = DataLoader(val_ds, batch_size=64, shuffle=True, num_workers=4, persistent_workers=True)
 
     print(f'\n step 4. autoencoder')
     device = args.device
@@ -68,14 +75,10 @@ def main(args) :
     print(f'\n step 6. autoencoder training')
     kl_weight = 1e-6
     n_epochs = 100
-    val_interval = 10
     autoencoder_warm_up_n_epochs = 10
     epoch_recon_losses = []
     epoch_gen_losses = []
     epoch_disc_losses = []
-    val_recon_losses = []
-    intermediary_images = []
-    num_example_images = 4
 
     for epoch in range(n_epochs):
         autoencoderkl.train()
@@ -143,6 +146,28 @@ def main(args) :
                             map_location='cpu')['model']
     msg = autoencoderkl.load_state_dict(state_dict, strict=False)
     """
+    print(f' (6.3) autoencoder inference')
+    inference_num = args.inference_num
+    random_idx = np.random.randint(0, len(val_ds), size=inference_num)
+    recon_img_list = []
+    for idx in random_idx:
+        fig, ax = plt.subplots(nrows=1, ncols=2, sharey=True)
+        # ------------------------------------------------------------------------------------------------
+        # org shape is [1615,840]
+        org_img_ = val_ds[idx]['image']
+        org_img = org_img_.unsqueeze(0).to(device) # [channel=1, width, height], torch type
+        org_pil = torch_transforms.ToPILImage()(org_img)
+
+        with torch.no_grad():
+            recon_img, z_mu, z_sigma = autoencoderkl(org_img_)
+            batch, channel, width, height = recon_img.shape
+            # recon_img = [Batch, Channel=1, Width, Height]
+            reconstructions = torch.reshape(recon_img, (width, height)).T  # height, width
+            print(f' - reconstructions : {reconstructions.shape}')
+            recon_pil = torch_transforms.ToPILImage()(reconstructions)
+
+
+    """        
     print(f'\n step 7. make diffusion model')
     unet = DiffusionModelUNet(spatial_dims=2,in_channels=3,out_channels=3,num_res_blocks=2,
                               num_channels=(256, 512, 768),attention_levels=(False, True, True),num_head_channels=(0, 512, 768),)
@@ -216,6 +241,7 @@ def main(args) :
             loading_image = wandb.Image(pil_img, caption=f"epoch : {epoch + 1}")
             wandb.log({"Unet Generating": loading_image})
     progress_bar.close()
+    """
 
 if __name__ == '__main__' :
 
@@ -232,8 +258,10 @@ if __name__ == '__main__' :
     # step 4.
     parser.add_argument("--device", type=str, default='cuda:7')
     # step 6. autoencoder saving
-    parser.add_argument("--experiment_basic_dir", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result/hand_1000')
+    parser.add_argument("--experiment_basic_dir", type=str, default='/data7/sooyeon/medical_image/experiment_result/hand_1000')
+    parser.add_argument("--inference_num", type=int,default=5)
+
+
     # step 6. diffusion training
     parser.add_argument("--unet_training_epochs", type=int, default=300)
     parser.add_argument("--unet_val_interval", type=int, default=40)
