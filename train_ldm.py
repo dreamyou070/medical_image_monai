@@ -156,6 +156,7 @@ def main(args) :
         # org shape is [1615,840]
         org_img_ = val_ds[idx]['image']
         org_img = org_img_.unsqueeze(0).to(device) # [channel=1, width, height], torch type
+        print(f' - org_img : {org_img.shape}')
         org_pil = torch_transforms.ToPILImage()(org_img)
 
         with torch.no_grad():
