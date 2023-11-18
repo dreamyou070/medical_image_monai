@@ -181,7 +181,8 @@ def main(args) :
                 # 2) time condition
                 timesteps = torch.randint(0, inferer.scheduler.num_train_timesteps, (z.shape[0],),device=z.device).long()
                 # 3) noise predictoin
-                noise_pred = inferer(inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps, autoencoder_model=autoencoderkl)
+                noise_pred = inferer(inputs=images,
+                                     diffusion_model=unet, noise=noise, timesteps=timesteps, autoencoder_model=autoencoderkl)
                 loss = F.mse_loss(noise_pred.float(), noise.float())
                 loss_dict['unet_training_loss'] = loss.item()
                 wandb.log(loss_dict)
@@ -198,8 +199,13 @@ def main(args) :
             z = torch.randn((1, 3, int(W/4), int(H/4))).to(device)
             scheduler.set_timesteps(num_inference_steps=1000)
             with autocast(enabled=True):
-                decoded = inferer.sample(input_noise=z, diffusion_model=unet, scheduler=scheduler,
+                decoded = inferer.sample(input_noise=z,
+                                         diffusion_model=unet,
+                                         scheduler=scheduler,
                                          autoencoder_model=autoencoderkl)
+
+
+
             # save image -----------------------------------------------------------------------------------------------
             torch_img = decoded.detach().squeeze().cpu()
             pil_img = torch_transforms.ToPILImage()(torch_img)
@@ -217,17 +223,17 @@ if __name__ == '__main__' :
     # step 1. wandb login
     parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
     parser.add_argument("--wandb_project_name", type=str, default='dental_experiment')
-    parser.add_argument("--wandb_run_name", type=str, default='dental_20231117_cropped_masked_img_good')
+    parser.add_argument("--wandb_run_name", type=str, default='hand_1000')
     # step 2. setting
     parser.add_argument("--seed", type=int, default=42)
     # step 3. dataset
-    parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs_masked_good')
+    parser.add_argument("--data_folder", type=str, default='/data7/sooyeon/medical_image/MedNIST/Hand_1000')
     parser.add_argument("--img_size", type=str, default='128,128')
     # step 4.
     parser.add_argument("--device", type=str, default='cuda:7')
     # step 6. autoencoder saving
     parser.add_argument("--experiment_basic_dir", type=str,
-                        default='/data7/sooyeon/medical_image/experiment_result/dental_20231117_cropped_masked_img_good')
+                        default='/data7/sooyeon/medical_image/experiment_result/hand_1000')
     # step 6. diffusion training
     parser.add_argument("--unet_training_epochs", type=int, default=300)
     parser.add_argument("--unet_val_interval", type=int, default=40)
