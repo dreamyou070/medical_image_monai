@@ -196,7 +196,6 @@ def main(args) :
     scaler = GradScaler()
 
     print(f' step 9. unet training')
-
     for epoch in range(args.unet_training_epochs):
         unet.train()
         autoencoderkl.eval()
@@ -239,6 +238,11 @@ def main(args) :
             loading_image = wandb.Image(pil_img, caption=f"epoch : {epoch + 1}")
             wandb.log({"Unet Generating": loading_image})
     progress_bar.close()
+    print(f' ** unet saving **')
+    experiment_basic_dir = args.experiment_basic_dir
+    os.makedirs(experiment_basic_dir, exist_ok=True)
+    save_obj = {'model': unet.state_dict(), }
+    torch.save(save_obj, os.path.join(experiment_basic_dir, f'unet_checkpoint_{epoch + 1}.pth'))
 
 
 if __name__ == "__main__":
