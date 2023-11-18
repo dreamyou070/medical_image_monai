@@ -155,11 +155,11 @@ def main(args) :
         # ------------------------------------------------------------------------------------------------
         # org shape is [1615,840]
         org_img_ = val_ds[idx]['image']
-        org_img = org_img_.unsqueeze(0).to(device) # [channel=1, width, height], torch type
         org_pil = torch_transforms.ToPILImage()(org_img_)
 
         with torch.no_grad():
-            recon_img, z_mu, z_sigma = autoencoderkl(org_img_)
+            org_img = org_img_.unsqueeze(0).to(device)  # [channel=1, width, height], torch type
+            recon_img, z_mu, z_sigma = autoencoderkl(org_img)
             batch, channel, width, height = recon_img.shape
             # recon_img = [Batch, Channel=1, Width, Height]
             reconstructions = torch.reshape(recon_img, (width, height)).T  # height, width
