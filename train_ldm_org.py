@@ -100,12 +100,11 @@ def main(args) :
         scaler_g = torch.cuda.amp.GradScaler()
         scaler_d = torch.cuda.amp.GradScaler()
         kl_weight = 1e-6
-        n_epochs = 100
         autoencoder_warm_up_n_epochs = 10
         epoch_recon_losses = []
         epoch_gen_losses = []
         epoch_disc_losses = []
-        for epoch in range(n_epochs):
+        for epoch in range(args.autoencoder_training_epochs):
             autoencoderkl.train()
             discriminator.train()
             epoch_loss = 0
@@ -255,6 +254,7 @@ if __name__ == "__main__":
     parser.add_argument("--data_folder", type=str)
     parser.add_argument("--experiment_basic_dir", type=str, default="experiments")
     parser.add_argument("--use_original_autoencoder", action='store_true')
+    parser.add_argument("--autoencoder_training_epochs", type=int)
     parser.add_argument("--autoencoder_inference_num", type=int)
     # step 4. Autoencoder KL training or loading
     parser.add_argument("--use_pretrained_autoencoder", action = 'store_true')
