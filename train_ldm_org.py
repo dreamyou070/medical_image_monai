@@ -56,7 +56,7 @@ def main(args) :
     val_loader = DataLoader(val_ds, batch_size=64, shuffle=True, num_workers=4, persistent_workers=True)
 
     print(f' step 3. Autoencoder KL')
-    device = torch.device("cuda")
+    device = args.device
     autoencoderkl = AutoencoderKL(spatial_dims=2,
                                   in_channels=1,
                                     out_channels=1,
@@ -240,6 +240,7 @@ if __name__ == "__main__":
     parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
     parser.add_argument("--wandb_project_name", type=str, default='dental_experiment')
     parser.add_argument("--wandb_run_name", type=str, default='hand_1000_64res')
+    parser.add_argument("--device", type=str)
     parser.add_argument("--data_folder", type=str)
     parser.add_argument("--experiment_basic_dir", type=str, default="experiments")
     parser.add_argument("--autoencoder_inference_num", type=int)
