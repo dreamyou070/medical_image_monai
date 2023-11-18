@@ -74,7 +74,7 @@ def main(args) :
 
     print(f'\n step 6. autoencoder training')
     kl_weight = 1e-6
-    n_epochs = 100
+    n_epochs = 1
     autoencoder_warm_up_n_epochs = 10
     epoch_recon_losses = []
     epoch_gen_losses = []
