@@ -13,7 +13,7 @@ from monai.utils import first, set_determinism
 from torch.cuda.amp import GradScaler, autocast
 from tqdm import tqdm
 import argparse
-from PIL import Image
+import PIL
 from generative.inferers import LatentDiffusionInferer
 from generative.losses.adversarial_loss import PatchAdversarialLoss
 from generative.losses.perceptual import PerceptualLoss
@@ -159,7 +159,7 @@ def main(args) :
             batch, channel, width, height = recon_img.shape
             reconstructions = torch.reshape(recon_img, (width, height)).T  # height, width
             recon_pil = torch_transforms.ToPILImage()(reconstructions)
-        new_image = Image.new('RGB', (2 * org_pil[0], recon_pil[1]), (250, 250, 250))
+        new_image = PIL.Image.new('RGB', (2 * org_pil[0], recon_pil[1]), (250, 250, 250))
         new_image.paste(org_pil, (0, 0))
         new_image.paste(recon_pil, (recon_pil[0], 0))
         loading_image = wandb.Image(new_image, caption=f"autokl_val_image_{idx}")
