@@ -112,6 +112,7 @@ def main(args) :
             progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=110)
             progress_bar.set_description(f"Epoch {epoch}")
             for step, batch in progress_bar:
+                autoencoderkl_loss_dict = {}
                 images = batch["image"].to(device)
                 optimizer_g.zero_grad(set_to_none=True)
                 with autocast(enabled=True):
@@ -125,6 +126,7 @@ def main(args) :
                         logits_fake = discriminator(reconstruction.contiguous().float())[-1]
                         generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
                         loss_g += adv_weight * generator_loss
+                    autoencoderkl_loss_dict['loss/autoencoderkl_loss'] = loss_g.item()
                 scaler_g.scale(loss_g).backward()
                 scaler_g.step(optimizer_g)
                 scaler_g.update()
@@ -137,6 +139,7 @@ def main(args) :
                         loss_d_real = adv_loss(logits_real, target_is_real=True, for_discriminator=True)
                         discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
                         loss_d = adv_weight * discriminator_loss
+                    autoencoderkl_loss_dict['loss/discriminator_loss'] = discriminator_loss.item()
                     scaler_d.scale(loss_d).backward()
                     scaler_d.step(optimizer_d)
                     scaler_d.update()
@@ -146,6 +149,7 @@ def main(args) :
                     disc_epoch_loss += discriminator_loss.item()
                 progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "gen_loss": gen_epoch_loss / (step + 1),
                                           "disc_loss": disc_epoch_loss / (step + 1),})
+                wandb.log(autoencoderkl_loss_dict)
             epoch_recon_losses.append(epoch_loss / (step + 1))
             epoch_gen_losses.append(gen_epoch_loss / (step + 1))
             epoch_disc_losses.append(disc_epoch_loss / (step + 1))
@@ -206,6 +210,7 @@ def main(args) :
             images = batch["image"].to(device)
             optimizer.zero_grad(set_to_none=True)
             with autocast(enabled=True):
+                unet_loss_dict = {}
                 z_mu, z_sigma = autoencoderkl.encode(images)
                 z = autoencoderkl.sampling(z_mu, z_sigma)
                 noise = torch.randn_like(z).to(device)
@@ -214,6 +219,8 @@ def main(args) :
                 noise_pred = inferer(inputs=images, diffusion_model=unet, noise=noise, timesteps=timesteps,
                                      autoencoder_model=autoencoderkl)
                 loss = F.mse_loss(noise_pred.float(), noise.float())
+                unet_loss_dict["loss/unet_loss"] = loss.item()
+            wandb.log(unet_loss_dict)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
