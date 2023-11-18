@@ -24,14 +24,13 @@ def main(args) :
     wandb.login(key=args.wandb_api_key)
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
     print_config()
-    set_determinism(42)
+    set_determinism(args.seed)
 
     print(f' step 2. data')
     data_dir =  args.data_folder
     total_datas = os.listdir(data_dir)
     train_num = int(0.9 * len(total_datas))
     train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
-
     train_datalist = [{"image": os.path.join(data_dir, train_data)} for train_data in train_datas]
     image_size = 64
     train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
@@ -51,7 +50,8 @@ def main(args) :
     val_datalist = [{"image": os.path.join(data_dir, val_data)} for val_data in val_datas]
     val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                          transforms.EnsureChannelFirstd(keys=["image"]),
-                                         transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),])
+                                         transforms.ScaleIntensityRanged(keys=["image"],
+                                                                         a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),])
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
     val_loader = DataLoader(val_ds, batch_size=64, shuffle=True, num_workers=4, persistent_workers=True)
 
@@ -240,6 +240,7 @@ if __name__ == "__main__":
     parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
     parser.add_argument("--wandb_project_name", type=str, default='dental_experiment')
     parser.add_argument("--wandb_run_name", type=str, default='hand_1000_64res')
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", type=str)
     parser.add_argument("--data_folder", type=str)
     parser.add_argument("--experiment_basic_dir", type=str, default="experiments")
