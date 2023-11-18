@@ -167,8 +167,6 @@ def main(args) :
         new_image.save(os.path.join(experiment_basic_dir, f'autoencoderkl_{idx}.png'))
 
 
-
-
     print(f'\n step 7. make diffusion model')
     unet = DiffusionModelUNet(spatial_dims=2,in_channels=3,out_channels=3,num_res_blocks=2,
                               num_channels=(256, 512, 768),attention_levels=(False, True, True),num_head_channels=(0, 512, 768),)
