@@ -151,7 +151,7 @@ def main(args) :
     train_datas = os.listdir(args['train_data_folder'])
     val_datas = os.listdir(args['val_data_folder'])
     train_datalist = [{"image": os.path.join(args['train_data_folder'], train_data)} for train_data in train_datas]
-    image_size = args.image_size
+    w,h = args['img_size'][0],args['img_size'][1]
     train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                            transforms.EnsureChannelFirstd(keys=["image"]),
                                            transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
@@ -159,7 +159,7 @@ def main(args) :
                                                                   rotate_range=[(-np.pi / 36, np.pi / 36),(-np.pi / 36, np.pi / 36)],
                                                                   translate_range=[(-1, 1), (-1, 1)],
                                                                   scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-                                                                  spatial_size=[image_size, image_size],
+                                                                  spatial_size=[w,h],
                                                                   padding_mode="zeros",
                                                                   prob=0.5, ), ])
     train_ds = Dataset(data=train_datalist, transform=train_transforms)
