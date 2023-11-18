@@ -67,15 +67,20 @@ def main(args) :
 
     print(f' step 3. Autoencoder KL')
     device = args.device
-    autoencoderkl = AutoencoderKL(spatial_dims=2,
-                                  in_channels=1,
-                                    out_channels=1,
-                                    num_channels=(128, 128, 256),
-                                    latent_channels=3,
-                                    num_res_blocks=2,
-                                    attention_levels=(False, False, False),
-                                    with_encoder_nonlocal_attn=False,
-                                    with_decoder_nonlocal_attn=False,)
+    if args.use_original_autoencoder :
+        autoencoderkl = AutoencoderKL(spatial_dims=2,in_channels=1,out_channels=1,
+                                      num_channels=(128, 128, 256),
+                                      latent_channels=3,num_res_blocks=2,
+                                      attention_levels=(False, False, False),
+                                      with_encoder_nonlocal_attn=False,
+                                      with_decoder_nonlocal_attn=False,)
+
+    else :
+        autoencoderkl = AutoencoderKL(spatial_dims=2,in_channels=1, out_channels=1,
+                                      num_channels=(64, 128, 128, 128),
+                                      latent_channels=3, num_res_blocks=2, attention_levels=(False, False, False, False),
+                                      with_encoder_nonlocal_attn=False,
+                                      with_decoder_nonlocal_attn=False, )
     autoencoderkl = autoencoderkl.to(device)
 
     print(f' step 4. Autoencoder KL training or loading')
