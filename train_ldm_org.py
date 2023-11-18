@@ -37,11 +37,9 @@ def main(args) :
             f.write(f"{key}: {vars_to_save[key]}\n")
 
     print(f' step 2. data')
-    data_dir =  args.data_folder
-    total_datas = os.listdir(data_dir)
-    train_num = int(0.9 * len(total_datas))
-    train_datas, val_datas = total_datas[:train_num], total_datas[train_num:]
-    train_datalist = [{"image": os.path.join(data_dir, train_data)} for train_data in train_datas]
+    train_datas = os.listdir(args.train_data_folder)
+    val_datas = os.listdir(args.val_data_folder)
+    train_datalist = [{"image": os.path.join(args.train_data_folder, train_data)} for train_data in train_datas]
     image_size = 64
     train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                            transforms.EnsureChannelFirstd(keys=["image"]),
@@ -57,7 +55,7 @@ def main(args) :
     train_loader = DataLoader(train_ds, batch_size=64, shuffle=True, num_workers=4, persistent_workers=True)
     check_data = first(train_loader)
     # ## Prepare validation set data loader
-    val_datalist = [{"image": os.path.join(data_dir, val_data)} for val_data in val_datas]
+    val_datalist = [{"image": os.path.join(args.val_data_folder, val_data)} for val_data in val_datas]
     val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                          transforms.EnsureChannelFirstd(keys=["image"]),
                                          transforms.ScaleIntensityRanged(keys=["image"],
@@ -251,7 +249,8 @@ if __name__ == "__main__":
     parser.add_argument("--wandb_run_name", type=str, default='hand_1000_64res')
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", type=str)
-    parser.add_argument("--data_folder", type=str)
+    parser.add_argument("--train_data_folder", type=str)
+    parser.add_argument("--val_data_folder", type=str)
     parser.add_argument("--experiment_basic_dir", type=str, default="experiments")
     parser.add_argument("--use_original_autoencoder", action='store_true')
     parser.add_argument("--autoencoder_training_epochs", type=int)
