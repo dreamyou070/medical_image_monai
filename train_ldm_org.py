@@ -21,10 +21,20 @@ from generative.networks.schedulers import DDPMScheduler
 def main(args) :
 
     print(f'\n step 1. wandb login')
+    print(f' (1.1) wandb')
     wandb.login(key=args.wandb_api_key)
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
+    print(f' (1.2) seed and basic setting')
     print_config()
     set_determinism(args.seed)
+
+    print(f' (1.3) save config')
+    experiment_base_dir = args.experiment_basic_dir
+    os.makedirs(experiment_base_dir, exist_ok=True)
+    vars_to_save = vars(args)
+    with open(os.path.join(experiment_base_dir, "config.txt"), "w") as f:
+        for key in sorted(vars_to_save.keys()):
+            f.write(f"{key}: {vars_to_save[key]}\n")
 
     print(f' step 2. data')
     data_dir =  args.data_folder
@@ -67,85 +77,86 @@ def main(args) :
                                     with_encoder_nonlocal_attn=False,
                                     with_decoder_nonlocal_attn=False,)
     autoencoderkl = autoencoderkl.to(device)
-    """
-    perceptual_loss = PerceptualLoss(spatial_dims=2, network_type="alex")
-    perceptual_loss.to(device)
-    perceptual_weight = 0.001
-    discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64, in_channels=1, out_channels=1)
-    discriminator = discriminator.to(device)
-    adv_loss = PatchAdversarialLoss(criterion="least_squares")
-    adv_weight = 0.01
-    optimizer_g = torch.optim.Adam(autoencoderkl.parameters(), lr=1e-4)
-    optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=5e-4)
-    scaler_g = torch.cuda.amp.GradScaler()
-    scaler_d = torch.cuda.amp.GradScaler()
-    
-    print(f' step 4. Autoencoder KL training')
-    kl_weight = 1e-6
-    n_epochs = 100
-    autoencoder_warm_up_n_epochs = 10
-    epoch_recon_losses = []
-    epoch_gen_losses = []
-    epoch_disc_losses = []
-    for epoch in range(n_epochs):
-        autoencoderkl.train()
-        discriminator.train()
-        epoch_loss = 0
-        gen_epoch_loss = 0
-        disc_epoch_loss = 0
-        progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=110)
-        progress_bar.set_description(f"Epoch {epoch}")
-        for step, batch in progress_bar:
-            images = batch["image"].to(device)
-            optimizer_g.zero_grad(set_to_none=True)
-            with autocast(enabled=True):
-                reconstruction, z_mu, z_sigma = autoencoderkl(images)
-                recons_loss = F.l1_loss(reconstruction.float(), images.float())
-                p_loss = perceptual_loss(reconstruction.float(), images.float())
-                kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
-                kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
-                loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
-                if epoch > autoencoder_warm_up_n_epochs:
-                    logits_fake = discriminator(reconstruction.contiguous().float())[-1]
-                    generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
-                    loss_g += adv_weight * generator_loss
-            scaler_g.scale(loss_g).backward()
-            scaler_g.step(optimizer_g)
-            scaler_g.update()
-            if epoch > autoencoder_warm_up_n_epochs:
+
+    print(f' step 4. Autoencoder KL training or loading')
+    if args.use_pretrained_autoencoder :
+        state_dict = torch.load(args.autoencoder_pretrained_dir,map_location='cpu')['model']
+        msg = autoencoderkl.load_state_dict(state_dict, strict=False)
+    else :
+        perceptual_loss = PerceptualLoss(spatial_dims=2, network_type="alex")
+        perceptual_loss.to(device)
+        perceptual_weight = 0.001
+        discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64, in_channels=1, out_channels=1)
+        discriminator = discriminator.to(device)
+        adv_loss = PatchAdversarialLoss(criterion="least_squares")
+        adv_weight = 0.01
+        optimizer_g = torch.optim.Adam(autoencoderkl.parameters(), lr=1e-4)
+        optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=5e-4)
+        scaler_g = torch.cuda.amp.GradScaler()
+        scaler_d = torch.cuda.amp.GradScaler()
+        kl_weight = 1e-6
+        n_epochs = 100
+        autoencoder_warm_up_n_epochs = 10
+        epoch_recon_losses = []
+        epoch_gen_losses = []
+        epoch_disc_losses = []
+        for epoch in range(n_epochs):
+            autoencoderkl.train()
+            discriminator.train()
+            epoch_loss = 0
+            gen_epoch_loss = 0
+            disc_epoch_loss = 0
+            progress_bar = tqdm(enumerate(train_loader), total=len(train_loader), ncols=110)
+            progress_bar.set_description(f"Epoch {epoch}")
+            for step, batch in progress_bar:
+                images = batch["image"].to(device)
+                optimizer_g.zero_grad(set_to_none=True)
                 with autocast(enabled=True):
-                    optimizer_d.zero_grad(set_to_none=True)
-                    logits_fake = discriminator(reconstruction.contiguous().detach())[-1]
-                    loss_d_fake = adv_loss(logits_fake, target_is_real=False, for_discriminator=True)
-                    logits_real = discriminator(images.contiguous().detach())[-1]
-                    loss_d_real = adv_loss(logits_real, target_is_real=True, for_discriminator=True)
-                    discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
-                    loss_d = adv_weight * discriminator_loss
-                scaler_d.scale(loss_d).backward()
-                scaler_d.step(optimizer_d)
-                scaler_d.update()
-            epoch_loss += recons_loss.item()
-            if epoch > autoencoder_warm_up_n_epochs:
-                gen_epoch_loss += generator_loss.item()
-                disc_epoch_loss += discriminator_loss.item()
-            progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "gen_loss": gen_epoch_loss / (step + 1),
-                                      "disc_loss": disc_epoch_loss / (step + 1),})
-        epoch_recon_losses.append(epoch_loss / (step + 1))
-        epoch_gen_losses.append(gen_epoch_loss / (step + 1))
-        epoch_disc_losses.append(disc_epoch_loss / (step + 1))
-    progress_bar.close()
+                    reconstruction, z_mu, z_sigma = autoencoderkl(images)
+                    recons_loss = F.l1_loss(reconstruction.float(), images.float())
+                    p_loss = perceptual_loss(reconstruction.float(), images.float())
+                    kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
+                    kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
+                    loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
+                    if epoch > autoencoder_warm_up_n_epochs:
+                        logits_fake = discriminator(reconstruction.contiguous().float())[-1]
+                        generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
+                        loss_g += adv_weight * generator_loss
+                scaler_g.scale(loss_g).backward()
+                scaler_g.step(optimizer_g)
+                scaler_g.update()
+                if epoch > autoencoder_warm_up_n_epochs:
+                    with autocast(enabled=True):
+                        optimizer_d.zero_grad(set_to_none=True)
+                        logits_fake = discriminator(reconstruction.contiguous().detach())[-1]
+                        loss_d_fake = adv_loss(logits_fake, target_is_real=False, for_discriminator=True)
+                        logits_real = discriminator(images.contiguous().detach())[-1]
+                        loss_d_real = adv_loss(logits_real, target_is_real=True, for_discriminator=True)
+                        discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
+                        loss_d = adv_weight * discriminator_loss
+                    scaler_d.scale(loss_d).backward()
+                    scaler_d.step(optimizer_d)
+                    scaler_d.update()
+                epoch_loss += recons_loss.item()
+                if epoch > autoencoder_warm_up_n_epochs:
+                    gen_epoch_loss += generator_loss.item()
+                    disc_epoch_loss += discriminator_loss.item()
+                progress_bar.set_postfix({"recons_loss": epoch_loss / (step + 1), "gen_loss": gen_epoch_loss / (step + 1),
+                                          "disc_loss": disc_epoch_loss / (step + 1),})
+            epoch_recon_losses.append(epoch_loss / (step + 1))
+            epoch_gen_losses.append(gen_epoch_loss / (step + 1))
+            epoch_disc_losses.append(disc_epoch_loss / (step + 1))
+        progress_bar.close()
+        del discriminator
+        del perceptual_loss
+        torch.cuda.empty_cache()
+        print(f' ** autoencoder KL saving **')
+        experiment_basic_dir = args.experiment_basic_dir
+        os.makedirs(experiment_basic_dir, exist_ok=True)
+        save_obj = {'model': autoencoderkl.state_dict(), }
+        torch.save(save_obj, os.path.join(experiment_basic_dir, f'vae_checkpoint_{epoch + 1}.pth'))
 
-    del discriminator
-    del perceptual_loss
-    torch.cuda.empty_cache()
-
-    print(f' step 6. Autoencoder KL saving')
-    experiment_basic_dir = args.experiment_basic_dir
-    os.makedirs(experiment_basic_dir, exist_ok=True)
-    save_obj = {'model': autoencoderkl.state_dict(), }
-    torch.save(save_obj, os.path.join(experiment_basic_dir, f'vae_checkpoint_{epoch + 1}.pth'))
-
-    print(f' step 7. autoencoder inference')
+    print(f' step 5. autoencoder inference')
     autoencoder_inference_num = args.autoencoder_inference_num
     random_idx = np.random.randint(0, len(val_ds), size=autoencoder_inference_num)
     for idx in random_idx:
@@ -164,21 +175,11 @@ def main(args) :
         loading_image = wandb.Image(new_image, caption=f"autokl_val_image_{idx}")
         wandb.log({"autoencoder inference": loading_image})
         new_image.save(os.path.join(experiment_basic_dir, f'autoencoderkl_{idx}.png'))
-    """
-    autoencoder_save_dir = '/data7/sooyeon/medical_image/experiment_result/hand_with_original_code_1000_64res/vae_checkpoint_100.pth'
-    state_dict = torch.load(autoencoder_save_dir,
-                            map_location='cpu')['model']
-    msg = autoencoderkl.load_state_dict(state_dict, strict=False)
 
-
-    print(f' step 8. unet')
-    unet = DiffusionModelUNet(spatial_dims=2,
-                              in_channels=3,
-                              out_channels=3,
-                              num_res_blocks=2,
-                              num_channels=(128, 256, 512),
-                              attention_levels=(False, True, True),
-                              num_head_channels=(0, 256, 512),)
+    print(f' step 6. unet')
+    unet = DiffusionModelUNet(spatial_dims=2,in_channels=3,out_channels=3,num_res_blocks=2,
+                              num_channels=   (128, 256, 512), attention_levels=(False, True, True),
+                              num_head_channels=(0, 256, 512), )
     scheduler = DDPMScheduler(num_train_timesteps=1000, schedule="linear_beta", beta_start=0.0015, beta_end=0.0195)
     with torch.no_grad():
         with autocast(enabled=True):
@@ -188,15 +189,12 @@ def main(args) :
     inferer = LatentDiffusionInferer(scheduler, scale_factor=scale_factor)
     optimizer = torch.optim.Adam(unet.parameters(), lr=1e-4)
     unet = unet.to(device)
-    n_epochs = 200
-    val_interval = 40
     epoch_losses = []
-    val_losses = []
     scaler = GradScaler()
 
     print(f' step 9. unet training')
 
-    for epoch in range(n_epochs):
+    for epoch in range(args.unet_training_epochs):
         unet.train()
         autoencoderkl.eval()
         epoch_loss = 0
@@ -252,6 +250,10 @@ if __name__ == "__main__":
     parser.add_argument("--data_folder", type=str)
     parser.add_argument("--experiment_basic_dir", type=str, default="experiments")
     parser.add_argument("--autoencoder_inference_num", type=int)
+    # step 4. Autoencoder KL training or loading
+    parser.add_argument("--use_pretrained_autoencoder", action = 'store_true')
+    parser.add_argument("--autoencoder_pretrained_dir", type=str)
+    parser.add_argument("--unet_training_epochs", type=int, default=300)
     parser.add_argument("--unet_val_interval", type=int)
     args = parser.parse_args()
     main(args)
