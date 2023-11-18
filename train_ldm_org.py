@@ -40,7 +40,7 @@ def main(args) :
     train_datas = os.listdir(args.train_data_folder)
     val_datas = os.listdir(args.val_data_folder)
     train_datalist = [{"image": os.path.join(args.train_data_folder, train_data)} for train_data in train_datas]
-    image_size = 64
+    image_size = args.image_size
     train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                            transforms.EnsureChannelFirstd(keys=["image"]),
                                            transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
@@ -66,7 +66,8 @@ def main(args) :
     print(f' step 3. Autoencoder KL')
     device = args.device
     if args.use_original_autoencoder :
-        autoencoderkl = AutoencoderKL(spatial_dims=2,in_channels=1,out_channels=1,
+        autoencoderkl = AutoencoderKL(spatial_dims=2,
+                                      in_channels=1,out_channels=1,
                                       num_channels=(128, 128, 256),
                                       latent_channels=3,num_res_blocks=2,
                                       attention_levels=(False, False, False),
@@ -180,7 +181,7 @@ def main(args) :
 
     print(f' step 6. unet')
     unet = DiffusionModelUNet(spatial_dims=2,in_channels=3,out_channels=3,num_res_blocks=2,
-                              num_channels=   (128, 256, 512), attention_levels=(False, True, True),
+                              num_channels= (128, 256, 512), attention_levels=(False, True, True),
                               num_head_channels=(0, 256, 512), )
     scheduler = DDPMScheduler(num_train_timesteps=1000, schedule="linear_beta", beta_start=0.0015, beta_end=0.0195)
     with torch.no_grad():
@@ -222,7 +223,7 @@ def main(args) :
         epoch_losses.append(epoch_loss / (step + 1))
         if (epoch + 1) % args.unet_val_interval == 0:
             unet.eval()
-            z = torch.randn((1, 3, 16, 16))
+            z = torch.randn((1, 3, int(args.image_size/4), int(args.image_size/4)))
             z = z.to(device)
             scheduler.set_timesteps(num_inference_steps=1000)
             with autocast(enabled=True):
@@ -255,6 +256,7 @@ if __name__ == "__main__":
     parser.add_argument("--use_original_autoencoder", action='store_true')
     parser.add_argument("--autoencoder_training_epochs", type=int)
     parser.add_argument("--autoencoder_inference_num", type=int)
+    parser.add_argument("--image_size", type=int)
     # step 4. Autoencoder KL training or loading
     parser.add_argument("--use_pretrained_autoencoder", action = 'store_true')
     parser.add_argument("--autoencoder_pretrained_dir", type=str)
