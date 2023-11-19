@@ -224,7 +224,7 @@ def main(args) :
 
             def mean_flat(tensor):
                 return torch.mean(tensor, dim=list(range(1, len(tensor.shape))))
-            ddpm_loss = mean_flat((noise_pred - target).square())
+            ddpm_loss = mean_flat((noise_pred - target).square()).mean()
             print(f'loss : {loss.item()} | ddpm_loss : {ddpm_loss.item()}')
 
             wandb.log({"loss": loss.item()})
