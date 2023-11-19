@@ -303,16 +303,19 @@ class GaussianDiffusionModel:
         else:
             noise = denoise_fn(x_t, t)
         # ---------------------------------------------------------------------------------
-        # make mask
-        print(f'when make nonzero mask, total t : {t}')
-        nonzero_mask = (t != 0).float()
-        print(f'when make nonzero mask, non zero t : {nonzero_mask}')
-
-
+        # make mask : random time step, if t = 0, that means does not noised at all
+        # therefore, except t =0 timestep, check all the other timestep
+        # expending to the batch size
         nonzero_mask = (t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))) # [[[[]]]] (one line)
-        #.view(-1, *([1, 1, 1]))
-        # what is sample do ... ?
-        sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
+        log_var = out["log_variance"]
+        # mean is x_t-1 mean
+        x_t_1_mean = out["mean"]
+        print("x_t_1_mean", x_t_1_mean.shape)
+        model_log_variances = out["log_variance"]
+        print("model_log_variances", model_log_variances.shape)
+        noise_residual = nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
+        print("noise_residual", noise_residual.shape)
+        sample = out["mean"] + noise_residual
         return {"sample": sample,                # x_t-1
                 "pred_x_0": out["pred_x_0"]}     # x_0
 
