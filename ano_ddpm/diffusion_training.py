@@ -317,7 +317,7 @@ if __name__ == '__main__':
 
     # step 7. inference
     parser.add_argument('--inference_num', type=int, default=4)
-    parser.add_argument('--interence_freq', type=int, default=50)
+    parser.add_argument('--inference_freq', type=int, default=50)
     parser.add_argument('--vlb_freq', type=int, default=200)
     parser.add_argument('--model_save_freq', type=int, default=1000)
     parser.add_argument('--save_imgs', action='store_true')
