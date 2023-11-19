@@ -157,7 +157,9 @@ def main(args) :
                                                                   padding_mode="zeros",
                                                                   prob=0.5, ), ])
     train_ds = Dataset(data=train_datalist, transform=train_transforms)
-    training_dataset_loader = DataLoader(train_ds, batch_size=1, shuffle=True, num_workers=4, persistent_workers=True)
+    training_dataset_loader = DataLoader(train_ds,
+                                         batch_size=args['Batch_Size'],
+                                         shuffle=True, num_workers=4, persistent_workers=True)
     check_data = first(training_dataset_loader)
     # ## Prepare validation set data loader
     val_datalist = [{"image": os.path.join(args['val_data_folder'], val_data)} for val_data in val_datas]
@@ -167,7 +169,9 @@ def main(args) :
                                                                          a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
                                                                          clip=True), ])
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
-    test_dataset_loader = DataLoader(val_ds, batch_size=1, shuffle=True, num_workers=4, persistent_workers=True)
+    test_dataset_loader = DataLoader(val_ds,
+                                     batch_size=args['Batch_Size'],
+                                     shuffle=True, num_workers=4, persistent_workers=True)
 
     print(f'\n step 5. resume or not')
     loaded_model = {}
@@ -259,6 +263,7 @@ def main(args) :
             mean_loss.append(loss.data.cpu())
             if epoch % 50 == 0 and i == 0:
                 row_size = min(8, args['Batch_Size'])
+                print()
                 training_outputs(diffusion, x, est, noisy, epoch, row_size, save_imgs=args['save_imgs'],
                                  save_vids=args['save_vids'], ema=ema, args=args)
 
@@ -351,5 +356,6 @@ if __name__ == '__main__':
     args['arg_num'] = file[4:-5]
     args['device'] = 'cuda:0'
     args['seed'] = 1
+    args['Batch_Size'] = 64
     args = defaultdict_from_json(args)
     main(args)
