@@ -47,7 +47,18 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
     image_save_dir = os.path.join(args.experiment_dir, 'diffusion-training-images')
     os.makedirs(video_save_dir, exist_ok=True)
     os.makedirs(image_save_dir, exist_ok=True)
-
+    """
+    for step, data in enumerate(training_dataset_loader) :
+        # [Batch, 1, W, H]
+        x = data["image"]
+        first_img = x[:2,...]
+        first_img = first_img.squeeze(0)
+        real_images = first_img.permute(-1,-2)
+        real_images = real_images.unsqueeze(0)
+        import torchvision.transforms as torch_transforms
+        pil_img = torch_transforms.ToPILImage()(real_images)
+        pil_img.save('test.png')
+    """
     if save_imgs:
         fig = plt.figure(figsize=(10, 10))
         # 1) make random noise
@@ -61,7 +72,9 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
         temp = diffusion.sample_p(ema, x_t, t)
 
         # 4)
-        real_images = x[:num_images, ...].cpu().permute(0,1,3,2)
+        real_images = x[:num_images, ...].cpu().permute(0,1,3,2) # [Batch, 1, W, H]
+
+
         sample_images = temp["sample"][:num_images, ...].cpu().permute(0,1,3,2)
         pred_images = temp["pred_x_0"][:num_images, ...].cpu().permute(0,1,3,2)
 
@@ -149,16 +162,17 @@ def main(args) :
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
     test_dataset_loader = DataLoader(val_ds,batch_size=args.batch_size,
                                      shuffle=True, num_workers=4, persistent_workers=True)
-    for step, data in enumerate(training_dataset_loader) :
+    for step, data in enumerate(training_dataset_loader):
         # [Batch, 1, W, H]
         x = data["image"]
-        first_img = x[0]
+        first_img = x[:2, ...]
         first_img = first_img.squeeze(0)
-        real_images = first_img.permute(-1,-2)
+        real_images = first_img.permute(-1, -2)
         real_images = real_images.unsqueeze(0)
         import torchvision.transforms as torch_transforms
         pil_img = torch_transforms.ToPILImage()(real_images)
         pil_img.save('test.png')
+
 
 
 
