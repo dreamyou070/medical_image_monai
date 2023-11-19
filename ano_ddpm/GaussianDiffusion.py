@@ -114,8 +114,12 @@ def generate_simplex_noise(
 
         noise_1 = Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:], t.detach().cpu().numpy(), octave,
                                                            persistence, frequency)
+
         torch_noise = torch.from_numpy(noise_1).to(x.device)
-        noise[:, i, ...] = torch_noise.repeat(x.shape[0], 1, 1)
+        print(f"torch_noise shape: {torch_noise.shape}")
+        batch_torch_noise = torch_noise.repeat(x.shape[0], 1, 1)
+        print(f"batch_torch_noise : {batch_torch_noise.shape}")
+        noise[:, i, ...] = batch_torch_noise
     return noise
 
 
