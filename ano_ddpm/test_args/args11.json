@@ -18,7 +18,7 @@
   "attention_resolutions":"32,16,8",
   "num_heads":4,
   "num_head_channels":64,
-  "device": "cuda:0",
+  "device": "cuda:1",
   "seed": 1,
   "in_channels": 1,
   "train_data_folder":"/data7/sooyeon/medical_image/experiment_data/DentalAI/train_preprocessed" ,
