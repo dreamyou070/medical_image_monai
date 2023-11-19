@@ -311,9 +311,7 @@ class GaussianDiffusionModel:
         sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
         return {"sample": sample, "pred_x_0": out["pred_x_0"]}
 
-    def forward_backward(
-            self, model, x, see_whole_sequence="half", t_distance=None, denoise_fn="gauss",
-            ):
+    def forward_backward(self, model, x, see_whole_sequence="half", t_distance=None, denoise_fn="gauss",):
         assert see_whole_sequence == "whole" or see_whole_sequence == "half" or see_whole_sequence == None
 
         if t_distance == 0:
@@ -423,9 +421,7 @@ class GaussianDiffusionModel:
         else:
             t, weights = self.sample_t_with_weights(x_0.shape[0], x_0.device)
 
-
         # calculate loss
-        print(f'go to calc_loss function')
         loss, x_t, eps_t = self.calc_loss(model, x_0, t)
         loss = ((loss["loss"] * weights).mean(), (loss, x_t, eps_t))
         return loss

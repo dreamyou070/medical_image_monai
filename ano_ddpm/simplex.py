@@ -93,7 +93,6 @@ class Simplex_CLASS:
         assert len(shape) == 2
         # noise = [1, w,h]
         noise = np.zeros((1, *shape))
-        print(f'in rand_3d fixed T-octaves, noise (W,H) : {noise.shape}')
         # y = [0, ..., w], x = [0, ..., h]
         y, x = [np.arange(0, end) for end in shape]
 
@@ -105,7 +104,6 @@ class Simplex_CLASS:
             x_ = x / frequency
             y_ = y / frequency
             t_ = T / frequency
-            print(f'x_ : {x_}, y_ : {y_}, t_ : {t_}')
             noise += amplitude * self.noise3array(x / frequency,
                                                   y / frequency,
                                                   T / frequency)

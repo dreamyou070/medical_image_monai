@@ -24,59 +24,6 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     }, f'{ROOT_DIR}model/diff-params-ARGS={args["arg_num"]}/checkpoint/diff_epoch={epoch}.pt'
                 )
 """
-"""
-def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args, save_imgs=False, save_vids=False):
-
-    try:
-        os.makedirs(f'./diffusion-videos/ARGS={args["arg_num"]}')
-        os.makedirs(f'./diffusion-training-images/ARGS={args["arg_num"]}')
-    except OSError:
-        pass
-    if save_imgs:
-        if epoch % 100 == 0:
-            # for a given t, output x_0, & prediction of x_(t-1), and x_0
-            noise = torch.rand_like(x)
-            t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=x.device)
-            x_t = diffusion.sample_q(x, t, noise)
-            temp = diffusion.sample_p(ema, x_t, t)
-            out = torch.cat(
-                    (x[:row_size, ...].cpu(), temp["sample"][:row_size, ...].cpu(),
-                     temp["pred_x_0"][:row_size, ...].cpu())
-                    )
-            plt.title(f'real,sample,prediction x_0-{epoch}epoch')
-        else:
-            # for a given t, output x_0, x_t, & prediction of noise in x_t & MSE
-            out = torch.cat(
-                    (x[:row_size, ...].cpu(), noisy[:row_size, ...].cpu(), est[:row_size, ...].cpu(),
-                     (est - noisy).square().cpu()[:row_size, ...])
-                    )
-            plt.title(f'real,noisy,noise prediction,mse-{epoch}epoch')
-        plt.rcParams['figure.dpi'] = 150
-        plt.grid(False)
-        plt.imshow(gridify_output(out, row_size), cmap='gray')
-
-        plt.savefig(f'./diffusion-training-images/ARGS={args["arg_num"]}/EPOCH={epoch}.png')
-        plt.clf()
-    if save_vids:
-        fig, ax = plt.subplots()
-        if epoch % 500 == 0:
-            plt.rcParams['figure.dpi'] = 200
-            if epoch % 1000 == 0:
-                out = diffusion.forward_backward(ema, x, "half", args['sample_distance'] // 2, denoise_fn="noise_fn")
-            else:
-                out = diffusion.forward_backward(ema, x, "half", args['sample_distance'] // 4, denoise_fn="noise_fn")
-            imgs = [[ax.imshow(gridify_output(x, row_size), animated=True)] for x in out]
-            ani = animation.ArtistAnimation(
-                    fig, imgs, interval=50, blit=True,
-                    repeat_delay=1000
-                    )
-
-            ani.save(f'{ROOT_DIR}diffusion-videos/ARGS={args["arg_num"]}/sample-EPOCH={epoch}.mp4')
-
-    plt.close('all')
-
-"""
-
 import argparse
 import collections
 import copy
@@ -98,14 +45,13 @@ from UNet import UNetModel, update_ema_params
 
 torch.cuda.empty_cache()
 def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args, save_imgs=False, save_vids=False):
-
     try:
         os.makedirs(f'./diffusion-videos/ARGS={args["arg_num"]}')
         os.makedirs(f'./diffusion-training-images/ARGS={args["arg_num"]}')
     except OSError:
         pass
     if save_imgs:
-        if epoch % 100 == 0:
+        if epoch % 100 == 0 or epoch < 2:
             # for a given t, output x_0, & prediction of x_(t-1), and x_0
             noise = torch.rand_like(x)
             t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=x.device)
@@ -131,7 +77,7 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args, save_
         plt.clf()
     if save_vids:
         fig, ax = plt.subplots()
-        if epoch % 500 == 0:
+        if epoch % 500 == 0 or epoch < 2 :
             plt.rcParams['figure.dpi'] = 200
             if epoch % 1000 == 0:
                 out = diffusion.forward_backward(ema, x, "half", args['sample_distance'] // 2, denoise_fn="noise_fn")
