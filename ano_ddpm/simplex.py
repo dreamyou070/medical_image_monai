@@ -9,7 +9,11 @@ import numpy as np
 from matplotlib import animation
 from numba import njit, prange
 
-
+"""
+print('this is the noise function')
+                self.noise_fn = lambda x, t: generate_simplex_noise(self.simplex,
+                                                                    x, t, False, in_channels=img_channels)
+"""
 
 class Simplex_CLASS:
 
@@ -33,7 +37,11 @@ class Simplex_CLASS:
         return _noise3(x, y, z, self._perm, self._perm_grad_index3)
 
     def noise3array(self, x, y, z):
-        return _noise3a(x, y, z, self._perm, self._perm_grad_index3)
+        # self._perm =
+        # self._perm_grad_index3 =
+        return _noise3a(x, y, z,
+                        self._perm,
+                        self._perm_grad_index3)
 
     def rand_3d_octaves(self, shape, octaves=1, persistence=0.5, frequency=32):
         """
@@ -76,7 +84,6 @@ class Simplex_CLASS:
     def rand_3d_fixed_T_octaves(self, shape, T, octaves=1, persistence=0.5, frequency=32):
         """
         Returns a layered fractal noise in 3D
-
         :param shape: Shape of 3D tensor output
         :param octaves: Number of levels of fractal noise
         :param persistence: float between (0-1) -> Rate at which amplitude of each level decreases
@@ -84,11 +91,24 @@ class Simplex_CLASS:
         :return: Fractal noise sample with n lots of 2D images
         """
         assert len(shape) == 2
+        # noise = [1, w,h]
         noise = np.zeros((1, *shape))
+        print(f'in rand_3d fixed T-octaves, noise (W,H) : {noise.shape}')
+        # y = [0, ..., w], x = [0, ..., h]
         y, x = [np.arange(0, end) for end in shape]
+
         amplitude = 1
         for _ in range(octaves):
-            noise += amplitude * self.noise3array(x / frequency, y / frequency, T / frequency)
+            # x/frequency = [0, ...., w/64]
+            # y/frequency = [0, ...., w/64]
+            # T/frequency = ?
+            x_ = x / frequency
+            y_ = y / frequency
+            t_ = T / frequency
+            print(f'x_ : {x_}, y_ : {y_}, t_ : {t_}')
+            noise += amplitude * self.noise3array(x / frequency,
+                                                  y / frequency,
+                                                  T / frequency)
             frequency /= 2
             amplitude *= persistence
         return noise
