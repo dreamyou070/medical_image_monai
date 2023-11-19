@@ -219,9 +219,9 @@ def main(args) :
             optimiser.step()
             update_ema_params(ema, model)
             mean_loss.append(loss.data.cpu())
-            if epoch % 50 == 0 and i == 0:
+            if epoch % 50 == 0 and step == 0:
                 row_size = min(8, args['Batch_Size'])
-                print()
+                print(f'row_size : {row_size}')
                 training_outputs(diffusion, x, est, noisy, epoch, row_size, save_imgs=args['save_imgs'],
                                  save_vids=args['save_vids'], ema=ema, args=args)
             del data
