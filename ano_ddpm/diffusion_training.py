@@ -148,9 +148,8 @@ def main(args) :
 
     print(f'\n step 4. model')
     in_channels = args.in_channels
-    model = UNetModel(w,
-                      args.base_channels,
-                      channel_mults=args.channel_mults,
+    model = UNetModel(img_size=int(w),
+                      base_channels=args.base_channels,
                       dropout=args.dropout,
                       n_heads=args.num_heads,
                       n_head_channels=args.num_head_channels,
