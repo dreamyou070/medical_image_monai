@@ -846,8 +846,9 @@ def _noise3(x, y, z, perm, perm_grad_index3):
 def _noise3a(X, Y, Z, perm, perm_grad_index3):
     # Z.size = 1
     noise = np.zeros((Z.size, Y.size, X.size), dtype=np.double)
-
+    print(f'in _noise3a, Z.size = {Z.size}')
     for z in prange(Z.size):
+        # z is timestep
         for y in prange(Y.size):
             for x in prange(X.size):
                 noise[z, y, x] = _noise3(X[x], Y[y], Z[z], perm, perm_grad_index3)
