@@ -168,7 +168,7 @@ def main(args) :
         first_img = x[:2, ...]
         first_img = first_img.squeeze(0)
         real_images = first_img.permute(-1, -2)
-        real_images = real_images.unsqueeze(0)
+        #real_images = real_images.unsqueeze(0)
         import torchvision.transforms as torch_transforms
         pil_img = torch_transforms.ToPILImage()(real_images)
         pil_img.save('test.png')
