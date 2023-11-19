@@ -138,10 +138,7 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args, save_
             else:
                 out = diffusion.forward_backward(ema, x, "half", args['sample_distance'] // 4, denoise_fn="noise_fn")
             imgs = [[ax.imshow(gridify_output(x, row_size), animated=True)] for x in out]
-            ani = animation.ArtistAnimation(
-                    fig, imgs, interval=50, blit=True,
-                    repeat_delay=1000
-                    )
+            ani = animation.ArtistAnimation(fig, imgs, interval=50, blit=True,repeat_delay=1000)
 
             ani.save(f'./diffusion-videos/ARGS={args["arg_num"]}/sample-EPOCH={epoch}.mp4')
 
@@ -214,7 +211,7 @@ def main(args) :
                                                                   padding_mode="zeros",
                                                                   prob=0.5, ), ])
     train_ds = Dataset(data=train_datalist, transform=train_transforms)
-    training_dataset_loader = DataLoader(train_ds, batch_size=64, shuffle=True, num_workers=4, persistent_workers=True)
+    training_dataset_loader = DataLoader(train_ds, batch_size=1, shuffle=True, num_workers=4, persistent_workers=True)
     check_data = first(training_dataset_loader)
     # ## Prepare validation set data loader
     val_datalist = [{"image": os.path.join(args['val_data_folder'], val_data)} for val_data in val_datas]
@@ -224,7 +221,7 @@ def main(args) :
                                                                          a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
                                                                          clip=True), ])
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
-    test_dataset_loader = DataLoader(val_ds, batch_size=64, shuffle=True, num_workers=4, persistent_workers=True)
+    test_dataset_loader = DataLoader(val_ds, batch_size=1, shuffle=True, num_workers=4, persistent_workers=True)
 
     print(f'\n step 5. resume or not')
     loaded_model = {}

@@ -392,12 +392,7 @@ class GaussianDiffusionModel:
 
     def calc_loss(self, model, x_0, t):
         # noise = torch.randn_like(x)
-        # x_0 = Batch, 1, 128, 127
-        print(f'in calc_loss function, x_0 shape is {x_0.shape}')
-        print(f'self.noise_fn : {self.noise_fn}')
-        import time
-        time.sleep(50)
-
+        # x_0 = Batch64, 1, 128, 128
         noise = self.noise_fn(x_0, t).float()
 
         x_t = self.sample_q(x_0, t, noise)
