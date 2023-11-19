@@ -201,6 +201,13 @@ def main(args) :
     tqdm_epoch = range(args.start_epoch, args.train_epochs + 1)
     start_time = time.time()
     vlb = collections.deque([], maxlen=10)
+
+    for step, data in enumerate(training_dataset_loader):
+        if step == 0 :
+            x = data["image"].to(device)  # batch, channel, w, h
+            first_noise = diffusion.check_noise(model, x, args)
+    print(f'first_noise : {first_noise.shape}')
+    """ 
     for epoch in tqdm_epoch:
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=300)
         progress_bar.set_description(f"Epoch {epoch}")
@@ -254,7 +261,7 @@ def main(args) :
         if epoch % 1000 == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-
+    """
 
 
 if __name__ == '__main__':
