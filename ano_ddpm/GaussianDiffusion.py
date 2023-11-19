@@ -278,9 +278,12 @@ class GaussianDiffusionModel:
                 - extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape, x_t.device) * eps)
 
     def predict_eps_from_x_0(self, x_t, t, pred_x_0):
-        return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t
-                - pred_x_0) \
-               / extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape, x_t.device)
+        """ eps = self.predict_eps_from_x_0(x_t, t_batch, out["pred_x_0"]) """
+
+        aa = extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device)
+        a = (aa * x_t - pred_x_0)
+        b = extract(self.sqrt_recipm1_alphas_cumprod,t, x_t.shape, x_t.device)
+        return a / b
 
     def q_mean_variance(self, x_0, t):
         """
@@ -381,9 +384,6 @@ class GaussianDiffusionModel:
         return (extract(self.sqrt_alphas, t, x_t.shape, x_t.device) * x_t +
                 extract(self.sqrt_betas, t, x_t.shape, x_t.device) * noise)
 
-
-
-
     def prior_vlb(self, x_0, args):
         t = torch.tensor([self.num_timesteps - 1] * x_0.shape[0], device=x_0.device)
         qt_mean, _, qt_log_variance = self.q_mean_variance(x_0, t)
@@ -442,10 +442,18 @@ class GaussianDiffusionModel:
             t_batch = torch.tensor([t] * x_0.shape[0],device=x_0.device)
             noise = torch.randn_like(x_0)
             x_t = self.sample_q(x_0=x_0,t=t_batch,noise=noise)
+
+            #
             with torch.no_grad():
                 out = self.calc_vlb_xt(model,x_0=x_0,x_t=x_t,t=t_batch,)
+            # ----------------------------------------------------------------------------------------------------------
+            # 1) null value
             vb.append(out["output"])
+            # ----------------------------------------------------------------------------------------------------------
+            # 2) denoising function
             x_0_mse.append(mean_flat((out["pred_x_0"] - x_0) ** 2))
+            # ----------------------------------------------------------------------------------------------------------
+            # 3) denoising function
             eps = self.predict_eps_from_x_0(x_t, t_batch, out["pred_x_0"])
             mse.append(mean_flat((eps - noise) ** 2))
 

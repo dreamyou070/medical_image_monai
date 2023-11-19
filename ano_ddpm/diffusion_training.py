@@ -281,6 +281,7 @@ if __name__ == '__main__':
     # sys.argv = ['C:\\Users\\hpuser\\PycharmProjects\\medical_image\\AnoDDPM\\diffusion_training.py']
     sys.argv.append(file_dir)
     files = sys.argv[1:]
+    print(f'files : {files}')
     resume = 0
     file = files[0]
     with open(file, 'r') as f:
