@@ -53,7 +53,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 
     if save_imgs:
         # 1) make random noise
-        x = test_data["image_info"].to(ema.device)  # batch, channel, w, h
+        x = test_data["image_info"]['image'].to(ema.device)  # batch, channel, w, h
         normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
         noise = torch.rand_like(x)
@@ -200,7 +200,7 @@ def main(args) :
             loss_dict = {}
             # -----------------------------------------------------------------------------------------
             # 0) data check
-            x = data["image_info"].to(device)  # batch, channel, w, h
+            x = data["image_info"]['image'].to(device)  # batch, channel, w, h
             normal_info = data['normal'] # if 1 = normal, 0 = abnormal
             mask_info = data['mask']     # if 1 = normal, 0 = abnormal
             if args.only_normal_training :
@@ -243,7 +243,7 @@ def main(args) :
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader) :
                 if i == 0 :
-                    x = test_data["image_info"].to(device)
+                    x = test_data["image_info"]['image'].to(device)
                     time_taken = time.time() - start_time
                     remaining_epochs = args.train_epochs - epoch
                     time_per_epoch = time_taken / (epoch + 1 - args.start_epoch)
