@@ -175,7 +175,7 @@ def main(args) :
                                        noise= args["noise_fn"],          # none
                                        img_channels=in_channels)        # 1
 
-    """
+
     if resume:
         if "unet" in resume:
             model.load_state_dict(resume["unet"])
@@ -258,7 +258,7 @@ def main(args) :
         if epoch % 1000 == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-    """
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -266,6 +266,7 @@ if __name__ == '__main__':
                         default = f'/data7/sooyeon/medical_image/anoddpm_result/20231119_dental_test')
     parser.add_argument('--file_dir', type=str,
                         default=f'/data7/sooyeon/medical_image/anoddpm_result/test_args/args11.json')
+    parser.add_argument('--device', type=str, default='cuda:0')
     parser_argument = vars(parser.parse_args())
     resume = 0
     file = parser_argument['file_dir']

@@ -1,0 +1,1 @@
+python diffusionb_training.py --experiment_dir data7/sooyeon/medical_image/anoddpm_result/test --device cuda:4
