@@ -166,7 +166,6 @@ def main(args) :
                                        loss_weight=args.loss_weight, # none
                                        loss_type=args.loss_type,     # l2
                                        noise= args.noise_fn,)        # 1
-
     print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(),
                             lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
@@ -269,7 +268,8 @@ if __name__ == '__main__':
     # step 6. training
     parser.add_argument('--start_epoch', type=int, default=0)
     parser.add_argument('--train_epochs', type=int, default=3000)
-
+    parser.add_argument('--train_start', action = 'store_true')
+    parser.add_argument('--sample_distance', action=int, default = 50)
     args = parser.parse_args()
     main(args)
 
