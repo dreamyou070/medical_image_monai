@@ -106,9 +106,10 @@ def main(args) :
     print(f' (1.3) saving configuration')
     experiment_dir = args.experiment_dir
     os.makedirs(experiment_dir, exist_ok=True)
+    var_args = vars(args)
     with open(os.path.join(experiment_dir, "config.txt"), "w") as f:
-        for key in sorted(args.keys()):
-            f.write(f"{key}: {args[key]}\n")
+        for key in sorted(var_args.keys()):
+            f.write(f"{key}: {var_args[key]}\n")
 
 
     print(f'\n step 2. dataset and dataloatder')
