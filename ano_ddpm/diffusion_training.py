@@ -258,15 +258,14 @@ def main(args) :
             # calculate vlb loss
             vlb_terms = diffusion.calc_total_vlb(x, model, args)
             vlb.append(vlb_terms["total_vlb"].mean(dim=-1).cpu().item())
-            print(
-                f"epoch: {epoch}, most recent total VLB: {vlb[-1]} mean total VLB:"
-                f" {np.mean(vlb):.4f}, "
-                f"prior vlb: {vlb_terms['prior_vlb'].mean(dim=-1).cpu().item():.2f}, vb: "
-                f"{torch.mean(vlb_terms['vb'], dim=list(range(2))).cpu().item():.2f}, x_0_mse: "
-                f"{torch.mean(vlb_terms['x_0_mse'], dim=list(range(2))).cpu().item():.2f}, mse: "
-                f"{torch.mean(vlb_terms['mse'], dim=list(range(2))).cpu().item():.2f}"
-                f" time elapsed {int(time_taken / 3600)}:{((time_taken / 3600) % 1) * 60:02.0f}, "
-                f"est time remaining: {hours}:{mins:02.0f}\r")            
+            print(f"epoch: {epoch}, most recent total VLB: {vlb[-1]} mean total VLB:"
+                  f" {np.mean(vlb):.4f}, "
+                  f"prior vlb: {vlb_terms['prior_vlb'].mean(dim=-1).cpu().item():.2f}, vb: "
+                  f"{torch.mean(vlb_terms['vb'], dim=list(range(2))).cpu().item():.2f}, x_0_mse: "
+                  f"{torch.mean(vlb_terms['x_0_mse'], dim=list(range(2))).cpu().item():.2f}, mse: "
+                  f"{torch.mean(vlb_terms['mse'], dim=list(range(2))).cpu().item():.2f}"
+                  f" time elapsed {int(time_taken / 3600)}:{((time_taken / 3600) % 1) * 60:02.0f}, "
+                  f"est time remaining: {hours}:{mins:02.0f}\r")
         if epoch % 1000 == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)

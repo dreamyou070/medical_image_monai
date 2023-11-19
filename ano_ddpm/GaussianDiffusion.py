@@ -59,9 +59,9 @@ def approx_standard_normal_cdf(x):
     standard normal.
     """
 
-    a = torch.Tensor([np.sqrt(2.0 / np.pi)])
+    a = torch.Tensor([np.sqrt(2.0 / np.pi)]).to(x.device)
     b = (x + 0.044715 * torch.pow(x, 3))
-    return 0.5 * (1.0 + torch.tanh(a*b))
+    return 0.5 * (1.0 + torch.tanh(a * b))
 
 
 def discretised_gaussian_log_likelihood(x, means, log_scales):
