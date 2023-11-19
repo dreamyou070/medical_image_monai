@@ -9,7 +9,9 @@ from helpers import *
 from tqdm import tqdm
 from monai import transforms
 import numpy  as np
-from medical_image.data_module import SYDataLoader, SYDataset_masking
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+from data_module import SYDataLoader, SYDataset_masking
 from monai.utils import first
 from UNet import UNetModel, update_ema_params
 import torch.multiprocessing
