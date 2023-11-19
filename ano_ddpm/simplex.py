@@ -45,8 +45,7 @@ class Simplex_CLASS:
     """
     def noise3array(self, x, y, z):
         # self._perm =
-        # self._perm_grad_index3 =
-        print(f'in noise3array, z.size = {z.size}')
+        # self._perm_grad_index3
         return _noise3a(x, y, z,
                         self._perm,
                         self._perm_grad_index3)
@@ -109,7 +108,6 @@ class Simplex_CLASS:
             noise += amplitude * self.noise3array(x / frequency, y / frequency, T / frequency)
             frequency /= 2
             amplitude *= persistence
-        print(f'in rand_3d_fixed_T_octaves (1, W,H) : {noise.shape}')
         return noise
 
 
