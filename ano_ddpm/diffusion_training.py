@@ -197,7 +197,7 @@ def main(args) :
             # EMA model updating
             update_ema_params(ema, model)
             if epoch % 50 == 0 and step == 0:
-                for i, test_data in test_dataset_loader:
+                for i, test_data in enumerate(test_dataset_loader):
                     if i == 0:
                         training_outputs(diffusion, x, unet_estimate_noise, noisy_latent, epoch, args.interence_num,
                                          save_imgs=args.save_imgs,  # true
