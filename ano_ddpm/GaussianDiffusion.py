@@ -205,7 +205,8 @@ class GaussianDiffusionModel:
         loss = ((loss["loss"] * weights).mean(), (loss, x_t, eps_t))
         return loss
 
-    def check_noise(self, model, x_0, t):
+    def check_noise(self, args, x_0):
+        t = torch.randint(0, min(args.sample_distance, self.num_timesteps), (x_0.shape[0],), device=x_0.device)
         noise = self.noise_fn(x_0, t).float()
         first_noise = noise[0, ...]
         return first_noise

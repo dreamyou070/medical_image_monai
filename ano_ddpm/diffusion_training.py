@@ -205,7 +205,7 @@ def main(args) :
     for step, data in enumerate(training_dataset_loader):
         if step == 0 :
             x = data["image"].to(device)  # batch, channel, w, h
-            first_noise = diffusion.check_noise(model, x, args)
+            first_noise = diffusion.check_noise(args, x)
     print(f'first_noise : {first_noise.shape}')
     """ 
     for epoch in tqdm_epoch:
