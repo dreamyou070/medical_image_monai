@@ -275,15 +275,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--experiment_dir', type=str,
                         default = f'/data7/sooyeon/medical_image/anoddpm_result/20231119_dental_test')
+    parser.add_argument('--file_dir', type=str,
+                        default=f'/data7/sooyeon/medical_image/anoddpm_result/test_args/args11.json')
     parser_argument = vars(parser.parse_args())
-
-    file_dir = f'/data7/sooyeon/medical_image/anoddpm_result/test_args/args11.json'
-    # sys.argv = ['C:\\Users\\hpuser\\PycharmProjects\\medical_image\\AnoDDPM\\diffusion_training.py']
-    sys.argv.append(file_dir)
-    files = sys.argv[1:]
-    print(f'files : {files}')
     resume = 0
-    file = files[0]
+    file = parser_argument['file_dir']
     with open(file, 'r') as f:
         args = json.load(f)
     args = defaultdict_from_json(args)
