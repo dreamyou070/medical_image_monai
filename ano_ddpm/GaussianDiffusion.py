@@ -208,10 +208,7 @@ class GaussianDiffusionModel:
                 np.append(self.posterior_variance[1], self.posterior_variance[1:]))
         self.posterior_mean_coef1 = (
                 betas * np.sqrt(self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod))
-        self.posterior_mean_coef2 = (
-                (1.0 - self.alphas_cumprod_prev)
-                * np.sqrt(alphas)
-                / (1.0 - self.alphas_cumprod))
+        self.posterior_mean_coef2 = ((1.0 - self.alphas_cumprod_prev) * np.sqrt(alphas) / (1.0 - self.alphas_cumprod))
 
     def p_loss(self, model, x_0, args):
         if self.loss_weight == "none":
@@ -261,24 +258,13 @@ class GaussianDiffusionModel:
 
     def sample_q(self, x_0, t, noise):
         """ q (x_t | x_0 ) = N ( x_t | x_0 * sqrt(1 - beta_t), sqrt(beta_t) )
-            :param x_0:
-            :param t:
-            :param noise:
-            :return: """
-
-        def extract(arr, timesteps, broadcast_shape, device):
-            res = torch.from_numpy(arr).to(device=timesteps.device)[timesteps].float()
-            while len(res.shape) < len(broadcast_shape):
-                res = res[..., None]
-            return res.expand(broadcast_shape).to(device)
+            :param x_0::param t::param noise::return: """
         sqrt_alpha_t_bar = extract(self.sqrt_alphas_cumprod,t,broadcast_shape=x_0.shape,device=x_0.device)
         mean_x_t = sqrt_alpha_t_bar * x_0
         one_minus_alpha_t = extract(self.sqrt_one_minus_alphas_cumprod, t, x_0.shape, x_0.device)
         std_x_t = one_minus_alpha_t * noise
         # --------------------------------------------------------------------------------------------------------------
         return (mean_x_t + std_x_t)
-
-
     def sample_t_with_weights(self, b_size, device):
         p = self.weights / np.sum(self.weights)
         indices_np = np.random.choice(len(p), size=b_size, p=p)
@@ -303,13 +289,11 @@ class GaussianDiffusionModel:
         :param t: the number of diffusion steps (minus 1). Here, 0 means one step.
         :return: A tuple (mean, variance, log_variance), all of x_start's shape.
         """
-        mean = (
-                extract(self.sqrt_alphas_cumprod, t, x_0.shape, x_0.device) * x_0
-        )
+        # ----------------------------------------------------------------------------------------------------
+        # x_t mean
+        mean = (extract(self.sqrt_alphas_cumprod, t, x_0.shape, x_0.device) * x_0)
         variance = extract(1.0 - self.alphas_cumprod, t, x_0.shape, x_0.device)
-        log_variance = extract(
-                self.log_one_minus_alphas_cumprod, t, x_0.shape, x_0.device
-                )
+        log_variance = extract(self.log_one_minus_alphas_cumprod, t, x_0.shape, x_0.device)
         return mean, variance, log_variance
 
     def q_posterior_mean_variance(self, x_0, x_t, t):
@@ -327,35 +311,6 @@ class GaussianDiffusionModel:
         posterior_var = extract(self.posterior_variance, t, x_t.shape, x_t.device)
         posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
         return posterior_mean, posterior_var, posterior_log_var_clipped
-
-    def p_mean_variance(self, model, x_t, t, estimate_noise=None):
-        """
-        Finds the mean & variance from N(x_{t-1}; mu_theta(x_t,t), sigma_theta (x_t,t))
-
-        :param model:
-        :param x_t:
-        :param t:
-        :return:
-        """
-        if estimate_noise == None:
-            estimate_noise = model(x_t, t)
-
-        # fixed model variance defined as \hat{\beta}_t - could add learned parameter
-        model_var = np.append(self.posterior_variance[1], self.betas[1:])
-        model_logvar = np.log(model_var)
-        model_var = extract(model_var, t, x_t.shape, x_t.device)
-        model_logvar = extract(model_logvar, t, x_t.shape, x_t.device)
-
-        pred_x_0 = self.predict_x_0_from_eps(x_t, t, estimate_noise).clamp(-1, 1)
-        model_mean, _, _ = self.q_posterior_mean_variance(
-                pred_x_0, x_t, t
-                )
-        return {
-            "mean":         model_mean,
-            "variance":     model_var,
-            "log_variance": model_logvar,
-            "pred_x_0":     pred_x_0,
-            }
 
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
         out = self.p_mean_variance(model, x_t, t)
@@ -415,8 +370,6 @@ class GaussianDiffusionModel:
 
         return x.detach() if not see_whole_sequence else seq
 
-
-
     def sample_q_gradual(self, x_t, t, noise):
         """
         q (x_t | x_{t-1})
@@ -428,48 +381,68 @@ class GaussianDiffusionModel:
         return (extract(self.sqrt_alphas, t, x_t.shape, x_t.device) * x_t +
                 extract(self.sqrt_betas, t, x_t.shape, x_t.device) * noise)
 
-    def calc_vlb_xt(self, model, x_0, x_t, t, estimate_noise=None):
-        # find KL divergence at t
-        true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
-        output = self.p_mean_variance(model, x_t, t, estimate_noise)
-        kl = normal_kl(true_mean, true_log_var, output["mean"], output["log_variance"])
-        kl = mean_flat(kl) / np.log(2.0)
-
-        decoder_nll = -discretised_gaussian_log_likelihood(
-                x_0, output["mean"], log_scales=0.5 * output["log_variance"]
-                )
-        decoder_nll = mean_flat(decoder_nll) / np.log(2.0)
-
-        nll = torch.where((t == 0), decoder_nll, kl)
-        return {"output": nll, "pred_x_0": output["pred_x_0"]}
-
-
 
 
 
     def prior_vlb(self, x_0, args):
-        t = torch.tensor([self.num_timesteps - 1] * args["Batch_Size"], device=x_0.device)
+        t = torch.tensor([self.num_timesteps - 1] * x_0.shape[0], device=x_0.device)
         qt_mean, _, qt_log_variance = self.q_mean_variance(x_0, t)
-        kl_prior = normal_kl(
-                mean1=qt_mean, logvar1=qt_log_variance, mean2=torch.tensor(0.0, device=x_0.device),
-                logvar2=torch.tensor(0.0, device=x_0.device)
-                )
+
+        # --------------------------------------------------------------------------------------------------------------
+        # KL divergence between two probability
+        kl_prior = normal_kl(mean1=qt_mean,                              logvar1=qt_log_variance,
+                             mean2=torch.tensor(0.0, device=x_0.device), logvar2=torch.tensor(0.0, device=x_0.device))
         return mean_flat(kl_prior) / np.log(2.0)
+    def p_mean_variance(self, model, x_t, t, estimate_noise=None):
+        """
+        Finds the mean & variance from N(x_{t-1}; mu_theta(x_t,t), sigma_theta (x_t,t))
+        :param model:
+        :param x_t:
+        :param t:
+        :return:
+        """
+        if estimate_noise == None:
+            estimate_noise = model(x_t, t)
+        # fixed model variance defined as \hat{\beta}_t - could add learned parameter
+        model_var = np.append(self.posterior_variance[1], self.betas[1:])
+        model_logvar = np.log(model_var)
+        model_var = extract(model_var, t, x_t.shape, x_t.device)
+        model_logvar = extract(model_logvar, t, x_t.shape, x_t.device)
+        pred_x_0 = self.predict_x_0_from_eps(x_t, t, estimate_noise).clamp(-1, 1)
+        model_mean, _, _ = self.q_posterior_mean_variance(
+                pred_x_0, x_t, t)
+        return {"mean":         model_mean,
+                "variance":     model_var,
+                "log_variance": model_logvar,
+                "pred_x_0":     pred_x_0,}
+
+    def calc_vlb_xt(self, model, x_0, x_t, t, estimate_noise=None):
+        # find KL divergence at t
+        true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
+        output = self.p_mean_variance(model, x_t, t, estimate_noise)
+
+        # --------------------------------------------------------------------------------------------------------------
+        # calculate kl divergence between two normal distributions
+        kl = normal_kl(true_mean, true_log_var, output["mean"], output["log_variance"])
+        kl = mean_flat(kl) / np.log(2.0)
+
+        # --------------------------------------------------------------------------------------------------------------
+        #
+        decoder_nll = -discretised_gaussian_log_likelihood(x_0, output["mean"], log_scales=0.5 * output["log_variance"])
+        decoder_nll = mean_flat(decoder_nll) / np.log(2.0)
+
+        nll = torch.where((t == 0), decoder_nll, kl)
+        return {"output": nll, "pred_x_0": output["pred_x_0"]}
 
     def calc_total_vlb(self, x_0, model, args):
         vb = []
         x_0_mse = []
         mse = []
         for t in reversed(list(range(self.num_timesteps))):
-            t_batch = torch.tensor([t] * x_0.shape[0],
-                                   device=x_0.device)
+            t_batch = torch.tensor([t] * x_0.shape[0],device=x_0.device)
             noise = torch.randn_like(x_0)
-            x_t = self.sample_q(x_0=x_0,
-                                t=t_batch,
-                                noise=noise)
-            # Calculate VLB term at the current timestep
+            x_t = self.sample_q(x_0=x_0,t=t_batch,noise=noise)
             with torch.no_grad():
-                # ---------------------------------------------------------------------------------------------
                 out = self.calc_vlb_xt(model,x_0=x_0,x_t=x_t,t=t_batch,)
             vb.append(out["output"])
             x_0_mse.append(mean_flat((out["pred_x_0"] - x_0) ** 2))
