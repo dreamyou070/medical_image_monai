@@ -101,8 +101,6 @@ def generate_simplex_noise(Simplex_instance,
     # ------------------------------------------------------------------------------------------------------------------
     # base shape = [Batch 64, Channel 1, Width, Height]
     noise = torch.empty(x.shape).to(x.device)
-    print(f'base noise : {noise.shape}')
-
     # noise !
     for i in range(in_channels):
         # i is always 0
@@ -440,7 +438,6 @@ class GaussianDiffusionModel:
 
         # --------------------------------------------------------------------------------------------------------------
         # calculate loss
-        print(f'in p_loss function, t : {t}')
         loss, x_t, eps_t = self.calc_loss(model, x_0, t)
 
         loss = ((loss["loss"] * weights).mean(), (loss, x_t, eps_t))
