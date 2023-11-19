@@ -54,8 +54,8 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
         noise = torch.rand_like(x)
         # 2) select random int
         #t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=x.device)
-        t =  torch.randint(0, args.sample_distance, (x.shape[0],), device=x.device)
-
+        t =  torch.randint(500, args.sample_distance, (x.shape[0],), device=x.device)
+        time_step = t[0].item()
         # 3) q sampling = noising & p sampling = denoising
         x_t  = diffusion.sample_q(x, t, noise)
         temp = diffusion.sample_p(ema, x_t, t)
@@ -64,11 +64,11 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
         real_images = x[:num_images, ...].cpu().permute(0,1,3,2)
         sample_images = temp["sample"][:num_images, ...].cpu().permute(0,1,3,2)
         pred_images = temp["pred_x_0"][:num_images, ...].cpu().permute(0,1,3,2)
-        print(f'real_images : {real_images.shape}')
+
         out = torch.cat((real_images,sample_images,pred_images))
-        print(f'out : {out.shape}')
-        plt.title(f'real | sample | prediction x_0 (epoch {epoch}, {train_data})')
-        plt.rcParams['figure.dpi'] = 100
+
+        plt.title(f'real | sample | prediction x_0 (epoch {epoch}, {train_data}, from {time_step} time step)')
+        plt.rcParams['figure.dpi'] = 180
         plt.grid(False)
         plt.imshow(gridify_output(out, num_images), cmap='gray')
         plt.axis('off')
@@ -280,7 +280,7 @@ if __name__ == '__main__':
     parser.add_argument('--start_epoch', type=int, default=0)
     parser.add_argument('--train_epochs', type=int, default=3000)
     parser.add_argument('--train_start', action = 'store_true')
-    parser.add_argument('--sample_distance', type=int, default = 50)
+    parser.add_argument('--sample_distance', type=int, default = 800)
     # step 7. inference
     parser.add_argument('--interence_num', type=int, default=4)
     parser.add_argument('--save_imgs', action='store_true')
