@@ -84,8 +84,13 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
             real_images = real_images.unsqueeze(0)
             real = torch_transforms.ToPILImage()(real_images)
 
-            sample = torch_transforms.ToPILImage()(sample_images[img_index, ...].unsqueeze(0))
-            pred = torch_transforms.ToPILImage()(pred_images[img_index, ...].unsqueeze(0))
+            sample_images = sample_images[img_index, ...].squeeze()
+            sample_images = sample_images.unsqueeze(0)
+            sample = torch_transforms.ToPILImage()(sample_images)
+
+            pred_images = pred_images[img_index, ...].squeeze()
+            pred_images = pred_images.unsqueeze(0)
+            pred = torch_transforms.ToPILImage()(pred_images)
 
             new_image = PIL.Image.new('RGB', (3 * real.size[0], real.size[1]), (250, 250, 250))
             new_image.paste(real, (0, 0))
