@@ -334,23 +334,19 @@ def _noise3(x, y, z, perm, perm_grad_index3):
     xs = x + stretch_offset
     ys = y + stretch_offset
     zs = z + stretch_offset
-
     # Floor to get simplectic honeycomb coordinates of rhombohedron (stretched cube) super-cell origin.
     xsb = floor(xs)
     ysb = floor(ys)
     zsb = floor(zs)
-
     # Skew out to get actual coordinates of rhombohedron origin. We'll need these later.
     squish_offset = (xsb + ysb + zsb) * SQUISH_CONSTANT3
     xb = xsb + squish_offset
     yb = ysb + squish_offset
     zb = zsb + squish_offset
-
     # Compute simplectic honeycomb coordinates relative to rhombohedral origin.
     xins = xs - xsb
     yins = ys - ysb
     zins = zs - zsb
-
     # Sum those together to get a value that determines which region we're in.
     in_sum = xins + yins + zins
 
@@ -358,10 +354,8 @@ def _noise3(x, y, z, perm, perm_grad_index3):
     dx0 = x - xb
     dy0 = y - yb
     dz0 = z - zb
-
     value = 0
     if in_sum <= 1:  # We're inside the tetrahedron (3-Simplex) at (0,0,0)
-
         # Determine which two of (0,0,1), (0,1,0), (1,0,0) are closest.
         a_point = 0x01
         a_score = xins
@@ -373,7 +367,6 @@ def _noise3(x, y, z, perm, perm_grad_index3):
         elif a_score < b_score and zins > a_score:
             a_score = zins
             a_point = 0x04
-
         # Now we determine the two lattice points not part of the tetrahedron that may contribute.
         # This depends on the closest two tetrahedral vertices, including (0,0,0)
         wins = 1 - in_sum
@@ -835,7 +828,6 @@ def _noise3(x, y, z, perm, perm_grad_index3):
                 dy_ext1,
                 dz_ext1
                 )
-
     return value / NORM_CONSTANT3
 
 
@@ -846,10 +838,11 @@ def _noise3a(X, Y, Z, perm, perm_grad_index3):
     noise = np.zeros((Z.size, Y.size, X.size),
                      dtype=np.double)
     for z in prange(Z.size):
-        # z is timestep
         for y in prange(Y.size):
             for x in prange(X.size):
-                noise[z, y, x] = _noise3(X[x], Y[y], Z[z], perm, perm_grad_index3)
+                value = _noise3(X[x], Y[y], Z[z], perm, perm_grad_index3)
+                print(f'in _noise3a, value: {value}')
+                noise[z, y, x] = value
     print(f'in _noise3a, noise (Batch, W=128, H=128): {noise}')
     return noise
 
