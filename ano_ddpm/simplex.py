@@ -843,7 +843,7 @@ def _noise3a(X, Y, Z, perm, perm_grad_index3):
                 value = _noise3(X[x], Y[y], Z[z], perm, perm_grad_index3)
                 print(f'in _noise3a, value: {value}')
                 noise[z, y, x] = value
-    print(f'in _noise3a, noise (Batch, W=128, H=128): {noise}')
+    print(f'in _noise3a, noise (Batch, W=128, H=128): {noise}' )
     return noise
 
 
