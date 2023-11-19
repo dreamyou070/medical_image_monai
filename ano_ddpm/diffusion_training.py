@@ -37,7 +37,7 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     "ema":                  ema.state_dict(),
                     'loss':                 loss,},
             os.path.join(model_save_base_dir, f'diff-params-ARGS={args["arg_num"]}_diff_epoch={epoch}.pt'))
-def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
+def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
                      save_imgs=False, save_vids=False,):
 
     video_save_dir = os.path.join(args.experiment_dir, 'diffusion-videos')
@@ -46,37 +46,35 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
     os.makedirs(image_save_dir, exist_ok=True)
 
     if save_imgs:
-        if epoch % 100 == 0 or epoch < 2:
+        fig = plt.figure(figsize=(10, 10))
+        # 1) make random noise
+        noise = torch.rand_like(x)
+        # 2) select random int
+        #t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=x.device)
+        t =  torch.randint(0, args.sample_distance, (x.shape[0],), device=x.device)
 
-            # 1) make random noise
-            noise = torch.rand_like(x)
+        # 3) q sampling = noising & p sampling = denoising
+        x_t  = diffusion.sample_q(x, t, noise)
+        temp = diffusion.sample_p(ema, x_t, t)
 
-            # 2) select random int
-            t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=x.device)
-
-            # 3) q sampling = noising & p sampling = denoising
-            x_t  = diffusion.sample_q(x, t, noise)
-            temp = diffusion.sample_p(ema, x_t, t)
-
-            # 4)
-            out = torch.cat((x[:row_size, ...].cpu(),                             # real number
-                             temp["sample"][:row_size, ...].cpu(),                # t-1 sample
-                             temp["pred_x_0"][:row_size, ...].cpu()))             # prediction (reconstruction)
-            plt.title(f'real,sample(one step upmode?) , prediction x_0-{epoch}epoch')
-        else:
-            out = torch.cat((x[:row_size, ...].cpu(),
-                             noisy[:row_size, ...].cpu(),                         # just random noise
-                             est[:row_size, ...].cpu(),                           # estimated noise
-                             (est - noisy).square().cpu()[:row_size, ...]))       # the difference between estimated and random noise (should be zero)
-            plt.title(f'real,noisy,noise prediction,mse-{epoch}epoch')
-        plt.rcParams['figure.dpi'] = 150
+        # 4)
+        real_images = x[:num_images, ...].cpu()
+        sample_images = temp["sample"][:num_images, ...].cpu()
+        pred_images = temp["pred_x_0"][:num_images, ...].cpu()
+        out = torch.cat((real_images,sample_images,pred_images))
+        plt.title(f'real | sample | prediction x_0 (epoch {epoch})')
+        plt.rcParams['figure.dpi'] = 100
         plt.grid(False)
-        plt.imshow(gridify_output(out, row_size), cmap='gray')
+        plt.imshow(gridify_output(out, num_images), cmap='gray')
         plt.axis('off')
-        img_save_dir = os.path.join(image_save_dir, f'EPOCH={epoch}.png')
+        img_save_dir = os.path.join(image_save_dir, f'epoch_{epoch}.png')
         print(f'saving image to {img_save_dir}')
+        loading_image = wandb.Image(plt, caption=f"epoch : {epoch + 1}")
+        wandb.log({"Unet Generating": loading_image})
         plt.savefig(img_save_dir)
-        plt.clf()
+        plt.close('all')
+
+
     if save_vids:
         fig, ax = plt.subplots()
         if epoch % 500 == 0 or epoch < 2 :
@@ -85,7 +83,7 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
                 out = diffusion.forward_backward(ema, x, "half", args.sample_distance // 2, denoise_fn="noise_fn")
             else:
                 out = diffusion.forward_backward(ema, x, "half", args.sample_distance // 4, denoise_fn="noise_fn")
-            imgs = [[ax.imshow(gridify_output(x, row_size), animated=True)] for x in out]
+            imgs = [[ax.imshow(gridify_output(x, num_images), animated=True)] for x in out]
             ani = animation.ArtistAnimation(fig, imgs, interval=50, blit=True,repeat_delay=1000)
             ani_save_dir = os.path.join(video_save_dir, f'EPOCH={epoch}.mp4')
             ani.save(ani_save_dir)
@@ -110,7 +108,6 @@ def main(args) :
     with open(os.path.join(experiment_dir, "config.txt"), "w") as f:
         for key in sorted(var_args.keys()):
             f.write(f"{key}: {var_args[key]}\n")
-
 
     print(f'\n step 2. dataset and dataloatder')
     train_datas = os.listdir(args.train_data_folder)
@@ -144,7 +141,7 @@ def main(args) :
                                      shuffle=True, num_workers=4, persistent_workers=True)
 
     print(f'\n step 3. resume or not')
-    loaded_model = {}
+
 
     print(f'\n step 4. model')
     in_channels = args.in_channels
@@ -169,25 +166,22 @@ def main(args) :
 
     print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(),
-                            lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
+                            lr=args.lr,
+                            weight_decay=args.weight_decay,
+                            betas=(0.9, 0.999))
 
     print(f'\n step 6. training')
-    start_epoch = args.start_epoch
-    train_epoch = args.train_epochs
-    tqdm_epoch = range(start_epoch, train_epoch + 1)
+    tqdm_epoch = range(args.start_epoch, args.train_epochs + 1)
     start_time = time.time()
-    losses = []
     vlb = collections.deque([], maxlen=10)
     for epoch in tqdm_epoch:
-        mean_loss = []
-        progress_bar = tqdm(enumerate(training_dataset_loader),
-                            total=len(training_dataset_loader),
-                            ncols=70)
+        progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=300)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, data in progress_bar:
             x = data["image"].to(device)  # batch, channel, w, h
             # GaussianDiffusionModel.p_loss
             loss, estimates = diffusion.p_loss(model, x, args)
+            wandb.log({"loss": loss.item()})
             noisy_latent, unet_estimate_noise = estimates[1], estimates[2]
             optimiser.zero_grad()
             loss.backward()
@@ -196,14 +190,13 @@ def main(args) :
             # ----------------------------------------------------------------------------------------- #
             # EMA model updating
             update_ema_params(ema, model)
-            mean_loss.append(loss.data.cpu())
+
             if epoch % 50 == 0 and step == 0:
-                row_size = min(8, args.batch_size)
-                training_outputs(diffusion, x, unet_estimate_noise, noisy_latent, epoch, row_size,
+                # inference with ema model
+                training_outputs(diffusion, x, unet_estimate_noise, noisy_latent, epoch, args.interence_num,
                                  save_imgs=args.save_imgs,  # true
                                  save_vids=args.save_vids,  # true
                                  ema=ema, args=args)
-        losses.append(np.mean(mean_loss))
         if epoch % 200 == 0:
             time_taken = time.time() - start_time
             remaining_epochs = args['EPOCHS'] - epoch
@@ -272,6 +265,7 @@ if __name__ == '__main__':
     parser.add_argument('--train_start', action = 'store_true')
     parser.add_argument('--sample_distance', type=int, default = 50)
     # step 7. inference
+    parser.add_argument('--interence_num', type=int, default=3)
     parser.add_argument('--save_imgs', action='store_true')
     parser.add_argument('--save_vids', action='store_true')
     args = parser.parse_args()

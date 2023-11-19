@@ -192,8 +192,6 @@ class GaussianDiffusionModel:
 
     def p_loss(self, model, x_0, args):
         """ calculate total loss """
-
-        print(f'self.loss_weight : {self.loss_weight}')
         if self.loss_weight == "none":
             if args.train_start:
                 t = torch.randint(0, min(args.sample_distance, self.num_timesteps), (x_0.shape[0],),
