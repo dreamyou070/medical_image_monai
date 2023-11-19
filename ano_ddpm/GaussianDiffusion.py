@@ -394,8 +394,9 @@ class GaussianDiffusionModel:
             :param noise:
             :return:
         """
-        return (extract(self.sqrt_alphas_cumprod, t, x_0.shape, x_0.device) * x_0 +
-                extract(self.sqrt_one_minus_alphas_cumprod, t, x_0.shape, x_0.device) * noise)
+        noise_x = extract(self.sqrt_alphas_cumprod, t, x_0.shape, x_0.device) * x_0
+        eps = extract(self.sqrt_one_minus_alphas_cumprod, t, x_0.shape, x_0.device) * noise
+        return ( noise_x + eps)
 
     def sample_q_gradual(self, x_t, t, noise):
         """
@@ -441,9 +442,12 @@ class GaussianDiffusionModel:
         x_0_mse = []
         mse = []
         for t in reversed(list(range(self.num_timesteps))):
-            t_batch = torch.tensor([t] * args["Batch_Size"], device=x_0.device)
+            t_batch = torch.tensor([t] * x_0.shape[0],
+                                   device=x_0.device)
             noise = torch.randn_like(x_0)
-            x_t = self.sample_q(x_0=x_0, t=t_batch, noise=noise)
+            x_t = self.sample_q(x_0=x_0,
+                                t=t_batch,
+                                noise=noise)
             # Calculate VLB term at the current timestep
             with torch.no_grad():
                 out = self.calc_vlb_xt(
