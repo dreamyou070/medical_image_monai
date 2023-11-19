@@ -1,5 +1,5 @@
 {"img_size": [128,128],
-  "Batch_Size": 1,
+  "Batch_Size": 64,
   "EPOCHS": 4000,
   "T": 1000,
   "base_channels": 256,

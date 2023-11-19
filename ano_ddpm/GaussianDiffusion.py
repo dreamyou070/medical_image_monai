@@ -426,7 +426,8 @@ class GaussianDiffusionModel:
         if self.loss_weight == "none":
             if args["train_start"]:
                 # batch size of t
-                t = torch.randint(0,min(args["sample_distance"], self.num_timesteps),(x_0.shape[0],),device=x_0.device)
+                t = torch.randint(0,min(args["sample_distance"], self.num_timesteps),
+                                  (x_0.shape[0],),device=x_0.device)
             else:
                 t = torch.randint(0, self.num_timesteps, (x_0.shape[0],), device=x_0.device)
             weights = 1
@@ -435,6 +436,7 @@ class GaussianDiffusionModel:
 
         # --------------------------------------------------------------------------------------------------------------
         # calculate loss
+        print(f'in p_loss function, t : {t}')
         loss, x_t, eps_t = self.calc_loss(model, x_0, t)
 
         loss = ((loss["loss"] * weights).mean(), (loss, x_t, eps_t))
