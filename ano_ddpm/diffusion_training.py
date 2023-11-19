@@ -59,18 +59,19 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
 
             # 4)
             out = torch.cat((x[:row_size, ...].cpu(),                             # real number
-                             temp["sample"][:row_size, ...].cpu(),                # what is temp
+                             temp["sample"][:row_size, ...].cpu(),                # t-1 sample
                              temp["pred_x_0"][:row_size, ...].cpu()))             # prediction (reconstruction)
-            plt.title(f'real,sample,prediction x_0-{epoch}epoch')
+            plt.title(f'real,sample(one step upmode?) , prediction x_0-{epoch}epoch')
         else:
             out = torch.cat((x[:row_size, ...].cpu(),
-                             noisy[:row_size, ...].cpu(),
-                             est[:row_size, ...].cpu(),
-                             (est - noisy).square().cpu()[:row_size, ...]))
+                             noisy[:row_size, ...].cpu(),                         # just random noise
+                             est[:row_size, ...].cpu(),                           # estimated noise
+                             (est - noisy).square().cpu()[:row_size, ...]))       # the difference between estimated and random noise (should be zero)
             plt.title(f'real,noisy,noise prediction,mse-{epoch}epoch')
         plt.rcParams['figure.dpi'] = 150
         plt.grid(False)
         plt.imshow(gridify_output(out, row_size), cmap='gray')
+        plt.axis('off')
         img_save_dir = os.path.join(image_save_dir, f'ARGS={args["arg_num"]}_EPOCH={epoch}.png')
         print(f'saving image to {img_save_dir}')
         plt.savefig(img_save_dir)
@@ -173,14 +174,7 @@ def main(args) :
                                        loss_type=args['loss-type'],     # l2
                                        noise= args["noise_fn"],          # none
                                        img_channels=in_channels)        # 1
-    #model_var = np.append(self.posterior_variance[1], self.betas[1:])
-    betas = diffusion.betas
-    posterior_variance = diffusion.posterior_variance
-    print(f' - betas : {betas}')
-    print(f' - posterior_variance (beta hat) : {posterior_variance}')
-    model_var = np.append(posterior_variance[1], betas[1:])
-    print(f' - model_var : {model_var}')
-    print(f' - model_var : {len(model_var)}')
+
     """
     if resume:
         if "unet" in resume:

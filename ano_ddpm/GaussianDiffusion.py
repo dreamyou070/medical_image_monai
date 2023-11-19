@@ -304,11 +304,15 @@ class GaussianDiffusionModel:
                 noise = generate_simplex_noise(self.simplex, x_t, t, False, in_channels=self.img_channels).float()
         else:
             noise = denoise_fn(x_t, t)
+        # ---------------------------------------------------------------------------------
+        # make mask
         nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
+        print(f'what is nonzero_mask : {nonzero_mask.shape}')
+        print(f'what is nonzero_mask : {nonzero_mask}')
         # what is sample do ... ?
         sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
-        return {"sample": sample,
-                "pred_x_0": out["pred_x_0"]}
+        return {"sample": sample,                # x_t-1
+                "pred_x_0": out["pred_x_0"]}     # x_0
 
     def p_mean_variance(self, model, x_t, t, estimate_noise=None):
         """ Finds the mean & variance from N(x_{t-1}; mu_theta(x_t,t), sigma_theta (x_t,t))
@@ -321,8 +325,9 @@ class GaussianDiffusionModel:
             estimate_noise = model(x_t, t)
         # fixed model variance defined as \hat{\beta}_t - could add learned parameter
         model_var = np.append(self.posterior_variance[1], self.betas[1:])
-        model_logvar = np.log(model_var)
         model_var = extract(model_var, t, x_t.shape, x_t.device)
+
+        model_logvar = np.log(model_var)
         model_logvar = extract(model_logvar, t, x_t.shape, x_t.device)
 
         pred_x_0 = self.predict_x_0_from_eps(x_t, t, estimate_noise).clamp(-1, 1)
