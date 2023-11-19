@@ -95,13 +95,16 @@ def discretised_gaussian_log_likelihood(x, means, log_scales):
 
 def generate_simplex_noise(Simplex_instance,
                            x, t, random_param=False,
-                           octave=6, persistence=0.8, frequency=64,
+                           octave=6, persistence=0.8,
+                           frequency=64,
                            in_channels=1):
-
+    # ------------------------------------------------------------------------------------------------------------------
+    # base shape = [Batch 64, Channel 1, Width, Height]
     noise = torch.empty(x.shape).to(x.device)
-    print(f'base noise (64,1,w,h) : {noise.shape}')
+
     # noise !
     for i in range(in_channels):
+        # i is always 0
         Simplex_instance.newSeed()
         # self._perm, self._perm_grad_index3
         if random_param:
@@ -126,11 +129,17 @@ def generate_simplex_noise(Simplex_instance,
                     ).repeat(x.shape[0], 1, 1, 1)
 
         # ---------------------------------------------------------------------------------------------------------------------------------------------------------
-        noise[:, i, ...] = torch.unsqueeze(torch.from_numpy(Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:],
-                                                                                                     t.detach().cpu().numpy(),
-                                                                                                     octave,        # 6
-                                                                                                     persistence,   # 0.8
-                                                                                                     frequency)).to(x.device), 0).repeat(x.shape[0], 1, 1, 1)
+        print(f'Makind 2D noise, frequency = {frequency}, t : {t}')
+        d2_np_noise = Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:],
+                                                               t.detach().cpu().numpy(),
+                                                               octave,  # 6
+                                                               persistence,  # 0.8
+                                                               frequency)
+
+        d2_noise = torch.from_numpy(d2_np_noise).to(x.device)
+        d3_noise = torch.unsqueeze(d2_noise,0)
+        expand_noise = d3_noise.repeat(x.shape[0], 1, 1, 1)
+        noise[:, i, ...] = expand_noise
     return noise
 
 
@@ -163,20 +172,15 @@ class GaussianDiffusionModel:
             elif noise == "random":
                 self.noise_fn = lambda x, t: random_noise(self.simplex, x, t)
             else:
-                print('this is the noise function')
-                self.noise_fn = lambda x, t: generate_simplex_noise(self.simplex,
-                                                                    x, t, False, in_channels=img_channels)
-
+                self.noise_fn = lambda x, t: generate_simplex_noise(self.simplex, x, t, False, in_channels=img_channels)
         self.img_size = img_size
         self.img_channels = img_channels
         self.loss_type = loss_type
         self.num_timesteps = len(betas)
-
         if loss_weight == 'prop-t':
             self.weights = np.arange(self.num_timesteps, 0, -1)
         elif loss_weight == "uniform":
             self.weights = np.ones(self.num_timesteps)
-
         self.loss_weight = loss_weight
         alphas = 1 - betas
         self.betas = betas
@@ -197,21 +201,17 @@ class GaussianDiffusionModel:
 
         # calculations for posterior q(x_{t-1} | x_t, x_0)
         self.posterior_variance = (
-                betas * (1.0 - self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod)
-        )
+                betas * (1.0 - self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod))
         # log calculation clipped because the posterior variance is 0 at the
         # beginning of the diffusion chain.
         self.posterior_log_variance_clipped = np.log(
-                np.append(self.posterior_variance[1], self.posterior_variance[1:])
-                )
+                np.append(self.posterior_variance[1], self.posterior_variance[1:]))
         self.posterior_mean_coef1 = (
-                betas * np.sqrt(self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod)
-        )
+                betas * np.sqrt(self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod))
         self.posterior_mean_coef2 = (
                 (1.0 - self.alphas_cumprod_prev)
                 * np.sqrt(alphas)
-                / (1.0 - self.alphas_cumprod)
-        )
+                / (1.0 - self.alphas_cumprod))
 
 
     def sample_t_with_weights(self, b_size, device):
@@ -389,9 +389,23 @@ class GaussianDiffusionModel:
         return {"output": nll, "pred_x_0": output["pred_x_0"]}
 
     def calc_loss(self, model, x_0, t):
-        # noise = torch.randn_like(x)
-        # x_0 = Batch64, 1, 128, 128
+
+        # --------------------------------------------------------------------------------------------------------------
+        # make noise = torch.randn_like(x) : (x_0 = Batch64, 1, 128, 128)
         noise = self.noise_fn(x_0, t).float()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         x_t = self.sample_q(x_0, t, noise)
         estimate_noise = model(x_t, t)
@@ -411,18 +425,18 @@ class GaussianDiffusionModel:
     def p_loss(self, model, x_0, args):
         if self.loss_weight == "none":
             if args["train_start"]:
-                t = torch.randint(
-                        0, min(args["sample_distance"], self.num_timesteps), (x_0.shape[0],),
-                        device=x_0.device
-                        )
+                # batch size of t
+                t = torch.randint(0,min(args["sample_distance"], self.num_timesteps),(x_0.shape[0],),device=x_0.device)
             else:
                 t = torch.randint(0, self.num_timesteps, (x_0.shape[0],), device=x_0.device)
             weights = 1
         else:
             t, weights = self.sample_t_with_weights(x_0.shape[0], x_0.device)
 
+        # --------------------------------------------------------------------------------------------------------------
         # calculate loss
         loss, x_t, eps_t = self.calc_loss(model, x_0, t)
+
         loss = ((loss["loss"] * weights).mean(), (loss, x_t, eps_t))
         return loss
 

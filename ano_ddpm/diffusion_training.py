@@ -212,6 +212,9 @@ def main(args) :
                 x = x.to(device) # batch, channel, w, h
             # GaussianDiffusionModel.p_loss
             loss, estimates = diffusion.p_loss(model, x, args)
+
+
+
             noisy, est = estimates[1], estimates[2]
             optimiser.zero_grad()
             loss.backward()
@@ -221,10 +224,8 @@ def main(args) :
             mean_loss.append(loss.data.cpu())
             if epoch % 50 == 0 and step == 0:
                 row_size = min(8, args['Batch_Size'])
-                print(f'row_size : {row_size}')
                 training_outputs(diffusion, x, est, noisy, epoch, row_size, save_imgs=args['save_imgs'],
                                  save_vids=args['save_vids'], ema=ema, args=args)
-            del data, loss, estimates, noisy, est
         losses.append(np.mean(mean_loss))
         if epoch % 200 == 0:
             time_taken = time.time() - start_time

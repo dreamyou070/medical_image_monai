@@ -82,22 +82,15 @@ class Simplex_CLASS:
         return noise
 
     def rand_3d_fixed_T_octaves(self, shape, T, octaves=1, persistence=0.5, frequency=32):
-        """
-        Returns a layered fractal noise in 3D
-        :param shape: Shape of 3D tensor output
-        :param octaves: Number of levels of fractal noise
-        :param persistence: float between (0-1) -> Rate at which amplitude of each level decreases
-        :param frequency: Frequency of initial octave of noise
-        :return: Fractal noise sample with n lots of 2D images
-        """
+
         assert len(shape) == 2
         # noise = [1, w,h]
         noise = np.zeros((1, *shape))
         # y = [0, ..., w], x = [0, ..., h]
         y, x = [np.arange(0, end) for end in shape]
-
         amplitude = 1
         for _ in range(octaves):
+            print(f'octave : {_} | amplitude : {amplitude} | frequency : {frequency}')
             # x/frequency = [0, ...., w/64]
             # y/frequency = [0, ...., w/64]
             # T/frequency = ?
