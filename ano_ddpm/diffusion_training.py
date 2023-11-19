@@ -40,7 +40,7 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     'loss':                 loss,},
             os.path.join(model_save_base_dir, f'diff-params-ARGS={args["arg_num"]}_diff_epoch={epoch}.pt'))
 def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
-                     save_imgs=False, is_train_data=True):
+                     save_imgs=False, is_train_data=True, device='cuda'):
 
     if is_train_data :
         train_data = 'training_data'
@@ -53,7 +53,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 
     if save_imgs:
         # 1) make random noise
-        x = test_data["image_info"]['image'].to(ema.device)  # batch, channel, w, h
+        x = test_data["image_info"]['image'].to(device)  # batch, channel, w, h
         normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
         noise = torch.rand_like(x)
@@ -243,9 +243,9 @@ def main(args) :
                     if i == 0:
                         ema.eval()
                         training_outputs(diffusion, test_data, epoch, args.inference_num, save_imgs=args.save_imgs,
-                                         ema=ema, args=args, is_train_data = False)
+                                         ema=ema, args=args, is_train_data = False, device = device)
                         training_outputs(diffusion, data, epoch, args.inference_num, save_imgs=args.save_imgs,
-                                         ema=ema, args=args, is_train_data=True)
+                                         ema=ema, args=args, is_train_data=True, device = device)
 
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader) :
