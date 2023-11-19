@@ -116,10 +116,10 @@ def generate_simplex_noise(
                                                            persistence, frequency)
 
         torch_noise = torch.from_numpy(noise_1).to(x.device)
-        print(f"torch_noise shape: {torch_noise.shape}")
-        batch_torch_noise = torch_noise.repeat(x.shape[0], 1, 1)
-        print(f"batch_torch_noise : {batch_torch_noise.shape}")
-        noise[:, i, ...] = batch_torch_noise
+        #print(f"torch_noise shape: {torch_noise.shape}")
+        #batch_torch_noise = torch_noise.repeat(x.shape[0], 1, 1)
+        #print(f"batch_torch_noise : {batch_torch_noise.shape}")
+        noise[:, i, ...] = torch_noise
     return noise
 
 
