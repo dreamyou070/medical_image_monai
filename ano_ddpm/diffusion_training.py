@@ -278,7 +278,7 @@ if __name__ == '__main__':
                         default = f'/data7/sooyeon/medical_image/anoddpm_result/20231119_dental_test')
     parser_argument = vars(parser.parse_args())
 
-    file_dir = f'/data7/sooyeon/medical_image/anoddpm_result/test_args/args11.joson'
+    file_dir = f'/data7/sooyeon/medical_image/anoddpm_result/test_args/args11.json'
     # sys.argv = ['C:\\Users\\hpuser\\PycharmProjects\\medical_image\\AnoDDPM\\diffusion_training.py']
     sys.argv.append(file_dir)
     files = sys.argv[1:]
