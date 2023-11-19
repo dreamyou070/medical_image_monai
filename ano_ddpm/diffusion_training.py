@@ -220,6 +220,13 @@ def main(args) :
                 target = target * mask_info
             # 4) loss
             loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
+            loss = loss.mean()
+
+            def mean_flat(tensor):
+                return torch.mean(tensor, dim=list(range(1, len(tensor.shape))))
+            ddpm_loss = mean_flat((noise_pred - target).square())
+            print(f'loss : {loss.item()} | ddpm_loss : {ddpm_loss.item()}')
+
             wandb.log({"loss": loss.item()})
             optimiser.zero_grad()
             loss.backward()
