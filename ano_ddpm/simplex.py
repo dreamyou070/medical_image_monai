@@ -841,14 +841,16 @@ def _noise3(x, y, z, perm, perm_grad_index3):
 
 @njit(cache=True, parallel=True)
 def _noise3a(X, Y, Z, perm, perm_grad_index3):
+    # make noise array
     # Z.size = 1
-    noise = np.zeros((Z.size, Y.size, X.size), dtype=np.double)
+    noise = np.zeros((Z.size, Y.size, X.size),
+                     dtype=np.double)
     for z in prange(Z.size):
         # z is timestep
         for y in prange(Y.size):
             for x in prange(X.size):
                 noise[z, y, x] = _noise3(X[x], Y[y], Z[z], perm, perm_grad_index3)
-    print(f'in _noise3a, noise (Batch, W=128, H=128): {noise.shape}')
+    print(f'in _noise3a, noise (Batch, W=128, H=128): {noise.size}')
     return noise
 
 
