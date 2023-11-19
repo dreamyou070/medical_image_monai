@@ -15,6 +15,8 @@ from monai.data import DataLoader, Dataset
 from monai.utils import first
 from UNet import UNetModel, update_ema_params
 import torch.multiprocessing
+import torchvision.transforms as torch_transforms
+import PIL
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
@@ -55,12 +57,11 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
         first_img = first_img.squeeze(0)
         real_images = first_img.permute(-1,-2)
         real_images = real_images.unsqueeze(0)
-        import torchvision.transforms as torch_transforms
+        
         pil_img = torch_transforms.ToPILImage()(real_images)
         pil_img.save('test.png')
     """
     if save_imgs:
-        fig = plt.figure(figsize=(10, 10))
         # 1) make random noise
         noise = torch.rand_like(x)
         # 2) select random int
@@ -73,24 +74,27 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
 
         # 4)
         real_images = x[:num_images, ...].cpu().permute(0,1,3,2) # [Batch, 1, W, H]
-
-
         sample_images = temp["sample"][:num_images, ...].cpu().permute(0,1,3,2)
         pred_images = temp["pred_x_0"][:num_images, ...].cpu().permute(0,1,3,2)
+        merge_images = []
+        for img_index in range(num_images.shape[0]):
+            real = torch_transforms(real_images[img_index, ...].unsqueeze(0))
+            sample = torch_transforms(sample_images[img_index, ...].unsqueeze(0))
+            pred = torch_transforms(pred_images[img_index, ...].unsqueeze(0))
+            new_image = PIL.Image.new('RGB', (3 * real.size[0], real.size[1]), (250, 250, 250))
+            new_image.paste(real, (0, 0))
+            new_image.paste(sample, (real.size[0], 0))
+            new_image.paste(pred, (real.size[0]+sample.size[0], 0))
+            merge_images.append(new_image)
 
-        out = torch.cat((real_images,sample_images,pred_images))
-
-        plt.title(f'real | sample | prediction x_0 (epoch {epoch}, {train_data}, from {time_step} time step)')
-        plt.rcParams['figure.dpi'] = 180
-        plt.grid(False)
-        plt.imshow(gridify_output(out, num_images), cmap='gray')
-        plt.axis('off')
+        new_image = PIL.Image.new('RGB', (merge_images[0].size[0], len(merge_images) * merge_images[0].size[1]), (250, 250, 250))
+        for i, img in enumerate(merge_images) :
+            new_image.paste(img, (0, i * img.size[1]))
         img_save_dir = os.path.join(image_save_dir, f'epoch_{epoch}_{train_data}.png')
+        new_image.save(img_save_dir)
         print(f'saving image to {img_save_dir}')
-        loading_image = wandb.Image(plt, caption=f"epoch : {epoch + 1} / {train_data}")
+        loading_image = wandb.Image(new_image, caption=f"epoch : {epoch + 1} / {train_data}")
         wandb.log({"Unet Generating": loading_image})
-        plt.savefig(img_save_dir)
-        plt.close('all')
 
     """
     if save_vids:
@@ -162,21 +166,11 @@ def main(args) :
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
     test_dataset_loader = DataLoader(val_ds,batch_size=args.batch_size,
                                      shuffle=True, num_workers=4, persistent_workers=True)
-    for step, data in enumerate(training_dataset_loader):
-        # [Batch, 1, W, H]
-        x = data["image"]
-        first_img = x[:2, ...]
-        first_img = first_img.squeeze(0)
-        real_images = first_img.permute(0,2,1)
-        #real_images = real_images.unsqueeze(0)
-        import torchvision.transforms as torch_transforms
-        pil_img = torch_transforms.ToPILImage()(real_images)
-        pil_img.save('test.png')
 
 
 
 
-    """
+
     print(f'\n step 3. resume or not')
 
 
@@ -265,7 +259,7 @@ def main(args) :
         if epoch % 1000 == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-    """
+   
 
 
 if __name__ == '__main__':
