@@ -40,9 +40,9 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
 def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
                      save_imgs=False, save_vids=False,is_train_data=True):
     if is_train_data :
-        train_data = 'true'
+        train_data = 'training_data'
     else :
-        train_data = 'false'
+        train_data = 'test_data'
     video_save_dir = os.path.join(args.experiment_dir, 'diffusion-videos')
     image_save_dir = os.path.join(args.experiment_dir, 'diffusion-training-images')
     os.makedirs(video_save_dir, exist_ok=True)
@@ -64,15 +64,17 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
         real_images = x[:num_images, ...].cpu()
         sample_images = temp["sample"][:num_images, ...].cpu()
         pred_images = temp["pred_x_0"][:num_images, ...].cpu()
+        print(f'real_images : {real_images.shape}')
         out = torch.cat((real_images,sample_images,pred_images))
-        plt.title(f'real | sample | prediction x_0 (epoch {epoch}, is train? {train_data})')
+        print(f'out : {out.shape}')
+        plt.title(f'real | sample | prediction x_0 (epoch {epoch}, {train_data})')
         plt.rcParams['figure.dpi'] = 100
         plt.grid(False)
         plt.imshow(gridify_output(out, num_images), cmap='gray')
         plt.axis('off')
-        img_save_dir = os.path.join(image_save_dir, f'epoch_{epoch}_train_{train_data}.png')
+        img_save_dir = os.path.join(image_save_dir, f'epoch_{epoch}_{train_data}.png')
         print(f'saving image to {img_save_dir}')
-        loading_image = wandb.Image(plt, caption=f"epoch : {epoch + 1} / is train data? : {train_data}")
+        loading_image = wandb.Image(plt, caption=f"epoch : {epoch + 1} / {train_data}")
         wandb.log({"Unet Generating": loading_image})
         plt.savefig(img_save_dir)
         plt.close('all')
@@ -280,7 +282,7 @@ if __name__ == '__main__':
     parser.add_argument('--train_start', action = 'store_true')
     parser.add_argument('--sample_distance', type=int, default = 50)
     # step 7. inference
-    parser.add_argument('--interence_num', type=int, default=3)
+    parser.add_argument('--interence_num', type=int, default=4)
     parser.add_argument('--save_imgs', action='store_true')
     parser.add_argument('--save_vids', action='store_true')
     args = parser.parse_args()
