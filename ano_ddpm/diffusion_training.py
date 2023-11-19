@@ -200,8 +200,8 @@ def main(args) :
             if epoch % 50 == 0 and step == 0:
                 row_size = min(8, args.batch_size)
                 training_outputs(diffusion, x, unet_estimate_noise, noisy_latent, epoch, row_size,
-                                 save_imgs=args['save_imgs'],  # true
-                                 save_vids=args['save_vids'],  # true
+                                 save_imgs=args.save_imgs,  # true
+                                 save_vids=args.save_vids,  # true
                                  ema=ema, args=args)
         losses.append(np.mean(mean_loss))
         if epoch % 200 == 0:
@@ -271,6 +271,9 @@ if __name__ == '__main__':
     parser.add_argument('--train_epochs', type=int, default=3000)
     parser.add_argument('--train_start', action = 'store_true')
     parser.add_argument('--sample_distance', type=int, default = 50)
+    # step 7. inference
+    parser.add_argument('--save_imgs', action='store_true')
+    parser.add_argument('--save_vids', action='store_true')
     args = parser.parse_args()
     main(args)
 
