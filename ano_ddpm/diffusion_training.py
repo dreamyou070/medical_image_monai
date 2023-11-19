@@ -77,7 +77,7 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
         sample_images = temp["sample"][:num_images, ...].cpu().permute(0,1,3,2)
         pred_images = temp["pred_x_0"][:num_images, ...].cpu().permute(0,1,3,2)
         merge_images = []
-        for img_index in range(num_images.shape[0]):
+        for img_index in range(num_images):
             real = torch_transforms(real_images[img_index, ...].unsqueeze(0))
             sample = torch_transforms(sample_images[img_index, ...].unsqueeze(0))
             pred = torch_transforms(pred_images[img_index, ...].unsqueeze(0))
@@ -259,7 +259,7 @@ def main(args) :
         if epoch % 1000 == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-   
+
 
 
 if __name__ == '__main__':
