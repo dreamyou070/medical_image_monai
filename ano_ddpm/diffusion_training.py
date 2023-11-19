@@ -258,7 +258,7 @@ if __name__ == '__main__':
     parser.add_argument('--timestep', type=int, default=1000)
     parser.add_argument('--beta_schedule', type=str, default='linear')
     # (3) diffusion
-    parser.add_argument('--loss_weight', type=str, default = "")
+    parser.add_argument('--loss_weight', type=str, default = "none")
     parser.add_argument('--loss_type', type=str, default='l2')
     parser.add_argument('--noise_fn', type=str, default='simplex')
 
