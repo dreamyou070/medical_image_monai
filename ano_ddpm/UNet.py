@@ -395,11 +395,14 @@ def zero_module(module):
     return module
 
 
-def update_ema_params(target, source, decay_rate=0.9999):
+def update_ema_params(target,
+                      source, decay_rate=0.9999):
     targParams = dict(target.named_parameters())
     srcParams = dict(source.named_parameters())
     for k in targParams:
-        targParams[k].data.mul_(decay_rate).add_(srcParams[k].data, alpha=1 - decay_rate)
+        src_data = srcParams[k].data
+        targParams[k].data.mul_(decay_rate).add_(src_data,
+                                                 alpha=1 - decay_rate)
 
 """
 if __name__ == "__main__":

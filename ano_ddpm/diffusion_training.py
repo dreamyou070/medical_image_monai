@@ -1,7 +1,6 @@
 import argparse
 import collections
 import copy
-import sys
 import matplotlib.pyplot as plt
 from matplotlib import animation
 import time
@@ -47,16 +46,26 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
 
     if save_imgs:
         if epoch % 100 == 0 or epoch < 2:
-            # for a given t, output x_0, & prediction of x_(t-1), and x_0
+
+            # 1) make random noise
             noise = torch.rand_like(x)
+
+            # 2) select random int
             t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=x.device)
-            x_t = diffusion.sample_q(x, t, noise)
+
+            # 3) q sampling = noising & p sampling = denoising
+            x_t  = diffusion.sample_q(x, t, noise)
             temp = diffusion.sample_p(ema, x_t, t)
-            out = torch.cat((x[:row_size, ...].cpu(), temp["sample"][:row_size, ...].cpu(),
-                             temp["pred_x_0"][:row_size, ...].cpu()))
+
+            # 4)
+            out = torch.cat((x[:row_size, ...].cpu(),                             # real number
+                             temp["sample"][:row_size, ...].cpu(),                # what is temp
+                             temp["pred_x_0"][:row_size, ...].cpu()))             # prediction (reconstruction)
             plt.title(f'real,sample,prediction x_0-{epoch}epoch')
         else:
-            out = torch.cat((x[:row_size, ...].cpu(), noisy[:row_size, ...].cpu(), est[:row_size, ...].cpu(),
+            out = torch.cat((x[:row_size, ...].cpu(),
+                             noisy[:row_size, ...].cpu(),
+                             est[:row_size, ...].cpu(),
                              (est - noisy).square().cpu()[:row_size, ...]))
             plt.title(f'real,noisy,noise prediction,mse-{epoch}epoch')
         plt.rcParams['figure.dpi'] = 150
@@ -164,6 +173,12 @@ def main(args) :
                                        loss_type=args['loss-type'],     # l2
                                        noise= args["noise_fn"],          # none
                                        img_channels=in_channels)        # 1
+    #model_var = np.append(self.posterior_variance[1], self.betas[1:])
+    betas = diffusion.betas
+    posterior_variance = diffusion.posterior_variance
+    print(f' - betas : {betas}')
+    print(f' - posterior_variance (beta hat) : {posterior_variance}')
+    """
     if resume:
         if "unet" in resume:
             model.load_state_dict(resume["unet"])
@@ -206,17 +221,20 @@ def main(args) :
                 x = x.to(device) # batch, channel, w, h
             # GaussianDiffusionModel.p_loss
             loss, estimates = diffusion.p_loss(model, x, args)
-            noisy_latent, eps_t = estimates[1], estimates[2]
-
+            noisy_latent, unet_estimate_noise = estimates[1], estimates[2]
             optimiser.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
             optimiser.step()
+            # ----------------------------------------------------------------------------------------- #
+            # EMA model updating
             update_ema_params(ema, model)
             mean_loss.append(loss.data.cpu())
             if epoch % 50 == 0 and step == 0:
                 row_size = min(8, args['Batch_Size'])
-                training_outputs(diffusion, x, eps_t, noisy_latent, epoch, row_size,
+                training_outputs(diffusion,
+                                 x,
+                                 unet_estimate_noise, noisy_latent, epoch, row_size,
                                  save_imgs=args['save_imgs'], # true
                                  save_vids=args['save_vids'], # true
                                  ema=ema, args=args)
@@ -243,7 +261,7 @@ def main(args) :
         if epoch % 1000 == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-
+    """
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
