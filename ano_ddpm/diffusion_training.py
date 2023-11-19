@@ -207,7 +207,11 @@ def main(args) :
             x = data["image"].to(device)  # batch, channel, w, h
             first_noise = diffusion.check_noise(args, x)
             first_noise = torch_transforms.ToPILImage()(first_noise.squeeze(0))
-    first_noise.save('first_noise.png')
+            random_noise = torch.randn_like(x)[0]
+            random_noise = torch_transforms.ToPILImage()(random_noise.squeeze(0))
+    first_noise.save('simplex_noise.png')
+    random_noise.save('gaussian_noise.png')
+
     """ 
     for epoch in tqdm_epoch:
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=300)
