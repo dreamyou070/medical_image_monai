@@ -1,4 +1,4 @@
-{"img_size": [128,128],
+{"img_size": [64,64],
   "Batch_Size": 32,
   "EPOCHS": 4000,
   "T": 1000,
