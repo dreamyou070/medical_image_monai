@@ -61,9 +61,9 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
         temp = diffusion.sample_p(ema, x_t, t)
 
         # 4)
-        real_images = x[:num_images, ...].cpu()
-        sample_images = temp["sample"][:num_images, ...].cpu()
-        pred_images = temp["pred_x_0"][:num_images, ...].cpu()
+        real_images = x[:num_images, ...].cpu().permute(0,1,3,2)
+        sample_images = temp["sample"][:num_images, ...].cpu().permute(0,1,3,2)
+        pred_images = temp["pred_x_0"][:num_images, ...].cpu().permute(0,1,3,2)
         print(f'real_images : {real_images.shape}')
         out = torch.cat((real_images,sample_images,pred_images))
         print(f'out : {out.shape}')
