@@ -170,7 +170,7 @@ def main(args) :
     print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(),
                             lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
-    """
+
     print(f'\n step 6. training')
     start_epoch = args.start_epoch
     train_epoch = args.train_epochs
@@ -226,7 +226,7 @@ def main(args) :
         if epoch % 1000 == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-    """
+
 
 if __name__ == '__main__':
 
