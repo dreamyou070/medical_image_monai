@@ -38,8 +38,11 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     'loss':                 loss,},
             os.path.join(model_save_base_dir, f'diff-params-ARGS={args["arg_num"]}_diff_epoch={epoch}.pt'))
 def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
-                     save_imgs=False, save_vids=False,):
-
+                     save_imgs=False, save_vids=False,is_train_data=True):
+    if is_train_data :
+        train_data = 'true'
+    else :
+        train_data = 'false'
     video_save_dir = os.path.join(args.experiment_dir, 'diffusion-videos')
     image_save_dir = os.path.join(args.experiment_dir, 'diffusion-training-images')
     os.makedirs(video_save_dir, exist_ok=True)
@@ -62,14 +65,14 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
         sample_images = temp["sample"][:num_images, ...].cpu()
         pred_images = temp["pred_x_0"][:num_images, ...].cpu()
         out = torch.cat((real_images,sample_images,pred_images))
-        plt.title(f'real | sample | prediction x_0 (epoch {epoch})')
+        plt.title(f'real | sample | prediction x_0 (epoch {epoch}, is train? {train_data})')
         plt.rcParams['figure.dpi'] = 100
         plt.grid(False)
         plt.imshow(gridify_output(out, num_images), cmap='gray')
         plt.axis('off')
-        img_save_dir = os.path.join(image_save_dir, f'epoch_{epoch}.png')
+        img_save_dir = os.path.join(image_save_dir, f'epoch_{epoch}_train_{train_data}.png')
         print(f'saving image to {img_save_dir}')
-        loading_image = wandb.Image(plt, caption=f"epoch : {epoch + 1}")
+        loading_image = wandb.Image(plt, caption=f"epoch : {epoch + 1} / is train data? : {train_data}")
         wandb.log({"Unet Generating": loading_image})
         plt.savefig(img_save_dir)
         plt.close('all')
@@ -116,12 +119,13 @@ def main(args) :
     w,h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
     train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                            transforms.EnsureChannelFirstd(keys=["image"]),
-                                           transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
+                                           transforms.ScaleIntensityRanged(keys=["image"],
+                                                                           a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
                                            transforms.RandAffined(keys=["image"],
+                                                                  spatial_size=[w, h], # output image spatial size ...........
                                                                   rotate_range=[(-np.pi / 36, np.pi / 36),(-np.pi / 36, np.pi / 36)],
                                                                   translate_range=[(-1, 1), (-1, 1)],
                                                                   scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-                                                                  spatial_size=[w,h],
                                                                   padding_mode="zeros",
                                                                   prob=0.5, ), ])
     train_ds = Dataset(data=train_datalist, transform=train_transforms)
@@ -135,7 +139,8 @@ def main(args) :
                                          transforms.EnsureChannelFirstd(keys=["image"]),
                                          transforms.ScaleIntensityRanged(keys=["image"],
                                                                          a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
-                                                                         clip=True), ])
+                                                                         clip=True), ],
+                                        transforms.RandAffined(keys=["image"],spatial_size=[w, h],])
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
     test_dataset_loader = DataLoader(val_ds,batch_size=args.batch_size,
                                      shuffle=True, num_workers=4, persistent_workers=True)
@@ -190,32 +195,41 @@ def main(args) :
             # ----------------------------------------------------------------------------------------- #
             # EMA model updating
             update_ema_params(ema, model)
-
             if epoch % 50 == 0 and step == 0:
-                # inference with ema model
-                training_outputs(diffusion, x, unet_estimate_noise, noisy_latent, epoch, args.interence_num,
-                                 save_imgs=args.save_imgs,  # true
-                                 save_vids=args.save_vids,  # true
-                                 ema=ema, args=args)
+                for i, test_data in test_dataset_loader:
+                    if i == 0:
+                        training_outputs(diffusion, x, unet_estimate_noise, noisy_latent, epoch, args.interence_num,
+                                         save_imgs=args.save_imgs,  # true
+                                         save_vids=args.save_vids,  # true
+                                         ema=ema, args=args, is_train_data = True)
+
+                        x = test_data["image"].to(device)
+                        training_outputs(diffusion, x, unet_estimate_noise, noisy_latent, epoch, args.interence_num,
+                                         save_imgs=args.save_imgs,  # true
+                                         save_vids=args.save_vids,  # true
+                                         ema=ema, args=args, is_train_data = False)
         if epoch % 200 == 0:
-            time_taken = time.time() - start_time
-            remaining_epochs = args['EPOCHS'] - epoch
-            time_per_epoch = time_taken / (epoch + 1 - start_epoch)
-            hours = remaining_epochs * time_per_epoch / 3600
-            mins = (hours % 1) * 60
-            hours = int(hours)
-            # ------------------------------------------------------------------------
-            # calculate vlb loss
-            vlb_terms = diffusion.calc_total_vlb(x, model, args)
-            vlb.append(vlb_terms["total_vlb"].mean(dim=-1).cpu().item())
-            print(f"epoch: {epoch}, most recent total VLB: {vlb[-1]} mean total VLB:"
-                  f" {np.mean(vlb):.4f}, "
-                  f"prior vlb: {vlb_terms['prior_vlb'].mean(dim=-1).cpu().item():.2f}, vb: "
-                  f"{torch.mean(vlb_terms['vb'], dim=list(range(2))).cpu().item():.2f}, x_0_mse: "
-                  f"{torch.mean(vlb_terms['x_0_mse'], dim=list(range(2))).cpu().item():.2f}, mse: "
-                  f"{torch.mean(vlb_terms['mse'], dim=list(range(2))).cpu().item():.2f}"
-                  f" time elapsed {int(time_taken / 3600)}:{((time_taken / 3600) % 1) * 60:02.0f}, "
-                  f"est time remaining: {hours}:{mins:02.0f}\r")
+            for i, test_data in test_dataset_loader :
+                if i == 0 :
+                    x = test_data["image"].to(device)
+                    time_taken = time.time() - start_time
+                    remaining_epochs = args['EPOCHS'] - epoch
+                    time_per_epoch = time_taken / (epoch + 1 - args.start_epoch)
+                    hours = remaining_epochs * time_per_epoch / 3600
+                    mins = (hours % 1) * 60
+                    hours = int(hours)
+                    # ------------------------------------------------------------------------
+                    # calculate vlb loss
+                    vlb_terms = diffusion.calc_total_vlb(x, model, args)
+                    vlb.append(vlb_terms["total_vlb"].mean(dim=-1).cpu().item())
+                    print(f"epoch: {epoch}, most recent total VLB: {vlb[-1]} mean total VLB:"
+                          f" {np.mean(vlb):.4f}, "
+                          f"prior vlb: {vlb_terms['prior_vlb'].mean(dim=-1).cpu().item():.2f}, vb: "
+                          f"{torch.mean(vlb_terms['vb'], dim=list(range(2))).cpu().item():.2f}, x_0_mse: "
+                          f"{torch.mean(vlb_terms['x_0_mse'], dim=list(range(2))).cpu().item():.2f}, mse: "
+                          f"{torch.mean(vlb_terms['mse'], dim=list(range(2))).cpu().item():.2f}"
+                          f" time elapsed {int(time_taken / 3600)}:{((time_taken / 3600) % 1) * 60:02.0f}, "
+                          f"est time remaining: {hours}:{mins:02.0f}\r")
         if epoch % 1000 == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)

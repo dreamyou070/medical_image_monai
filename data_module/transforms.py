@@ -20,3 +20,4 @@ def apply_transform(transform: Callable[..., ReturnType],
         return transform(*data, lazy=lazy) if isinstance(transform, LazyTrait) else transform(*data)
     return transform(data, lazy=lazy) if isinstance(transform, LazyTrait) else transform(data)
 
+#transforms.RandAffined

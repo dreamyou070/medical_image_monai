@@ -39,21 +39,9 @@ class RandAffined(RandomizableTransform, MapTransform, InvertibleTransform, Lazy
                  lazy: bool = False,) -> None:
         """
         Args:
-            keys: keys of the corresponding items to be transformed.
             spatial_size: output image spatial size.
-                if `spatial_size` and `self.spatial_size` are not defined, or smaller than 1,
-                the transform will use the spatial size of `img`.
-                if some components of the `spatial_size` are non-positive values, the transform will use the
-                corresponding components of img size. For example, `spatial_size=(32, -1)` will be adapted
-                to `(32, 64)` if the second spatial dimension size of img is `64`.
-            prob: probability of returning a randomized affine grid.
-                defaults to 0.1, with 10% chance returns a randomized grid.
-            rotate_range: angle range in radians. If element `i` is a pair of (min, max) values, then
-                `uniform[-rotate_range[i][0], rotate_range[i][1])` will be used to generate the rotation parameter
-                for the `i`th spatial dimension. If not, `uniform[-rotate_range[i], rotate_range[i])` will be used.
-                This can be altered on a per-dimension basis. E.g., `((0,3), 1, ...)`: for dim0, rotation will be
-                in range `[0, 3]`, and for dim1 `[-1, 1]` will be used. Setting a single value will use `[-x, x]`
-                for dim0 and nothing for the remaining dimensions.
+            rotate_range: angle range in radians.
+
             shear_range: shear range with format matching `rotate_range`, it defines the range to randomly select
                 shearing factors(a tuple of 2 floats for 2D, a tuple of 6 floats for 3D) for affine matrix,
                 take a 3D affine as example::
