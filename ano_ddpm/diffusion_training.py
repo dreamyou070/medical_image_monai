@@ -17,13 +17,34 @@ from monai.utils import first
 from UNet import UNetModel, update_ema_params
 
 torch.cuda.empty_cache()
+
+def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
+
+    model_save_base_dir = os.path.join(args['experiment_dir'], 'diffusion-models')
+    os.makedirs(model_save_base_dir, exist_ok=True)
+
+    if final:
+        torch.save({'n_epoch':              args["EPOCHS"],
+                    'model_state_dict':     unet.state_dict(),
+                    'optimizer_state_dict': optimiser.state_dict(),
+                    "ema":                  ema.state_dict(),
+                    "args":                 args},
+            os.path.join(model_save_base_dir, f'diff-params-ARGS={args["arg_num"]}_params-final.pt'))
+    else:
+        torch.save({'n_epoch':              epoch,
+                    'model_state_dict':     unet.state_dict(),
+                    'optimizer_state_dict': optimiser.state_dict(),
+                    "args":                 args,
+                    "ema":                  ema.state_dict(),
+                    'loss':                 loss,},
+            os.path.join(model_save_base_dir, f'diff-params-ARGS={args["arg_num"]}_diff_epoch={epoch}.pt'))
 def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
-                     save_imgs=False, save_vids=False):
-    try:
-        os.makedirs(f'./diffusion-videos/ARGS={args["arg_num"]}')
-        os.makedirs(f'./diffusion-training-images/ARGS={args["arg_num"]}')
-    except OSError:
-        pass
+                     save_imgs=False, save_vids=False,):
+    video_save_dir = os.path.join(args['experiment_dir'], 'diffusion-videos')
+    image_save_dir = os.path.join(args['experiment_dir'], 'diffusion-training-images')
+    os.makedirs(video_save_dir, exist_ok=True)
+    os.makedirs(image_save_dir, exist_ok=True)
+
     if save_imgs:
         if epoch % 100 == 0 or epoch < 2:
             # for a given t, output x_0, & prediction of x_(t-1), and x_0
@@ -32,19 +53,16 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
             x_t = diffusion.sample_q(x, t, noise)
             temp = diffusion.sample_p(ema, x_t, t)
             out = torch.cat((x[:row_size, ...].cpu(), temp["sample"][:row_size, ...].cpu(),
-                     temp["pred_x_0"][:row_size, ...].cpu()))
+                             temp["pred_x_0"][:row_size, ...].cpu()))
             plt.title(f'real,sample,prediction x_0-{epoch}epoch')
         else:
-            # for a given t, output x_0, x_t, & prediction of noise in x_t & MSE
-            out = torch.cat(
-                    (x[:row_size, ...].cpu(), noisy[:row_size, ...].cpu(), est[:row_size, ...].cpu(),
-                     (est - noisy).square().cpu()[:row_size, ...])
-                    )
+            out = torch.cat((x[:row_size, ...].cpu(), noisy[:row_size, ...].cpu(), est[:row_size, ...].cpu(),
+                             (est - noisy).square().cpu()[:row_size, ...]))
             plt.title(f'real,noisy,noise prediction,mse-{epoch}epoch')
         plt.rcParams['figure.dpi'] = 150
         plt.grid(False)
         plt.imshow(gridify_output(out, row_size), cmap='gray')
-        img_save_dir = f'./diffusion-training-images/ARGS={args["arg_num"]}/EPOCH={epoch}.png'
+        img_save_dir = os.path.join(image_save_dir, f'ARGS={args["arg_num"]}_EPOCH={epoch}.png')
         print(f'saving image to {img_save_dir}')
         plt.savefig(img_save_dir)
         plt.clf()
@@ -58,8 +76,8 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
                 out = diffusion.forward_backward(ema, x, "half", args['sample_distance'] // 4, denoise_fn="noise_fn")
             imgs = [[ax.imshow(gridify_output(x, row_size), animated=True)] for x in out]
             ani = animation.ArtistAnimation(fig, imgs, interval=50, blit=True,repeat_delay=1000)
-
-            ani.save(f'./diffusion-videos/ARGS={args["arg_num"]}/sample-EPOCH={epoch}.mp4')
+            ani_save_dir = os.path.join(video_save_dir, f'ARGS={args["arg_num"]}_EPOCH={epoch}.mp4')
+            ani.save(ani_save_dir)
 
     plt.close('all')
 
@@ -232,11 +250,6 @@ def main(args) :
                                  save_imgs=args['save_imgs'], # true
                                  save_vids=args['save_vids'], # true
                                  ema=ema, args=args)
-
-
-
-
-
         losses.append(np.mean(mean_loss))
         if epoch % 200 == 0:
             time_taken = time.time() - start_time
@@ -256,20 +269,9 @@ def main(args) :
                 f"{torch.mean(vlb_terms['mse'], dim=list(range(2))).cpu().item():.2f}"
                 f" time elapsed {int(time_taken / 3600)}:{((time_taken / 3600) % 1) * 60:02.0f}, "
                 f"est time remaining: {hours}:{mins:02.0f}\r")            
-    #    if epoch % 1000 == 0 and epoch >= 0:
-    #        save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
-    #save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-    #evaluation.testing(testing_dataset_loader, diffusion, ema=ema, args=args, model=model)
-
-    # 
-    # if resuming, loaded model is attached to the dictionary
-
-    # load, pass args
-    # remove checkpoints after final_param is saved (due to storage requirements)
-    #for file_remove in os.listdir(f'./model/diff-params-ARGS={args["arg_num"]}/checkpoint'):
-    #    os.remove(os.path.join(f'./model/diff-params-ARGS={args["arg_num"]}/checkpoint', file_remove))
-    #os.removedirs(f'./model/diff-params-ARGS={args["arg_num"]}/checkpoint')
-
+        if epoch % 1000 == 0 and epoch >= 0:
+            save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
+    save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
 
 if __name__ == '__main__':
 
