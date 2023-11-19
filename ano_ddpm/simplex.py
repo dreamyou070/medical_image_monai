@@ -102,13 +102,10 @@ class Simplex_CLASS:
             x_ = x / frequency
             y_ = y / frequency
             t_ = T / frequency # batchwise all different timestep
-            print(f't_ : {t_}')
             # should change to 1
             base_noise = self.noise3array(x / frequency,
                                           y / frequency,
                                           T / frequency)
-            import time
-            time.sleep(10)
             noise += amplitude * self.noise3array(x / frequency, y / frequency, T / frequency)
             frequency /= 2
             amplitude *= persistence
