@@ -305,6 +305,7 @@ def main(args) :
             else:
                 x = data["image"]
                 x = x.to(device) # batch, channel, w, h
+            # GaussianDiffusionModel.p_loss
             loss, estimates = diffusion.p_loss(model, x, args)
             noisy, est = estimates[1], estimates[2]
             optimiser.zero_grad()
