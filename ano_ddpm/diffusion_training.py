@@ -206,7 +206,8 @@ def main(args) :
         if step == 0 :
             x = data["image"].to(device)  # batch, channel, w, h
             first_noise = diffusion.check_noise(args, x)
-    print(f'first_noise : {first_noise.shape}')
+            first_noise = torch_transforms.ToPILImage()(first_noise.squeeze(0))
+    first_noise.save('first_noise.png')
     """ 
     for epoch in tqdm_epoch:
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=300)
