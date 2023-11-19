@@ -163,9 +163,10 @@ def main(args) :
     diffusion = GaussianDiffusionModel([w,h], #  [128, 128]
                                        betas,            #  1
                                        img_channels=in_channels,
+                                       loss_type=args.loss_type,  # l2
                                        loss_weight=args.loss_weight, # none
-                                       loss_type=args.loss_type,     # l2
                                        noise= args.noise_fn,)        # 1
+
     print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(),
                             lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
