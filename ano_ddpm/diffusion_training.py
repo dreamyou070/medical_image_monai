@@ -356,6 +356,6 @@ if __name__ == '__main__':
     args['arg_num'] = file[4:-5]
     args['device'] = 'cuda:0'
     args['seed'] = 1
-    args['Batch_Size'] = 64
+    args['Batch_Size'] = 1
     args = defaultdict_from_json(args)
     main(args)
