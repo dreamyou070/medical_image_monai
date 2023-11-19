@@ -87,7 +87,7 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
                 out = diffusion.forward_backward(ema, x, "half", args.sample_distance // 4, denoise_fn="noise_fn")
             imgs = [[ax.imshow(gridify_output(x, row_size), animated=True)] for x in out]
             ani = animation.ArtistAnimation(fig, imgs, interval=50, blit=True,repeat_delay=1000)
-            ani_save_dir = os.path.join(video_save_dir, f'ARGS={args["arg_num"]}_EPOCH={epoch}.mp4')
+            ani_save_dir = os.path.join(video_save_dir, f'EPOCH={epoch}.mp4')
             ani.save(ani_save_dir)
 
     plt.close('all')
