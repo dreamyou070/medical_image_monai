@@ -196,16 +196,13 @@ class GaussianDiffusionModel:
         """ calculate total loss """
         if self.loss_weight == "none":
             if args["train_start"]:
-                t = torch.randint(
-                    0, min(args["sample_distance"], self.num_timesteps), (x_0.shape[0],),
-                    device=x_0.device
-                )
+                t = torch.randint(0, min(args["sample_distance"], self.num_timesteps), (x_0.shape[0],),
+                                  device=x_0.device)
             else:
                 t = torch.randint(0, self.num_timesteps, (x_0.shape[0],), device=x_0.device)
             weights = 1
         else:
             t, weights = self.sample_t_with_weights(x_0.shape[0], x_0.device)
-
         loss, x_t, eps_t = self.calc_loss(model, x_0, t)
         loss = ((loss["loss"] * weights).mean(), (loss, x_t, eps_t))
         return loss
@@ -290,6 +287,7 @@ class GaussianDiffusionModel:
 
     # -----------------------------------------------------------------------------------------------------------------
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
+        # -------------------------------------------------------------------------------------------------------------
         out = self.p_mean_variance(model, x_t, t)
         # noise = torch.randn_like(x_t)
         if type(denoise_fn) == str:
@@ -325,9 +323,8 @@ class GaussianDiffusionModel:
             estimate_noise = model(x_t, t)
         # fixed model variance defined as \hat{\beta}_t - could add learned parameter
         model_var = np.append(self.posterior_variance[1], self.betas[1:])
-        model_var = extract(model_var, t, x_t.shape, x_t.device)
-
         model_logvar = np.log(model_var)
+        model_var = extract(model_var, t, x_t.shape, x_t.device)
         model_logvar = extract(model_logvar, t, x_t.shape, x_t.device)
 
         pred_x_0 = self.predict_x_0_from_eps(x_t, t, estimate_noise).clamp(-1, 1)

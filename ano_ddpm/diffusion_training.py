@@ -174,16 +174,13 @@ def main(args) :
                                        loss_type=args['loss-type'],     # l2
                                        noise= args["noise_fn"],          # none
                                        img_channels=in_channels)        # 1
-
-
     if resume:
         if "unet" in resume:
             model.load_state_dict(resume["unet"])
         else:
             model.load_state_dict(resume["ema"])
-        ema = UNetModel(args['img_size'][0], args['base_channels'], channel_mults=args['channel_mults'],
-                        dropout=args["dropout"], n_heads=args["num_heads"], n_head_channels=args["num_head_channels"],
-                        in_channels=in_channels)
+        ema = UNetModel(args['img_size'][0], args['base_channels'], channel_mults=args['channel_mults'],dropout=args["dropout"],
+                        n_heads=args["num_heads"], n_head_channels=args["num_head_channels"],in_channels=in_channels)
         ema.load_state_dict(resume["ema"])
         start_epoch = resume['n_epoch']
     else:
