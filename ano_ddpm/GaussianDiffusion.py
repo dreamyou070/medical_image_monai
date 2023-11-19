@@ -208,6 +208,7 @@ class GaussianDiffusionModel:
     def calc_loss(self, model, x_0, t):
 
         noise = self.noise_fn(x_0, t).float()
+        print(f'random noise : {noise.shape}')
 
         x_t = self.sample_q(x_0, t, noise)
         estimate_noise = model(x_t, t)

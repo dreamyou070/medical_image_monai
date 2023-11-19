@@ -107,22 +107,7 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
                                     caption=f"epoch : {epoch + 1}")
         wandb.log({"train_data": loading_image})
 
-    """
-    if save_vids:
-        fig, ax = plt.subplots()
-        if epoch % 500 == 0 or epoch < 2 :
-            plt.rcParams['figure.dpi'] = 200
-            if epoch % 1000 == 0:
-                out = diffusion.forward_backward(ema, x, "half", args.sample_distance // 2, denoise_fn="noise_fn")
-            else:
-                out = diffusion.forward_backward(ema, x, "half", args.sample_distance // 4, denoise_fn="noise_fn")
-            imgs = [[ax.imshow(gridify_output(x, num_images), animated=True)] for x in out]
-            ani = animation.ArtistAnimation(fig, imgs, interval=50, blit=True,repeat_delay=1000)
-            ani_save_dir = os.path.join(video_save_dir, f'EPOCH={epoch}.mp4')
-            ani.save(ani_save_dir)
 
-    plt.close('all')
-    """
 
 def main(args) :
 
@@ -221,7 +206,6 @@ def main(args) :
         progress_bar.set_description(f"Epoch {epoch}")
         for step, data in progress_bar:
             x = data["image"].to(device)  # batch, channel, w, h
-            # GaussianDiffusionModel.p_loss
             loss, estimates = diffusion.p_loss(model, x, args)
             wandb.log({"loss": loss.item()})
             noisy_latent, unet_estimate_noise = estimates[1], estimates[2]
