@@ -79,6 +79,9 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
 
         merge_images = []
         for img_index in range(num_images):
+            print(f'img_index = {img_index}')
+            print(f'real_images.shape = {real_images.shape}')
+            time.sleep(100)
 
             real_images = real_images[img_index,:,:].squeeze()
             real_images = real_images.unsqueeze(0)
