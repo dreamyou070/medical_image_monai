@@ -60,7 +60,8 @@ def get_transform(image_size):
 
     val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                          transforms.EnsureChannelFirstd(keys=["image"]),
-                                         transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0,
+                                         transforms.ScaleIntensityRanged(keys=["image"],
+                                                                         a_min=0.0, a_max=255.0,
                                                                          b_min=0.0, b_max=1.0, clip=True), ])
     return train_transforms, val_transforms
 
@@ -117,11 +118,10 @@ class SYDataset_masking(_TorchDataset):
         normal = True
         if criterion > 0 :
             normal = False
-        resized_masK_pil = mask_pil.resize((int(self.w/8) - 2, int(self.h/8) - 2) )
-        resized_masK_np = np.array(resized_masK_pil)
+        masK_np = np.array(mask_pil.resize((int(self.w), int(self.h))))
         data_dict['image_info'] = self.data_transform(index)
-        data_dict['normal'] = int(normal)
-        data_dict['mask'] = 1-torch.from_numpy(resized_masK_np)
+        data_dict['normal'] = int(normal) # normal = 1, abnormal = 0
+        data_dict['mask'] = 1-torch.from_numpy(masK_np)
         return data_dict
 
 class SYDataset(_TorchDataset):
