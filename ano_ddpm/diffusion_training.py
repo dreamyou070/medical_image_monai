@@ -17,7 +17,8 @@ from monai.utils import first
 from UNet import UNetModel, update_ema_params
 
 torch.cuda.empty_cache()
-def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args, save_imgs=False, save_vids=False):
+def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
+                     save_imgs=False, save_vids=False):
     try:
         os.makedirs(f'./diffusion-videos/ARGS={args["arg_num"]}')
         os.makedirs(f'./diffusion-training-images/ARGS={args["arg_num"]}')
@@ -30,10 +31,8 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args, save_
             t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=x.device)
             x_t = diffusion.sample_q(x, t, noise)
             temp = diffusion.sample_p(ema, x_t, t)
-            out = torch.cat(
-                    (x[:row_size, ...].cpu(), temp["sample"][:row_size, ...].cpu(),
-                     temp["pred_x_0"][:row_size, ...].cpu())
-                    )
+            out = torch.cat((x[:row_size, ...].cpu(), temp["sample"][:row_size, ...].cpu(),
+                     temp["pred_x_0"][:row_size, ...].cpu()))
             plt.title(f'real,sample,prediction x_0-{epoch}epoch')
         else:
             # for a given t, output x_0, x_t, & prediction of noise in x_t & MSE
@@ -45,8 +44,9 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args, save_
         plt.rcParams['figure.dpi'] = 150
         plt.grid(False)
         plt.imshow(gridify_output(out, row_size), cmap='gray')
-
-        plt.savefig(f'./diffusion-training-images/ARGS={args["arg_num"]}/EPOCH={epoch}.png')
+        img_save_dir = f'./diffusion-training-images/ARGS={args["arg_num"]}/EPOCH={epoch}.png'
+        print(f'saving image to {img_save_dir}')
+        plt.savefig(img_save_dir)
         plt.clf()
     if save_vids:
         fig, ax = plt.subplots()
@@ -221,8 +221,10 @@ def main(args) :
             mean_loss.append(loss.data.cpu())
             if epoch % 50 == 0 and step == 0:
                 row_size = min(8, args['Batch_Size'])
-                training_outputs(diffusion, x, est, noisy, epoch, row_size, save_imgs=args['save_imgs'],
-                                 save_vids=args['save_vids'], ema=ema, args=args)
+                training_outputs(diffusion, x, est, noisy, epoch, row_size,
+                                 save_imgs=args['save_imgs'], # true
+                                 save_vids=args['save_vids'], # true
+                                 ema=ema, args=args)
         losses.append(np.mean(mean_loss))
         if epoch % 200 == 0:
             time_taken = time.time() - start_time
