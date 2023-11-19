@@ -66,8 +66,15 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
 def main(args) :
 
     print(f'\n step 1. setting')
+    print(f' (1.1) base setting')
     device = args['device']
     seed(args['seed'])
+    print(f' (1.2) saving configuration')
+    experiment_dir = args['experiment_dir']
+    os.makedirs(experiment_dir, exist_ok=True)
+    with open(os.path.join(experiment_dir, "config.txt"), "w") as f:
+        for key in sorted(args.keys()):
+            f.write(f"{key}: {args[key]}\n")
 
     print(f'\n step 2. check file and the argument')
     print(f' - args : {args}')
@@ -225,6 +232,11 @@ def main(args) :
                                  save_imgs=args['save_imgs'], # true
                                  save_vids=args['save_vids'], # true
                                  ema=ema, args=args)
+
+
+
+
+
         losses.append(np.mean(mean_loss))
         if epoch % 200 == 0:
             time_taken = time.time() - start_time
@@ -262,17 +274,20 @@ def main(args) :
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    ROOT_DIR = "../ano_ddpm/"
+    parser.add_argument('--experiment_dir', type=str,
+                        default = f'/data7/sooyeon/medical_image/anoddpm_result/20231119_dental_test')
+    parser_argument = vars(parser.parse_args())
+
+    file_dir = f'/data7/sooyeon/medical_image/anoddpm_result/test_args/args11.joson'
     # sys.argv = ['C:\\Users\\hpuser\\PycharmProjects\\medical_image\\AnoDDPM\\diffusion_training.py']
-    sys.argv.append('args11.json')
+    sys.argv.append(file_dir)
     files = sys.argv[1:]
-    # resume from final or resume from most recent checkpoint -> ran from specific slurm script?
     resume = 0
-    # allow different arg inputs ie 25 or args15 which are converted into argsNUM.json
     file = files[0]
-    # load the json args
-    with open(f'{ROOT_DIR}test_args/{file}', 'r') as f:
+    with open(file, 'r') as f:
         args = json.load(f)
     args = defaultdict_from_json(args)
     args['resume'] = resume
+    args.update(parser_argument)
     main(args)
+
