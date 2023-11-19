@@ -85,24 +85,20 @@ class Simplex_CLASS:
 
         assert len(shape) == 2
         # noise = [1, w,h]
-        batch = T.shape[0]
-        noise = np.zeros((batch, *shape))
+        noise = np.zeros((1, *shape))
         # y = [0, ..., w], x = [0, ..., h]
         y, x = [np.arange(0, end) for end in shape]
         amplitude = 1
         for _ in range(octaves):
-            print(f'octave : {_} | amplitude : {amplitude} | frequency : {frequency}')
-            # x/frequency = [0, ...., w/64]
-            # y/frequency = [0, ...., w/64]
-            # T/frequency = ?
             x_ = x / frequency
             y_ = y / frequency
             t_ = T / frequency
-            noise += amplitude * self.noise3array(x / frequency,
-                                                  y / frequency,
-                                                  T / frequency)
+            base_noise = self.noise3array(x / frequency, y / frequency, T / frequency)
+            #print(f'base_nosie (Batch, 128, 128): {base_noise.shape}}')
+            noise += amplitude * base_noise
             frequency /= 2
             amplitude *= persistence
+        print(f'in rand_3d_fixed_T_octaves (1, W,H) : {noise.shape}')
         return noise
 
 
@@ -847,12 +843,12 @@ def _noise3(x, y, z, perm, perm_grad_index3):
 def _noise3a(X, Y, Z, perm, perm_grad_index3):
     # Z.size = 1
     noise = np.zeros((Z.size, Y.size, X.size), dtype=np.double)
-    print(f'in _noise3a, Z.size = {Z.size}')
     for z in prange(Z.size):
         # z is timestep
         for y in prange(Y.size):
             for x in prange(X.size):
                 noise[z, y, x] = _noise3(X[x], Y[y], Z[z], perm, perm_grad_index3)
+    print(f'in _noise3a, noise (Batch, W=128, H=128): {noise.shape}')
     return noise
 
 
