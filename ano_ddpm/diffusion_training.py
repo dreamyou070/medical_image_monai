@@ -250,7 +250,7 @@ if __name__ == '__main__':
     # step 3. model
     parser.add_argument('--in_channels', type=int, default = 1)
     parser.add_argument('--base_channels', type=int, default = 256)
-    parser.add_argument('--channel_mults', type=int, default = '1,2,3,4')
+    parser.add_argument('--channel_mults', type=str, default = '1,2,3,4')
     parser.add_argument('--dropout', type=float, default = 0.0)
     parser.add_argument('--num_heads', type=int, default = 2)
     parser.add_argument('--num_head_channels', type=int, default = -1)
