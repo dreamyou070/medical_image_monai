@@ -103,8 +103,9 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
         img_save_dir = os.path.join(image_save_dir, f'epoch_{epoch}_{train_data}.png')
         new_image.save(img_save_dir)
         print(f'saving image to {img_save_dir}')
-        loading_image = wandb.Image(new_image, caption=f"epoch : {epoch + 1} / {train_data}")
-        wandb.log({"Unet Generating": loading_image})
+        loading_image = wandb.Image(new_image,
+                                    caption=f"epoch : {epoch + 1}")
+        wandb.log({"train_data": loading_image})
 
     """
     if save_vids:
