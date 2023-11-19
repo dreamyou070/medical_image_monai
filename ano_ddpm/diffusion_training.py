@@ -260,7 +260,7 @@ if __name__ == '__main__':
     # (3) diffusion
     parser.add_argument('--loss_weight', type=float)
     parser.add_argument('--loss_type', type=str, default='l2')
-    parser.add_argument('--noise_fn', type=int, default='simplex')
+    parser.add_argument('--noise_fn', type=str, default='simplex')
 
     # step 5. optimizer
     parser.add_argument('--lr', type=float, default=1e-4)
