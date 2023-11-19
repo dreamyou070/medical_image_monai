@@ -73,7 +73,7 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
         plt.grid(False)
         plt.imshow(gridify_output(out, row_size), cmap='gray')
         plt.axis('off')
-        img_save_dir = os.path.join(image_save_dir, f'ARGS={args["arg_num"]}_EPOCH={epoch}.png')
+        img_save_dir = os.path.join(image_save_dir, f'EPOCH={epoch}.png')
         print(f'saving image to {img_save_dir}')
         plt.savefig(img_save_dir)
         plt.clf()
