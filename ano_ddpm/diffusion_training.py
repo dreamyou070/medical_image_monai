@@ -40,8 +40,8 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
 def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
                      save_imgs=False, save_vids=False,):
 
-    video_save_dir = os.path.join(args['experiment_dir'], 'diffusion-videos')
-    image_save_dir = os.path.join(args['experiment_dir'], 'diffusion-training-images')
+    video_save_dir = os.path.join(args.experiment_dir, 'diffusion-videos')
+    image_save_dir = os.path.join(args.experiment_dir, 'diffusion-training-images')
     os.makedirs(video_save_dir, exist_ok=True)
     os.makedirs(image_save_dir, exist_ok=True)
 
@@ -82,9 +82,9 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
         if epoch % 500 == 0 or epoch < 2 :
             plt.rcParams['figure.dpi'] = 200
             if epoch % 1000 == 0:
-                out = diffusion.forward_backward(ema, x, "half", args['sample_distance'] // 2, denoise_fn="noise_fn")
+                out = diffusion.forward_backward(ema, x, "half", args.sample_distance // 2, denoise_fn="noise_fn")
             else:
-                out = diffusion.forward_backward(ema, x, "half", args['sample_distance'] // 4, denoise_fn="noise_fn")
+                out = diffusion.forward_backward(ema, x, "half", args.sample_distance // 4, denoise_fn="noise_fn")
             imgs = [[ax.imshow(gridify_output(x, row_size), animated=True)] for x in out]
             ani = animation.ArtistAnimation(fig, imgs, interval=50, blit=True,repeat_delay=1000)
             ani_save_dir = os.path.join(video_save_dir, f'ARGS={args["arg_num"]}_EPOCH={epoch}.mp4')
