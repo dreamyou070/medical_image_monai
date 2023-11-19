@@ -1,29 +1,3 @@
-"""
-def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
-
-    if final:
-        torch.save(
-                {
-                    'n_epoch':              args["EPOCHS"],
-                    'model_state_dict':     unet.state_dict(),
-                    'optimizer_state_dict': optimiser.state_dict(),
-                    "ema":                  ema.state_dict(),
-                    "args":                 args
-                    # 'loss': LOSS,
-                    }, f'{ROOT_DIR}model/diff-params-ARGS={args["arg_num"]}/params-final.pt'
-                )
-    else:
-        torch.save(
-                {
-                    'n_epoch':              epoch,
-                    'model_state_dict':     unet.state_dict(),
-                    'optimizer_state_dict': optimiser.state_dict(),
-                    "args":                 args,
-                    "ema":                  ema.state_dict(),
-                    'loss':                 loss,
-                    }, f'{ROOT_DIR}model/diff-params-ARGS={args["arg_num"]}/checkpoint/diff_epoch={epoch}.pt'
-                )
-"""
 import argparse
 import collections
 import copy
@@ -33,7 +7,6 @@ from matplotlib import animation
 import time
 from random import seed
 from torch import optim
-import dataset
 from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule
 from helpers import *
 from tqdm import tqdm
@@ -96,21 +69,9 @@ def main(args) :
     device = args['device']
     seed(args['seed'])
 
-    print(f'\n step 2. make arg specific directories')
-    for i in [f'./model/diff-params-ARGS={args["arg_num"]}',
-              f'./model/diff-params-ARGS={args["arg_num"]}/checkpoint',
-              f'./diffusion-videos/ARGS={args["arg_num"]}',
-              f'./diffusion-training-images/ARGS={args["arg_num"]}']:
-        try:
-            os.makedirs(i)
-        except OSError:
-            pass
-
-    print(f'\n step 3. check file and the argument')
-    #print(f' - file : {file}')
+    print(f'\n step 2. check file and the argument')
     print(f' - args : {args}')
-    if args["channels"] != "":
-        in_channels = args["channels"]
+    in_channels = args["channels"]
 
     """
     print(f'\n step 4. dataset')
@@ -138,10 +99,7 @@ def main(args) :
         training_dataset_loader = dataset.init_dataset_loader(training_dataset, args)
         testing_dataset_loader = dataset.init_dataset_loader(testing_dataset, args)
     """
-
-
-
-    print(f' step 4. data')
+    print(f'\n step 3. dataset and dataloatder')
     train_datas = os.listdir(args['train_data_folder'])
     val_datas = os.listdir(args['val_data_folder'])
     train_datalist = [{"image": os.path.join(args['train_data_folder'], train_data)} for train_data in train_datas]
@@ -169,13 +127,12 @@ def main(args) :
                                                                          a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
                                                                          clip=True), ])
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
-    test_dataset_loader = DataLoader(val_ds,
-                                     batch_size=args['Batch_Size'],
+    test_dataset_loader = DataLoader(val_ds,batch_size=args['Batch_Size'],
                                      shuffle=True, num_workers=4, persistent_workers=True)
 
     print(f'\n step 5. resume or not')
     loaded_model = {}
-    resume = 0
+    resume = args['resume']
     if resume:
         if resume == 1:
             checkpoints = os.listdir(f'model/diff-params-ARGS={args["arg_num"]}/checkpoint')
@@ -192,7 +149,6 @@ def main(args) :
             loaded_model = torch.load(file_dir, map_location=device)
 
     print(f'\n step 6. model')
-    in_channels = 1
     if args["dataset"].lower() == "cifar" or args["dataset"].lower() == "leather":
         in_channels = 3
     if args["channels"] != "":
@@ -206,7 +162,8 @@ def main(args) :
                       n_head_channels=args["num_head_channels"],
                       in_channels=in_channels)
     # small linear schedule (1000 time step , linear schaduler)
-    betas = get_beta_schedule(args['T'], args['beta_schedule'])
+    betas = get_beta_schedule(args['T'],
+                              args['beta_schedule'])
     diffusion = GaussianDiffusionModel(args['img_size'], #  [128, 128]
                                        betas,            #  1
                                        loss_weight=args['loss_weight'], # none
@@ -232,7 +189,8 @@ def main(args) :
 
     print(f'\n step 7. optimizer')
     optimiser = optim.AdamW(model.parameters(),
-                            lr=args['lr'], weight_decay=args['weight_decay'], betas=(0.9, 0.999))
+                            lr=args['lr'],
+                            weight_decay=args['weight_decay'], betas=(0.9, 0.999))
     if resume:
         optimiser.load_state_dict(resume["optimizer_state_dict"])
     del resume
@@ -266,6 +224,7 @@ def main(args) :
                 print()
                 training_outputs(diffusion, x, est, noisy, epoch, row_size, save_imgs=args['save_imgs'],
                                  save_vids=args['save_vids'], ema=ema, args=args)
+            del data
 
         losses.append(np.mean(mean_loss))
         if epoch % 200 == 0:
@@ -296,15 +255,6 @@ def main(args) :
     # if resuming, loaded model is attached to the dictionary
 
     # load, pass args
-    
-    
-    
-    
-
-
-    
-    
-
     # remove checkpoints after final_param is saved (due to storage requirements)
     #for file_remove in os.listdir(f'./model/diff-params-ARGS={args["arg_num"]}/checkpoint'):
     #    os.remove(os.path.join(f'./model/diff-params-ARGS={args["arg_num"]}/checkpoint', file_remove))
@@ -315,47 +265,16 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     ROOT_DIR = "../ano_ddpm/"
-    for i in ['./model/', "./diffusion-videos/", './diffusion-training-images/']:
-        try:
-            os.makedirs(i)
-        except OSError:
-            pass
-    # read file from argument
     # sys.argv = ['C:\\Users\\hpuser\\PycharmProjects\\medical_image\\AnoDDPM\\diffusion_training.py']
     sys.argv.append('args11.json')
-    if len(sys.argv[1:]) > 0:
-        files = sys.argv[1:]
-    else:
-        raise ValueError("Missing file argument")
+    files = sys.argv[1:]
     # resume from final or resume from most recent checkpoint -> ran from specific slurm script?
     resume = 0
-    if files[0] == "RESUME_RECENT":
-        resume = 1
-        files = files[1:]
-        if len(files) == 0:
-            raise ValueError("Missing file argument")
-    elif files[0] == "RESUME_FINAL":
-        resume = 2
-        files = files[1:]
-        if len(files) == 0:
-            raise ValueError("Missing file argument")
-
     # allow different arg inputs ie 25 or args15 which are converted into argsNUM.json
     file = files[0]
-    if file.isnumeric():
-        file = f"args{file}.json"
-    elif file[:4] == "args" and file[-5:] == ".json":
-        pass
-    elif file[:4] == "args":
-        file = f"args{file[4:]}.json"
-    else:
-        raise ValueError("File Argument is not a json file")
     # load the json args
     with open(f'{ROOT_DIR}test_args/{file}', 'r') as f:
         args = json.load(f)
-    args['arg_num'] = file[4:-5]
-    args['device'] = 'cuda:0'
-    args['seed'] = 1
-    args['Batch_Size'] = 1
     args = defaultdict_from_json(args)
+    args['resume'] = resume
     main(args)
