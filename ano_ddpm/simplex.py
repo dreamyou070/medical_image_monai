@@ -37,7 +37,6 @@ class Simplex_CLASS:
         # make noise array
         # Z.size = 1
         noise = np.zeros((Z.size, Y.size, X.size), dtype=np.double)
-
         for z in prange(Z.size):
             for y in prange(Y.size):
                 for x in prange(X.size):
@@ -94,14 +93,15 @@ class Simplex_CLASS:
 
         assert len(shape) == 2
         # noise = [1, w,h]
-        noise = np.zeros((1, *shape))
+        batch = T.shape[0]
+        noise = np.zeros((batch, *shape))
         # y = [0, ..., w], x = [0, ..., h]
         y, x = [np.arange(0, end) for end in shape]
         amplitude = 1
         for _ in range(octaves):
             x_ = x / frequency
             y_ = y / frequency
-            t_ = T / frequency
+            t_ = T / frequency # batchwise all different timestep
             print(f't_ : {t_}')
             # should change to 1
             base_noise = self.noise3array(x / frequency,

@@ -132,7 +132,7 @@ def generate_simplex_noise(Simplex_instance,
         # 1D tensor, length = Batch
         x_shape = x.shape[-2:]
         print(f't.detach().cpu().numpy() : {t.detach().cpu().numpy()}')
-        
+
         d2_np_noise = Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:],
                                                                t.detach().cpu().numpy(),
                                                                octave,  # 6
@@ -141,8 +141,9 @@ def generate_simplex_noise(Simplex_instance,
 
         d2_noise = torch.from_numpy(d2_np_noise).to(x.device)
         print(f'd2_noise (Batch, W, H) : {d2_noise.shape}')
-        d3_noise = torch.unsqueeze(d2_noise,0)
-        expand_noise = d3_noise.repeat(x.shape[0], 1, 1, 1)
+        d3_noise = torch.unsqueeze(d2_noise,1)
+        #expand_noise = d3_noise.repeat(x.shape[0], 1, 1, 1)
+        expand_noise = d3_noise
         noise[:, i, ...] = expand_noise
     return noise
 
