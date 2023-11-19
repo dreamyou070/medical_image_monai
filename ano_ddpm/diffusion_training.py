@@ -224,8 +224,7 @@ def main(args) :
                 print(f'row_size : {row_size}')
                 training_outputs(diffusion, x, est, noisy, epoch, row_size, save_imgs=args['save_imgs'],
                                  save_vids=args['save_vids'], ema=ema, args=args)
-            del data
-
+            del data, loss, estimates, noisy, est
         losses.append(np.mean(mean_loss))
         if epoch % 200 == 0:
             time_taken = time.time() - start_time
@@ -234,7 +233,6 @@ def main(args) :
             hours = remaining_epochs * time_per_epoch / 3600
             mins = (hours % 1) * 60
             hours = int(hours)
-
             vlb_terms = diffusion.calc_total_vlb(x, model, args)
             vlb.append(vlb_terms["total_vlb"].mean(dim=-1).cpu().item())
             print(
