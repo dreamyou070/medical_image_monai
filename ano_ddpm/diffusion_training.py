@@ -88,6 +88,7 @@ import dataset
 from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule
 from helpers import *
 from UNet import UNetModel
+from tqdm import tqdm
 import torchvision.transforms as torch_transforms
 from monai import transforms
 import numpy  as np
@@ -266,8 +267,9 @@ def main(args) :
     iters = range(100 // args['Batch_Size']) if args["dataset"].lower() != "cifar" else range(200)
     for epoch in tqdm_epoch:
         mean_loss = []
-        for i in iters:
-            data = next(training_dataset_loader)
+        progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=70)
+        progress_bar.set_description(f"Epoch {epoch}")
+        for step, data in progress_bar:
             if args["dataset"] == "cifar":
                 x = data[0].to(device)
             else:
