@@ -105,7 +105,6 @@ def generate_simplex_noise(Simplex_instance,
     for i in range(in_channels):
         # i is always 0
         Simplex_instance.newSeed()
-        # self._perm, self._perm_grad_index3
         if random_param:
             param = random.choice([(2, 0.6, 16), (6, 0.6, 32), (7, 0.7, 32), (10, 0.8, 64), (5, 0.8, 16), (4, 0.6, 16), (1, 0.6, 64),
                                    (7, 0.8, 128), (6, 0.9, 64), (2, 0.85, 128), (2, 0.85, 64), (2, 0.85, 32), (2, 0.85, 16),
@@ -126,10 +125,6 @@ def generate_simplex_noise(Simplex_instance,
                                     )
                             ).to(x.device), 0
                     ).repeat(x.shape[0], 1, 1, 1)
-
-        # ---------------------------------------------------------------------------------------------------------------------------------------------------------
-        # 1D tensor, length = Batch
-        x_shape = x.shape[-2:]
         d2_np_noise = Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:],
                                                                t.detach().cpu().numpy(),
                                                                octave,  # 6
@@ -214,6 +209,44 @@ class GaussianDiffusionModel:
                 (1.0 - self.alphas_cumprod_prev)
                 * np.sqrt(alphas)
                 / (1.0 - self.alphas_cumprod))
+
+    def p_loss(self, model, x_0, args):
+        if self.loss_weight == "none":
+            if args["train_start"]:
+                t = torch.randint(0,min(args["sample_distance"], self.num_timesteps), (x_0.shape[0],),device=x_0.device)
+            else:
+                t = torch.randint(0, self.num_timesteps, (x_0.shape[0],), device=x_0.device)
+            weights = 1
+        else:
+            t, weights = self.sample_t_with_weights(x_0.shape[0], x_0.device)
+        # --------------------------------------------------------------------------------------------------------------
+        # calculate loss
+        loss, x_t, eps_t = self.calc_loss(model, x_0, t)
+        return ((loss["loss"] * weights).mean(), (loss, x_t, eps_t))
+
+    def calc_loss(self, model, x_0, t):
+
+        # make noise = torch.randn_like(x) : (x_0 = Batch64, 1, 128, 128)
+        noise = self.noise_fn(x_0, t).float()
+
+        print(f'in calc_loss noise : {noise.shape}')
+        print(f'in calc_loss, t : {t.shape}')
+        x_t = self.sample_q(x_0,
+                            t,
+                            noise)
+        estimate_noise = model(x_t, t)
+        loss = {}
+        if self.loss_type == "l1":
+            loss["loss"] = mean_flat((estimate_noise - noise).abs())
+        elif self.loss_type == "l2":
+            loss["loss"] = mean_flat((estimate_noise - noise).square())
+        elif self.loss_type == "hybrid":
+            # add vlb term
+            loss["vlb"] = self.calc_vlb_xt(model, x_0, x_t, t, estimate_noise)["output"]
+            loss["loss"] = loss["vlb"] + mean_flat((estimate_noise - noise).square())
+        else:
+            loss["loss"] = mean_flat((estimate_noise - noise).square())
+        return loss, x_t, estimate_noise
 
 
     def sample_t_with_weights(self, b_size, device):
@@ -390,58 +423,9 @@ class GaussianDiffusionModel:
         nll = torch.where((t == 0), decoder_nll, kl)
         return {"output": nll, "pred_x_0": output["pred_x_0"]}
 
-    def calc_loss(self, model, x_0, t):
-
-        # --------------------------------------------------------------------------------------------------------------
-        # make noise = torch.randn_like(x) : (x_0 = Batch64, 1, 128, 128)
-        noise = self.noise_fn(x_0, t).float()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-        x_t = self.sample_q(x_0, t, noise)
-        estimate_noise = model(x_t, t)
-        loss = {}
-        if self.loss_type == "l1":
-            loss["loss"] = mean_flat((estimate_noise - noise).abs())
-        elif self.loss_type == "l2":
-            loss["loss"] = mean_flat((estimate_noise - noise).square())
-        elif self.loss_type == "hybrid":
-            # add vlb term
-            loss["vlb"] = self.calc_vlb_xt(model, x_0, x_t, t, estimate_noise)["output"]
-            loss["loss"] = loss["vlb"] + mean_flat((estimate_noise - noise).square())
-        else:
-            loss["loss"] = mean_flat((estimate_noise - noise).square())
-        return loss, x_t, estimate_noise
-
-    def p_loss(self, model, x_0, args):
-        if self.loss_weight == "none":
-            if args["train_start"]:
-                # batch size of t
-                t = torch.randint(0,min(args["sample_distance"], self.num_timesteps),
-                                  (x_0.shape[0],),device=x_0.device)
-            else:
-                t = torch.randint(0, self.num_timesteps, (x_0.shape[0],), device=x_0.device)
-            weights = 1
-        else:
-            t, weights = self.sample_t_with_weights(x_0.shape[0], x_0.device)
-
-        # --------------------------------------------------------------------------------------------------------------
-        # calculate loss
-        loss, x_t, eps_t = self.calc_loss(model, x_0, t)
-
-        loss = ((loss["loss"] * weights).mean(), (loss, x_t, eps_t))
-        return loss
 
     def prior_vlb(self, x_0, args):
         t = torch.tensor([self.num_timesteps - 1] * args["Batch_Size"], device=x_0.device)

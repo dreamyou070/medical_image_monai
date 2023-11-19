@@ -249,6 +249,7 @@ class UNetModel(nn.Module):
                 channel_mults = (1, 2, 3, 4)
             else:
                 raise ValueError(f"unsupported image size: {img_size}")
+
         attention_ds = []
         for res in attention_resolutions.split(","):
             attention_ds.append(img_size // int(res))
@@ -262,87 +263,61 @@ class UNetModel(nn.Module):
         self.dropout = dropout
         self.channel_mult = channel_mults
         self.conv_resample = conv_resample
-
         self.dtype = torch.float32
         self.num_heads = n_heads
         self.num_head_channels = n_head_channels
-
         time_embed_dim = base_channels * 4
-        self.time_embedding = nn.Sequential(
-                PositionalEmbedding(base_channels, 1),
-                nn.Linear(base_channels, time_embed_dim),
-                nn.SiLU(),
-                nn.Linear(time_embed_dim, time_embed_dim),
-                )
 
+        # ---------------------------------------------------------------------------------------------------------------
+        self.time_embedding = nn.Sequential(PositionalEmbedding(base_channels, 1),
+                                            nn.Linear(base_channels, time_embed_dim),
+                                            nn.SiLU(),
+                                            nn.Linear(time_embed_dim, time_embed_dim),)
         ch = int(channel_mults[0] * base_channels)
-        self.down = nn.ModuleList(
-                [TimestepEmbedSequential(nn.Conv2d(self.in_channels, base_channels, 3, padding=1))]
-                )
+
+        # ---------------------------------------------------------------------------------------------------------------
+        # 2) down layers
+        self.down = nn.ModuleList([TimestepEmbedSequential(nn.Conv2d(self.in_channels, base_channels, 3, padding=1))])
         channels = [ch]
         ds = 1
         for i, mult in enumerate(channel_mults):
-            # out_channels = base_channels * mult
-
             for _ in range(num_res_blocks):
-                layers = [ResBlock(
-                        ch,
-                        time_embed_dim=time_embed_dim,
-                        out_channels=base_channels * mult,
-                        dropout=dropout,
-                        )]
+                layers = [ResBlock(ch,
+                                   time_embed_dim=time_embed_dim,
+                                   out_channels=base_channels * mult,
+                                   dropout=dropout,)]
                 ch = base_channels * mult
                 # channels.append(ch)
-
                 if ds in attention_ds:
-                    layers.append(
-                            AttentionBlock(
-                                    ch,
-                                    n_heads=n_heads,
-                                    n_head_channels=n_head_channels,
-                                    )
-                            )
+                    layers.append(AttentionBlock(ch,
+                                                 n_heads=n_heads,
+                                                 n_head_channels=n_head_channels,))
                 self.down.append(TimestepEmbedSequential(*layers))
                 channels.append(ch)
             if i != len(channel_mults) - 1:
                 out_channels = ch
-                self.down.append(
-                        TimestepEmbedSequential(
-                                ResBlock(
-                                        ch,
-                                        time_embed_dim=time_embed_dim,
-                                        out_channels=out_channels,
-                                        dropout=dropout,
-                                        down=True
-                                        )
-                                if biggan_updown
-                                else
-                                Downsample(ch, conv_resample, out_channels=out_channels)
-                                )
-                        )
+                self.down.append(TimestepEmbedSequential(ResBlock(ch,
+                                                                  time_embed_dim=time_embed_dim,
+                                                                  out_channels=out_channels,
+                                                                  dropout=dropout,
+                                                                  down=True) if biggan_updown else Downsample(ch, conv_resample, out_channels=out_channels)))
                 ds *= 2
                 ch = out_channels
                 channels.append(ch)
-
-        self.middle = TimestepEmbedSequential(
-                ResBlock(
-                        ch,
-                        time_embed_dim=time_embed_dim,
-                        dropout=dropout
-                        ),
-                AttentionBlock(
-                        ch,
-                        n_heads=n_heads,
-                        n_head_channels=n_head_channels
-                        ),
-                ResBlock(
-                        ch,
-                        time_embed_dim=time_embed_dim,
-                        dropout=dropout
-                        )
-                )
+        # ---------------------------------------------------------------------------------------------------------------
+        # 3) middle layers
+        self.middle = TimestepEmbedSequential(ResBlock(ch,
+                                                       time_embed_dim=time_embed_dim,
+                                                       dropout=dropout),
+                                              AttentionBlock(ch,
+                                                             n_heads=n_heads,
+                                                             n_head_channels=n_head_channels),
+                                              ResBlock(ch,
+                                                       time_embed_dim=time_embed_dim,
+                                                       dropout=dropout))
+        # ---------------------------------------------------------------------------------------------------------------
+        # 4) up layers
         self.up = nn.ModuleList([])
-
         for i, mult in reversed(list(enumerate(channel_mults))):
             for j in range(num_res_blocks + 1):
                 inp_chs = channels.pop()
@@ -426,23 +401,20 @@ def update_ema_params(target, source, decay_rate=0.9999):
     for k in targParams:
         targParams[k].data.mul_(decay_rate).add_(srcParams[k].data, alpha=1 - decay_rate)
 
-
+"""
 if __name__ == "__main__":
-    args = {
-        'img_size':          256,
+    args = {'img_size':          256,
         'base_channels':     64,
         'dropout':           0.3,
         'num_heads':         4,
         'num_head_channels': '32,16,8',
         'lr':                1e-4,
-        'Batch_Size':        64
-        }
-    model = UNetModel(
-            args['img_size'], args['base_channels'], dropout=args[
-                "dropout"], n_heads=args["num_heads"], attention_resolutions=args["num_head_channels"],
-            in_channels=3
-            )
-
+        'Batch_Size':        64}
+    model = UNetModel(args['img_size'],
+                      args['base_channels'], dropout=args[ "dropout"],
+                      n_heads=args["num_heads"], attention_resolutions=args["num_head_channels"],
+                      in_channels=3)
     x = torch.randn(1, 3, 512, 512)
     t_batch = torch.tensor([1], device=x.device).repeat(x.shape[0])
     print(model(x, t_batch).shape)
+"""

@@ -96,7 +96,6 @@ def main(args) :
 
     print(f'\n step 2. check file and the argument')
     print(f' - args : {args}')
-    in_channels = args["in_channels"]
 
     """
     print(f'\n step 4. dataset')
@@ -174,11 +173,7 @@ def main(args) :
             loaded_model = torch.load(file_dir, map_location=device)
 
     print(f'\n step 6. model')
-    if args["dataset"].lower() == "cifar" or args["dataset"].lower() == "leather":
-        in_channels = 3
-    if args["channels"] != "":
-        in_channels = args["channels"]
-
+    in_channels = args["in_channels"]
     model = UNetModel(args['img_size'][0],
                       args['base_channels'],
                       channel_mults=args['channel_mults'],
@@ -237,7 +232,8 @@ def main(args) :
                 x = x.to(device) # batch, channel, w, h
             # GaussianDiffusionModel.p_loss
             loss, estimates = diffusion.p_loss(model, x, args)
-            noisy, est = estimates[1], estimates[2]
+            noisy_latent, eps_t = estimates[1], estimates[2]
+
             optimiser.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
@@ -246,7 +242,7 @@ def main(args) :
             mean_loss.append(loss.data.cpu())
             if epoch % 50 == 0 and step == 0:
                 row_size = min(8, args['Batch_Size'])
-                training_outputs(diffusion, x, est, noisy, epoch, row_size,
+                training_outputs(diffusion, x, eps_t, noisy_latent, epoch, row_size,
                                  save_imgs=args['save_imgs'], # true
                                  save_vids=args['save_vids'], # true
                                  ema=ema, args=args)
