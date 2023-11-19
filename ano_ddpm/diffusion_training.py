@@ -254,6 +254,8 @@ def main(args) :
             hours = remaining_epochs * time_per_epoch / 3600
             mins = (hours % 1) * 60
             hours = int(hours)
+            # ------------------------------------------------------------------------
+            # calculate vlb loss
             vlb_terms = diffusion.calc_total_vlb(x, model, args)
             vlb.append(vlb_terms["total_vlb"].mean(dim=-1).cpu().item())
             print(

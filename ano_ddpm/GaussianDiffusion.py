@@ -58,7 +58,10 @@ def approx_standard_normal_cdf(x):
     A fast approximation of the cumulative distribution function of the
     standard normal.
     """
-    return 0.5 * (1.0 + torch.tanh(np.sqrt(2.0 / np.pi) * (x + 0.044715 * torch.pow(x, 3))))
+
+    a = torch.Tensor([np.sqrt(2.0 / np.pi)])
+    b = (x + 0.044715 * torch.pow(x, 3))
+    return 0.5 * (1.0 + torch.tanh(a*b))
 
 
 def discretised_gaussian_log_likelihood(x, means, log_scales):
@@ -466,12 +469,8 @@ class GaussianDiffusionModel:
                                 noise=noise)
             # Calculate VLB term at the current timestep
             with torch.no_grad():
-                out = self.calc_vlb_xt(
-                        model,
-                        x_0=x_0,
-                        x_t=x_t,
-                        t=t_batch,
-                        )
+                # ---------------------------------------------------------------------------------------------
+                out = self.calc_vlb_xt(model,x_0=x_0,x_t=x_t,t=t_batch,)
             vb.append(out["output"])
             x_0_mse.append(mean_flat((out["pred_x_0"] - x_0) ** 2))
             eps = self.predict_eps_from_x_0(x_t, t_batch, out["pred_x_0"])
