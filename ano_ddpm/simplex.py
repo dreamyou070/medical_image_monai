@@ -94,8 +94,10 @@ class Simplex_CLASS:
             y_ = y / frequency
             t_ = T / frequency
             base_noise = self.noise3array(x / frequency, y / frequency, T / frequency)
-            #print(f'base_nosie (Batch, 128, 128): {base_noise.shape}}')
-            noise += amplitude * base_noise
+            print(f'base_noise.shape (1, 128, 128) : {base_noise.shape}')
+            import time
+            time.sleep(10)
+            noise += amplitude * self.noise3array(x / frequency, y / frequency, T / frequency)
             frequency /= 2
             amplitude *= persistence
         print(f'in rand_3d_fixed_T_octaves (1, W,H) : {noise.shape}')
@@ -840,10 +842,7 @@ def _noise3a(X, Y, Z, perm, perm_grad_index3):
     for z in prange(Z.size):
         for y in prange(Y.size):
             for x in prange(X.size):
-                value = _noise3(X[x], Y[y], Z[z], perm, perm_grad_index3)
-                print(f'in _noise3a, value: {value}')
-                noise[z, y, x] = value
-    print(f'in _noise3a, noise (Batch, W=128, H=128): {noise}' )
+                noise[z, y, x] = _noise3(X[x], Y[y], Z[z], perm, perm_grad_index3)
     return noise
 
 
