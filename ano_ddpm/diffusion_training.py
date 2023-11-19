@@ -1,4 +1,4 @@
-import argparse
+import argparse, wandb
 import collections
 import copy
 import matplotlib.pyplot as plt
@@ -39,6 +39,7 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
             os.path.join(model_save_base_dir, f'diff-params-ARGS={args["arg_num"]}_diff_epoch={epoch}.pt'))
 def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
                      save_imgs=False, save_vids=False,):
+
     video_save_dir = os.path.join(args['experiment_dir'], 'diffusion-videos')
     image_save_dir = os.path.join(args['experiment_dir'], 'diffusion-training-images')
     os.makedirs(video_save_dir, exist_ok=True)
@@ -94,24 +95,27 @@ def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args,
 def main(args) :
 
     print(f'\n step 1. setting')
-    print(f' (1.1) base setting')
-    device = args['device']
-    seed(args['seed'])
-    print(f' (1.2) saving configuration')
-    experiment_dir = args['experiment_dir']
+    print(f' (1.1) wandb')
+    wandb.login(key=args.wandb_api_key)
+    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
+
+    print(f' (1.2) seed and device')
+    seed(args.seed)
+    device = args.device
+
+    print(f' (1.3) saving configuration')
+    experiment_dir = args.experiment_dir
     os.makedirs(experiment_dir, exist_ok=True)
     with open(os.path.join(experiment_dir, "config.txt"), "w") as f:
         for key in sorted(args.keys()):
             f.write(f"{key}: {args[key]}\n")
 
-    print(f'\n step 2. check file and the argument')
-    print(f' - args : {args}')
 
-    print(f'\n step 3. dataset and dataloatder')
-    train_datas = os.listdir(args['train_data_folder'])
-    val_datas = os.listdir(args['val_data_folder'])
-    train_datalist = [{"image": os.path.join(args['train_data_folder'], train_data)} for train_data in train_datas]
-    w,h = args['img_size'][0],args['img_size'][1]
+    print(f'\n step 2. dataset and dataloatder')
+    train_datas = os.listdir(args.train_data_folder)
+    val_datas = os.listdir(args.val_data_folder)
+    train_datalist = [{"image": os.path.join(args.train_data_folder, train_data)} for train_data in train_datas]
+    w,h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
     train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                            transforms.EnsureChannelFirstd(keys=["image"]),
                                            transforms.ScaleIntensityRanged(keys=["image"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
@@ -124,95 +128,64 @@ def main(args) :
                                                                   prob=0.5, ), ])
     train_ds = Dataset(data=train_datalist, transform=train_transforms)
     training_dataset_loader = DataLoader(train_ds,
-                                         batch_size=args['Batch_Size'],
+                                         batch_size=args.batch_size,
                                          shuffle=True, num_workers=4, persistent_workers=True)
     check_data = first(training_dataset_loader)
     # ## Prepare validation set data loader
-    val_datalist = [{"image": os.path.join(args['val_data_folder'], val_data)} for val_data in val_datas]
+    val_datalist = [{"image": os.path.join(args.val_data_folder, val_data)} for val_data in val_datas]
     val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                          transforms.EnsureChannelFirstd(keys=["image"]),
                                          transforms.ScaleIntensityRanged(keys=["image"],
                                                                          a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
                                                                          clip=True), ])
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
-    test_dataset_loader = DataLoader(val_ds,batch_size=args['Batch_Size'],
+    test_dataset_loader = DataLoader(val_ds,batch_size=args.batch_size,
                                      shuffle=True, num_workers=4, persistent_workers=True)
 
-    print(f'\n step 5. resume or not')
+    print(f'\n step 3. resume or not')
     loaded_model = {}
-    resume = args['resume']
-    if resume:
-        if resume == 1:
-            checkpoints = os.listdir(f'model/diff-params-ARGS={args["arg_num"]}/checkpoint')
-            checkpoints.sort(reverse=True)
-            for i in checkpoints:
-                try:
-                    file_dir = f"model/diff-params-ARGS={args['arg_num']}/checkpoint/{i}"
-                    loaded_model = torch.load(file_dir, map_location=device)
-                    break
-                except RuntimeError:
-                    continue
-        else:
-            file_dir = f'model/diff-params-ARGS={args["arg_num"]}/params-final.pt'
-            loaded_model = torch.load(file_dir, map_location=device)
 
-    print(f'\n step 6. model')
-    in_channels = args["in_channels"]
-    model = UNetModel(args['img_size'][0],
-                      args['base_channels'],
-                      channel_mults=args['channel_mults'],
-                      dropout=args["dropout"],
-                      n_heads=args["num_heads"],
-                      n_head_channels=args["num_head_channels"],
+    print(f'\n step 4. model')
+    in_channels = args.in_channels
+    model = UNetModel(w,
+                      args.base_channels,
+                      channel_mults=args.channel_mults,
+                      dropout=args.dropout,
+                      n_heads=args.num_heads,
+                      n_head_channels=args.num_head_channels,
                       in_channels=in_channels)
-    # small linear schedule (1000 time step , linear schaduler)
-    betas = get_beta_schedule(args['T'],
-                              args['beta_schedule'])
-    diffusion = GaussianDiffusionModel(args['img_size'], #  [128, 128]
-                                       betas,            #  1
-                                       loss_weight=args['loss_weight'], # none
-                                       loss_type=args['loss-type'],     # l2
-                                       noise= args["noise_fn"],          # none
-                                       img_channels=in_channels)        # 1
-    if resume:
-        if "unet" in resume:
-            model.load_state_dict(resume["unet"])
-        else:
-            model.load_state_dict(resume["ema"])
-        ema = UNetModel(args['img_size'][0], args['base_channels'], channel_mults=args['channel_mults'],dropout=args["dropout"],
-                        n_heads=args["num_heads"], n_head_channels=args["num_head_channels"],in_channels=in_channels)
-        ema.load_state_dict(resume["ema"])
-        start_epoch = resume['n_epoch']
-    else:
-        start_epoch = 0
-        ema = copy.deepcopy(model)
-    tqdm_epoch = range(start_epoch, args['EPOCHS'] + 1)
+    ema = copy.deepcopy(model)
     model.to(device)
     ema.to(device)
+    # (2) scaheduler
+    betas = get_beta_schedule(args.timestep, args.beta_schedule)
+    # (3) scaheduler
+    diffusion = GaussianDiffusionModel([w,h], #  [128, 128]
+                                       betas,            #  1
+                                       img_channels=in_channels,
+                                       loss_weight=args.loss_weight, # none
+                                       loss_type=args.loss_type,     # l2
+                                       noise= args.noise_fn,)        # 1
 
-    print(f'\n step 7. optimizer')
+    print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(),
-                            lr=args['lr'],
-                            weight_decay=args['weight_decay'], betas=(0.9, 0.999))
-    if resume:
-        optimiser.load_state_dict(resume["optimizer_state_dict"])
-    del resume
-
-    print(f'\n step 8. training')
+                            lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
+    """
+    print(f'\n step 6. training')
+    start_epoch = args.start_epoch
+    train_epoch = args.train_epochs
+    tqdm_epoch = range(start_epoch, train_epoch + 1)
     start_time = time.time()
     losses = []
     vlb = collections.deque([], maxlen=10)
-    iters = range(100 // args['Batch_Size']) if args["dataset"].lower() != "cifar" else range(200)
     for epoch in tqdm_epoch:
         mean_loss = []
-        progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=70)
+        progress_bar = tqdm(enumerate(training_dataset_loader),
+                            total=len(training_dataset_loader),
+                            ncols=70)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, data in progress_bar:
-            if args["dataset"] == "cifar":
-                x = data[0].to(device)
-            else:
-                x = data["image"]
-                x = x.to(device) # batch, channel, w, h
+            x = data["image"].to(device)  # batch, channel, w, h
             # GaussianDiffusionModel.p_loss
             loss, estimates = diffusion.p_loss(model, x, args)
             noisy_latent, unet_estimate_noise = estimates[1], estimates[2]
@@ -225,12 +198,10 @@ def main(args) :
             update_ema_params(ema, model)
             mean_loss.append(loss.data.cpu())
             if epoch % 50 == 0 and step == 0:
-                row_size = min(8, args['Batch_Size'])
-                training_outputs(diffusion,
-                                 x,
-                                 unet_estimate_noise, noisy_latent, epoch, row_size,
-                                 save_imgs=args['save_imgs'], # true
-                                 save_vids=args['save_vids'], # true
+                row_size = min(8, args.batch_size)
+                training_outputs(diffusion, x, unet_estimate_noise, noisy_latent, epoch, row_size,
+                                 save_imgs=args['save_imgs'],  # true
+                                 save_vids=args['save_vids'],  # true
                                  ema=ema, args=args)
         losses.append(np.mean(mean_loss))
         if epoch % 200 == 0:
@@ -255,22 +226,50 @@ def main(args) :
         if epoch % 1000 == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
+    """
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
+
+    # step 1. wandb login
+    parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
+    parser.add_argument("--wandb_project_name", type=str, default='dental_experiment')
+    parser.add_argument("--wandb_run_name", type=str, default='hand_1000_64res')
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--device", type=str)
     parser.add_argument('--experiment_dir', type=str,
                         default = f'/data7/sooyeon/medical_image/anoddpm_result/20231119_dental_test')
-    parser.add_argument('--file_dir', type=str,
-                        default=f'/data7/sooyeon/medical_image/anoddpm_result/test_args/args11.json')
-    parser.add_argument('--device', type=str, default='cuda:0')
-    parser_argument = vars(parser.parse_args())
-    resume = 0
-    file = parser_argument['file_dir']
-    with open(file, 'r') as f:
-        args = json.load(f)
-    args = defaultdict_from_json(args)
-    args['resume'] = resume
-    args.update(parser_argument)
+
+    # step 2. dataset and dataloatder
+    parser.add_argument('--train_data_folder', type=str)
+    parser.add_argument('--val_data_folder', type=str)
+    parser.add_argument('--img_size', type=str)
+    parser.add_argument('--batch_size', type=int)
+
+    # step 3. model
+    parser.add_argument('--in_channels', type=int, default = 1)
+    parser.add_argument('--base_channels', type=int, default = 256)
+    parser.add_argument('--channel_mults', type=int, default = '1,2,3,4')
+    parser.add_argument('--dropout', type=float, default = 0.0)
+    parser.add_argument('--num_heads', type=int, default = 2)
+    parser.add_argument('--num_head_channels', type=int, default = -1)
+    # (2) scaheduler
+    parser.add_argument('--timestep', type=int, default=1000)
+    parser.add_argument('--beta_schedule', type=str, default='linear')
+    # (3) diffusion
+    parser.add_argument('--loss_weight', type=float)
+    parser.add_argument('--loss_type', type=str, default='l2')
+    parser.add_argument('--noise_fn', type=int, default='simplex')
+
+    # step 5. optimizer
+    parser.add_argument('--lr', type=float, default=1e-4)
+    parser.add_argument('--weight_decay', type=float, default=0.0)
+
+    # step 6. training
+    parser.add_argument('--start_epoch', type=int, default=0)
+    parser.add_argument('--train_epochs', type=int, default=3000)
+
+    args = parser.parse_args()
     main(args)
 
