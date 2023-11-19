@@ -71,7 +71,7 @@ def main(args) :
 
     print(f'\n step 2. check file and the argument')
     print(f' - args : {args}')
-    in_channels = args["channels"]
+    in_channels = args["in_channels"]
 
     """
     print(f'\n step 4. dataset')
