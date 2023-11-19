@@ -19,26 +19,35 @@ class Simplex_CLASS:
 
     def __init__(self):
         self.newSeed()
-
     def newSeed(self, seed=None):
         if not seed:
             #seed = np.random.randint(-10000000000, 10000000000)
             seed = np.random.randint(-1000000000, 1000000000)
         self._perm, self._perm_grad_index3 = _init(seed)
-
-
     def noise2(self, x, y):
         return _noise2(x, y, self._perm)
-
     def noise2array(self, x, y):
         return _noise2a(x, y, self._perm)
-
     def noise3(self, x, y, z):
         return _noise3(x, y, z, self._perm, self._perm_grad_index3)
 
+    """
+    @njit(cache=True, parallel=True)
+    def _noise3a(X, Y, Z, perm, perm_grad_index3):
+        # make noise array
+        # Z.size = 1
+        noise = np.zeros((Z.size, Y.size, X.size), dtype=np.double)
+
+        for z in prange(Z.size):
+            for y in prange(Y.size):
+                for x in prange(X.size):
+                    noise[z, y, x] = _noise3(X[x], Y[y], Z[z], perm, perm_grad_index3)
+        return noise
+    """
     def noise3array(self, x, y, z):
         # self._perm =
         # self._perm_grad_index3 =
+        print(f'in noise3array, z.size = {z.size}')
         return _noise3a(x, y, z,
                         self._perm,
                         self._perm_grad_index3)
@@ -93,8 +102,8 @@ class Simplex_CLASS:
             x_ = x / frequency
             y_ = y / frequency
             t_ = T / frequency
+            # should change to 1
             base_noise = self.noise3array(x / frequency, y / frequency, T / frequency)
-            print(f'base_noise.shape (1, 128, 128) : {base_noise.shape}')
             import time
             time.sleep(10)
             noise += amplitude * self.noise3array(x / frequency, y / frequency, T / frequency)
@@ -837,8 +846,8 @@ def _noise3(x, y, z, perm, perm_grad_index3):
 def _noise3a(X, Y, Z, perm, perm_grad_index3):
     # make noise array
     # Z.size = 1
-    noise = np.zeros((Z.size, Y.size, X.size),
-                     dtype=np.double)
+    noise = np.zeros((Z.size, Y.size, X.size), dtype=np.double)
+
     for z in prange(Z.size):
         for y in prange(Y.size):
             for x in prange(X.size):
