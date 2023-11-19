@@ -229,24 +229,51 @@ class GaussianDiffusionModel:
         # make noise = torch.randn_like(x) : (x_0 = Batch64, 1, 128, 128)
         noise = self.noise_fn(x_0, t).float()
 
-        print(f'in calc_loss noise : {noise.shape}')
-        print(f'in calc_loss, t : {t.shape}')
-        x_t = self.sample_q(x_0,
-                            t,
-                            noise)
+        # --------------------------------------------------------------------------------------------------------------
+        # by equation (8)
+        x_t = self.sample_q(x_0, t, noise)
+        # --------------------------------------------------------------------------------------------------------------
+        # by equation (9)
         estimate_noise = model(x_t, t)
+        # --------------------------------------------------------------------------------------------------------------
+        # by equation (10)
         loss = {}
+
         if self.loss_type == "l1":
             loss["loss"] = mean_flat((estimate_noise - noise).abs())
+
         elif self.loss_type == "l2":
+            # why not squaring ??
+            print(f'calculating loss')
             loss["loss"] = mean_flat((estimate_noise - noise).square())
+
         elif self.loss_type == "hybrid":
             # add vlb term
             loss["vlb"] = self.calc_vlb_xt(model, x_0, x_t, t, estimate_noise)["output"]
             loss["loss"] = loss["vlb"] + mean_flat((estimate_noise - noise).square())
+
         else:
             loss["loss"] = mean_flat((estimate_noise - noise).square())
         return loss, x_t, estimate_noise
+
+    def sample_q(self, x_0, t, noise):
+        """ q (x_t | x_0 ) = N ( x_t | x_0 * sqrt(1 - beta_t), sqrt(beta_t) )
+            :param x_0:
+            :param t:
+            :param noise:
+            :return: """
+
+        def extract(arr, timesteps, broadcast_shape, device):
+            res = torch.from_numpy(arr).to(device=timesteps.device)[timesteps].float()
+            while len(res.shape) < len(broadcast_shape):
+                res = res[..., None]
+            return res.expand(broadcast_shape).to(device)
+        sqrt_alpha_t_bar = extract(self.sqrt_alphas_cumprod,t,broadcast_shape=x_0.shape,device=x_0.device)
+        mean_x_t = sqrt_alpha_t_bar * x_0
+        one_minus_alpha_t = extract(self.sqrt_one_minus_alphas_cumprod, t, x_0.shape, x_0.device)
+        std_x_t = one_minus_alpha_t * noise
+        # --------------------------------------------------------------------------------------------------------------
+        return (mean_x_t + std_x_t)
 
 
     def sample_t_with_weights(self, b_size, device):
@@ -385,18 +412,7 @@ class GaussianDiffusionModel:
 
         return x.detach() if not see_whole_sequence else seq
 
-    def sample_q(self, x_0, t, noise):
-        """
-            q (x_t | x_0 )
 
-            :param x_0:
-            :param t:
-            :param noise:
-            :return:
-        """
-        noise_x = extract(self.sqrt_alphas_cumprod, t, x_0.shape, x_0.device) * x_0
-        eps = extract(self.sqrt_one_minus_alphas_cumprod, t, x_0.shape, x_0.device) * noise
-        return ( noise_x + eps)
 
     def sample_q_gradual(self, x_t, t, noise):
         """
