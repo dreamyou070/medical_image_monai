@@ -238,7 +238,7 @@ def main(args) :
 
             # ----------------------------------------------------------------------------------------- #
             # Inference
-            if epoch % args.interence_freq == 0 and step == 0:
+            if epoch % args.inference_freq == 0 and step == 0:
                 for i, test_data in enumerate(test_dataset_loader):
                     if i == 0:
                         ema.eval()
