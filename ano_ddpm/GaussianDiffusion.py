@@ -139,11 +139,11 @@ def generate_simplex_noise(Simplex_instance,
                                                                frequency)
 
         d2_noise = torch.from_numpy(d2_np_noise).to(x.device)
-        d3_noise = torch.unsqueeze(d2_noise,1)
-        print(f'd2_noise (Batch, 1, W, H) : {d3_noise.shape}')
+        #d3_noise = torch.unsqueeze(d2_noise,1)
+        #print(f'd3_noise (Batch, 1, W, H) : {d3_noise.shape}')
         #expand_noise = d3_noise.repeat(x.shape[0], 1, 1, 1)
-        expand_noise = d3_noise
-        noise[:, i, :,:] = expand_noise
+        #expand_noise = d3_noise
+        noise[:, i, :,:] = d2_noise #expand_noise
     return noise
 
 
