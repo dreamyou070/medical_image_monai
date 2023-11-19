@@ -269,7 +269,7 @@ if __name__ == '__main__':
     parser.add_argument('--start_epoch', type=int, default=0)
     parser.add_argument('--train_epochs', type=int, default=3000)
     parser.add_argument('--train_start', action = 'store_true')
-    parser.add_argument('--sample_distance', action=int, default = 50)
+    parser.add_argument('--sample_distance', type=int, default = 50)
     args = parser.parse_args()
     main(args)
 
