@@ -202,17 +202,6 @@ def main(args) :
     start_time = time.time()
     vlb = collections.deque([], maxlen=10)
 
-    for step, data in enumerate(training_dataset_loader):
-        if step == 0 :
-            x = data["image"].to(device)  # batch, channel, w, h
-            first_noise = diffusion.check_noise(args, x)
-            first_noise = torch_transforms.ToPILImage()(first_noise.squeeze(0))
-            random_noise = torch.randn_like(x)[0]
-            random_noise = torch_transforms.ToPILImage()(random_noise.squeeze(0))
-    first_noise.save('simplex_noise.png')
-    random_noise.save('gaussian_noise.png')
-
-    """ 
     for epoch in tqdm_epoch:
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=300)
         progress_bar.set_description(f"Epoch {epoch}")
@@ -266,8 +255,6 @@ def main(args) :
         if epoch % 1000 == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-    """
-
 
 if __name__ == '__main__':
 
@@ -281,7 +268,6 @@ if __name__ == '__main__':
     parser.add_argument("--device", type=str)
     parser.add_argument('--experiment_dir', type=str,
                         default = f'/data7/sooyeon/medical_image/anoddpm_result/20231119_dental_test')
-
     # step 2. dataset and dataloatder
     parser.add_argument('--train_data_folder', type=str)
     parser.add_argument('--val_data_folder', type=str)
