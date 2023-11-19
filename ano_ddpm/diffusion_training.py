@@ -9,7 +9,7 @@ from helpers import *
 from tqdm import tqdm
 from monai import transforms
 import numpy  as np
-from data_module import SYDataLoader, SYDataset_masking
+from ..data_module import SYDataLoader, SYDataset_masking
 from monai.utils import first
 from UNet import UNetModel, update_ema_params
 import torch.multiprocessing
