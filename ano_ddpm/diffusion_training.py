@@ -1,8 +1,6 @@
 import argparse, wandb
 import collections
 import copy
-import matplotlib.pyplot as plt
-from matplotlib import animation
 import time
 from random import seed
 from torch import optim
@@ -11,7 +9,7 @@ from helpers import *
 from tqdm import tqdm
 from monai import transforms
 import numpy  as np
-from monai.data import DataLoader, Dataset
+from data_module import SYDataLoader, SYDataset_masking
 from monai.utils import first
 from UNet import UNetModel, update_ema_params
 import torch.multiprocessing
@@ -39,8 +37,9 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     "ema":                  ema.state_dict(),
                     'loss':                 loss,},
             os.path.join(model_save_base_dir, f'diff-params-ARGS={args["arg_num"]}_diff_epoch={epoch}.pt'))
-def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
-                     save_imgs=False, save_vids=False,is_train_data=True):
+def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
+                     save_imgs=False, is_train_data=True):
+
     if is_train_data :
         train_data = 'training_data'
     else :
@@ -49,29 +48,19 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
     image_save_dir = os.path.join(args.experiment_dir, 'diffusion-training-images')
     os.makedirs(video_save_dir, exist_ok=True)
     os.makedirs(image_save_dir, exist_ok=True)
-    """
-    for step, data in enumerate(training_dataset_loader) :
-        # [Batch, 1, W, H]
-        x = data["image"]
-        first_img = x[:2,...]
-        first_img = first_img.squeeze(0)
-        real_images = first_img.permute(-1,-2)
-        real_images = real_images.unsqueeze(0)
-        
-        pil_img = torch_transforms.ToPILImage()(real_images)
-        pil_img.save('test.png')
-    """
+
     if save_imgs:
         # 1) make random noise
+        x = test_data["image_info"].to(ema.device)  # batch, channel, w, h
+        normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
+        mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
         noise = torch.rand_like(x)
         # 2) select random int
-        #t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=x.device)
-        t =  torch.randint(0, args.sample_distance, (x.shape[0],), device=x.device)
+        t = torch.Tensor([args.sample_distance]).repeat(x.shape[0]).to(x.device)
         time_step = t[0].item()
         # 3) q sampling = noising & p sampling = denoising
-        x_t  = diffusion.sample_q(x, t, noise)
+        x_t = diffusion.sample_q(x, t, noise)
         temp = diffusion.sample_p(ema, x_t, t)
-
         # 4)
         real_images = x[:num_images, ...].cpu().permute(0,1,3,2) # [Batch, 1, W, H]
         sample_images = temp["sample"][:num_images, ...].cpu().permute(0, 1, 3, 2)  # [Batch, 1, W, H]
@@ -79,6 +68,9 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
 
         merge_images = []
         for img_index in range(num_images):
+
+            normal_info = normal_info[img_index]
+
             real = real_images[img_index,...].squeeze()
             real= real.unsqueeze(0)
             real = torch_transforms.ToPILImage()(real)
@@ -135,7 +127,6 @@ def main(args) :
     w,h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
     train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                            transforms.EnsureChannelFirstd(keys=["image"]),
-                                           # 아마도 0~1 범위로 하다 보니 색이 흐려진 것으로 보인다.
                                            transforms.ScaleIntensityRanged(keys=["image"],
                                                                            a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
                                            transforms.RandAffined(keys=["image"],
@@ -145,11 +136,12 @@ def main(args) :
                                                                   scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
                                                                   padding_mode="zeros",
                                                                   prob=0.5, ), ])
-    train_ds = Dataset(data=train_datalist, transform=train_transforms)
-    training_dataset_loader = DataLoader(train_ds,
-                                         batch_size=args.batch_size,
+    train_ds = SYDataset_masking(data=train_datalist,transform=train_transforms,
+                                 base_mask_dir=args.train_mask_dir,image_size = args.img_size)
+    training_dataset_loader = SYDataLoader(train_ds,batch_size=args.batch_size,
                                          shuffle=True, num_workers=4, persistent_workers=True)
     check_data = first(training_dataset_loader)
+
     # ## Prepare validation set data loader
     val_datalist = [{"image": os.path.join(args.val_data_folder, val_data)} for val_data in val_datas]
     val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
@@ -157,15 +149,11 @@ def main(args) :
                                          transforms.ScaleIntensityRanged(keys=["image"],
                                                                          a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
                                                                          clip=True),
-                                         transforms.RandAffined(keys=["image"],
-                                                                spatial_size=[w, h], ), ])
-    val_ds = Dataset(data=val_datalist, transform=val_transforms)
-    test_dataset_loader = DataLoader(val_ds,batch_size=args.batch_size,
+                                         transforms.RandAffined(keys=["image"], spatial_size=[w, h], ), ])
+    val_ds = SYDataset_masking(data=val_datalist, transform=val_transforms,
+                               base_mask_dir=args.val_mask_dir, image_size=args.img_size)
+    test_dataset_loader = SYDataLoader(val_ds,batch_size=args.batch_size,
                                      shuffle=True, num_workers=4, persistent_workers=True)
-
-
-
-
 
     print(f'\n step 3. resume or not')
 
@@ -206,10 +194,31 @@ def main(args) :
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=300)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, data in progress_bar:
-            x = data["image"].to(device)  # batch, channel, w, h
-            loss, estimates = diffusion.p_loss(model, x, args)
+            model.train()
+            loss_dict = {}
+            # -----------------------------------------------------------------------------------------
+            # 0) data check
+            x = data["image_info"].to(device)  # batch, channel, w, h
+            normal_info = data['normal'] # if 1 = normal, 0 = abnormal
+            mask_info = data['mask']     # if 1 = normal, 0 = abnormal
+            if args.only_normal_training :
+                x = x[normal_info == 1]
+                mask_info = mask_info[normal_info == 1]
+            # -----------------------------------------------------------------------------------------
+            # 1) check random t
+            t = torch.randint(0, args.sample_distance, (x.shape[0],), device = x.device)
+            # 2) make noisy latent
+            noise = diffusion.noise_fn(x, t).float()
+            x_t = diffusion.sample_q(x, t, noise)
+            # 3) model prediction
+            noise_pred = model(x_t, t)
+            target = noise
+            if args.masked_loss:
+                noise_pred = noise_pred * mask_info
+                target = target * mask_info
+            # 4) loss
+            loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
             wandb.log({"loss": loss.item()})
-            noisy_latent, unet_estimate_noise = estimates[1], estimates[2]
             optimiser.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
@@ -217,25 +226,24 @@ def main(args) :
             # ----------------------------------------------------------------------------------------- #
             # EMA model updating
             update_ema_params(ema, model)
-            if epoch % 50 == 0 and step == 0:
+
+            # ----------------------------------------------------------------------------------------- #
+            # Inference
+            if epoch % args.interence_freq == 0 and step == 0:
                 for i, test_data in enumerate(test_dataset_loader):
                     if i == 0:
-                        training_outputs(diffusion, x, unet_estimate_noise, noisy_latent, epoch, args.interence_num,
-                                         save_imgs=args.save_imgs,  # true
-                                         save_vids=args.save_vids,  # true
-                                         ema=ema, args=args, is_train_data = True)
-
-                        x = test_data["image"].to(device)
-                        training_outputs(diffusion, x, unet_estimate_noise, noisy_latent, epoch, args.interence_num,
-                                         save_imgs=args.save_imgs,  # true
-                                         save_vids=args.save_vids,  # true
+                        ema.eval()
+                        training_outputs(diffusion, test_data, epoch, args.inference_num, save_imgs=args.save_imgs,
                                          ema=ema, args=args, is_train_data = False)
-        if epoch % 200 == 0:
-            for i, test_data in test_dataset_loader :
+                        training_outputs(diffusion, data, epoch, args.inference_num, save_imgs=args.save_imgs,
+                                         ema=ema, args=args, is_train_data=True)
+
+        if epoch % args.vlb_freq == 0:
+            for i, test_data in enumerate(test_dataset_loader) :
                 if i == 0 :
-                    x = test_data["image"].to(device)
+                    x = test_data["image_info"].to(device)
                     time_taken = time.time() - start_time
-                    remaining_epochs = args['EPOCHS'] - epoch
+                    remaining_epochs = args.train_epochs - epoch
                     time_per_epoch = time_taken / (epoch + 1 - args.start_epoch)
                     hours = remaining_epochs * time_per_epoch / 3600
                     mins = (hours % 1) * 60
@@ -252,7 +260,7 @@ def main(args) :
                           f"{torch.mean(vlb_terms['mse'], dim=list(range(2))).cpu().item():.2f}"
                           f" time elapsed {int(time_taken / 3600)}:{((time_taken / 3600) % 1) * 60:02.0f}, "
                           f"est time remaining: {hours}:{mins:02.0f}\r")
-        if epoch % 1000 == 0 and epoch >= 0:
+        if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
 
@@ -268,9 +276,12 @@ if __name__ == '__main__':
     parser.add_argument("--device", type=str)
     parser.add_argument('--experiment_dir', type=str,
                         default = f'/data7/sooyeon/medical_image/anoddpm_result/20231119_dental_test')
+
     # step 2. dataset and dataloatder
     parser.add_argument('--train_data_folder', type=str)
+    parser.add_argument('--train_mask_dir', type=str)
     parser.add_argument('--val_data_folder', type=str)
+    parser.add_argument('--val_mask_dir', type=str)
     parser.add_argument('--img_size', type=str)
     parser.add_argument('--batch_size', type=int)
 
@@ -298,8 +309,15 @@ if __name__ == '__main__':
     parser.add_argument('--train_epochs', type=int, default=3000)
     parser.add_argument('--train_start', action = 'store_true')
     parser.add_argument('--sample_distance', type=int, default = 800)
+    parser.add_argument('--only_normal_training', action='store_true')
+    parser.add_argument('--masked_loss', action='store_true')
+
+
     # step 7. inference
-    parser.add_argument('--interence_num', type=int, default=4)
+    parser.add_argument('--inference_num', type=int, default=4)
+    parser.add_argument('--interence_freq', type=int, default=50)
+    parser.add_argument('--vlb_freq', type=int, default=200)
+    parser.add_argument('--model_save_freq', type=int, default=1000)
     parser.add_argument('--save_imgs', action='store_true')
     parser.add_argument('--save_vids', action='store_true')
     args = parser.parse_args()
