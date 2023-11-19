@@ -178,6 +178,9 @@ def main(args) :
     posterior_variance = diffusion.posterior_variance
     print(f' - betas : {betas}')
     print(f' - posterior_variance (beta hat) : {posterior_variance}')
+    model_var = np.append(posterior_variance[1], betas[1:])
+    print(f' - model_var : {model_var}')
+    print(f' - model_var : {len(model_var)}')
     """
     if resume:
         if "unet" in resume:
