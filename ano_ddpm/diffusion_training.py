@@ -139,8 +139,9 @@ def main(args) :
                                          transforms.EnsureChannelFirstd(keys=["image"]),
                                          transforms.ScaleIntensityRanged(keys=["image"],
                                                                          a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
-                                                                         clip=True), ],
-                                        transforms.RandAffined(keys=["image"],spatial_size=[w, h],))
+                                                                         clip=True),
+                                         transforms.RandAffined(keys=["image"],
+                                                                spatial_size=[w, h], ), ])
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
     test_dataset_loader = DataLoader(val_ds,batch_size=args.batch_size,
                                      shuffle=True, num_workers=4, persistent_workers=True)
