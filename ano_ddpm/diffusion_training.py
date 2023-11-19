@@ -81,21 +81,71 @@ import argparse
 import collections
 import copy
 import sys
+import matplotlib.pyplot as plt
+from matplotlib import animation
 import time
 from random import seed
 from torch import optim
 import dataset
 from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule
 from helpers import *
-from UNet import UNetModel
 from tqdm import tqdm
-import torchvision.transforms as torch_transforms
 from monai import transforms
 import numpy  as np
 from monai.data import DataLoader, Dataset
 from monai.utils import first
+from UNet import UNetModel, update_ema_params
 
 torch.cuda.empty_cache()
+def training_outputs(diffusion, x, est, noisy, epoch, row_size, ema, args, save_imgs=False, save_vids=False):
+
+    try:
+        os.makedirs(f'./diffusion-videos/ARGS={args["arg_num"]}')
+        os.makedirs(f'./diffusion-training-images/ARGS={args["arg_num"]}')
+    except OSError:
+        pass
+    if save_imgs:
+        if epoch % 100 == 0:
+            # for a given t, output x_0, & prediction of x_(t-1), and x_0
+            noise = torch.rand_like(x)
+            t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=x.device)
+            x_t = diffusion.sample_q(x, t, noise)
+            temp = diffusion.sample_p(ema, x_t, t)
+            out = torch.cat(
+                    (x[:row_size, ...].cpu(), temp["sample"][:row_size, ...].cpu(),
+                     temp["pred_x_0"][:row_size, ...].cpu())
+                    )
+            plt.title(f'real,sample,prediction x_0-{epoch}epoch')
+        else:
+            # for a given t, output x_0, x_t, & prediction of noise in x_t & MSE
+            out = torch.cat(
+                    (x[:row_size, ...].cpu(), noisy[:row_size, ...].cpu(), est[:row_size, ...].cpu(),
+                     (est - noisy).square().cpu()[:row_size, ...])
+                    )
+            plt.title(f'real,noisy,noise prediction,mse-{epoch}epoch')
+        plt.rcParams['figure.dpi'] = 150
+        plt.grid(False)
+        plt.imshow(gridify_output(out, row_size), cmap='gray')
+
+        plt.savefig(f'./diffusion-training-images/ARGS={args["arg_num"]}/EPOCH={epoch}.png')
+        plt.clf()
+    if save_vids:
+        fig, ax = plt.subplots()
+        if epoch % 500 == 0:
+            plt.rcParams['figure.dpi'] = 200
+            if epoch % 1000 == 0:
+                out = diffusion.forward_backward(ema, x, "half", args['sample_distance'] // 2, denoise_fn="noise_fn")
+            else:
+                out = diffusion.forward_backward(ema, x, "half", args['sample_distance'] // 4, denoise_fn="noise_fn")
+            imgs = [[ax.imshow(gridify_output(x, row_size), animated=True)] for x in out]
+            ani = animation.ArtistAnimation(
+                    fig, imgs, interval=50, blit=True,
+                    repeat_delay=1000
+                    )
+
+            ani.save(f'./diffusion-videos/ARGS={args["arg_num"]}/sample-EPOCH={epoch}.mp4')
+
+    plt.close('all')
 
 def main(args) :
 
@@ -114,7 +164,7 @@ def main(args) :
             pass
 
     print(f'\n step 3. check file and the argument')
-    print(f' - file : {file}')
+    #print(f' - file : {file}')
     print(f' - args : {args}')
     if args["channels"] != "":
         in_channels = args["channels"]
@@ -208,26 +258,6 @@ def main(args) :
                       n_heads=args["num_heads"],
                       n_head_channels=args["num_head_channels"],
                       in_channels=in_channels)
-    """
-    def get_beta_schedule(num_diffusion_steps, name="cosine"):
-        betas = []
-        if name == "cosine":
-            max_beta = 0.999
-            f = lambda t: np.cos((t + 0.008) / 1.008 * np.pi / 2) ** 2
-            for i in range(num_diffusion_steps):
-                t1 = i / num_diffusion_steps
-                t2 = (i + 1) / num_diffusion_steps
-                betas.append(min(1 - f(t2) / f(t1), max_beta))
-            betas = np.array(betas)
-        elif name == "linear":
-            scale = 1000 / num_diffusion_steps
-            beta_start = scale * 0.0001
-            beta_end = scale * 0.02
-            betas = np.linspace(beta_start, beta_end, num_diffusion_steps, dtype=np.float64)
-        else:
-            raise NotImplementedError(f"unknown beta schedule: {name}")
-        return betas
-    """
     # small linear schedule (1000 time step , linear schaduler)
     betas = get_beta_schedule(args['T'], args['beta_schedule'])
     diffusion = GaussianDiffusionModel(args['img_size'], #  [128, 128]
@@ -274,10 +304,7 @@ def main(args) :
                 x = data[0].to(device)
             else:
                 x = data["image"]
-                x = x.to(device)
-                print(f'x shape : {x.shape}')
-    """
-
+                x = x.to(device) # batch, channel, w, h
             loss, estimates = diffusion.p_loss(model, x, args)
             noisy, est = estimates[1], estimates[2]
             optimiser.zero_grad()
@@ -288,10 +315,8 @@ def main(args) :
             mean_loss.append(loss.data.cpu())
             if epoch % 50 == 0 and i == 0:
                 row_size = min(8, args['Batch_Size'])
-                training_outputs(
-                    diffusion, x, est, noisy, epoch, row_size, save_imgs=args['save_imgs'],
-                    save_vids=args['save_vids'], ema=ema, args=args
-                )
+                training_outputs(diffusion, x, est, noisy, epoch, row_size, save_imgs=args['save_imgs'],
+                                 save_vids=args['save_vids'], ema=ema, args=args)
 
         losses.append(np.mean(mean_loss))
         if epoch % 200 == 0:
@@ -313,10 +338,10 @@ def main(args) :
                 f"{torch.mean(vlb_terms['mse'], dim=list(range(2))).cpu().item():.2f}"
                 f" time elapsed {int(time_taken / 3600)}:{((time_taken / 3600) % 1) * 60:02.0f}, "
                 f"est time remaining: {hours}:{mins:02.0f}\r")            
-        if epoch % 1000 == 0 and epoch >= 0:
-            save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
-    save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-    evaluation.testing(testing_dataset_loader, diffusion, ema=ema, args=args, model=model)
+    #    if epoch % 1000 == 0 and epoch >= 0:
+    #        save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
+    #save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
+    #evaluation.testing(testing_dataset_loader, diffusion, ema=ema, args=args, model=model)
 
     # 
     # if resuming, loaded model is attached to the dictionary
@@ -332,10 +357,10 @@ def main(args) :
     
 
     # remove checkpoints after final_param is saved (due to storage requirements)
-    for file_remove in os.listdir(f'./model/diff-params-ARGS={args["arg_num"]}/checkpoint'):
-        os.remove(os.path.join(f'./model/diff-params-ARGS={args["arg_num"]}/checkpoint', file_remove))
-    os.removedirs(f'./model/diff-params-ARGS={args["arg_num"]}/checkpoint')
-    """
+    #for file_remove in os.listdir(f'./model/diff-params-ARGS={args["arg_num"]}/checkpoint'):
+    #    os.remove(os.path.join(f'./model/diff-params-ARGS={args["arg_num"]}/checkpoint', file_remove))
+    #os.removedirs(f'./model/diff-params-ARGS={args["arg_num"]}/checkpoint')
+
 
 if __name__ == '__main__':
 
@@ -353,7 +378,6 @@ if __name__ == '__main__':
         files = sys.argv[1:]
     else:
         raise ValueError("Missing file argument")
-
     # resume from final or resume from most recent checkpoint -> ran from specific slurm script?
     resume = 0
     if files[0] == "RESUME_RECENT":
