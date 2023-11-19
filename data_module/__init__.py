@@ -112,6 +112,7 @@ class SYDataset_masking(_TorchDataset):
         data_dir = self.data[index]['image']
         parent, net_name = os.path.split(data_dir)
         mask_dir = os.path.join(self.base_mask_dir, net_name)
+        print(f'data_dir : {data_dir} | mask_dir : {mask_dir}')
         mask_pil = Image.open(mask_dir)
         mask_np = np.array(mask_pil)
         criterion = np.sum(mask_np)
