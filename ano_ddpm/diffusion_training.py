@@ -79,7 +79,7 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
         plt.savefig(img_save_dir)
         plt.close('all')
 
-
+    """
     if save_vids:
         fig, ax = plt.subplots()
         if epoch % 500 == 0 or epoch < 2 :
@@ -94,6 +94,7 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
             ani.save(ani_save_dir)
 
     plt.close('all')
+    """
 
 def main(args) :
 
@@ -121,6 +122,7 @@ def main(args) :
     w,h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
     train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                            transforms.EnsureChannelFirstd(keys=["image"]),
+                                           # 아마도 0~1 범위로 하다 보니 색이 흐려진 것으로 보인다.
                                            transforms.ScaleIntensityRanged(keys=["image"],
                                                                            a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
                                            transforms.RandAffined(keys=["image"],
@@ -147,7 +149,19 @@ def main(args) :
     val_ds = Dataset(data=val_datalist, transform=val_transforms)
     test_dataset_loader = DataLoader(val_ds,batch_size=args.batch_size,
                                      shuffle=True, num_workers=4, persistent_workers=True)
+    for step, data in enumerate(training_dataset_loader) :
+        # [Batch, 1, W, H]
+        x = data["image"]
+        first_img = x[0]
+        first_img = first_img.squeeze(0)
+        real_images = first_img.permute(-1,-2)
+        real_images = real_images.unsqueeze(0)
+        pil_image = transforms.ToPILImage()(real_images)
+        pil_image.save('test.png')
 
+
+
+    """
     print(f'\n step 3. resume or not')
 
 
@@ -236,6 +250,7 @@ def main(args) :
         if epoch % 1000 == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
+    """
 
 
 if __name__ == '__main__':
