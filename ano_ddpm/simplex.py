@@ -850,7 +850,7 @@ def _noise3a(X, Y, Z, perm, perm_grad_index3):
         for y in prange(Y.size):
             for x in prange(X.size):
                 noise[z, y, x] = _noise3(X[x], Y[y], Z[z], perm, perm_grad_index3)
-    print(f'in _noise3a, noise (Batch, W=128, H=128): {noise.size}')
+    print(f'in _noise3a, noise (Batch, W=128, H=128): {noise}')
     return noise
 
 
