@@ -15,14 +15,14 @@ import numpy  as np
 from monai.data import DataLoader, Dataset
 from monai.utils import first
 from UNet import UNetModel, update_ema_params
+import torch.multiprocessing
 
+torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
 
 def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
-
     model_save_base_dir = os.path.join(args['experiment_dir'], 'diffusion-models')
     os.makedirs(model_save_base_dir, exist_ok=True)
-
     if final:
         torch.save({'n_epoch':              args["EPOCHS"],
                     'model_state_dict':     unet.state_dict(),
@@ -97,32 +97,6 @@ def main(args) :
     print(f'\n step 2. check file and the argument')
     print(f' - args : {args}')
 
-    """
-    print(f'\n step 4. dataset')
-    if args["dataset"].lower() == "cifar":
-        training_dataset_loader_, testing_dataset_loader_ = dataset.load_CIFAR10(args, True), dataset.load_CIFAR10(args, False)
-        training_dataset_loader = dataset.cycle(training_dataset_loader_)
-        testing_dataset_loader = dataset.cycle(testing_dataset_loader_)
-    elif args["dataset"].lower() == "carpet":
-        training_dataset = dataset.DAGM("DATASETS/CARPET/Class1", False, args["img_size"], False)
-        training_dataset_loader = dataset.init_dataset_loader(training_dataset, args)
-        testing_dataset = dataset.DAGM("DATASETS/CARPET/Class1", True, args["img_size"], False)
-        testing_dataset_loader = dataset.init_dataset_loader(testing_dataset, args)
-    elif args["dataset"].lower() == "leather":
-        if in_channels == 3:
-            training_dataset = dataset.MVTec("DATASETS/leather", anomalous=False, img_size=args["img_size"], rgb=True)
-            testing_dataset = dataset.MVTec("DATASETS/leather", anomalous=True, img_size=args["img_size"], rgb=True, include_good=True)
-        else:
-            training_dataset = dataset.MVTec("DATASETS/leather", anomalous=False, img_size=args["img_size"], rgb=False)
-            testing_dataset = dataset.MVTec("DATASETS/leather", anomalous=True, img_size=args["img_size"], rgb=False, include_good=True)
-        training_dataset_loader = dataset.init_dataset_loader(training_dataset, args)
-        testing_dataset_loader = dataset.init_dataset_loader(testing_dataset, args)
-    else:
-        # load NFBS dataset
-        training_dataset, testing_dataset = dataset.init_datasets(ROOT_DIR, args)
-        training_dataset_loader = dataset.init_dataset_loader(training_dataset, args)
-        testing_dataset_loader = dataset.init_dataset_loader(testing_dataset, args)
-    """
     print(f'\n step 3. dataset and dataloatder')
     train_datas = os.listdir(args['train_data_folder'])
     val_datas = os.listdir(args['val_data_folder'])
