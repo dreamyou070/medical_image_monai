@@ -131,7 +131,8 @@ def generate_simplex_noise(Simplex_instance,
         # ---------------------------------------------------------------------------------------------------------------------------------------------------------
         # 1D tensor, length = Batch
         x_shape = x.shape[-2:]
-        print(f'x_shape: {x_shape}')
+        print(f't.detach().cpu().numpy() : {t.detach().cpu().numpy()}')
+        
         d2_np_noise = Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:],
                                                                t.detach().cpu().numpy(),
                                                                octave,  # 6
