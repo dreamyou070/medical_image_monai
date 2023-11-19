@@ -129,7 +129,9 @@ def generate_simplex_noise(Simplex_instance,
                     ).repeat(x.shape[0], 1, 1, 1)
 
         # ---------------------------------------------------------------------------------------------------------------------------------------------------------
-        print(f'Makind 2D noise, frequency = {frequency}, t : {t}')
+        # 1D tensor, length = Batch
+        x_shape = x.shape[-2:]
+        print(f'x_shape: {x_shape}')
         d2_np_noise = Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:],
                                                                t.detach().cpu().numpy(),
                                                                octave,  # 6
