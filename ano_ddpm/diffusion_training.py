@@ -80,7 +80,7 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
         merge_images = []
         for img_index in range(num_images):
             real = real_images[img_index,...].squeeze()
-            real= real_images.unsqueeze(0)
+            real= real.unsqueeze(0)
             real = torch_transforms.ToPILImage()(real)
 
             sample = sample_images[img_index,...].squeeze()
