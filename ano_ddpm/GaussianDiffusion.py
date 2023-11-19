@@ -304,9 +304,13 @@ class GaussianDiffusionModel:
             noise = denoise_fn(x_t, t)
         # ---------------------------------------------------------------------------------
         # make mask
-        nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
-        print(f'what is nonzero_mask : {nonzero_mask.shape}')
-        print(f'what is nonzero_mask : {nonzero_mask}')
+        print(f'when make nonzero mask, total t : {t}')
+        nonzero_mask = (t != 0).float()
+        print(f'when make nonzero mask, non zero t : {nonzero_mask}')
+
+
+        nonzero_mask = (t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))) # [[[[]]]] (one line)
+        #.view(-1, *([1, 1, 1]))
         # what is sample do ... ?
         sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
         return {"sample": sample,                # x_t-1
