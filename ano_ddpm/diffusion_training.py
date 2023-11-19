@@ -66,7 +66,7 @@ def training_outputs(diffusion, x, est, noisy, epoch, num_images, ema, args,
         noise = torch.rand_like(x)
         # 2) select random int
         #t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=x.device)
-        t =  torch.randint(500, args.sample_distance, (x.shape[0],), device=x.device)
+        t =  torch.randint(0, args.sample_distance, (x.shape[0],), device=x.device)
         time_step = t[0].item()
         # 3) q sampling = noising & p sampling = denoising
         x_t  = diffusion.sample_q(x, t, noise)
