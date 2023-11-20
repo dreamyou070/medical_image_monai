@@ -25,23 +25,23 @@ torch.cuda.empty_cache()
 
 
 def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
-    model_save_base_dir = os.path.join(args['experiment_dir'], 'diffusion-models')
+    model_save_base_dir = os.path.join(args.experiment_dir,'diffusion-models')
     os.makedirs(model_save_base_dir, exist_ok=True)
     if final:
-        torch.save({'n_epoch':              args["EPOCHS"],
+        save_dir = os.path.join(model_save_base_dir,f'unet_final.pt')
+        torch.save({'n_epoch':              args.train_epochs,
                     'model_state_dict':     unet.state_dict(),
                     'optimizer_state_dict': optimiser.state_dict(),
                     "ema":                  ema.state_dict(),
-                    "args":                 args},
-            os.path.join(model_save_base_dir, f'diff-params-ARGS={args["arg_num"]}_params-final.pt'))
+                    "args":                 args},save_dir)
     else:
+        save_dir = os.path.join(model_save_base_dir, f'unet_epoch_{epoch}.pt')
         torch.save({'n_epoch':              epoch,
                     'model_state_dict':     unet.state_dict(),
                     'optimizer_state_dict': optimiser.state_dict(),
                     "args":                 args,
                     "ema":                  ema.state_dict(),
-                    'loss':                 loss,},
-            os.path.join(model_save_base_dir, f'diff-params-ARGS={args["arg_num"]}_diff_epoch={epoch}.pt'))
+                    'loss':                 loss,},save_dir)
 
 def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                      save_imgs=False, is_train_data=True, device='cuda'):
@@ -267,20 +267,19 @@ def main(args) :
                     hours = int(hours)
                     # --------------------------------------------------------------------------------------------------
                     # calculate vlb loss
+                    # x = [Batch, Channel, 128, 128]
                     vlb_terms = diffusion.calc_total_vlb(x, model, args)
-                    total_vlb = vlb_terms["total_vlb"]
-                    prior_vlb = vlb_terms["prior_vlb"]
-                    vb = vlb_terms["vb"]
+                    total_vlb = vlb_terms["total_vlb"] # [Batch]
+                    prior_vlb = vlb_terms["prior_vlb"] # [Batch]
+                    vb = vlb_terms["vb"]               # vb = [Batch, number of timestps = 1000]
                     x_0_mse = vlb_terms["x_0_mse"]
                     noise_mse = vlb_terms["mse"]
+                    batch_mean_vlb = total_vlb.mean(dim=-1).cpu().item()
+                    vlb.append(batch_mean_vlb)
+                    wandb.log({"total_vlb (test data)": batch_mean_vlb })
                     # --------------------------------------------------------------------------------------------------
                     # collecting total vlb in deque collections
-                    print(f'x : {x.shape} | total_vlb : {total_vlb.shape}')
                     """
-                    vlb.append(total_vlb.mean(dim=-1).cpu().item())
-
-                    log_dict = {"total_vlb": total_vlb.mean(dim=-1).cpu().item(),}
-                    wandb.log({"vlb": total_vlb.mean(dim=-1).cpu().item()})
                     print(f"epoch: {epoch}, most recent total VLB: {vlb[-1]} mean total VLB:"
                           f" {np.mean(vlb):.4f}, "
                           f"prior vlb: {vlb_terms['prior_vlb'].mean(dim=-1).cpu().item():.2f}, vb: "
