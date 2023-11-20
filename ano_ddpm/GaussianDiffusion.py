@@ -156,7 +156,10 @@ class GaussianDiffusionModel:
         else:
             self.simplex = Simplex_CLASS()
             if noise == "simplex_randParam":
-                self.noise_fn = lambda x, t: generate_simplex_noise(self.simplex, x, t, True, in_channels=img_channels)
+                self.noise_fn = lambda x, t: generate_simplex_noise(self.simplex, x, t, True,
+                                                                    octave=6,
+                                                                    frequency=64,
+                                                                    in_channels=img_channels)
             elif noise == "random":
                 self.noise_fn = lambda x, t: random_noise(self.simplex, x, t)
 
@@ -166,7 +169,7 @@ class GaussianDiffusionModel:
                                                                     octave=6,
                                                                     frequency = 64,
                                                                     in_channels=img_channels) # 1
-                
+
 
 
         self.img_size = img_size
