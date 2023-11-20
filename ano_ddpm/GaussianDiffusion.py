@@ -449,19 +449,17 @@ class GaussianDiffusionModel:
         model_mean = output["mean"]
         model_log_var = output["log_variance"]
 
-        kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
-        print(f'originalk kl : {kl.shape}')
-        kl = mean_flat(kl) / np.log(2.0)
-        print(f'after mean flat, kl : {kl.shape}')
+        whole_kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
+        kl = mean_flat(whole_kl) / np.log(2.0)
         decoder_nll = -discretised_gaussian_log_likelihood(x_0, output["mean"], log_scales=0.5 * output["log_variance"])
         decoder_nll = mean_flat(decoder_nll) / np.log(2.0)
         nll = torch.where((t == 0), decoder_nll, kl)
         return {"output": nll,
                 "pred_x_0": output["pred_x_0"],
-                "whole_kl" : kl}
+                "whole_kl" : whole_kl}
 
     def calc_total_vlb(self, x_0, model, args):
-        vb = []
+        vb, vb_whole = [], []
         x_0_mse = []
         noise_mse = []
         for t in reversed(list(range(self.num_timesteps))):
@@ -475,8 +473,9 @@ class GaussianDiffusionModel:
                 out = self.calc_vlb_xt(model,
                                        x_0=x_0,x_t=x_t,t=t_batch,)
                 kl_divergence = out["output"]
+                whole_kl = out["whole_kl"]
             vb.append(kl_divergence)
-
+            vb_whole.append(whole_kl)
             # ----------------------------------------------------------------------------------------------------------
             # 2) every timestep, MSE between model_x0 and true_x)
             model_x0 = out['pred_x_0']
@@ -492,11 +491,14 @@ class GaussianDiffusionModel:
 
 
         # vb = [Batch, number of timestps = 1000]
+        whole_vb = torch.stack(vb_whole, dim=1)  # [batch, 1, W, H]
+        print(f'whole_vb.shape : {whole_vb.shape}')
         vb        = torch.stack(vb, dim=1)        # [batch, 1000]
         x_0_mse   = torch.stack(x_0_mse, dim=1)
         noise_mse = torch.stack(noise_mse, dim=1)
         prior_vlb = self.prior_vlb(x_0, args)     # [batch]
         total_vlb = vb.sum(dim=1) + prior_vlb     # [batch]
+
         return {"total_vlb": total_vlb,
                 "prior_vlb": prior_vlb,
                 "vb": vb,
