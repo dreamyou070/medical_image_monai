@@ -153,38 +153,14 @@ def main(args) :
                                               rotate_range=[(-np.pi / 36, np.pi / 36),(-np.pi / 36, np.pi / 36)],
                                               translate_range=[(-1, 1), (-1, 1)],
                                               scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-                                              #padding_mode="zeros",
+                                              padding_mode="zeros",
                                               prob=0.5, ), ])
     train_ds = SYDataset_masking(data=train_datalist,transform=train_transforms,
                                  base_mask_dir=args.train_mask_dir,image_size = args.img_size)
     training_dataset_loader = SYDataLoader(train_ds,batch_size=args.batch_size,
                                          shuffle=True, num_workers=4, persistent_workers=True)
-    #check_data = first(training_dataset_loader)
-    check_data = train_ds.__getitem__(0)
+    check_data = first(training_dataset_loader)
 
-    image_x = check_data['image_info']['image']
-    real = torch_transforms.ToPILImage()(image_x)
-    real.save(f'real_test_256.png')
-
-    #print(f"keys: {keys}")
-    """
-    fixed_image = check_data["fixed_hand"][0][0]
-    moving_image = check_data["moving_hand"][0][0]
-
-    print(f"moving_image shape: {moving_image.shape}")
-    print(f"fixed_image shape: {fixed_image.shape}")
-
-    plt.figure("check", (12, 6))
-    plt.subplot(1, 2, 1)
-    plt.title("moving_image")
-    plt.imshow(moving_image, cmap="gray")
-    plt.subplot(1, 2, 2)
-    plt.title("fixed_image")
-    plt.imshow(fixed_image, cmap="gray")
-
-    plt.show()
-    """
-    """
 
     # ## Prepare validation set data loader
     val_datalist = [{"image": os.path.join(args.val_data_folder, val_data)} for val_data in val_datas]
@@ -342,7 +318,7 @@ def main(args) :
                                 ab_portion_ab_whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
                     # collecting total vlb in deque collections
-                    
+                    """
                     print(f"epoch: {epoch}, most recent total VLB: {vlb[-1]} mean total VLB:"
                           f" {np.mean(vlb):.4f}, "
                           f"prior vlb: {vlb_terms['prior_vlb'].mean(dim=-1).cpu().item():.2f}, vb: "
@@ -351,11 +327,11 @@ def main(args) :
                           f"{torch.mean(vlb_terms['mse'], dim=list(range(2))).cpu().item():.2f}"
                           f" time elapsed {int(time_taken / 3600)}:{((time_taken / 3600) % 1) * 60:02.0f}, "
                           f"est time remaining: {hours}:{mins:02.0f}\r")
-                    
+                    """
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-    """
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
