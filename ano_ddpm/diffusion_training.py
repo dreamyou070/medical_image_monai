@@ -254,6 +254,7 @@ def main(args) :
                                          ema=ema, args=args, is_train_data=True, device = device)
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
+        print(f'vlb loss calculating ... ')
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader) :
                 if i == 0 :
