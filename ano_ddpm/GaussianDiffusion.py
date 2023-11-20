@@ -118,12 +118,16 @@ def generate_simplex_noise(Simplex_instance, x, t,
         # -----------------------------------------------------------------------------------------------------------
         # timewise noise ???
         # Batch size,
-        noise_1 = Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:],
+        #noise_1 = Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:],
                                                            #t.detach().cpu().numpy(),
-                                                           torch.Tensor([1000]).cpu().numpy(),
-                                                           octave,
-                                                           persistence,
-                                                           frequency)
+        #                                                   torch.Tensor([1000]).cpu().numpy(),
+        #                                                   octave,
+        #                                                   persistence,
+         #                                                  frequency)
+        noise_1 = Simplex_instance.rand_3d_fixed_T_octaves(
+            x.shape[-2:], t.detach().cpu().numpy(), octave,
+            persistence, frequency)
+        print(f'original noise_1 shape : {noise_1.shape}')
 
         torch_noise = torch.from_numpy(noise_1).to(x.device).squeeze()
         #print(f"torch_noise shape (1, 256,256) : {torch_noise.shape}")
@@ -482,6 +486,9 @@ class GaussianDiffusionModel:
             model_noise = self.predict_eps_from_x_0(x_t, t_batch, out["pred_x_0"])
             true_noise = noise
             noise_mse.append(mean_flat((model_noise - true_noise) ** 2))
+
+
+
         # vb = [Batch, number of timestps = 1000]
         vb        = torch.stack(vb, dim=1)        # [batch, 1000]
         x_0_mse   = torch.stack(x_0_mse, dim=1)
