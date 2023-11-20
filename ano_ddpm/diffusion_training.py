@@ -209,22 +209,17 @@ def main(args) :
                                        noise= args.noise_fn,)        # 1
 
     print(f'\n step 5. optimizer')
-    optimiser = optim.AdamW(model.parameters(),
-                            lr=args.lr,
-                            weight_decay=args.weight_decay,
-                            betas=(0.9, 0.999))
+    optimiser = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
 
     print(f'\n step 6. training')
     tqdm_epoch = range(args.start_epoch, args.train_epochs + 1)
     start_time = time.time()
     vlb = collections.deque([], maxlen=10)
-
     for epoch in tqdm_epoch:
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=300)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, data in progress_bar:
             model.train()
-            loss_dict = {}
             # -----------------------------------------------------------------------------------------
             # 0) data check
             x = data["image_info"]['image'].to(device)  # batch, channel, w, h
@@ -237,9 +232,16 @@ def main(args) :
             # 1) check random t
             t = torch.randint(0, args.sample_distance, (x.shape[0],), device = x.device)
             # 2) make noisy latent
-            noise = diffusion.noise_fn(x, t).float()
-            print(f'main function, x : {x.shape}, t : {t.shape}, noise : {noise.shape}')
-            print(f'main function, t : {t}')
+            print(f'when generate noise, t : {t}')
+            noise = diffusion.noise_fn(x, t,
+                                       octave = 6,
+                                       frequency = 64).float()
+
+
+
+
+
+
             x_t = diffusion.sample_q(x, t, noise)
             # 3) model prediction
             noise_pred = model(x_t, t)

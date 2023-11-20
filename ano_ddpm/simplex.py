@@ -9,46 +9,30 @@ import numpy as np
 from matplotlib import animation
 from numba import njit, prange
 
-"""
-print('this is the noise function')
-                self.noise_fn = lambda x, t: generate_simplex_noise(self.simplex,
-                                                                    x, t, False, in_channels=img_channels)
-"""
+
 
 class Simplex_CLASS:
 
     def __init__(self):
         self.newSeed()
+
     def newSeed(self, seed=None):
         if not seed:
-            #seed = np.random.randint(-10000000000, 10000000000)
-            seed = np.random.randint(-1000000000, 1000000000)
+            seed = np.random.randint(-10000000000, 10000000000)
         self._perm, self._perm_grad_index3 = _init(seed)
+
+
     def noise2(self, x, y):
         return _noise2(x, y, self._perm)
+
     def noise2array(self, x, y):
         return _noise2a(x, y, self._perm)
+
     def noise3(self, x, y, z):
         return _noise3(x, y, z, self._perm, self._perm_grad_index3)
 
-    """
-    @njit(cache=True, parallel=True)
-    def _noise3a(X, Y, Z, perm, perm_grad_index3):
-        # make noise array
-        # Z.size = 1
-        noise = np.zeros((Z.size, Y.size, X.size), dtype=np.double)
-        for z in prange(Z.size):
-            for y in prange(Y.size):
-                for x in prange(X.size):
-                    noise[z, y, x] = _noise3(X[x], Y[y], Z[z], perm, perm_grad_index3)
-        return noise
-    """
     def noise3array(self, x, y, z):
-        # self._perm =
-        # self._perm_grad_index3
-        return _noise3a(x, y, z,
-                        self._perm,
-                        self._perm_grad_index3)
+        return _noise3a(x, y, z, self._perm, self._perm_grad_index3)
 
     def rand_3d_octaves(self, shape, octaves=1, persistence=0.5, frequency=32):
         """
@@ -89,22 +73,20 @@ class Simplex_CLASS:
         return noise
 
     def rand_3d_fixed_T_octaves(self, shape, T, octaves=1, persistence=0.5, frequency=32):
+        """
+        Returns a layered fractal noise in 3D
 
+        :param shape: Shape of 3D tensor output
+        :param octaves: Number of levels of fractal noise
+        :param persistence: float between (0-1) -> Rate at which amplitude of each level decreases
+        :param frequency: Frequency of initial octave of noise
+        :return: Fractal noise sample with n lots of 2D images
+        """
         assert len(shape) == 2
-        # noise = [1, w,h]
-        batch = T.shape[0]
-        noise = np.zeros((batch, *shape))
-        # y = [0, ..., w], x = [0, ..., h]
+        noise = np.zeros((1, *shape))
         y, x = [np.arange(0, end) for end in shape]
         amplitude = 1
         for _ in range(octaves):
-            x_ = x / frequency
-            y_ = y / frequency
-            t_ = T / frequency # batchwise all different timestep
-            # should change to 1
-            base_noise = self.noise3array(x / frequency,
-                                          y / frequency,
-                                          T / frequency)
             noise += amplitude * self.noise3array(x / frequency, y / frequency, T / frequency)
             frequency /= 2
             amplitude *= persistence
@@ -343,19 +325,23 @@ def _noise3(x, y, z, perm, perm_grad_index3):
     xs = x + stretch_offset
     ys = y + stretch_offset
     zs = z + stretch_offset
+
     # Floor to get simplectic honeycomb coordinates of rhombohedron (stretched cube) super-cell origin.
     xsb = floor(xs)
     ysb = floor(ys)
     zsb = floor(zs)
+
     # Skew out to get actual coordinates of rhombohedron origin. We'll need these later.
     squish_offset = (xsb + ysb + zsb) * SQUISH_CONSTANT3
     xb = xsb + squish_offset
     yb = ysb + squish_offset
     zb = zsb + squish_offset
+
     # Compute simplectic honeycomb coordinates relative to rhombohedral origin.
     xins = xs - xsb
     yins = ys - ysb
     zins = zs - zsb
+
     # Sum those together to get a value that determines which region we're in.
     in_sum = xins + yins + zins
 
@@ -363,8 +349,10 @@ def _noise3(x, y, z, perm, perm_grad_index3):
     dx0 = x - xb
     dy0 = y - yb
     dz0 = z - zb
+
     value = 0
     if in_sum <= 1:  # We're inside the tetrahedron (3-Simplex) at (0,0,0)
+
         # Determine which two of (0,0,1), (0,1,0), (1,0,0) are closest.
         a_point = 0x01
         a_score = xins
@@ -376,6 +364,7 @@ def _noise3(x, y, z, perm, perm_grad_index3):
         elif a_score < b_score and zins > a_score:
             a_score = zins
             a_point = 0x04
+
         # Now we determine the two lattice points not part of the tetrahedron that may contribute.
         # This depends on the closest two tetrahedral vertices, including (0,0,0)
         wins = 1 - in_sum
@@ -837,15 +826,13 @@ def _noise3(x, y, z, perm, perm_grad_index3):
                 dy_ext1,
                 dz_ext1
                 )
+
     return value / NORM_CONSTANT3
 
 
 @njit(cache=True, parallel=True)
 def _noise3a(X, Y, Z, perm, perm_grad_index3):
-    # make noise array
-    # Z.size = 1
     noise = np.zeros((Z.size, Y.size, X.size), dtype=np.double)
-
     for z in prange(Z.size):
         for y in prange(Y.size):
             for x in prange(X.size):

@@ -82,10 +82,13 @@ def discretised_gaussian_log_likelihood(x, means, log_scales):
     return log_probs
 
 
-def generate_simplex_noise(
-        Simplex_instance, x, t, random_param=False, octave=6, persistence=0.8, frequency=64,
-        in_channels=1
-):
+def generate_simplex_noise(Simplex_instance, x, t,
+                           random_param=False,
+                           octave=6,
+                           persistence=0.8,
+                           frequency=64,
+                           in_channels=1):
+
     noise = torch.empty(x.shape).to(x.device)
     for i in range(in_channels):
         Simplex_instance.newSeed()
@@ -112,7 +115,10 @@ def generate_simplex_noise(
                 ).to(x.device), 0
             ).repeat(x.shape[0], 1, 1, 1)
 
-        noise_1 = Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:], t.detach().cpu().numpy(), octave,
+        # -----------------------------------------------------------------------------------------------------------
+        # timewise noise ???
+        noise_1 = Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:],
+                                                           t.detach().cpu().numpy(), octave,
                                                            persistence, frequency)
 
         torch_noise = torch.from_numpy(noise_1).to(x.device)
