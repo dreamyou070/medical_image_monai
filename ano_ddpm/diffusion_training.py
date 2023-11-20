@@ -297,7 +297,6 @@ def main(args) :
                     ab_total_vlb = ab_vlb_terms["total_vlb"]  # [Batch]
                     ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze().mean(dim=1)  # whole_vb = [Batch, number of timestps = 1000, W, H]
                     ab_whole_vb = ab_whole_vb.unsqueeze(dim=1)
-                    print(f'ab_whole_vb (Batch, 1, W,H) : {ab_whole_vb.shape}')
                     normal_portion_ab_whole_vb = abnormal_mask.to(device) * ab_whole_vb
                     abnormal_portion_ab_whole_vb = (1-abnormal_mask).to(device) * ab_whole_vb
 
