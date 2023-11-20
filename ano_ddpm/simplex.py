@@ -45,10 +45,14 @@ class Simplex_CLASS:
         """
         assert len(shape) == 3
         noise = np.zeros(shape)
+        print(f'noise.shape: {noise.shape}')
         z, y, x = [np.arange(0, end) for end in shape]
         amplitude = 1
         for _ in range(octaves):
-            noise += amplitude * self.noise3array(x / frequency, y / frequency, z / frequency)
+            # noise_ should be 2D ( or 3D with 1 )
+            noise_ = self.noise3array(x / frequency, y / frequency, z / frequency)
+            print(f'noise_.shape: {noise_.shape}')
+            noise += amplitude * noise_
             frequency /= 2
             amplitude *= persistence
         return noise
@@ -110,7 +114,7 @@ class Simplex_CLASS:
             #
             noise += amplitude * self.noise3array(x / frequency,  # 255 shape
                                                   y / frequency,  # 255 shape
-                                                  T / frequency)  # batch num
+                                                  T / frequency)  # batch num (or 1 num)
             frequency /= 2
             amplitude *= persistence
         return noise
