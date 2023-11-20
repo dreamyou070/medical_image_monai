@@ -262,6 +262,7 @@ def main(args) :
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader) :
                 if i == 0 :
+
                     x = test_data["image_info"]['image'].to(device)
                     normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
                     mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
@@ -278,6 +279,7 @@ def main(args) :
                     hours = remaining_epochs * time_per_epoch / 3600
                     mins = (hours % 1) * 60
                     hours = int(hours)
+
                     # --------------------------------------------------------------------------------------------------
                     # calculate vlb loss
                     # x = [Batch, Channel, 128, 128]
@@ -287,25 +289,29 @@ def main(args) :
                     vb = vlb_terms["vb"]               # vb = [Batch, number of timestps = 1000]
                     x_0_mse = vlb_terms["x_0_mse"]
                     noise_mse = vlb_terms["mse"]
-                    batch_mean_vlb = total_vlb.mean(dim=-1).cpu().item()
-                    #vlb.append(batch_mean_vlb)
-                    wandb.log({"total_vlb (test normal data)": batch_mean_vlb })
-
+                    whole_vb = vlb_terms["whole_vb"].squeeze().mean(dim=1) # batch, 1000, 1, W, H
+                    efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
+                    whole_vb = whole_vb.flatten(start_dim=1)  # batch, 1000, W*H
+                    whole_vb = whole_vb.sum(dim=-1) / efficient_pixel_num # shape = [batch]
+                    wandb.log({"total_vlb (test normal data)": whole_vb.mean().cpu().item()})
+                    # --------------------------------------------------------------------------------------------------
                     ab_vlb_terms = diffusion.calc_total_vlb(abnormal_x, model, args)
                     ab_total_vlb = ab_vlb_terms["total_vlb"]  # [Batch]
                     ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze().mean(dim=1)  # whole_vb = [Batch, number of timestps = 1000, W, H]
-                    ab_whole_vb = ab_whole_vb.unsqueeze(dim=1)
-                    normal_portion_ab_whole_vb = abnormal_mask.to(device) * ab_whole_vb
-                    abnormal_portion_ab_whole_vb = (1-abnormal_mask).to(device) * ab_whole_vb
-
-                    ab_batch_mean_vlb = ab_total_vlb.mean(dim=-1).cpu().item()
-                    normal_portion_ab_whole_vb = normal_portion_ab_whole_vb.mean().cpu().item()
-                    abnormal_portion_ab_whole_vb = abnormal_portion_ab_whole_vb.mean().cpu().item()
-                    # vlb.append(batch_mean_vlb)
-                    wandb.log({"total_vlb (test *ab*normal data)": ab_batch_mean_vlb,
-                               "normal portion of *ab*normal sample kl": normal_portion_ab_whole_vb,
-                               "abnormal portion of *ab*normal sample kl": abnormal_portion_ab_whole_vb})
-
+                    ab_whole_vb = ab_whole_vb.unsqueeze(dim=1)  # Batch, 1, W, H
+                    efficient_pixel_num = abnormal_mask.sum(dim=-1).sum(dim=-1).to(device)
+                    normal_portion_ab_whole_vb = abnormal_mask * ab_whole_vb
+                    normal_portion_ab_whole_vb = normal_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
+                    normal_portion_ab_whole_vb = normal_portion_ab_whole_vb / efficient_pixel_num
+                    wandb.log({"normal portion of *ab*normal sample kl":
+                                normal_portion_ab_whole_vb.mean().cpu().item()})
+                    # --------------------------------------------------------------------------------------------------
+                    efficient_pixel_num = (1-abnormal_mask).sum(dim=-1).sum(dim=-1).to(device)
+                    ab_portion_ab_whole_vb = abnormal_mask * ab_whole_vb
+                    ab_portion_ab_whole_vb = ab_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
+                    ab_portion_ab_whole_vb = ab_portion_ab_whole_vb / efficient_pixel_num
+                    wandb.log({"abnormal portion of *ab*normal sample kl":
+                                ab_portion_ab_whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
                     # collecting total vlb in deque collections
                     """
