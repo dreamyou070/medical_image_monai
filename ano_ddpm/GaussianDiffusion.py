@@ -118,11 +118,16 @@ def generate_simplex_noise(Simplex_instance, x, t,
         # -----------------------------------------------------------------------------------------------------------
         # timewise noise ???
         # Batch size,
-        noise_1 = Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:],
-                                                           torch.Tensor([1000]).cpu().numpy(),
-                                                           octave,
-                                                           persistence,
-                                                           frequency)
+        #noise_1 = Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:],
+        #                                                   torch.Tensor([1000]).cpu().numpy(),
+        #                                                   octave,
+        #                                                   persistence,
+        #                                                   frequency)
+        noise_1 = Simplex_instance.rand_2d_octaves(x.shape[-2:],
+                                                   octave,
+                                                   persistence,
+                                                   frequency)
+
         #noise_1 = Simplex_instance.rand_3d_fixed_T_octaves(x.shape[-2:],
         #                                                   t.detach().cpu().numpy(),
         #                                                   octave,

@@ -94,7 +94,6 @@ class Simplex_CLASS:
                                 frequency=32):  # 2^6 = 64
         """
         Returns a layered fractal noise in 3D
-
         :param shape: Shape of 3D tensor output
         :param octaves: Number of levels of fractal noise
         :param persistence: float between (0-1) -> Rate at which amplitude of each level decreases
