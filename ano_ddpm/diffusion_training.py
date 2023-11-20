@@ -149,17 +149,17 @@ def main(args) :
                                                                            a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
                                                                            clip=True),
                                            transforms.RandAffined(keys=["image"],
-                                                                  spatial_size=[w, h], # output image spatial size ...........
-                                                                  rotate_range=[(-np.pi / 36, np.pi / 36),(-np.pi / 36, np.pi / 36)],
-                                                                  translate_range=[(-1, 1), (-1, 1)],
-                                                                  scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-                                                                  padding_mode="zeros",
-                                                                  prob=0.5, ), ])
+                                              spatial_size=[w, h], # output image spatial size ...........
+                                              rotate_range=[(-np.pi / 36, np.pi / 36),(-np.pi / 36, np.pi / 36)],
+                                              translate_range=[(-1, 1), (-1, 1)],
+                                              scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
+                                              #padding_mode="zeros",
+                                              prob=0.5, ), ])
     train_ds = SYDataset_masking(data=train_datalist,transform=train_transforms,
                                  base_mask_dir=args.train_mask_dir,image_size = args.img_size)
     training_dataset_loader = SYDataLoader(train_ds,batch_size=args.batch_size,
                                          shuffle=True, num_workers=4, persistent_workers=True)
-    check_data = first(training_dataset_loader)
+    #check_data = first(training_dataset_loader)
     check_data = train_ds.__getitem__(0)
 
     image_x = check_data['image_info']['image']
