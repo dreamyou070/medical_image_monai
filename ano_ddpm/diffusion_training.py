@@ -164,7 +164,7 @@ def main(args) :
 
     image_x = check_data['image_info']['image']
     real = torch_transforms.ToPILImage()(image_x)
-    real.save(f'real_test.png')
+    real.save(f'real_test_256.png')
 
     #print(f"keys: {keys}")
     """
