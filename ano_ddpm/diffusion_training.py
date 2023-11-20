@@ -272,7 +272,7 @@ def main(args) :
                     prior_vlb = vlb_terms["prior_vlb"]
                     vb = vlb_terms["vb"]
                     x_0_mse = vlb_terms["x_0_mse"]
-                    noise_mse = vlb_terms["noise_mse"]
+                    noise_mse = vlb_terms["mse"]
                     # --------------------------------------------------------------------------------------------------
                     # collecting total vlb in deque collections
                     print(f'x : {x.shape} | total_vlb : {total_vlb.shape}')
