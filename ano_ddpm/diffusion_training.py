@@ -160,8 +160,11 @@ def main(args) :
     training_dataset_loader = SYDataLoader(train_ds,batch_size=args.batch_size,
                                          shuffle=True, num_workers=4, persistent_workers=True)
     check_data = first(training_dataset_loader)
-    keys = check_data.keys()
-    print(f"keys: {keys}")
+    image_x = check_data['image_info']['image'][0]
+    real = torch_transforms.ToPILImage()(image_x)
+    real.save(f'real_test.png')
+
+    #print(f"keys: {keys}")
     """
     fixed_image = check_data["fixed_hand"][0][0]
     moving_image = check_data["moving_hand"][0][0]
