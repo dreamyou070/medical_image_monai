@@ -208,9 +208,9 @@ def main(args) :
     for epoch in tqdm_epoch:
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=200)
         progress_bar.set_description(f"Epoch {epoch}")
-        #for step, data in progress_bar:
-        #    model.train()
-        """
+        for step, data in progress_bar:
+            model.train()
+
             # -----------------------------------------------------------------------------------------
             # 0) data check
             x = data["image_info"]['image'].to(device)  # batch, channel, w, h
@@ -256,7 +256,6 @@ def main(args) :
                                          ema=ema, args=args, is_train_data = False, device = device)
                         training_outputs(diffusion, data, epoch, args.inference_num, save_imgs=args.save_imgs,
                                          ema=ema, args=args, is_train_data=True, device = device)
-        """
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
         print(f'vlb loss calculating ... ')
@@ -301,7 +300,6 @@ def main(args) :
                     ab_batch_mean_vlb = ab_total_vlb.mean(dim=-1).cpu().item()
                     normal_portion_ab_whole_vb = normal_portion_ab_whole_vb.mean().cpu().item()
                     abnormal_portion_ab_whole_vb = abnormal_portion_ab_whole_vb.mean().cpu().item()
-                    print(f"normal_portion_ab_whole_vb : {normal_portion_ab_whole_vb}")
                     # vlb.append(batch_mean_vlb)
                     wandb.log({"total_vlb (test *ab*normal data)": ab_batch_mean_vlb,
                                "normal portion of *ab*normal sample kl": normal_portion_ab_whole_vb,
