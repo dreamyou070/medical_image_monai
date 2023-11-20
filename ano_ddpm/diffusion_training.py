@@ -67,7 +67,11 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         time_step = t[0].item()
 
         # 3) q sampling = noising & p sampling = denoising
+        print(f'Let sample q ')
         x_t = diffusion.sample_q(x, t, noise)
+        time.sleep(10)
+
+        print(f'Let sample p ')
         temp = diffusion.sample_p(ema, x_t, t)
 
         # 4)
