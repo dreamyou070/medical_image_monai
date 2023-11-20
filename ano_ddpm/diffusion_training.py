@@ -50,6 +50,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         train_data = 'training_data'
     else :
         train_data = 'test_data'
+
     video_save_dir = os.path.join(args.experiment_dir, 'diffusion-videos')
     image_save_dir = os.path.join(args.experiment_dir, 'diffusion-training-images')
     os.makedirs(video_save_dir, exist_ok=True)
@@ -62,15 +63,15 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
 
-        noise = torch.rand_like(x).to(x.device)
+        noise = torch.rand_like(x).float().to(x.device)
 
         # 2) select random int
-        t = torch.Tensor([args.sample_distance]).repeat(x.shape[0]).to(x.device)
+        t = torch.Tensor([args.sample_distance]).float().repeat(x.shape[0]).to(x.device)
         time_step = t[0].item()
         with torch.no_grad():
             # 3) q sampling = noising & p sampling = denoising
             print(f'Let sample q ')
-            print(f'x ')
+            print(f'x : {x.shape}, t : {t.shape}, noise : {noise.shape}')
             x_t = diffusion.sample_q(x, t, noise)
             time.sleep(10)
 
