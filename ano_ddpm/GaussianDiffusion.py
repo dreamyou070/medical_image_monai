@@ -128,7 +128,6 @@ def generate_simplex_noise(Simplex_instance, x, t,
         #                                                   octave,
         #                                                   persistence,
         #                                                   frequency)
-
         torch_noise = torch.from_numpy(noise_1).to(x.device).squeeze()
         #print(f"torch_noise shape (1, 256,256) : {torch_noise.shape}")
         batch_torch_noise = torch_noise.repeat(x.shape[0], 1, 1)

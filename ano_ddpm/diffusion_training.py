@@ -222,11 +222,9 @@ def main(args) :
             # 1) check random t
             t = torch.randint(0, args.sample_distance, (x.shape[0],), device = x.device)
             if args.use_simplex_noise :
-                print('generate simplex noise')
                 noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
             else :
                 noise = torch.randn_like(x)
-
             # 2) make noisy latent
             x_t = diffusion.sample_q(x, t, noise)
             # 3) model prediction
@@ -247,8 +245,7 @@ def main(args) :
             # EMA model updating
             update_ema_params(ema, model)
             # ----------------------------------------------------------------------------------------- #
-            # Inference+
-
+            # Inference
             if epoch % args.inference_freq == 0 and step == 0:
                 for i, test_data in enumerate(test_dataset_loader):
                     if i == 0:

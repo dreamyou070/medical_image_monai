@@ -45,7 +45,6 @@ class Simplex_CLASS:
         """
         assert len(shape) == 3
         noise = np.zeros(shape)
-        print(f'noise.shape: {noise.shape}')
         z, y, x = [np.arange(0, end) for end in shape]
         amplitude = 1
         for _ in range(octaves):
@@ -933,8 +932,6 @@ def testing_main():
     # y = np.arange(0, img_size[1]) / feature_size  # indices divided by feature size
     #
     three_noise = simplexObj.rand_3d_octaves((slices, *img_size), 6, 0.6)
-
-    print(three_noise.shape)
     fig, ax = plt.subplots()
     imgs = [[ax.imshow(three_noise[x], animated=True, cmap='gray')] for x in range(slices)]
     ani = animation.ArtistAnimation(
