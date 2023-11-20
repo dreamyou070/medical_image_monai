@@ -70,6 +70,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         with torch.no_grad():
             # 3) q sampling = noising & p sampling = denoising
             print(f'Let sample q ')
+            print(f'x ')
             x_t = diffusion.sample_q(x, t, noise)
             time.sleep(10)
 
@@ -166,10 +167,11 @@ def main(args) :
                                                                          a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
                                                                          clip=True),
                                          transforms.RandAffined(keys=["image"], spatial_size=[w, h], ), ])
-    val_ds = SYDataset_masking(data=val_datalist, transform=val_transforms,
+    val_ds = SYDataset_masking(data=val_datalist,
+                               transform=val_transforms,
                                base_mask_dir=args.val_mask_dir, image_size=args.img_size)
     test_dataset_loader = SYDataLoader(val_ds,batch_size=args.batch_size,
-                                     shuffle=True, num_workers=4, persistent_workers=True)
+                                       shuffle=True, num_workers=4, persistent_workers=True)
 
     print(f'\n step 3. resume or not')
 
