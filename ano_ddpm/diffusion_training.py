@@ -296,9 +296,10 @@ def main(args) :
                     ab_vlb_terms = diffusion.calc_total_vlb(abnormal_x, model, args)
                     ab_total_vlb = ab_vlb_terms["total_vlb"]  # [Batch]
                     ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze().mean(dim=1)  # whole_vb = [Batch, number of timestps = 1000, W, H]
+                    ab_whole_vb = ab_whole_vb.unsqueeze(dim=1)
                     print(f'ab_whole_vb (Batch, 1, W,H) : {ab_whole_vb.shape}')
-                    normal_portion_ab_whole_vb = abnormal_mask * ab_whole_vb
-                    abnormal_portion_ab_whole_vb = (1-abnormal_mask) * ab_whole_vb
+                    normal_portion_ab_whole_vb = abnormal_mask.to(device) * ab_whole_vb
+                    abnormal_portion_ab_whole_vb = (1-abnormal_mask).to(device) * ab_whole_vb
 
                     ab_batch_mean_vlb = ab_total_vlb.mean(dim=-1).cpu().item()
                     normal_portion_ab_whole_vb = normal_portion_ab_whole_vb.mean().cpu().item()
