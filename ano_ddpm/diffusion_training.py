@@ -221,15 +221,20 @@ def main(args) :
             # -----------------------------------------------------------------------------------------
             # 1) check random t
             t = torch.randint(0, args.sample_distance, (x.shape[0],), device = x.device)
+
+            if args.use_simplex_noise :
+                noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
+            else :
+                noise = torch.randn_like(x)
             # 2) make noisy latent
-            noise = diffusion.noise_fn(x=x,t=t,octave = 6,frequency = 64).float()
+
             x_t = diffusion.sample_q(x, t, noise)
             # 3) model prediction
             noise_pred = model(x_t, t)
             target = noise
             if args.masked_loss:
-                noise_pred = noise_pred * mask_info
-                target = target * mask_info
+                noise_pred = noise_pred * mask_info.to(device)
+                target = target * mask_info.to(device)
             # 4) loss
             loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
             loss = loss.mean()
@@ -351,6 +356,7 @@ if __name__ == '__main__':
     parser.add_argument('--start_epoch', type=int, default=0)
     parser.add_argument('--train_epochs', type=int, default=3000)
     parser.add_argument('--train_start', action = 'store_true')
+    parser.add_argument('--use_simplex_noise', action='store_true')
     parser.add_argument('--sample_distance', type=int, default = 800)
     parser.add_argument('--only_normal_training', action='store_true')
     parser.add_argument('--masked_loss', action='store_true')
