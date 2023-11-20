@@ -210,7 +210,7 @@ def main(args) :
         progress_bar.set_description(f"Epoch {epoch}")
         #for step, data in progress_bar:
         #    model.train()
-            """
+        """
             # -----------------------------------------------------------------------------------------
             # 0) data check
             x = data["image_info"]['image'].to(device)  # batch, channel, w, h
@@ -256,7 +256,7 @@ def main(args) :
                                          ema=ema, args=args, is_train_data = False, device = device)
                         training_outputs(diffusion, data, epoch, args.inference_num, save_imgs=args.save_imgs,
                                          ema=ema, args=args, is_train_data=True, device = device)
-            """
+        """
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
         print(f'vlb loss calculating ... ')
