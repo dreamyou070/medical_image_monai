@@ -52,16 +52,21 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
     os.makedirs(image_save_dir, exist_ok=True)
 
     if save_imgs:
+
         # 1) make random noise
         x = test_data["image_info"]['image'].to(device)  # batch, channel, w, h
         normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
-        noise = torch.rand_like(x)
+
+        noise = torch.rand_like(x).to(x.device)
+
         # 2) select random int
         t = torch.Tensor([args.sample_distance]).repeat(x.shape[0]).to(x.device)
         time_step = t[0].item()
+
         # 3) q sampling = noising & p sampling = denoising
         x_t = diffusion.sample_q(x, t, noise)
+
         temp = diffusion.sample_p(ema, x_t, t)
         # 4)
         real_images = x[:num_images, ...].cpu().permute(0,1,3,2) # [Batch, 1, W, H]
@@ -70,13 +75,10 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 
         merge_images = []
         for img_index in range(num_images):
-
             normal_info = normal_info[img_index]
-
             real = real_images[img_index,...].squeeze()
             real= real.unsqueeze(0)
             real = torch_transforms.ToPILImage()(real)
-
             sample = sample_images[img_index,...].squeeze()
             sample = sample.unsqueeze(0)
             sample = torch_transforms.ToPILImage()(sample)
@@ -238,6 +240,7 @@ def main(args) :
 
             # ----------------------------------------------------------------------------------------- #
             # Inference
+            """
             if epoch % args.inference_freq == 0 and step == 0:
                 for i, test_data in enumerate(test_dataset_loader):
                     if i == 0:
@@ -246,7 +249,7 @@ def main(args) :
                                          ema=ema, args=args, is_train_data = False, device = device)
                         training_outputs(diffusion, data, epoch, args.inference_num, save_imgs=args.save_imgs,
                                          ema=ema, args=args, is_train_data=True, device = device)
-
+            """
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader) :
                 if i == 0 :
