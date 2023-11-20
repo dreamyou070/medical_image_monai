@@ -208,7 +208,8 @@ def main(args) :
     for epoch in tqdm_epoch:
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=200)
         progress_bar.set_description(f"Epoch {epoch}")
-        for step, data in progress_bar:
+        #for step, data in progress_bar:
+        """
             model.train()
 
             # -----------------------------------------------------------------------------------------
@@ -256,6 +257,7 @@ def main(args) :
                                          ema=ema, args=args, is_train_data = False, device = device)
                         training_outputs(diffusion, data, epoch, args.inference_num, save_imgs=args.save_imgs,
                                          ema=ema, args=args, is_train_data=True, device = device)
+        """
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
         print(f'vlb loss calculating ... ')
@@ -293,7 +295,8 @@ def main(args) :
 
                     ab_vlb_terms = diffusion.calc_total_vlb(abnormal_x, model, args)
                     ab_total_vlb = ab_vlb_terms["total_vlb"]  # [Batch]
-                    ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze()  # whole_vb = [Batch, number of timestps = 1000, W, H]
+                    ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze().mean(dim=1)  # whole_vb = [Batch, number of timestps = 1000, W, H]
+                    print(f'ab_whole_vb (Batch, 1, W,H) : {ab_whole_vb.shape}')
                     normal_portion_ab_whole_vb = abnormal_mask * ab_whole_vb
                     abnormal_portion_ab_whole_vb = (1-abnormal_mask) * ab_whole_vb
 
