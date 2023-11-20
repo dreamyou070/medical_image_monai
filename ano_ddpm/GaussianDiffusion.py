@@ -407,6 +407,18 @@ class GaussianDiffusionModel:
                              logvar2=torch.tensor(0.0, device=x_0.device))
         return mean_flat(kl_prior) / np.log(2.0)
 
+    def calc_vlb_xt(self, model, x_0, x_t, t, estimate_noise=None):
+        # find KL divergence at t
+        true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
+        output = self.p_mean_variance(model, x_t, t, estimate_noise)
+        kl = normal_kl(true_mean, true_log_var, output["mean"], output["log_variance"])
+        kl = mean_flat(kl) / np.log(2.0)
+
+        decoder_nll = -discretised_gaussian_log_likelihood(x_0, output["mean"], log_scales=0.5 * output["log_variance"])
+        decoder_nll = mean_flat(decoder_nll) / np.log(2.0)
+        nll = torch.where((t == 0), decoder_nll, kl)
+        return {"output": nll, "pred_x_0": output["pred_x_0"]}
+
     def calc_total_vlb(self, x_0, model, args):
         vb = []
         x_0_mse = []

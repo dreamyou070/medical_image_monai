@@ -21,6 +21,8 @@ import PIL
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
 
+
+
 def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
     model_save_base_dir = os.path.join(args['experiment_dir'], 'diffusion-models')
     os.makedirs(model_save_base_dir, exist_ok=True)
@@ -66,8 +68,8 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 
         # 3) q sampling = noising & p sampling = denoising
         x_t = diffusion.sample_q(x, t, noise)
-
         temp = diffusion.sample_p(ema, x_t, t)
+
         # 4)
         real_images = x[:num_images, ...].cpu().permute(0,1,3,2) # [Batch, 1, W, H]
         sample_images = temp["sample"][:num_images, ...].cpu().permute(0, 1, 3, 2)  # [Batch, 1, W, H]
