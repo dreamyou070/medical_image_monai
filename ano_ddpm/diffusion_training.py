@@ -70,13 +70,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         time_step = t[0].item()
         with torch.no_grad():
             # 3) q sampling = noising & p sampling = denoising
-            print(f'Let sample q ')
-            print(f'x : {x.shape}, t : {t.shape}, noise : {noise.shape}')
-            print(f't : {t}')
             x_t = diffusion.sample_q(x, t, noise)
-            time.sleep(10)
-
-            print(f'Let sample p ')
             temp = diffusion.sample_p(ema, x_t, t)
 
         # 4)
