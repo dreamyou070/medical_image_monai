@@ -270,6 +270,9 @@ def main(args) :
                     normal_x = x[normal_info == 1]
                     abnormal_x = x[normal_info != 1]
 
+                    # mask 1 = normal, 0 = abnormal
+                    abnormal_mask = mask_info[normal_info != 1]
+
                     time_taken = time.time() - start_time
                     remaining_epochs = args.train_epochs - epoch
                     time_per_epoch = time_taken / (epoch + 1 - args.start_epoch)
@@ -291,9 +294,18 @@ def main(args) :
 
                     ab_vlb_terms = diffusion.calc_total_vlb(abnormal_x, model, args)
                     ab_total_vlb = ab_vlb_terms["total_vlb"]  # [Batch]
+                    ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze()  # whole_vb = [Batch, number of timestps = 1000, W, H]
+                    normal_portion_ab_whole_vb = abnormal_mask * ab_whole_vb
+                    abnormal_portion_ab_whole_vb = (1-abnormal_mask) * ab_whole_vb
+
                     ab_batch_mean_vlb = ab_total_vlb.mean(dim=-1).cpu().item()
+                    normal_portion_ab_whole_vb = normal_portion_ab_whole_vb.mean().cpu().item()
+                    abnormal_portion_ab_whole_vb = abnormal_portion_ab_whole_vb.mean().cpu().item()
+                    print(f"normal_portion_ab_whole_vb : {normal_portion_ab_whole_vb}")
                     # vlb.append(batch_mean_vlb)
-                    wandb.log({"total_vlb (test *ab*normal data)": ab_batch_mean_vlb})
+                    wandb.log({"total_vlb (test *ab*normal data)": ab_batch_mean_vlb,
+                               "normal portion of *ab*normal sample kl": normal_portion_ab_whole_vb,
+                               "abnormal portion of *ab*normal sample kl": abnormal_portion_ab_whole_vb})
 
                     # --------------------------------------------------------------------------------------------------
                     # collecting total vlb in deque collections

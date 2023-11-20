@@ -487,21 +487,17 @@ class GaussianDiffusionModel:
             model_noise = self.predict_eps_from_x_0(x_t, t_batch, out["pred_x_0"])
             true_noise = noise
             noise_mse.append(mean_flat((model_noise - true_noise) ** 2))
-
-
-
         # vb = [Batch, number of timestps = 1000]
         whole_vb = torch.stack(vb_whole, dim=1)  # [batch, 1, W, H]
-        print(f'whole_vb.shape : {whole_vb.shape}')
         vb        = torch.stack(vb, dim=1)        # [batch, 1000]
         x_0_mse   = torch.stack(x_0_mse, dim=1)
         noise_mse = torch.stack(noise_mse, dim=1)
         prior_vlb = self.prior_vlb(x_0, args)     # [batch]
         total_vlb = vb.sum(dim=1) + prior_vlb     # [batch]
-
         return {"total_vlb": total_vlb,
                 "prior_vlb": prior_vlb,
                 "vb": vb,
+                "whole_vb": whole_vb,
                 "x_0_mse": x_0_mse,
                 "mse": noise_mse,}
 
