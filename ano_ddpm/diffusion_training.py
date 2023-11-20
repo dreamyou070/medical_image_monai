@@ -17,6 +17,7 @@ from UNet import UNetModel, update_ema_params
 import torch.multiprocessing
 import torchvision.transforms as torch_transforms
 import PIL
+from setproctitle import *
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
@@ -115,6 +116,10 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 def main(args) :
 
     print(f'\n step 1. setting')
+    if args.process_title:
+        setproctitle(args.process_title)
+    else:
+        setproctitle('parksooyeon')
     print(f' (1.1) wandb')
     wandb.login(key=args.wandb_api_key)
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
@@ -290,6 +295,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # step 1. wandb login
+    parser.add_argument("--process_title", type=str, default='parksooyeon')
     parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
     parser.add_argument("--wandb_project_name", type=str, default='dental_experiment')
     parser.add_argument("--wandb_run_name", type=str, default='hand_1000_64res')
