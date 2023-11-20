@@ -151,6 +151,7 @@ class GaussianDiffusionModel:
                  noise="gauss",  # gauss / perlin / simplex
                  ):
         super().__init__()
+
         if noise == "gauss":
             self.noise_fn = lambda x, t: torch.randn_like(x)
         else:
@@ -164,6 +165,7 @@ class GaussianDiffusionModel:
                 self.noise_fn = lambda x, t: random_noise(self.simplex, x, t)
 
             else: # simplex
+                print("Here is what the noise_fn")
                 self.noise_fn = lambda x, t: generate_simplex_noise(self.simplex,             # Simplex_CLASS()
                                                                     x, t, False,
                                                                     octave=6,
