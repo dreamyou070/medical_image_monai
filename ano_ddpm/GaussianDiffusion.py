@@ -449,14 +449,16 @@ class GaussianDiffusionModel:
         model_mean = output["mean"]
         model_log_var = output["log_variance"]
 
-        kl = normal_kl(true_mean, true_log_var,
-                       model_mean, model_log_var)
+        kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
+        print(f'originalk kl : {kl.shape}')
         kl = mean_flat(kl) / np.log(2.0)
+        print(f'after mean flat, kl : {kl.shape}')
         decoder_nll = -discretised_gaussian_log_likelihood(x_0, output["mean"], log_scales=0.5 * output["log_variance"])
         decoder_nll = mean_flat(decoder_nll) / np.log(2.0)
         nll = torch.where((t == 0), decoder_nll, kl)
         return {"output": nll,
-                "pred_x_0": output["pred_x_0"]}
+                "pred_x_0": output["pred_x_0"],
+                "whole_kl" : kl}
 
     def calc_total_vlb(self, x_0, model, args):
         vb = []
@@ -470,7 +472,8 @@ class GaussianDiffusionModel:
             # ----------------------------------------------------------------------------------------------------------
             # 1) Calculate VLB term at the current timestep
             with torch.no_grad():
-                out = self.calc_vlb_xt(model,x_0=x_0,x_t=x_t,t=t_batch,)
+                out = self.calc_vlb_xt(model,
+                                       x_0=x_0,x_t=x_t,t=t_batch,)
                 kl_divergence = out["output"]
             vb.append(kl_divergence)
 
