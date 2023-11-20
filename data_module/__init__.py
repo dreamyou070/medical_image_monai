@@ -110,7 +110,6 @@ class SYDataset_masking(_TorchDataset):
             return Subset(dataset=self, indices=index)
 
         data_dir = self.data[index]['image']
-        print(f'data_dir : {data_dir}')
         parent, net_name = os.path.split(data_dir)
         mask_dir = os.path.join(self.base_mask_dir, net_name)
         mask_pil = Image.open(mask_dir)
