@@ -469,6 +469,7 @@ class GaussianDiffusionModel:
             with torch.no_grad():
                 out = self.calc_vlb_xt(model,x_0=x_0,x_t=x_t,t=t_batch,)
                 kl_divergence = out["output"]
+            print(f'kl_divergence (Batch, 1, 128, 128) : {kl_divergence.shape}')
             vb.append(kl_divergence)
 
             # ----------------------------------------------------------------------------------------------------------
