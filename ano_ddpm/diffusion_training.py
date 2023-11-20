@@ -255,9 +255,10 @@ def main(args) :
                     if i == 0:
                         ema.eval()
                         model.eval()
-                        training_outputs(diffusion, test_data, epoch, args.inference_num, save_imgs=args.save_imgs,
+                        inference_num = min(args.inference_num, args.batch_size)
+                        training_outputs(diffusion, test_data, epoch, inference_num, save_imgs=args.save_imgs,
                                          ema=ema, args=args, is_train_data = False, device = device)
-                        training_outputs(diffusion, data, epoch, args.inference_num, save_imgs=args.save_imgs,
+                        training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
                                          ema=ema, args=args, is_train_data=True, device = device)
 
         # ----------------------------------------------------------------------------------------- #
