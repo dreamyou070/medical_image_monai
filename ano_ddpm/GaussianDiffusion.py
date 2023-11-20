@@ -415,6 +415,9 @@ class GaussianDiffusionModel:
                 extract(self.sqrt_betas, t, x_t.shape, x_t.device) * noise)
 
     def prior_vlb(self, x_0, args):
+
+        # --------------------------------------------------------------------------------------------------------------
+        # 1) calculate q (x_T | x_0) : final step mean, and log_variance
         t = torch.tensor([self.num_timesteps - 1] * x_0.shape[0], device=x_0.device)
         qt_mean, _, qt_log_variance = self.q_mean_variance(x_0, t)
 
@@ -432,51 +435,64 @@ class GaussianDiffusionModel:
         return mean_flat(kl_prior) / np.log(2.0)
 
     def calc_vlb_xt(self, model, x_0, x_t, t, estimate_noise=None):
-        # find KL divergence at t
-        true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
-        output = self.p_mean_variance(model, x_t, t, estimate_noise)
-        kl = normal_kl(true_mean, true_log_var, output["mean"], output["log_variance"])
-        kl = mean_flat(kl) / np.log(2.0)
 
+        # --------------------------------------------------------------------------------------------------------------
+        # 1) calculating from scheduler
+        true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
+
+        # --------------------------------------------------------------------------------------------------------------
+        # 2) calculating from model
+        output = self.p_mean_variance(model, x_t, t, estimate_noise)
+        model_mean = output["mean"]
+        model_log_var = output["log_variance"]
+
+        kl = normal_kl(true_mean, true_log_var,
+                       model_mean, model_log_var)
+        kl = mean_flat(kl) / np.log(2.0)
         decoder_nll = -discretised_gaussian_log_likelihood(x_0, output["mean"], log_scales=0.5 * output["log_variance"])
         decoder_nll = mean_flat(decoder_nll) / np.log(2.0)
         nll = torch.where((t == 0), decoder_nll, kl)
-        return {"output": nll, "pred_x_0": output["pred_x_0"]}
+        return {"output": nll,
+                "pred_x_0": output["pred_x_0"]}
 
     def calc_total_vlb(self, x_0, model, args):
         vb = []
         x_0_mse = []
-        mse = []
+        noise_mse = []
         for t in reversed(list(range(self.num_timesteps))):
             t_batch = torch.tensor([t] * x_0.shape[0], device=x_0.device)
             noise = torch.randn_like(x_0)
             x_t = self.sample_q(x_0=x_0, t=t_batch, noise=noise)
-            # Calculate VLB term at the current timestep
+
+            # ----------------------------------------------------------------------------------------------------------
+            # 1) Calculate VLB term at the current timestep
             with torch.no_grad():
-                out = self.calc_vlb_xt(
-                    model,
-                    x_0=x_0,
-                    x_t=x_t,
-                    t=t_batch,
-                )
-            vb.append(out["output"])
-            x_0_mse.append(mean_flat((out["pred_x_0"] - x_0) ** 2))
-            eps = self.predict_eps_from_x_0(x_t, t_batch, out["pred_x_0"])
-            mse.append(mean_flat((eps - noise) ** 2))
+                out = self.calc_vlb_xt(model,x_0=x_0,x_t=x_t,t=t_batch,)
+                kl_divergence = out["output"]
+            vb.append(kl_divergence)
 
-        vb = torch.stack(vb, dim=1)
-        x_0_mse = torch.stack(x_0_mse, dim=1)
-        mse = torch.stack(mse, dim=1)
+            # ----------------------------------------------------------------------------------------------------------
+            # 2) every timestep, MSE between model_x0 and true_x)
+            model_x0 = kl_divergence
+            true_x0 = x_0
+            x_0_mse.append(mean_flat((model_x0 - true_x0) ** 2))
 
+            # ----------------------------------------------------------------------------------------------------------
+            # 3) every timestep, MSE between model_noise and true_noise
+            model_noise = self.predict_eps_from_x_0(x_t, t_batch, out["pred_x_0"])
+            true_noise = noise
+            noise_mse.append(mean_flat((model_noise - true_noise) ** 2))
+
+        vb        = torch.stack(vb, dim=1)
+        x_0_mse   = torch.stack(x_0_mse, dim=1)
+        noise_mse = torch.stack(noise_mse, dim=1)
         prior_vlb = self.prior_vlb(x_0, args)
         total_vlb = vb.sum(dim=1) + prior_vlb
-        return {
-            "total_vlb": total_vlb,
-            "prior_vlb": prior_vlb,
-            "vb": vb,
-            "x_0_mse": x_0_mse,
-            "mse": mse,
-        }
+        return {"total_vlb": total_vlb,
+                "prior_vlb": prior_vlb,
+                "vb": vb,
+                "x_0_mse": x_0_mse,
+                "mse": noise_mse,}
 
     def detection_A(self, model, x_0, args, file, mask, total_avg=2):
         for i in [f"./diffusion-videos/ARGS={args['arg_num']}/Anomalous/{file[0]}",

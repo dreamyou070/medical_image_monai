@@ -241,7 +241,6 @@ def main(args) :
             # ----------------------------------------------------------------------------------------- #
             # EMA model updating
             update_ema_params(ema, model)
-
             # ----------------------------------------------------------------------------------------- #
             # Inference
             if epoch % args.inference_freq == 0 and step == 0:
@@ -253,6 +252,8 @@ def main(args) :
                                          ema=ema, args=args, is_train_data = False, device = device)
                         training_outputs(diffusion, data, epoch, args.inference_num, save_imgs=args.save_imgs,
                                          ema=ema, args=args, is_train_data=True, device = device)
+        # ----------------------------------------------------------------------------------------- #
+        # vlb loss calculating
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader) :
                 if i == 0 :
@@ -263,10 +264,22 @@ def main(args) :
                     hours = remaining_epochs * time_per_epoch / 3600
                     mins = (hours % 1) * 60
                     hours = int(hours)
-                    # ------------------------------------------------------------------------
+                    # --------------------------------------------------------------------------------------------------
                     # calculate vlb loss
                     vlb_terms = diffusion.calc_total_vlb(x, model, args)
-                    vlb.append(vlb_terms["total_vlb"].mean(dim=-1).cpu().item())
+                    total_vlb = vlb_terms["total_vlb"]
+                    prior_vlb = vlb_terms["prior_vlb"]
+                    vb = vlb_terms["vb"]
+                    x_0_mse = vlb_terms["x_0_mse"]
+                    noise_mse = vlb_terms["noise_mse"]
+                    # --------------------------------------------------------------------------------------------------
+                    # collecting total vlb in deque collections
+                    print(f'x : {x.shape} | total_vlb : {total_vlb.shape}')
+                    """
+                    vlb.append(total_vlb.mean(dim=-1).cpu().item())
+
+                    log_dict = {"total_vlb": total_vlb.mean(dim=-1).cpu().item(),}
+                    wandb.log({"vlb": total_vlb.mean(dim=-1).cpu().item()})
                     print(f"epoch: {epoch}, most recent total VLB: {vlb[-1]} mean total VLB:"
                           f" {np.mean(vlb):.4f}, "
                           f"prior vlb: {vlb_terms['prior_vlb'].mean(dim=-1).cpu().item():.2f}, vb: "
@@ -275,6 +288,7 @@ def main(args) :
                           f"{torch.mean(vlb_terms['mse'], dim=list(range(2))).cpu().item():.2f}"
                           f" time elapsed {int(time_taken / 3600)}:{((time_taken / 3600) % 1) * 60:02.0f}, "
                           f"est time remaining: {hours}:{mins:02.0f}\r")
+                    """
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
