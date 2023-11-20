@@ -232,6 +232,9 @@ def main(args) :
             # 1) check random t
             t = torch.randint(0, args.sample_distance, (x.shape[0],), device = x.device)
             # 2) make noisy latent
+
+            noise_function = diffusion.noise_fn
+            print(f'noise_function : {noise_function}')
             print(f'when generate noise, t : {t}')
             noise = diffusion.noise_fn(diffusion.simplex,
                                        x, t,
