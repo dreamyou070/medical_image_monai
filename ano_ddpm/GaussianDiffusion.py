@@ -401,12 +401,10 @@ class GaussianDiffusionModel:
         return mean_flat(kl_prior) / np.log(2.0)
 
     def prior_vlb(self, x_0, args):
-        t = torch.tensor([self.num_timesteps - 1] * args["Batch_Size"], device=x_0.device)
+        t = torch.tensor([self.num_timesteps - 1] * x_0.shape[0], device=x_0.device)
         qt_mean, _, qt_log_variance = self.q_mean_variance(x_0, t)
-        kl_prior = normal_kl(
-            mean1=qt_mean, logvar1=qt_log_variance, mean2=torch.tensor(0.0, device=x_0.device),
-            logvar2=torch.tensor(0.0, device=x_0.device)
-        )
+        kl_prior = normal_kl(mean1=qt_mean, logvar1=qt_log_variance, mean2=torch.tensor(0.0, device=x_0.device),
+                             logvar2=torch.tensor(0.0, device=x_0.device))
         return mean_flat(kl_prior) / np.log(2.0)
 
     def calc_total_vlb(self, x_0, model, args):
@@ -414,7 +412,7 @@ class GaussianDiffusionModel:
         x_0_mse = []
         mse = []
         for t in reversed(list(range(self.num_timesteps))):
-            t_batch = torch.tensor([t] * args["Batch_Size"], device=x_0.device)
+            t_batch = torch.tensor([t] * x_0.shape[0], device=x_0.device)
             noise = torch.randn_like(x_0)
             x_t = self.sample_q(x_0=x_0, t=t_batch, noise=noise)
             # Calculate VLB term at the current timestep
