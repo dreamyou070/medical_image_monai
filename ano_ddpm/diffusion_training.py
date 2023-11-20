@@ -72,6 +72,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             # 3) q sampling = noising & p sampling = denoising
             print(f'Let sample q ')
             print(f'x : {x.shape}, t : {t.shape}, noise : {noise.shape}')
+            print(f't : {t}')
             x_t = diffusion.sample_q(x, t, noise)
             time.sleep(10)
 
@@ -228,6 +229,8 @@ def main(args) :
             t = torch.randint(0, args.sample_distance, (x.shape[0],), device = x.device)
             # 2) make noisy latent
             noise = diffusion.noise_fn(x, t).float()
+            print(f'main function, x : {x.shape}, t : {t.shape}, noise : {noise.shape}')
+            print(f'main function, t : {t}')
             x_t = diffusion.sample_q(x, t, noise)
             # 3) model prediction
             noise_pred = model(x_t, t)
