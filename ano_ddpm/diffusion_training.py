@@ -160,7 +160,9 @@ def main(args) :
     training_dataset_loader = SYDataLoader(train_ds,batch_size=args.batch_size,
                                          shuffle=True, num_workers=4, persistent_workers=True)
     check_data = first(training_dataset_loader)
-    image_x = check_data['image_info']['image'][0]
+    check_data = train_ds.__getitem__(0)
+
+    image_x = check_data['image_info']['image']
     real = torch_transforms.ToPILImage()(image_x)
     real.save(f'real_test.png')
 
