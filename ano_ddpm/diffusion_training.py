@@ -271,7 +271,7 @@ def main(args) :
                     abnormal_x = x[normal_info != 1]
 
                     # mask 1 = normal, 0 = abnormal
-                    abnormal_mask = mask_info[normal_info != 1]
+                    abnormal_mask = mask_info[normal_info != 1].to(device)
 
                     time_taken = time.time() - start_time
                     remaining_epochs = args.train_epochs - epoch
