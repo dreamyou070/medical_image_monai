@@ -469,7 +469,6 @@ class GaussianDiffusionModel:
             with torch.no_grad():
                 out = self.calc_vlb_xt(model,x_0=x_0,x_t=x_t,t=t_batch,)
                 kl_divergence = out["output"]
-            print(f'kl_divergence (Batch, 1, 128, 128) : {kl_divergence.shape}')
             vb.append(kl_divergence)
 
             # ----------------------------------------------------------------------------------------------------------
@@ -484,10 +483,12 @@ class GaussianDiffusionModel:
             true_noise = noise
             noise_mse.append(mean_flat((model_noise - true_noise) ** 2))
 
+        # vb = [Batch, number of timestps = 1000]
         vb        = torch.stack(vb, dim=1)
         x_0_mse   = torch.stack(x_0_mse, dim=1)
         noise_mse = torch.stack(noise_mse, dim=1)
         prior_vlb = self.prior_vlb(x_0, args)
+        print(f'vb (batch=16, timestep=1000) : {vb.shape} | prior_vlb (batch=16, timestep=1) : {prior_vlb.shape}')
         total_vlb = vb.sum(dim=1) + prior_vlb
         return {"total_vlb": total_vlb,
                 "prior_vlb": prior_vlb,
