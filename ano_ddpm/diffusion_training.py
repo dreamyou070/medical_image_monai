@@ -88,6 +88,10 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         #num_images = min(len(normal_info), num_images)
         for img_index in range(num_images):
             normal_info_ = normal_info[img_index]
+            if normal_info_ == 1:
+                is_normal = 'normal'
+            else :
+                is_normal = 'abnormal'
             real = real_images[img_index,...].squeeze()
             real= real.unsqueeze(0)
             real = torch_transforms.ToPILImage()(real)
@@ -103,17 +107,21 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             new_image.paste(real, (0, 0))
             new_image.paste(sample, (real.size[0], 0))
             new_image.paste(pred, (real.size[0]+sample.size[0], 0))
-            merge_images.append(new_image)
+            new_image.save(os.path.join(image_save_dir, f'epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
+            loading_image = wandb.Image(new_image,
+                                        caption=f"epoch {epoch + 1} | {is_normal} | {train_data}')
+            wandb.log({"inference": loading_image})
 
-        new_image = PIL.Image.new('RGB', (merge_images[0].size[0], len(merge_images) * merge_images[0].size[1]), (250, 250, 250))
-        for i, img in enumerate(merge_images) :
-            new_image.paste(img, (0, i * img.size[1]))
-        img_save_dir = os.path.join(image_save_dir, f'epoch_{epoch}_{train_data}.png')
-        new_image.save(img_save_dir)
-        print(f'saving image to {img_save_dir}')
-        loading_image = wandb.Image(new_image,
-                                    caption=f"epoch : {epoch + 1}")
-        wandb.log({"train_data": loading_image})
+            #merge_images.append(new_image)
+
+        #new_image = PIL.Image.new('RGB', (merge_images[0].size[0], len(merge_images) * merge_images[0].size[1]), (250, 250, 250))
+        #for i, img in enumerate(merge_images) :
+        #    new_image.paste(img, (0, i * img.size[1]))
+        #img_save_dir = os.path.join(image_save_dir, f'epoch_{epoch}_{train_data}.png')
+        #new_image.save(img_save_dir)
+        #loading_image = wandb.Image(new_image,
+        #                            caption=f"epoch : {epoch + 1}")
+        #wandb.log({"train_data": loading_image})
 
 
 
