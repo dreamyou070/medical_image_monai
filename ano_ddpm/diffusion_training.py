@@ -236,8 +236,8 @@ def main(args) :
             noise_function = diffusion.noise_fn
             print(f'noise_function : {noise_function}')
             print(f'when generate noise, t : {t}')
-            noise = diffusion.noise_fn(diffusion.simplex,
-                                       x, t,
+            noise = diffusion.noise_fn(x=x,
+                                       t=t,
                                        octave = 6,
                                        frequency = 64).float()
 

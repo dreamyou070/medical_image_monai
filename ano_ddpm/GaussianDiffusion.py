@@ -166,10 +166,10 @@ class GaussianDiffusionModel:
 
             else: # simplex
                 print("Here is what the noise_fn")
-                self.noise_fn = lambda x, t: generate_simplex_noise(self.simplex,             # Simplex_CLASS()
+                self.noise_fn = lambda x, t, octave, frequency, : generate_simplex_noise(self.simplex,             # Simplex_CLASS()
                                                                     x, t, False,
-                                                                    octave=6,
-                                                                    frequency = 64,
+                                                                    octave=octave,
+                                                                    frequency = frequency,
                                                                     in_channels=img_channels) # 1
 
 
