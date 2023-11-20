@@ -231,7 +231,7 @@ def main(args) :
             noise_pred = model(x_t, t)
             target = noise
             if args.masked_loss:
-                print(f'when masked loss, mask_info : {mask_info.shape} | noise_pred : {noise_pred.shape}')
+                #print(f'when masked loss, mask_info : {mask_info.shape} | noise_pred : {noise_pred.shape}')
                 noise_pred = noise_pred * mask_info.to(device)
                 target = target * mask_info.to(device)
             # 4) loss
