@@ -128,7 +128,6 @@ def generate_simplex_noise(Simplex_instance, x, t,
         torch_noise = torch.from_numpy(noise_1).to(x.device).squeeze()
         #print(f"torch_noise shape (1, 256,256) : {torch_noise.shape}")
         batch_torch_noise = torch_noise.repeat(x.shape[0], 1, 1)
-        print(f"batch_torch_noise : {batch_torch_noise.shape}")
         noise[:, i, ...] = torch_noise
     return noise
 
@@ -169,7 +168,6 @@ class GaussianDiffusionModel:
                 self.noise_fn = lambda x, t: random_noise(self.simplex, x, t)
 
             else: # simplex
-                print("Here is what the noise_fn")
                 self.noise_fn = lambda x, t, octave, frequency, : generate_simplex_noise(self.simplex,             # Simplex_CLASS()
                                                                     x, t, False,
                                                                     octave=octave,
