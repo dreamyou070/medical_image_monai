@@ -73,11 +73,10 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             x_t = diffusion.sample_q(x, t, noise)
             temp = diffusion.sample_p(ema, x_t, t)
 
-        # 4)
+        # 4) what is sample_p do ?
         real_images = x[:num_images, ...].cpu().permute(0,1,3,2) # [Batch, 1, W, H]
         sample_images = temp["sample"][:num_images, ...].cpu().permute(0, 1, 3, 2)  # [Batch, 1, W, H]
         pred_images = temp["pred_x_0"][:num_images, ...].cpu().permute(0,1,3,2)
-
         merge_images = []
         #num_images = min(len(normal_info), num_images)
         for img_index in range(num_images):
@@ -92,20 +91,17 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             sample = sample_images[img_index,...].squeeze()
             sample = sample.unsqueeze(0)
             sample = torch_transforms.ToPILImage()(sample)
-
             pred = pred_images[img_index,...].squeeze()
             pred = pred.unsqueeze(0)
             pred = torch_transforms.ToPILImage()(pred)
-
             new_image = PIL.Image.new('RGB', (3 * real.size[0], real.size[1]), (250, 250, 250))
             new_image.paste(real, (0, 0))
             new_image.paste(sample, (real.size[0], 0))
             new_image.paste(pred, (real.size[0]+sample.size[0], 0))
-            new_image.save(os.path.join(image_save_dir, f'epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
+            new_image.save(os.path.join(image_save_dir, f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
             loading_image = wandb.Image(new_image,
-                                        caption=f"epoch {epoch + 1} | {is_normal} | {train_data}")
+                                        caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
             wandb.log({"inference": loading_image})
-
             #merge_images.append(new_image)
 
         #new_image = PIL.Image.new('RGB', (merge_images[0].size[0], len(merge_images) * merge_images[0].size[1]), (250, 250, 250))
@@ -226,20 +222,7 @@ def main(args) :
             # 1) check random t
             t = torch.randint(0, args.sample_distance, (x.shape[0],), device = x.device)
             # 2) make noisy latent
-
-            noise_function = diffusion.noise_fn
-            print(f'noise_function : {noise_function}')
-            print(f'when generate noise, t : {t}')
-            noise = diffusion.noise_fn(x=x,
-                                       t=t,
-                                       octave = 6,
-                                       frequency = 64).float()
-
-
-
-
-
-
+            noise = diffusion.noise_fn(x=x,t=t,octave = 6,frequency = 64).float()
             x_t = diffusion.sample_q(x, t, noise)
             # 3) model prediction
             noise_pred = model(x_t, t)
@@ -250,12 +233,6 @@ def main(args) :
             # 4) loss
             loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
             loss = loss.mean()
-
-            def mean_flat(tensor):
-                return torch.mean(tensor, dim=list(range(1, len(tensor.shape))))
-            ddpm_loss = mean_flat((noise_pred - target).square()).mean()
-            print(f'loss : {loss.item()} | ddpm_loss : {ddpm_loss.item()}')
-
             wandb.log({"loss": loss.item()})
             optimiser.zero_grad()
             loss.backward()
@@ -267,18 +244,15 @@ def main(args) :
 
             # ----------------------------------------------------------------------------------------- #
             # Inference
-
             if epoch % args.inference_freq == 0 and step == 0:
                 for i, test_data in enumerate(test_dataset_loader):
                     if i == 0:
                         ema.eval()
                         model.eval()
-
                         training_outputs(diffusion, test_data, epoch, args.inference_num, save_imgs=args.save_imgs,
                                          ema=ema, args=args, is_train_data = False, device = device)
                         training_outputs(diffusion, data, epoch, args.inference_num, save_imgs=args.save_imgs,
                                          ema=ema, args=args, is_train_data=True, device = device)
-
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader) :
                 if i == 0 :

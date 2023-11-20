@@ -313,6 +313,10 @@ class GaussianDiffusionModel:
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
         # -------------------------------------------------------------------------------------------------------------
         out = self.p_mean_variance(model, x_t, t)
+        # out["mean"] = one step unnoised x mean
+        # out["variance"] = model variance about batas
+        # out["pred_x_0"] = model predict x_0
+
         # noise = torch.randn_like(x_t)
         if type(denoise_fn) == str:
             if denoise_fn == "gauss":
@@ -335,9 +339,9 @@ class GaussianDiffusionModel:
         # mean is x_t-1 mean
         x_t_1_mean = out["mean"]                    # torch.Size([32, 1, 64, 64])
         model_log_variances = out["log_variance"]   # torch.Size([32, 1, 64, 64])
-        noise_residual = nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise # torch.Size([32, 1, 64, 64])
-        sample = out["mean"] + noise_residual    # mean + variance * noise ( is out['mean'] mean x_t_1 sample mean?)
-        return {"sample": sample,                # x_t-1
+        std = torch.exp(0.5 * out["log_variance"])
+        sample = out["mean"] + nonzero_mask * std * noise # torch.Size([32, 1, 64, 64])
+        return {"sample": sample,                # (mean) + (std * noise)
                 "pred_x_0": out["pred_x_0"]}     # x_0
 
     def p_mean_variance(self, model, x_t, t, estimate_noise=None):
@@ -352,7 +356,9 @@ class GaussianDiffusionModel:
         model_logvar = np.log(model_var)
         model_var = extract(model_var, t, x_t.shape, x_t.device)
         model_logvar = extract(model_logvar, t, x_t.shape, x_t.device)
+
         pred_x_0 = self.predict_x_0_from_eps(x_t, t, estimate_noise).clamp(-1, 1)
+
         model_mean, _, _ = self.q_posterior_mean_variance(pred_x_0, x_t, t)
         return {"mean":         model_mean,
                 "variance":     model_var,
