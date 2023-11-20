@@ -214,7 +214,7 @@ def main(args) :
             # 0) data check
             x = data["image_info"]['image'].to(device)  # batch, channel, w, h
             normal_info = data['normal'] # if 1 = normal, 0 = abnormal
-            mask_info = data['mask']     # if 1 = normal, 0 = abnormal
+            mask_info = data['mask'].unsqueeze(dim=1)    # if 1 = normal, 0 = abnormal
             if args.only_normal_training :
                 x = x[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
