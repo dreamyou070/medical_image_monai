@@ -1,9 +1,5 @@
-# https://github.com/lmas/opensimplex fork
-
-
 from ctypes import c_int64
 from math import floor
-
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
@@ -34,9 +30,13 @@ class Simplex_CLASS:
     def noise3array(self, x, y, z):
         return _noise3a(x, y, z, self._perm, self._perm_grad_index3)
 
-    def rand_3d_octaves(self, shape, octaves=1, persistence=0.5, frequency=32):
+    def rand_3d_octaves(self,
+                        shape,
+                        octaves=1,      # 6
+                        persistence=0.5,
+                        frequency=32):  # 2^6 = 64
         """
-            Returns a layered fractal noise in 3D
+        Returns a layered fractal noise in 3D
         :param shape: Shape of 3D tensor output
         :param octaves: Number of levels of fractal noise
         :param persistence: float between (0-1) -> Rate at which amplitude of each level decreases
@@ -72,7 +72,23 @@ class Simplex_CLASS:
             amplitude *= persistence
         return noise
 
-    def rand_3d_fixed_T_octaves(self, shape, T, octaves=1, persistence=0.5, frequency=32):
+    """
+    def _noise3 
+    
+    
+    @njit(cache=True, parallel=True)
+    def _noise3a(X, Y, Z, perm, perm_grad_index3):
+        noise = np.zeros((Z.size, Y.size, X.size), dtype=np.double)
+        for z in prange(Z.size):
+            for y in prange(Y.size):
+                for x in prange(X.size):
+                    noise[z, y, x] = _noise3(X[x], Y[y], Z[z], perm, perm_grad_index3)
+        return noise
+    """
+    def rand_3d_fixed_T_octaves(self, shape, T,
+                                octaves=1,      # 6
+                                persistence=0.5,
+                                frequency=32):  # 2^6 = 64
         """
         Returns a layered fractal noise in 3D
 
@@ -84,10 +100,17 @@ class Simplex_CLASS:
         """
         assert len(shape) == 2
         noise = np.zeros((1, *shape))
-        y, x = [np.arange(0, end) for end in shape]
+        y, x = [np.arange(0, end) for end in shape] # [0, ..., 255], [0, ..., 255]
         amplitude = 1
         for _ in range(octaves):
-            noise += amplitude * self.noise3array(x / frequency, y / frequency, T / frequency)
+            # _         = 0,   1,  2,    3,     4,      5
+            # frequent  = 64, 32,  16,   8,     4,      2
+            # amplitude = 1,  0.5, 0.25, 0.125, 0.0625, 0.03125
+            # self.noise3array make all same shape
+            #
+            noise += amplitude * self.noise3array(x / frequency,  # 255 shape
+                                                  y / frequency,  # 255 shape
+                                                  T / frequency)  # batch num
             frequency /= 2
             amplitude *= persistence
         return noise
