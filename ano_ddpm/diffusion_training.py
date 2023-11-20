@@ -66,7 +66,6 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         noise = torch.rand_like(x).float().to(x.device)
 
         # 2) select random int
-        #t = torch.Tensor([int(args.sample_distance)]).long().repeat(x.shape[0]).to(x.device)
         t = torch.randint(args.sample_distance-1, args.sample_distance, (x.shape[0],), device=x.device)
         time_step = t[0].item()
         with torch.no_grad():
@@ -86,8 +85,9 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         pred_images = temp["pred_x_0"][:num_images, ...].cpu().permute(0,1,3,2)
 
         merge_images = []
+        #num_images = min(len(normal_info), num_images)
         for img_index in range(num_images):
-            normal_info = normal_info[img_index]
+            normal_info_ = normal_info[img_index]
             real = real_images[img_index,...].squeeze()
             real= real.unsqueeze(0)
             real = torch_transforms.ToPILImage()(real)
