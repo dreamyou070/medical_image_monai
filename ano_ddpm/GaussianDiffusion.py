@@ -473,7 +473,7 @@ class GaussianDiffusionModel:
 
             # ----------------------------------------------------------------------------------------------------------
             # 2) every timestep, MSE between model_x0 and true_x)
-            model_x0 = kl_divergence
+            model_x0 = out['pred_x_0']
             true_x0 = x_0
             x_0_mse.append(mean_flat((model_x0 - true_x0) ** 2))
 
@@ -510,8 +510,8 @@ class GaussianDiffusionModel:
                 in_channels=self.img_channels
             )
 
-            for t_distance in range(50, int(args["T"] * 0.6), 50):
-                output = torch.empty((total_avg, 1, *args["img_size"]), device=x_0.device)
+            for t_distance in range(50, int(args.T * 0.6), 50):
+                output = torch.empty((total_avg, 1, *args.img_size), device=x_0.device)
                 for avg in range(total_avg):
 
                     t_tensor = torch.tensor([t_distance], device=x_0.device).repeat(x_0.shape[0])
