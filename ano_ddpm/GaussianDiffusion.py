@@ -163,7 +163,12 @@ class GaussianDiffusionModel:
             else: # simplex
                 self.noise_fn = lambda x, t: generate_simplex_noise(self.simplex,             # Simplex_CLASS()
                                                                     x, t, False,
+                                                                    octave=6,
+                                                                    frequency = 64,
                                                                     in_channels=img_channels) # 1
+                
+
+
         self.img_size = img_size
         self.img_channels = img_channels
         self.loss_type = loss_type
