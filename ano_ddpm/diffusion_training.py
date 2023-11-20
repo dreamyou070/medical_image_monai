@@ -41,6 +41,7 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     "ema":                  ema.state_dict(),
                     'loss':                 loss,},
             os.path.join(model_save_base_dir, f'diff-params-ARGS={args["arg_num"]}_diff_epoch={epoch}.pt'))
+
 def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                      save_imgs=False, is_train_data=True, device='cuda'):
 
@@ -246,7 +247,7 @@ def main(args) :
 
             # ----------------------------------------------------------------------------------------- #
             # Inference
-            """
+
             if epoch % args.inference_freq == 0 and step == 0:
                 for i, test_data in enumerate(test_dataset_loader):
                     if i == 0:
@@ -255,7 +256,7 @@ def main(args) :
                                          ema=ema, args=args, is_train_data = False, device = device)
                         training_outputs(diffusion, data, epoch, args.inference_num, save_imgs=args.save_imgs,
                                          ema=ema, args=args, is_train_data=True, device = device)
-            """
+            
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader) :
                 if i == 0 :
