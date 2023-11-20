@@ -109,7 +109,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             new_image.paste(pred, (real.size[0]+sample.size[0], 0))
             new_image.save(os.path.join(image_save_dir, f'epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
             loading_image = wandb.Image(new_image,
-                                        caption=f"epoch {epoch + 1} | {is_normal} | {train_data}')
+                                        caption=f"epoch {epoch + 1} | {is_normal} | {train_data}")
             wandb.log({"inference": loading_image})
 
             #merge_images.append(new_image)
