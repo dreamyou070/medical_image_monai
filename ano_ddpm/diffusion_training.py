@@ -259,6 +259,12 @@ def main(args) :
             for i, test_data in enumerate(test_dataset_loader) :
                 if i == 0 :
                     x = test_data["image_info"]['image'].to(device)
+                    normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
+                    mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
+
+                    normal_x = x[normal_info == 1]
+                    abnormal_x = x[normal_info != 1]
+
                     time_taken = time.time() - start_time
                     remaining_epochs = args.train_epochs - epoch
                     time_per_epoch = time_taken / (epoch + 1 - args.start_epoch)
@@ -268,15 +274,22 @@ def main(args) :
                     # --------------------------------------------------------------------------------------------------
                     # calculate vlb loss
                     # x = [Batch, Channel, 128, 128]
-                    vlb_terms = diffusion.calc_total_vlb(x, model, args)
+                    vlb_terms = diffusion.calc_total_vlb(normal_x, model, args)
                     total_vlb = vlb_terms["total_vlb"] # [Batch]
                     prior_vlb = vlb_terms["prior_vlb"] # [Batch]
                     vb = vlb_terms["vb"]               # vb = [Batch, number of timestps = 1000]
                     x_0_mse = vlb_terms["x_0_mse"]
                     noise_mse = vlb_terms["mse"]
                     batch_mean_vlb = total_vlb.mean(dim=-1).cpu().item()
-                    vlb.append(batch_mean_vlb)
-                    wandb.log({"total_vlb (test data)": batch_mean_vlb })
+                    #vlb.append(batch_mean_vlb)
+                    wandb.log({"total_vlb (test normal data)": batch_mean_vlb })
+
+                    ab_vlb_terms = diffusion.calc_total_vlb(abnormal_x, model, args)
+                    ab_total_vlb = ab_vlb_terms["total_vlb"]  # [Batch]
+                    ab_batch_mean_vlb = ab_total_vlb.mean(dim=-1).cpu().item()
+                    # vlb.append(batch_mean_vlb)
+                    wandb.log({"total_vlb (test *ab*normal data)": ab_batch_mean_vlb})
+
                     # --------------------------------------------------------------------------------------------------
                     # collecting total vlb in deque collections
                     """
