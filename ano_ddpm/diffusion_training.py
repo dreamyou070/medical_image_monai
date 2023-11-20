@@ -66,14 +66,14 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         # 2) select random int
         t = torch.Tensor([args.sample_distance]).repeat(x.shape[0]).to(x.device)
         time_step = t[0].item()
+        with torch.no_grad():
+            # 3) q sampling = noising & p sampling = denoising
+            print(f'Let sample q ')
+            x_t = diffusion.sample_q(x, t, noise)
+            time.sleep(10)
 
-        # 3) q sampling = noising & p sampling = denoising
-        print(f'Let sample q ')
-        x_t = diffusion.sample_q(x, t, noise)
-        time.sleep(10)
-
-        print(f'Let sample p ')
-        temp = diffusion.sample_p(ema, x_t, t)
+            print(f'Let sample p ')
+            temp = diffusion.sample_p(ema, x_t, t)
 
         # 4)
         real_images = x[:num_images, ...].cpu().permute(0,1,3,2) # [Batch, 1, W, H]
@@ -252,11 +252,13 @@ def main(args) :
                 for i, test_data in enumerate(test_dataset_loader):
                     if i == 0:
                         ema.eval()
+                        model.eval()
+
                         training_outputs(diffusion, test_data, epoch, args.inference_num, save_imgs=args.save_imgs,
                                          ema=ema, args=args, is_train_data = False, device = device)
                         training_outputs(diffusion, data, epoch, args.inference_num, save_imgs=args.save_imgs,
                                          ema=ema, args=args, is_train_data=True, device = device)
-            
+
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader) :
                 if i == 0 :
