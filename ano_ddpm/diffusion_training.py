@@ -281,7 +281,7 @@ def main(args) :
                     if normal_x_.shape[0] != 0 :
                         vlb_terms = diffusion.calc_total_vlb(normal_x_, model, args)
                         vlb = vlb_terms["whole_vb"]          # [batch, 1000, 1, W, H]
-                        whole_vb = vlb.squeeze().mean(dim=1) # batch, W, H
+                        whole_vb = vlb.squeeze(dim=2).mean(dim=1) # batch, W, H
                         efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
                         whole_vb = whole_vb.flatten(start_dim=1)  # batch, W*H
                         batch_vb = whole_vb.sum(dim=-1)           # batch
@@ -295,7 +295,6 @@ def main(args) :
                         normal_efficient_pixel_num = abnormal_mask.sum(dim=-1).sum(dim=-1).to(device)
                         # abnormal_mask = [batch, w, h]
                         # ab_whole_vb =   [batch, w, h]
-                        print(f'abnormal_mask : {abnormal_mask.shape} ab_whole_vb : {ab_whole_vb.shape}')
                         normal_portion_ab_whole_vb = abnormal_mask * ab_whole_vb
 
                         normal_portion_ab_whole_vb = normal_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
