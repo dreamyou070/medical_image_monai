@@ -178,47 +178,6 @@ def main(args) :
                                        shuffle=True, num_workers=4, persistent_workers=True)
 
     print(f'\n step 3. data check')
-    train_data_num = len(train_ds)
-    val_data_num = len(val_ds)
-    normal_check = 'normal_check.txt'
-    with open(normal_check, 'w') as f:
-        for i in range(train_data_num) :
-            train_data = train_ds[i]
-            data_dir = train_data['image_dir']
-            # normal = 1, abnormal = 0
-            is_normal = train_data['normal']
-            if is_normal == 1 :
-                data_name = os.path.split(data_dir)[-1]
-                f.write(f'{data_name}\n')
-        for i in range(val_data_num):
-            val_data = val_ds[i]
-            data_dir = val_data['image_dir']
-            is_normal = val_data['normal']
-            if is_normal == 1 :
-                data_name = os.path.split(data_dir)[-1]
-                f.write(f'{data_name}\n')
-    normal_check = 'oob_check.txt'
-    with open(normal_check, 'w') as f:
-        for i in range(train_data_num):
-            train_data = train_ds[i]
-            data_dir = train_data['image_dir']
-            # normal = 1, abnormal = 0
-            is_normal = train_data['normal']
-            if is_normal == 0:
-                data_name = os.path.split(data_dir)[-1]
-                f.write(f'{data_name}\n')
-        for i in range(val_data_num):
-            val_data = val_ds[i]
-            data_dir = val_data['image_dir']
-            is_normal = val_data['normal']
-            if is_normal == 0:
-                data_name = os.path.split(data_dir)[-1]
-                f.write(f'{data_name}\n')
-
-
-    """
-    
-
 
     print(f'\n step 4. model')
     in_channels = args.in_channels
@@ -234,12 +193,12 @@ def main(args) :
     # (2) scaheduler
     betas = get_beta_schedule(args.timestep, args.beta_schedule)
     # (3) scaheduler
-    diffusion = GaussianDiffusionModel([w,h], #  [128, 128]
-                                       betas,            #  1
+    diffusion = GaussianDiffusionModel([w, h],  # [128, 128]
+                                       betas,  # 1
                                        img_channels=in_channels,
                                        loss_type=args.loss_type,  # l2
-                                       loss_weight=args.loss_weight, # none
-                                       noise= args.noise_fn,)        # 1
+                                       loss_weight=args.loss_weight,  # none
+                                       noise=args.noise_fn, )  # 1
 
     print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
@@ -269,7 +228,7 @@ def main(args) :
                 if args.use_simplex_noise :
                     noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
                 else :
-                    noise = torch.randn_like(x)
+                    noise = torch.randn_like(x_0)
                 # 2) make noisy latent
                 x_t = diffusion.sample_q(x_0, t, noise)
                 # 3) model prediction
@@ -277,12 +236,13 @@ def main(args) :
                 target = noise
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss:
+                    print(f'using masked loss')
+                    print(f'noise_pred shape : {noise_pred.shape} | mask_info shape : {mask_info.shape}')
                     noise_pred = noise_pred * mask_info.to(device)
                     target = target * mask_info.to(device)
-                # 4) loss
                 loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
                 loss = loss.mean()
-                wandb.log({"loss": loss.item()})
+                wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
@@ -313,12 +273,13 @@ def main(args) :
                     mask_info_ = test_data['mask']  # if 1 = normal, 0 = abnormal
                     normal_x_ = x[normal_info_ == 1]
                     abnormal_x_ = x[normal_info_ != 1]
-                    # mask 1 = normal, 0 = abnormal
+
+                    # ----------------------------------------------------------------------------------------- #
+                    # [mask] 1 = normal, 0 = abnormal
+                    # abnormal_mask = [Batch, W, H]
                     abnormal_mask = mask_info_[normal_info_ != 1].to(device)
-                    time_taken = time.time() - start_time
-                    remaining_epochs = args.train_epochs - epoch
-                    time_per_epoch = time_taken / (epoch + 1 - args.start_epoch)
-                    hours = remaining_epochs * time_per_epoch / 3600
+                    print(f'abnormal_mask [Batch, W, H] : {abnormal_mask.shape}')
+
                     # --------------------------------------------------------------------------------------------------
                     # calculate vlb loss
                     # x = [Batch, Channel, 128, 128]
@@ -330,22 +291,28 @@ def main(args) :
                         #x_0_mse = vlb_terms["x_0_mse"]
                         #noise_mse = vlb_terms["mse"]
                         whole_vb = vlb_terms["whole_vb"].squeeze().mean(dim=1) # batch, 1000, 1, W, H
+                        print(f'whole_vb (Batch, 1000, W, H) : {whole_vb.shape}')
                         efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
                         whole_vb = whole_vb.flatten(start_dim=1)  # batch, 1000, W*H
-                        whole_vb = whole_vb.sum(dim=-1) / efficient_pixel_num # shape = [batch]
+                        print(f'whole_vb (Batch, Len) : {whole_vb.shape}')
+                        batch_vb = whole_vb.sum(dim=-1)
+                        print(f'batch_vb (Batch, 1) : {batch_vb.shape}')
+                        whole_vb = batch_vb / efficient_pixel_num # shape = [batch]
+                        print(f'batch_vb (Batch, 1) : {batch_vb.shape}')
                         wandb.log({"total_vlb (test data normal sample)": whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
                     if abnormal_x_.shape[0] != 0 :
                         ab_vlb_terms = diffusion.calc_total_vlb(abnormal_x_, model, args)
-                        #ab_total_vlb = ab_vlb_terms["total_vlb"]  # [Batch]
                         ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze().mean(dim=1)  # whole_vb = [Batch, number of timestps = 1000, W, H]
                         ab_whole_vb = ab_whole_vb.unsqueeze(dim=1)  # Batch, 1, W, H
                         efficient_pixel_num = abnormal_mask.sum(dim=-1).sum(dim=-1).to(device)
+                        # ----------------------------------------------------------------------------------------------
+                        normal_efficient_pixel_num = abnormal_mask.sum(dim=-1).sum(dim=-1).to(device)
+                        print(f'normal_efficient_pixel_num (batch, 1) : {normal_efficient_pixel_num.shape}')
                         normal_portion_ab_whole_vb = abnormal_mask * ab_whole_vb
                         normal_portion_ab_whole_vb = normal_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
-                        normal_portion_ab_whole_vb = normal_portion_ab_whole_vb / efficient_pixel_num
-                        wandb.log({"normal portion of *ab*normal sample kl":
-                                    normal_portion_ab_whole_vb.mean().cpu().item()})
+                        normal_portion_ab_whole_vb = normal_portion_ab_whole_vb / normal_efficient_pixel_num
+                        wandb.log({"normal portion of *ab*normal sample kl":  normal_portion_ab_whole_vb.mean().cpu().item()})
 
                         # --------------------------------------------------------------------------------------------------
                         inverse_abnormal_mask = 1 - abnormal_mask
@@ -353,14 +320,14 @@ def main(args) :
                         ab_portion_ab_whole_vb = inverse_abnormal_mask * ab_whole_vb
                         ab_portion_ab_whole_vb = ab_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
                         ab_portion_ab_whole_vb = ab_portion_ab_whole_vb / efficient_pixel_num
-                        wandb.log({"abnormal portion of *ab*normal sample kl":
-                                    ab_portion_ab_whole_vb.mean().cpu().item()})
+                        wandb.log({"abnormal portion of *ab*normal sample kl" : ab_portion_ab_whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
-                    # collecting total vlb in deque collections                    
+                    # collecting total vlb in deque collections
+
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-    """
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()

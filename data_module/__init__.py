@@ -79,7 +79,7 @@ class SYDataset_masking(_TorchDataset):
                  data: Sequence,
                  transform: Callable | None = None,
                  base_mask_dir : str = None,
-                 image_size = '256,256') -> None:
+                 image_size = '128,128') -> None:
 
         self.data = data # list of datas
         self.transform: Any = transform
@@ -121,8 +121,8 @@ class SYDataset_masking(_TorchDataset):
         mask_np = np.array(mask_pil.resize((int(self.w), int(self.h))))
         data_dict['image_dir'] = data_dir
         data_dict['image_info'] = self.data_transform(index)
-        data_dict['normal'] = int(normal) # normal = 1, abnormal = 0
-        data_dict['mask'] = 1-torch.from_numpy(mask_np)
+        data_dict['normal'] = int(normal)               # normal = 1, abnormal = 0
+        data_dict['mask'] = 1-torch.from_numpy(mask_np) # normal = 1, abnormal = 0
         return data_dict
 
 class SYDataset(_TorchDataset):
