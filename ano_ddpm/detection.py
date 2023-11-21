@@ -806,4 +806,5 @@ if __name__ == "__main__" :
     parser.add_argument('--device',
                         type=str, default='cuda:0')
     args = parser.parse_args()
+    
     anomalous_validation_1(args)
