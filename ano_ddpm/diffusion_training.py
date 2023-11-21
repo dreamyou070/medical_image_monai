@@ -210,7 +210,6 @@ def main(args) :
     for epoch in tqdm_epoch:
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=200)
         progress_bar.set_description(f"Epoch {epoch}")
-
         for step, data in progress_bar:
             model.train()
             # -----------------------------------------------------------------------------------------
