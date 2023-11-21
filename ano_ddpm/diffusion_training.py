@@ -229,43 +229,43 @@ def main(args) :
                 mask_info = mask_info[normal_info == 1]
             # -----------------------------------------------------------------------------------------
             # 1) check random t
-            print(f'only normal case, x_0 : {x_0.shape}')
-            t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device = x_0.device)
-            if args.use_simplex_noise :
-                noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
-            else :
-                noise = torch.randn_like(x)
-            # 2) make noisy latent
-            x_t = diffusion.sample_q(x_0, t, noise)
-            # 3) model prediction
-            noise_pred = model(x_t, t)
-            target = noise
-            if args.masked_loss:
-                noise_pred = noise_pred * mask_info.to(device)
-                target = target * mask_info.to(device)
-            # 4) loss
-            loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
-            loss = loss.mean()
-            wandb.log({"loss": loss.item()})
-            optimiser.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
-            optimiser.step()
-            # ----------------------------------------------------------------------------------------- #
-            # EMA model updating
-            update_ema_params(ema, model)
-            # ----------------------------------------------------------------------------------------- #
-            # Inference
-            if epoch % args.inference_freq == 0 and step == 0:
-                for i, test_data in enumerate(test_dataset_loader):
-                    if i == 0:
-                        ema.eval()
-                        model.eval()
-                        inference_num = min(args.inference_num, args.batch_size)
-                        training_outputs(diffusion, test_data, epoch, inference_num, save_imgs=args.save_imgs,
-                                         ema=ema, args=args, is_train_data = False, device = device)
-                        training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
-                                         ema=ema, args=args, is_train_data=True, device = device)
+            if x_0.shape[0] != 0 :
+                t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device = x_0.device)
+                if args.use_simplex_noise :
+                    noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
+                else :
+                    noise = torch.randn_like(x)
+                # 2) make noisy latent
+                x_t = diffusion.sample_q(x_0, t, noise)
+                # 3) model prediction
+                noise_pred = model(x_t, t)
+                target = noise
+                if args.masked_loss:
+                    noise_pred = noise_pred * mask_info.to(device)
+                    target = target * mask_info.to(device)
+                # 4) loss
+                loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
+                loss = loss.mean()
+                wandb.log({"loss": loss.item()})
+                optimiser.zero_grad()
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
+                optimiser.step()
+                # ----------------------------------------------------------------------------------------- #
+                # EMA model updating
+                update_ema_params(ema, model)
+                # ----------------------------------------------------------------------------------------- #
+                # Inference
+                if epoch % args.inference_freq == 0 and step == 0:
+                    for i, test_data in enumerate(test_dataset_loader):
+                        if i == 0:
+                            ema.eval()
+                            model.eval()
+                            inference_num = min(args.inference_num, args.batch_size)
+                            training_outputs(diffusion, test_data, epoch, inference_num, save_imgs=args.save_imgs,
+                                             ema=ema, args=args, is_train_data = False, device = device)
+                            training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
+                                             ema=ema, args=args, is_train_data=True, device = device)
 
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
