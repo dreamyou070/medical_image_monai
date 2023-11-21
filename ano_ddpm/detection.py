@@ -673,11 +673,11 @@ def anomalous_validation_1(args):
                                        noise=args.noise_fn, )  # 1
 
     print(f'\n step 3. dataset')
-    ano_dataset = dataset.AnomalousMRIDataset(args.dataset_path,
-                                              img_size=args.img_size,
-                                              slice_selection="iterateKnown_restricted",
-                                              resized=False)
+    ano_dataset = dataset.PanoXrayDataset(ROOT_DIR=args.dataset_path,
+                                          transform=None,
+                                          img_size=(128,128))
     loader = dataset.init_dataset_loader(ano_dataset, args)
+
     plt.rcParams['figure.dpi'] = 200
     try:
         os.makedirs(f'./diffusion-videos/ARGS={args["arg_num"]}/Anomalous')
@@ -690,17 +690,15 @@ def anomalous_validation_1(args):
             os.makedirs(f'./diffusion-videos/ARGS={args["arg_num"]}/Anomalous/{i}')
         except OSError:
             pass
-
+    """
     dice_data = []
     start_time = time.time()
     for i in range(len(ano_dataset)):
-
         new = next(loader)
         img = new["image"].to(device)
         img = img.reshape(img.shape[1], 1, *args["img_size"])
         img_mask = dataset.load_image_mask(new['filenames'][0][-9:-4], args['img_size'], ano_dataset)
         img_mask = img_mask.to(device)
-
         for slice_number in range(4):
             try:
                 os.makedirs(
@@ -778,9 +776,8 @@ def anomalous_validation_1(args):
         print(
                 f"file: {new['filenames'][0][-9:-4]}, "
                 f"elapsed time: {int(time_taken / 3600)}:{((time_taken / 3600) % 1) * 60:02.0f}, "
-                f"remaining time: {hours}:{mins:02.0f}"
-                )
-
+                f"remaining time: {hours}:{mins:02.0f}" )
+    """
 
 if __name__ == "__main__" :
     parser = argparse.ArgumentParser()
@@ -805,7 +802,7 @@ if __name__ == "__main__" :
 
     # step 3 dataset
     parser.add_argument('--dataset_path', type=str,
-                        default='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/original')
+                        default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs')
     parser.add_argument('--device',
                         type=str, default='cuda:0')
     args = parser.parse_args()

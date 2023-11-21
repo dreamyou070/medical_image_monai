@@ -900,38 +900,59 @@ class AnomalousMRIDataset(Dataset):
 import json
 
 class PanoXrayDataset(Dataset):
-    "Custom Image Dataset Class"
 
-    def __init__(self, ROOT_DIR, transform=None, img_size=(256, 256)):
+    """Custom Image Dataset Class"""
+
+    def __init__(self,
+                 ROOT_DIR='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs',
+                 transform=None,
+                 img_size=(256, 256)):
+
         self.img_dir = ROOT_DIR
+
         self.transform = transforms.Compose([transforms.ToPILImage(),
              transforms.RandomAffine(3, translate=(0.02, 0.09)),
              transforms.Resize(img_size, transforms.InterpolationMode.BILINEAR),
              # transforms.CenterCrop(256),
              transforms.ToTensor(),
              transforms.Normalize((0.5), (0.5))]) if not transform else transform
-        self.img_size = img_size
-        self.img_list = sorted(os.listdir(self.img_dir))
 
+        self.img_size = img_size
+
+        self.img_list = sorted(os.listdir(self.img_dir))
 
     def __len__(self):
         return len(self.img_list)
 
     def __getitem__(self, idx):
+
+        # -------------------------------------------------------------------------------
+        # 1) get original image
         img_name = os.path.join(self.img_dir, self.img_list[idx])
         img = cv2.imread(img_name, cv2.IMREAD_GRAYSCALE)
+
+        # -------------------------------------------------------------------------------
+        # 2) get segmentation mask
         y1, x1, h, w = self.getBox(self.img_list[idx])
         img = img[y1:y1 + h, x1:x1 + w]
+
+        # -------------------------------------------------------------------------------
+        # 3) get target image
         img = cv2.resize(img, self.img_size, interpolation=cv2.INTER_CUBIC)
 
+        # -------------------------------------------------------------------------------
+        # 4) image transform
         if self.transform:
             img = self.transform(img)
-        sample = {'image': img, "filenames": self.img_list[idx]}
+        sample = {'image': img,
+                  "filenames": self.img_list[idx]}
         return sample
 
     def getBox(self, i):
-        mask = cv2.imread(
-            os.path.join('/home/jerry0110/AnoDDPM/dataset/Tufts/Segmentation/maxillomandibular', i.lower()), 0)
+
+        label_info_dir = '/data7/sooyeon/medical_image/experiment_data/dental/Segmentation/maxillomandibular'
+        segmentation_mask_dir = os.path.join(label_info_dir, i.lower())
+        mask = cv2.imread(segmentation_mask_dir, 0)
         _, mask = cv2.threshold(mask, 127, 255, 0)
         object_pixels = np.argwhere(mask == 255)  # 여기서 255는 오브젝트를 나타내는 흰색 값입니다.
         # 바운딩 박스 좌표 계산
