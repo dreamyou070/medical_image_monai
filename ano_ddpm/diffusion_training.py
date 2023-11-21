@@ -235,16 +235,8 @@ def main(args) :
                 target = noise
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss:
-                    print(f'when masked loss')
-                    noise_pred_ = noise_pred * mask_info.to(device)
-
-                    test_loss = torch.nn.functional.mse_loss(noise_pred.float(),
-                                                             noise_pred_.float(), reduction="none")
-                    test_loss = test_loss.mean()
-                    print(f'test_loss : {test_loss}')
-                    wandb.log({"test_loss": test_loss.item()})
-
-                    target     = target     * mask_info.to(device)
+                    noise_pred = noise_pred * mask_info.to(device)
+                    target = target * mask_info.to(device)
                 loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
                 loss = loss.mean()
                 wandb.log({"training loss": loss.item()})
