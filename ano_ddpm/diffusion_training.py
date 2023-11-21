@@ -235,6 +235,7 @@ def main(args) :
                 target = noise
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss:
+                    print(f'mask is all one : {mask_info}')
                     noise_pred = noise_pred * mask_info.to(device)
                     target = target * mask_info.to(device)
                 loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
