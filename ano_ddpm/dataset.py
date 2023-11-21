@@ -647,8 +647,8 @@ class AnomalyPanoXrayDataset(Dataset):
     def __getitem__(self, idx):
         img_name = os.path.join(self.img_dir, self.img_list[idx])
         img = cv2.imread(img_name, cv2.IMREAD_GRAYSCALE)
-        # y1,x1, h,w = self.getBox(self.img_list[idx])
-        # img =img[y1:y1+h,x1:x1+w]
+        y1,x1, h,w = self.getBox(self.img_list[idx])
+        img =img[y1:y1+h,x1:x1+w]
         img = cv2.resize(img, self.img_size, interpolation=cv2.INTER_CUBIC)
 
         mask= self.getMask(idx)
