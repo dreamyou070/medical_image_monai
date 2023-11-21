@@ -564,6 +564,121 @@ class MVTec(Dataset):
 
         return sample
 
+class PanoXrayDataset(Dataset):
+    "Custom Image Dataset Class"
+
+    def __init__(self, ROOT_DIR, transform=None, img_size=(256, 256)):
+        self.img_dir = ROOT_DIR
+        self.img_size = img_size
+        self.transform = transforms.Compose(
+                [transforms.ToPILImage(),
+                 transforms.RandomAffine(3, translate=(0.02, 0.09)),
+                 transforms.Resize(img_size, transforms.InterpolationMode.BILINEAR),
+                 # transforms.CenterCrop(256),
+                 transforms.ToTensor(),
+                 transforms.Normalize((0.5), (0.5))
+                 ]
+                ) if not transform else transform
+        self.img_list = sorted(os.listdir(self.img_dir))
+
+        #read two json file and combine as one
+        json1="/home/jerry0110/AnoDDPM/dataset/Tufts/Radiographs/normal/test_labels.json"
+        json2="/home/jerry0110/AnoDDPM/dataset/Tufts/Radiographs/normal/train_labels.json"
+        with open(json1) as f:
+            data1 = json.load(f)
+        
+        with open(json2) as f:
+            data2 = json.load(f)
+        data1.update(data2)
+        filter_dict = data1
+        
+        for key, value in filter_dict.items():
+            if value =='bad' and key in self.img_list:
+                self.img_list.remove(key)
+        
+    def __len__(self):
+        return len(self.img_list)
+
+    def __getitem__(self, idx):
+        img_name = os.path.join(self.img_dir, self.img_list[idx])
+        img = cv2.imread(img_name, cv2.IMREAD_GRAYSCALE)
+        y1,x1, h,w = self.getBox(self.img_list[idx])
+        img =img[y1:y1+h,x1:x1+w]
+        img = cv2.resize(img, self.img_size, interpolation=cv2.INTER_CUBIC)
+
+        if self.transform:
+            img = self.transform(img)
+        sample = {'image': img, "filenames": self.img_list[idx]}
+        return sample
+    
+    def getBox(self,i):
+        mask = cv2.imread(os.path.join('/home/jerry0110/AnoDDPM/dataset/Tufts/Segmentation/maxillomandibular', i.lower()), 0)
+        _, mask = cv2.threshold(mask, 127,255, 0)
+        object_pixels = np.argwhere(mask == 255)  # 여기서 255는 오브젝트를 나타내는 흰색 값입니다.
+        # 바운딩 박스 좌표 계산
+        y1,x1 = object_pixels.min(axis=0)
+        y2,x2 = object_pixels.max(axis=0)
+        h=y2-y1
+        w=x2-x1
+        return y1,x1, h,w
+class AnomalyPanoXrayDataset(Dataset):
+    "Custom Image Dataset Class"
+
+    def __init__(self, ROOT_DIR, transform=None, img_size=(256, 256)):
+        self.img_dir = ROOT_DIR
+        self.img_size = img_size
+        self.transform = transforms.Compose(
+                [transforms.ToPILImage(),
+                 transforms.RandomAffine(3, translate=(0.02, 0.09)),
+                #  transforms.CenterCrop(235),
+                 transforms.Resize(img_size, transforms.InterpolationMode.BILINEAR),
+                 # transforms.CenterCrop(256),
+                 transforms.ToTensor(),
+                 transforms.Normalize((0.5), (0.5))
+                 ]
+                ) if not transform else transform
+        self.img_list = sorted(os.listdir(self.img_dir))
+        
+
+
+    def __len__(self):
+        return len(self.img_list)
+
+    def __getitem__(self, idx):
+        img_name = os.path.join(self.img_dir, self.img_list[idx])
+        img = cv2.imread(img_name, cv2.IMREAD_GRAYSCALE)
+        # y1,x1, h,w = self.getBox(self.img_list[idx])
+        # img =img[y1:y1+h,x1:x1+w]
+        img = cv2.resize(img, self.img_size, interpolation=cv2.INTER_CUBIC)
+
+        mask= self.getMask(idx)
+        
+        if self.transform:
+            img = self.transform(img)
+        sample = {'image': img, 'mask':mask, "filenames": self.img_list[idx]}
+        return sample
+    
+    def getMask(self, idx):
+        mask_name = os.path.join("/home/jerry0110/AnoDDPM/dataset/Tufts/Expert/mask", self.img_list[idx])
+        mask = cv2.imread(mask_name, cv2.IMREAD_GRAYSCALE)
+        y1,x1, h,w = self.getBox(self.img_list[idx])
+        mask =mask[y1:y1+h,x1:x1+w]
+        mask = cv2.resize(mask, self.img_size, interpolation=cv2.INTER_CUBIC)
+        
+        if self.transform:
+            mask = self.transform(mask)
+        return mask
+
+    def getBox(self,i):
+        mask = cv2.imread(os.path.join('/home/jerry0110/AnoDDPM/dataset/Tufts/Segmentation/maxillomandibular', i.lower()), 0)
+        _, mask = cv2.threshold(mask, 127,255, 0)
+        object_pixels = np.argwhere(mask == 255)  # 여기서 255는 오브젝트를 나타내는 흰색 값입니다.
+        # 바운딩 박스 좌표 계산
+        y1,x1 = object_pixels.min(axis=0)
+        y2,x2 = object_pixels.max(axis=0)
+        h=y2-y1
+        w=x2-x1
+        return y1,x1, h,w
 
 
 class MRIDataset(Dataset):
