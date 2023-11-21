@@ -229,9 +229,9 @@ def main(args) :
                 mask_info = mask_info[normal_info == 1]
             # -----------------------------------------------------------------------------------------
             # 1) check random t
-            t = torch.randint(0, args.sample_distance, (x.shape[0],), device = x.device)
+            t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device = x_0.device)
             if args.use_simplex_noise :
-                noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
+                noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
             else :
                 noise = torch.randn_like(x)
             # 2) make noisy latent
