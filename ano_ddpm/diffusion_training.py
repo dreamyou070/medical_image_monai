@@ -273,23 +273,17 @@ def main(args) :
                     mask_info_ = test_data['mask']  # if 1 = normal, 0 = abnormal
                     normal_x_ = x[normal_info_ == 1]
                     abnormal_x_ = x[normal_info_ != 1]
-
                     # ----------------------------------------------------------------------------------------- #
                     # [mask] 1 = normal, 0 = abnormal
                     # abnormal_mask = [Batch, W, H]
                     abnormal_mask = mask_info_[normal_info_ != 1].to(device)
-                    print(f'abnormal_mask [Batch, W, H] : {abnormal_mask.shape}')
-
                     # --------------------------------------------------------------------------------------------------
                     # calculate vlb loss
                     # x = [Batch, Channel, 128, 128]
                     if normal_x_.shape[0] != 0 :
                         vlb_terms = diffusion.calc_total_vlb(normal_x_, model, args)
-                        #total_vlb = vlb_terms["total_vlb"] # [Batch]
-                        #prior_vlb = vlb_terms["prior_vlb"] # [Batch]
-                        #vb = vlb_terms["vb"]               # vb = [Batch, number of timestps = 1000]
-                        #x_0_mse = vlb_terms["x_0_mse"]
-                        #noise_mse = vlb_terms["mse"]
+                        vlb = vlb_terms["whole_vb"]
+                        print(f'vlb shape : {vlb.shape}')
                         whole_vb = vlb_terms["whole_vb"].squeeze().mean(dim=1) # batch, 1000, 1, W, H
                         print(f'whole_vb (Batch, 1000, W, H) : {whole_vb.shape}')
                         efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
