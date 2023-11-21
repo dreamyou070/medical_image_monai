@@ -240,7 +240,7 @@ def main(args) :
 
                     test_loss = torch.nn.functional.mse_loss(noise_pred.float(),
                                                              noise_pred_.float(), reduction="none")
-                    wandb.log({"test_loss": test_loss.item()})
+                    wandb.log({"test_loss": test_loss})
 
                     target     = target     * mask_info.to(device)
                 loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
