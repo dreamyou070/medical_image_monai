@@ -180,23 +180,40 @@ def main(args) :
     print(f'\n step 3. data check')
     train_data_num = len(train_ds)
     val_data_num = len(val_ds)
-    train_check = 'train_check.txt'
-    with open(train_check, 'w') as f:
+    normal_check = 'normal_check.txt'
+    with open(normal_check, 'w') as f:
         for i in range(train_data_num) :
             train_data = train_ds[i]
             data_dir = train_data['image_dir']
             # normal = 1, abnormal = 0
             is_normal = train_data['normal']
-            f.write(f'{data_dir} {is_normal}\n')
-    val_check = 'val_check.txt'
-    with open(val_check, 'w') as f:
+            if is_normal == 1 :
+                data_name = os.path.split(data_dir)[-1]
+                f.write(f'{data_name}\n')
         for i in range(val_data_num):
             val_data = val_ds[i]
             data_dir = val_data['image_dir']
-            # normal = 1, abnormal = 0
             is_normal = val_data['normal']
-            f.write(f'{data_dir} {is_normal}\n')
-
+            if is_normal == 1 :
+                data_name = os.path.split(data_dir)[-1]
+                f.write(f'{data_name}\n')
+    normal_check = 'oob_check.txt'
+    with open(normal_check, 'w') as f:
+        for i in range(train_data_num):
+            train_data = train_ds[i]
+            data_dir = train_data['image_dir']
+            # normal = 1, abnormal = 0
+            is_normal = train_data['normal']
+            if is_normal == 0:
+                data_name = os.path.split(data_dir)[-1]
+                f.write(f'{data_name}\n')
+        for i in range(val_data_num):
+            val_data = val_ds[i]
+            data_dir = val_data['image_dir']
+            is_normal = val_data['normal']
+            if is_normal == 0:
+                data_name = os.path.split(data_dir)[-1]
+                f.write(f'{data_name}\n')
 
 
     """
