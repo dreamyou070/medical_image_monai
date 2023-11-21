@@ -479,7 +479,6 @@ class GaussianDiffusionModel:
                                        x_0=x_0,x_t=x_t,t=t_batch,)
                 kl_divergence = out["output"]
                 whole_kl = out["whole_kl"]
-                print("whole_kl", whole_kl.shape)
             vb.append(kl_divergence)
             vb_whole.append(whole_kl)
             # ----------------------------------------------------------------------------------------------------------
@@ -487,14 +486,13 @@ class GaussianDiffusionModel:
             model_x0 = out['pred_x_0']
             true_x0 = x_0
             x_0_mse.append(mean_flat((model_x0 - true_x0) ** 2))
-
             # ----------------------------------------------------------------------------------------------------------
             # 3) every timestep, MSE between model_noise and true_noise
             model_noise = self.predict_eps_from_x_0(x_t, t_batch, out["pred_x_0"])
             true_noise = noise
             noise_mse.append(mean_flat((model_noise - true_noise) ** 2))
         # vb = [Batch, number of timestps = 1000]
-        whole_vb = torch.stack(vb_whole, dim=1)  # [batch, 1, W, H]
+        whole_vb = torch.stack(vb_whole, dim=1)  # [batch, 1000, 1, W, H]
         vb = torch.stack(vb, dim=1)        # [batch, 1000]
         x_0_mse = torch.stack(x_0_mse, dim=1)
         noise_mse = torch.stack(noise_mse, dim=1)
