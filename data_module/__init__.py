@@ -118,10 +118,11 @@ class SYDataset_masking(_TorchDataset):
         normal = True
         if criterion > 0 :
             normal = False
-        masK_np = np.array(mask_pil.resize((int(self.w), int(self.h))))
+        mask_np = np.array(mask_pil.resize((int(self.w), int(self.h))))
+        data_dict['image_dir'] = data_dir
         data_dict['image_info'] = self.data_transform(index)
         data_dict['normal'] = int(normal) # normal = 1, abnormal = 0
-        data_dict['mask'] = 1-torch.from_numpy(masK_np)
+        data_dict['mask'] = 1-torch.from_numpy(mask_np)
         return data_dict
 
 class SYDataset(_TorchDataset):

@@ -139,11 +139,6 @@ def main(args) :
             f.write(f"{key}: {var_args[key]}\n")
 
     print(f'\n step 2. dataset and dataloatder')
-    """
-    training_dataset, testing_dataset = dataset.init_datasets(ROOT_DIR, args)
-    training_dataset_loader = dataset.init_dataset_loader(training_dataset, args)
-    testing_dataset_loader = dataset.init_dataset_loader(testing_dataset, args)
-    """
     train_datas = os.listdir(args.train_data_folder)
     val_datas = os.listdir(args.val_data_folder)
     train_datalist = [{"image": os.path.join(args.train_data_folder, train_data)} for train_data in train_datas]
@@ -182,7 +177,30 @@ def main(args) :
     test_dataset_loader = SYDataLoader(val_ds,batch_size=args.batch_size,
                                        shuffle=True, num_workers=4, persistent_workers=True)
 
-    print(f'\n step 3. resume or not')
+    print(f'\n step 3. data check')
+    train_data_num = len(train_ds)
+    val_data_num = len(val_ds)
+    train_check = 'train_check.txt'
+    with open(train_check, 'w') as f:
+        for i in range(train_data_num) :
+            train_data = train_ds[i]
+            data_dir = train_data['image_dir']
+            # normal = 1, abnormal = 0
+            is_normal = train_data['normal']
+            f.write(f'{data_dir} {is_normal}\n')
+    val_check = 'val_check.txt'
+    with open(val_check, 'w') as f:
+        for i in range(val_data_num):
+            val_data = val_ds[i]
+            data_dir = val_data['image_dir']
+            # normal = 1, abnormal = 0
+            is_normal = val_data['normal']
+            f.write(f'{data_dir} {is_normal}\n')
+
+
+
+    """
+    
 
 
     print(f'\n step 4. model')
@@ -227,7 +245,7 @@ def main(args) :
             if args.only_normal_training :
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
-            # -----------------------------------------------------------------------------------------
+            # ----------------------------------------------------------------------------------------------------------
             # 1) check random t
             if x_0.shape[0] != 0 :
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device = x_0.device)
@@ -240,37 +258,13 @@ def main(args) :
                 # 3) model prediction
                 noise_pred = model(x_t, t)
                 target = noise
-
-
-
-
+                # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss:
                     noise_pred = noise_pred * mask_info.to(device)
                     target = target * mask_info.to(device)
                 # 4) loss
                 loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
-
-                if args.inverse_loss:
-                    inverse_mask_info = (1-mask_info).to(device)
-                    noise_pred_ood = noise_pred * inverse_mask_info
-
-                    shuffled_target = torch.roll(noise, shifts=args.roll_intense, dims=2)
-                    shuffled_target = torch.roll(shuffled_target, shifts=args.roll_intense, dims=3)
-                    target_ood = shuffled_target * inverse_mask_info
-
-                    inverse_loss = torch.nn.functional.mse_loss(noise_pred_ood.float(),
-                                                                target_ood.float(), reduction="none")
-
-                    loss += args.inverse_loss_weight * inverse_loss
                 loss = loss.mean()
-
-                """
-                predicted noise = unconditional noise + guidance factor(conditioned noise -unconditioned noise)
-                """
-
-
-
-
                 wandb.log({"loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
@@ -291,7 +285,6 @@ def main(args) :
                                              ema=ema, args=args, is_train_data = False, device = device)
                             training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
                                              ema=ema, args=args, is_train_data=True, device = device)
-
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
         print(f'vlb loss calculating ... ')
@@ -346,21 +339,11 @@ def main(args) :
                         wandb.log({"abnormal portion of *ab*normal sample kl":
                                     ab_portion_ab_whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
-                    # collecting total vlb in deque collections
-                    """
-                    print(f"epoch: {epoch}, most recent total VLB: {vlb[-1]} mean total VLB:"
-                          f" {np.mean(vlb):.4f}, "
-                          f"prior vlb: {vlb_terms['prior_vlb'].mean(dim=-1).cpu().item():.2f}, vb: "
-                          f"{torch.mean(vlb_terms['vb'], dim=list(range(2))).cpu().item():.2f}, x_0_mse: "
-                          f"{torch.mean(vlb_terms['x_0_mse'], dim=list(range(2))).cpu().item():.2f}, mse: "
-                          f"{torch.mean(vlb_terms['mse'], dim=list(range(2))).cpu().item():.2f}"
-                          f" time elapsed {int(time_taken / 3600)}:{((time_taken / 3600) % 1) * 60:02.0f}, "
-                          f"est time remaining: {hours}:{mins:02.0f}\r")
-                    """
+                    # collecting total vlb in deque collections                    
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-
+    """
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
