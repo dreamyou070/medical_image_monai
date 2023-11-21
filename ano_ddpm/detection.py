@@ -803,8 +803,6 @@ if __name__ == "__main__" :
     # step 3 dataset
     parser.add_argument('--dataset_path', type=str,
                         default='/data7/sooyeon/medical_image/experiment_data/dental/Radiographs')
-    parser.add_argument('--device',
-                        type=str, default='cuda:0')
     args = parser.parse_args()
 
     anomalous_validation_1(args)
