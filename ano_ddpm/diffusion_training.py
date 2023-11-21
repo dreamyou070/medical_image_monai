@@ -236,9 +236,12 @@ def main(args) :
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss:
                     print(f'when masked loss')
-                    print(f'noise_pred shape : {noise_pred.shape} | mask_info shape : {mask_info.shape}')
-                    print(f'mask_info : {mask_info}')   
-                    noise_pred = noise_pred * mask_info.to(device)
+                    noise_pred_ = noise_pred * mask_info.to(device)
+
+                    test_loss = torch.nn.functional.mse_loss(noise_pred.float(),
+                                                             noise_pred_.float(), reduction="none")
+                    wandb.log({"test_loss": test_loss.item()})
+
                     target     = target     * mask_info.to(device)
                 loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
                 loss = loss.mean()
