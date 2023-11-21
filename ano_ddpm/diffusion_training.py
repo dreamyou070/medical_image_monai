@@ -235,11 +235,20 @@ def main(args) :
                 target = noise
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss:
-                    print(f'mask is all one : {mask_info}')
                     noise_pred = noise_pred * mask_info.to(device)
                     target = target * mask_info.to(device)
                 loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
                 loss = loss.mean()
+
+                if args.abnormal_loss :
+                    inverse_mask = 1 - mask_info
+                    noise_pred = noise_pred * inverse_mask.to(device)
+                    target = target * inverse_mask.to(device)
+                    abnormal_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
+                    abnormal_loss = abnormal_loss.mean()
+                    abnormal_loss = 1/abnormal_loss
+                    loss = loss + abnormal_loss
+
                 wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
@@ -366,6 +375,8 @@ if __name__ == '__main__':
     parser.add_argument('--only_normal_training', action='store_true')
     parser.add_argument('--masked_loss', action='store_true')
     parser.add_argument('--inverse_loss', action='store_true')
+    parser.add_argument('--abnormal_loss', action='store_true')
+
     parser.add_argument('--roll_intense', type=int, default = 8)
     parser.add_argument('--inverse_loss_weight', type=float, default=1.0)
 
