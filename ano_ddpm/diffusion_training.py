@@ -139,6 +139,11 @@ def main(args) :
             f.write(f"{key}: {var_args[key]}\n")
 
     print(f'\n step 2. dataset and dataloatder')
+    """
+    training_dataset, testing_dataset = dataset.init_datasets(ROOT_DIR, args)
+    training_dataset_loader = dataset.init_dataset_loader(training_dataset, args)
+    testing_dataset_loader = dataset.init_dataset_loader(testing_dataset, args)
+    """
     train_datas = os.listdir(args.train_data_folder)
     val_datas = os.listdir(args.val_data_folder)
     train_datalist = [{"image": os.path.join(args.train_data_folder, train_data)} for train_data in train_datas]

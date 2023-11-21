@@ -329,7 +329,6 @@ def output_videos_for_dataset():
 def load_datasets_for_test():
     args = {'img_size': (256, 256), 'random_slice': True, 'Batch_Size': 20}
     training, testing = init_datasets("../AnoDDPM/", args)
-
     ano_dataset = AnomalousMRIDataset(
             ROOT_DIR=f'DATASETS/CancerousDataset/EdinburghDataset/Anomalous-T1', img_size=args['img_size'],
             slice_selection="random", resized=False
@@ -348,12 +347,8 @@ def load_datasets_for_test():
 
 
 def init_datasets(ROOT_DIR, args):
-    training_dataset = MRIDataset(
-            ROOT_DIR=f'{ROOT_DIR}DATASETS/Train/', img_size=args['img_size'], random_slice=args['random_slice']
-            )
-    testing_dataset = MRIDataset(
-            ROOT_DIR=f'{ROOT_DIR}DATASETS/Test/', img_size=args['img_size'], random_slice=args['random_slice']
-            )
+    training_dataset = MRIDataset(ROOT_DIR=f'{ROOT_DIR}DATASETS/Train/', img_size=args['img_size'], random_slice=args['random_slice'])
+    testing_dataset = MRIDataset(ROOT_DIR=f'{ROOT_DIR}DATASETS/Test/', img_size=args['img_size'], random_slice=args['random_slice'])
     return training_dataset, testing_dataset
 
 
@@ -609,9 +604,7 @@ class MRIDataset(Dataset):
             image = np.load(os.path.join(self.ROOT_DIR, self.filenames[idx], f"{self.filenames[idx]}.npy"))
             pass
         else:
-            img_name = os.path.join(
-                    self.ROOT_DIR, self.filenames[idx], f"sub-{self.filenames[idx]}_ses-NFB3_T1w.nii.gz"
-                    )
+            img_name = os.path.join(self.ROOT_DIR, self.filenames[idx], f"sub-{self.filenames[idx]}_ses-NFB3_T1w.nii.gz")
             # random between 40 and 130
             # print(nib.load(img_name).slicer[:,90:91,:].dataobj.shape)
             img = nib.load(img_name)
@@ -622,8 +615,7 @@ class MRIDataset(Dataset):
             img_range = (image_mean - 1 * image_std, image_mean + 2 * image_std)
             image = np.clip(image, img_range[0], img_range[1])
             image = image / (img_range[1] - img_range[0])
-            np.save(
-                    os.path.join(self.ROOT_DIR, self.filenames[idx], f"{self.filenames[idx]}.npy"), image.astype(
+            np.save(os.path.join(self.ROOT_DIR, self.filenames[idx], f"{self.filenames[idx]}.npy"), image.astype(
                             np.float32
                             )
                     )
