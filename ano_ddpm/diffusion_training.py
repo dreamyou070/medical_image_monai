@@ -284,7 +284,6 @@ def main(args) :
                         vlb_terms = diffusion.calc_total_vlb(normal_x_, model, args)
                         vlb = vlb_terms["whole_vb"]          # [batch, 1000, 1, W, H]
                         whole_vb = vlb.squeeze().mean(dim=1) # batch, W, H
-
                         efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
                         whole_vb = whole_vb.flatten(start_dim=1)  # batch, W*H
                         batch_vb = whole_vb.sum(dim=-1)           # batch

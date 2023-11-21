@@ -468,15 +468,14 @@ class GaussianDiffusionModel:
         x_0_mse = []
         noise_mse = []
         for t in reversed(list(range(self.num_timesteps))):
+            # from 1000 to 0  (that means generating)
             t_batch = torch.tensor([t] * x_0.shape[0], device=x_0.device)
             noise = torch.randn_like(x_0)
             x_t = self.sample_q(x_0=x_0, t=t_batch, noise=noise)
-
             # ----------------------------------------------------------------------------------------------------------
             # 1) Calculate VLB term at the current timestep
             with torch.no_grad():
-                out = self.calc_vlb_xt(model,
-                                       x_0=x_0,x_t=x_t,t=t_batch,)
+                out = self.calc_vlb_xt(model,x_0=x_0,x_t=x_t,t=t_batch,)
                 kl_divergence = out["output"]
                 whole_kl = out["whole_kl"]
             vb.append(kl_divergence)
