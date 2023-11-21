@@ -290,10 +290,14 @@ def main(args) :
                     # --------------------------------------------------------------------------------------------------
                     if abnormal_x_.shape[0] != 0 :
                         ab_vlb_terms = diffusion.calc_total_vlb(abnormal_x_, model, args)
-                        ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze().mean(dim=1)  # [Batch, W, H]
+                        ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze(dim=2).mean(dim=1)  # [Batch, W, H]
                         # ----------------------------------------------------------------------------------------------
                         normal_efficient_pixel_num = abnormal_mask.sum(dim=-1).sum(dim=-1).to(device)
+                        # abnormal_mask = [batch, w, h]
+                        # ab_whole_vb =   [batch, w, h]
+                        print(f'abnormal_mask : {abnormal_mask.shape} ab_whole_vb : {ab_whole_vb.shape}')
                         normal_portion_ab_whole_vb = abnormal_mask * ab_whole_vb
+
                         normal_portion_ab_whole_vb = normal_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
                         normal_portion_ab_whole_vb = normal_portion_ab_whole_vb / normal_efficient_pixel_num
                         wandb.log({"normal portion of *ab*normal sample kl":  normal_portion_ab_whole_vb.mean().cpu().item()})
@@ -302,7 +306,9 @@ def main(args) :
                         inverse_abnormal_mask = 1 - abnormal_mask
                         efficient_pixel_num = (inverse_abnormal_mask).sum(dim=-1).sum(dim=-1).to(device)
                         ab_portion_ab_whole_vb = inverse_abnormal_mask * ab_whole_vb
+
                         ab_portion_ab_whole_vb = ab_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
+
                         ab_portion_ab_whole_vb = ab_portion_ab_whole_vb / efficient_pixel_num
                         wandb.log({"abnormal portion of *ab*normal sample kl" : ab_portion_ab_whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
