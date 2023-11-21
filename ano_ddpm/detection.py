@@ -12,138 +12,6 @@ import sys
 from matplotlib import font_manager
 import argparse
 
-def anomalous_metric_calculation():
-    """
-    Iterates over 4 anomalous slices for each Volume, returning diffused video for it,
-    the heatmap of that & detection method (A&B) or C
-    :return:
-    """
-    args, output = load_parameters(device)
-    in_channels = 1
-    if args["dataset"].lower() == "leather":
-        in_channels = 3
-
-    print(f"args{args['arg_num']}")
-    unet = UNetModel(
-            args['img_size'][0], args['base_channels'], channel_mults=args['channel_mults'], in_channels=in_channels
-            )
-
-    betas = get_beta_schedule(args['T'], args['beta_schedule'])
-
-    diff = GaussianDiffusionModel(
-            args['img_size'], betas, loss_weight=args['loss_weight'],
-            loss_type=args['loss-type'], noise=args["noise_fn"], img_channels=in_channels
-            )
-
-    unet.load_state_dict(output["ema"])
-    unet.to(device)
-    unet.eval()
-    if args["dataset"].lower() == "carpet":
-        d_set = dataset.DAGM("DATASETS/CARPET/Class1", True)
-        d_set_size = len(d_set)
-    elif args["dataset"].lower() == "leather":
-        d_set = dataset.MVTec(
-            "DATASETS/leather", anomalous=True, img_size=args["img_size"],
-                rgb=True, include_good=False
-                )
-        d_set_size = len(d_set)
-    else:
-        d_set = dataset.AnomalousMRIDataset(
-                ROOT_DIR=f'{DATASET_PATH}', img_size=args['img_size'],
-                slice_selection="iterateKnown_restricted", resized=False, cleaned=True
-                )
-        d_set_size = len(d_set) * 4
-    loader = dataset.init_dataset_loader(d_set, args)
-    plt.rcParams['figure.dpi'] = 200
-
-    dice_data = []
-    ssim_data = []
-    IOU = []
-    precision = []
-    recall = []
-    FPR = []
-    AUC_scores = []
-
-    start_time = time.time()
-    for i in range(d_set_size):
-
-        if args["dataset"].lower() != "carpet" and args["dataset"].lower() != "leather":
-            if i % 4 == 0:
-                new = next(loader)
-                new["image"] = new["image"].reshape(new["image"].shape[1], 1, *args["img_size"])
-                new["mask"] = new["mask"].reshape(new["mask"].shape[1], 1, *args["img_size"])
-            image = new["image"][i % 4, ...].to(device).reshape(1, 1, *args["img_size"])
-            mask = new["mask"][i % 4, ...].to(device).reshape(1, 1, *args["img_size"])
-        else:
-            new = next(loader)
-            image = new["image"].to(device)
-            mask = new["mask"].to(device)
-
-        output = diff.forward_backward(
-                unet, image,
-                see_whole_sequence=None,
-                t_distance=200, denoise_fn=args["noise_fn"]
-                )
-
-        mse = (image - output).square()
-        fpr_simplex, tpr_simplex, _ = evaluation.ROC_AUC(mask.to(torch.uint8), mse)
-        AUC_scores.append(evaluation.AUC_score(fpr_simplex, tpr_simplex))
-        mse = (mse > 0.5).float()
-        # print(img.shape, output.shape, img_mask.shape, mse.shape)
-        dice_data.append(
-                evaluation.dice_coeff(
-                        image, output.to(device),
-                        mask, mse=mse
-                        ).cpu().item()
-                )
-
-        ssim_data.append(
-                evaluation.SSIM(
-                        image.permute(0, 2, 3, 1).reshape(*args["img_size"], image.shape[1]),
-                        output.permute(0, 2, 3, 1).reshape(*args["img_size"], image.shape[1])
-                        )
-                )
-        precision.append(evaluation.precision(mask, mse).cpu().numpy())
-        recall.append(evaluation.recall(mask, mse).cpu().numpy())
-        IOU.append(evaluation.IoU(mask, mse))
-        FPR.append(evaluation.FPR(mask, mse).cpu().numpy())
-        plt.close('all')
-
-        if i % 8 == 0:
-            time_taken = time.time() - start_time
-            remaining_epochs = d_set_size - i
-            time_per_epoch = time_taken / (i + 1)
-            hours = remaining_epochs * time_per_epoch / 3600
-            mins = (hours % 1) * 60
-            hours = int(hours)
-
-            print(
-                    f"elapsed time: {int(time_taken / 3600)}:{((time_taken / 3600) % 1) * 60:02.0f}, "
-                    f"remaining time: {hours}:{mins:02.0f}"
-                    )
-
-        if i % 4 == 0 and (args["dataset"].lower() != "carpet" and args["dataset"].lower() != "leather"):
-            print(f"file: {new['filenames'][0][-9:-4]}")
-            print(f"Dice: {np.mean(dice_data[-4:])} +- {np.std(dice_data[-4:])}")
-            print(f"Structural Similarity Index (SSIM): {np.mean(ssim_data[-4:])} +- {np.std(ssim_data[-4:])}")
-            print(f"Precision: {np.mean(precision[-4:])} +- {np.std(precision[-4:])}")
-            print(f"Recall: {np.mean(recall[-4:])} +- {np.std(recall[-4:])}")
-            print(f"FPR: {np.mean(FPR[-4:])} +- {np.std(FPR[-4:])}")
-            print(f"IOU: {np.mean(IOU[-4:])} +- {np.std(IOU[-4:])}")
-            print("\n")
-
-    print()
-    print("Overall: ")
-    print(f"Dice coefficient: {np.mean(dice_data)} +- {np.std(dice_data)}")
-    print(f"Structural Similarity Index (SSIM): {np.mean(ssim_data)} +- {np.std(ssim_data)}")
-    print(f"Precision: {np.mean(precision)} +- {np.std(precision)}")
-    print(f"Recall: {np.mean(recall)} +- {np.std(recall)}")
-    print(f"FPR: {np.mean(FPR)} +- {np.std(FPR)}")
-    print(f"IOU: {np.mean(IOU)} +- {np.std(IOU)}")
-    with open(f"./metrics/args{args['arg_num']}.csv", mode="w") as f:
-        f.write("dice,ssim,iou,precision,recall,fpr,auc\n")
-        for METRIC in [dice_data, ssim_data, IOU, precision, recall, FPR, AUC_scores]:
-            f.write(f"{np.mean(METRIC):.4f} +- {np.std(METRIC):.4f},")
 def graph_data():
     args, output = load_parameters(device)
     print(f"args{args['arg_num']}")
@@ -811,7 +679,6 @@ def anomalous_validation_1(args):
                                               resized=False)
     loader = dataset.init_dataset_loader(ano_dataset, args)
     plt.rcParams['figure.dpi'] = 200
-
     try:
         os.makedirs(f'./diffusion-videos/ARGS={args["arg_num"]}/Anomalous')
     except OSError:
@@ -937,9 +804,6 @@ if __name__ == "__main__" :
     parser.add_argument('--noise_fn', type=str, default='simplex')
 
     # step 3 dataset
-
-
-
     parser.add_argument('--dataset_path', type=str,
                         default='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/original')
     parser.add_argument('--device',
