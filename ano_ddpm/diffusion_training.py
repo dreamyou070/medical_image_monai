@@ -257,7 +257,7 @@ def main(args) :
                     inverse_loss = torch.nn.functional.mse_loss(noise_pred_ood.float(),
                                                                 target_ood.float(), reduction="none")
 
-                    loss += inverse_loss
+                    loss += args.inverse_loss_weight * inverse_loss
                 loss = loss.mean()
                 wandb.log({"loss": loss.item()})
                 optimiser.zero_grad()
@@ -311,7 +311,7 @@ def main(args) :
                         efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
                         whole_vb = whole_vb.flatten(start_dim=1)  # batch, 1000, W*H
                         whole_vb = whole_vb.sum(dim=-1) / efficient_pixel_num # shape = [batch]
-                        wandb.log({"total_vlb (test normal data)": whole_vb.mean().cpu().item()})
+                        wandb.log({"total_vlb (test data normal sample)": whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
                     if abnormal_x_.shape[0] != 0 :
                         ab_vlb_terms = diffusion.calc_total_vlb(abnormal_x_, model, args)
@@ -400,7 +400,7 @@ if __name__ == '__main__':
     parser.add_argument('--masked_loss', action='store_true')
     parser.add_argument('--inverse_loss', action='store_true')
     parser.add_argument('--roll_intense', type=int, default = 8)
-
+    parser.add_argument('--inverse_loss_weight', type=float, default=1.0)
 
     # step 7. inference
     parser.add_argument('--inference_num', type=int, default=4)
