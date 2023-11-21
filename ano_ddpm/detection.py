@@ -782,15 +782,11 @@ import argparse
 
 def anomalous_validation_1(args):
 
-    dataset_path = args.dataset_path
-    font_path = "./times new roman.ttf"
-    font_manager.fontManager.addfont(font_path)
-    prop = font_manager.FontProperties(fname=font_path)
-    plt.rcParams['font.family'] = 'sans-serif'
-    plt.rcParams['font.sans-serif'] = prop.get_name()
 
     print(f'\n step 1. check argument')
     device = args.device
+    dataset_path = args.dataset_path
+
     args, output = load_parameters(device)
     print(f"args{args['arg_num']}")
     """
