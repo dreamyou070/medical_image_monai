@@ -232,7 +232,7 @@ def main(args):
                 if args.use_simplex_noise:
                     noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
                 else:
-                    noise = torch.randn_like(x)
+                    noise = torch.randn_like(x_0)
                 # 2) make noisy latent
                 x_t = diffusion.sample_q(x_0, t, noise)
                 # 3) model prediction
