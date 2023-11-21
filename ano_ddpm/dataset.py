@@ -1,6 +1,5 @@
 import os
 from random import randint
-
 import cv2
 import nibabel as nib
 import numpy as np

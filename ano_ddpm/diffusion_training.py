@@ -211,15 +211,16 @@ def main(args) :
     for epoch in tqdm_epoch:
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=200)
         progress_bar.set_description(f"Epoch {epoch}")
+
         for step, data in progress_bar:
             model.train()
             # -----------------------------------------------------------------------------------------
             # 0) data check
-            x = data["image_info"]['image'].to(device)  # batch, channel, w, h
+            x_0 = data["image_info"]['image'].to(device)  # batch, channel, w, h
             normal_info = data['normal'] # if 1 = normal, 0 = abnormal
             mask_info = data['mask'].unsqueeze(dim=1)    # if 1 = normal, 0 = abnormal
             if args.only_normal_training :
-                x = x[normal_info == 1]
+                x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
             # -----------------------------------------------------------------------------------------
             # 1) check random t
@@ -229,12 +230,11 @@ def main(args) :
             else :
                 noise = torch.randn_like(x)
             # 2) make noisy latent
-            x_t = diffusion.sample_q(x, t, noise)
+            x_t = diffusion.sample_q(x_0, t, noise)
             # 3) model prediction
             noise_pred = model(x_t, t)
             target = noise
             if args.masked_loss:
-                #print(f'when masked loss, mask_info : {mask_info.shape} | noise_pred : {noise_pred.shape}')
                 noise_pred = noise_pred * mask_info.to(device)
                 target = target * mask_info.to(device)
             # 4) loss
@@ -267,41 +267,35 @@ def main(args) :
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader) :
                 if i == 0 :
-
                     x = test_data["image_info"]['image'].to(device)
-                    normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
-                    mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
-
-                    normal_x = x[normal_info == 1]
-                    abnormal_x = x[normal_info != 1]
-
+                    normal_info_ = test_data['normal']  # if 1 = normal, 0 = abnormal
+                    mask_info_ = test_data['mask']  # if 1 = normal, 0 = abnormal
+                    normal_x_ = x[normal_info_ == 1]
+                    abnormal_x_ = x[normal_info_ != 1]
                     # mask 1 = normal, 0 = abnormal
-                    abnormal_mask = mask_info[normal_info != 1].to(device)
-
+                    abnormal_mask = mask_info_[normal_info_ != 1].to(device)
                     time_taken = time.time() - start_time
                     remaining_epochs = args.train_epochs - epoch
                     time_per_epoch = time_taken / (epoch + 1 - args.start_epoch)
                     hours = remaining_epochs * time_per_epoch / 3600
-                    mins = (hours % 1) * 60
-                    hours = int(hours)
-
                     # --------------------------------------------------------------------------------------------------
                     # calculate vlb loss
                     # x = [Batch, Channel, 128, 128]
-                    vlb_terms = diffusion.calc_total_vlb(normal_x, model, args)
-                    total_vlb = vlb_terms["total_vlb"] # [Batch]
-                    prior_vlb = vlb_terms["prior_vlb"] # [Batch]
-                    vb = vlb_terms["vb"]               # vb = [Batch, number of timestps = 1000]
-                    x_0_mse = vlb_terms["x_0_mse"]
-                    noise_mse = vlb_terms["mse"]
+                    vlb_terms = diffusion.calc_total_vlb(normal_x_, model, args)
+                    #total_vlb = vlb_terms["total_vlb"] # [Batch]
+                    #prior_vlb = vlb_terms["prior_vlb"] # [Batch]
+                    #vb = vlb_terms["vb"]               # vb = [Batch, number of timestps = 1000]
+                    #x_0_mse = vlb_terms["x_0_mse"]
+                    #noise_mse = vlb_terms["mse"]
                     whole_vb = vlb_terms["whole_vb"].squeeze().mean(dim=1) # batch, 1000, 1, W, H
                     efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
                     whole_vb = whole_vb.flatten(start_dim=1)  # batch, 1000, W*H
                     whole_vb = whole_vb.sum(dim=-1) / efficient_pixel_num # shape = [batch]
                     wandb.log({"total_vlb (test normal data)": whole_vb.mean().cpu().item()})
+
                     # --------------------------------------------------------------------------------------------------
-                    ab_vlb_terms = diffusion.calc_total_vlb(abnormal_x, model, args)
-                    ab_total_vlb = ab_vlb_terms["total_vlb"]  # [Batch]
+                    ab_vlb_terms = diffusion.calc_total_vlb(abnormal_x_, model, args)
+                    #ab_total_vlb = ab_vlb_terms["total_vlb"]  # [Batch]
                     ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze().mean(dim=1)  # whole_vb = [Batch, number of timestps = 1000, W, H]
                     ab_whole_vb = ab_whole_vb.unsqueeze(dim=1)  # Batch, 1, W, H
                     efficient_pixel_num = abnormal_mask.sum(dim=-1).sum(dim=-1).to(device)
@@ -310,9 +304,11 @@ def main(args) :
                     normal_portion_ab_whole_vb = normal_portion_ab_whole_vb / efficient_pixel_num
                     wandb.log({"normal portion of *ab*normal sample kl":
                                 normal_portion_ab_whole_vb.mean().cpu().item()})
+
                     # --------------------------------------------------------------------------------------------------
-                    efficient_pixel_num = (1-abnormal_mask).sum(dim=-1).sum(dim=-1).to(device)
-                    ab_portion_ab_whole_vb = abnormal_mask * ab_whole_vb
+                    inverse_abnormal_mask = 1 - abnormal_mask
+                    efficient_pixel_num = (inverse_abnormal_mask).sum(dim=-1).sum(dim=-1).to(device)
+                    ab_portion_ab_whole_vb = inverse_abnormal_mask * ab_whole_vb
                     ab_portion_ab_whole_vb = ab_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
                     ab_portion_ab_whole_vb = ab_portion_ab_whole_vb / efficient_pixel_num
                     wandb.log({"abnormal portion of *ab*normal sample kl":

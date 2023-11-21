@@ -1,18 +1,15 @@
 import random
 import time
-
-# import matplotlib
-# matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
-
 import dataset
 import evaluation
 from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule
 from helpers import *
 from UNet import UNetModel
-
+import sys
+from matplotlib import font_manager
 
 def anomalous_validation_1():
     """
@@ -24,21 +21,16 @@ def anomalous_validation_1():
 
     print(f"args{args['arg_num']}")
     unet = UNetModel(args['img_size'][0], args['base_channels'], channel_mults=args['channel_mults'])
-
     betas = get_beta_schedule(args['T'], args['beta_schedule'])
-
-    diff = GaussianDiffusionModel(
-            args['img_size'], betas, loss_weight=args['loss_weight'],
-            loss_type=args['loss-type'], noise=args["noise_fn"]
-            )
-
+    diff = GaussianDiffusionModel(args['img_size'], betas, loss_weight=args['loss_weight'],
+                                  loss_type=args['loss-type'], noise=args["noise_fn"])
     unet.load_state_dict(output["ema"])
     unet.to(device)
     unet.eval()
-    ano_dataset = dataset.AnomalousMRIDataset(
-            ROOT_DIR=f'{DATASET_PATH}', img_size=args['img_size'],
-            slice_selection="iterateKnown_restricted", resized=False
-            )
+    ano_dataset = dataset.AnomalousMRIDataset(ROOT_DIR=f'{DATASET_PATH}',
+                                              img_size=args['img_size'],
+                                              slice_selection="iterateKnown_restricted",
+                                              resized=False)
     loader = dataset.init_dataset_loader(ano_dataset, args)
     plt.rcParams['figure.dpi'] = 200
 
@@ -77,24 +69,16 @@ def anomalous_validation_1():
             else:
                 timestep = random.randint(int(args["sample_distance"] * 0.1), int(args["sample_distance"] * 0.6))
 
-            output = diff.forward_backward(
-                    unet, img[slice_number, ...].reshape(1, 1, *args["img_size"]),
-                    see_whole_sequence="whole",
-                    t_distance=timestep, denoise_fn=args["noise_fn"]
-                    )
-
+            output = diff.forward_backward(unet, img[slice_number, ...].reshape(1, 1, *args["img_size"]),
+                                           see_whole_sequence="whole",
+                                           t_distance=timestep, denoise_fn=args["noise_fn"])
             fig, ax = plt.subplots()
             plt.axis('off')
             imgs = [[ax.imshow(gridify_output(x, 5), animated=True)] for x in output]
-            ani = animation.ArtistAnimation(
-                    fig, imgs, interval=50, blit=True,
-                    repeat_delay=1000
-                    )
-            temp = os.listdir(
-                    f'./diffusion-videos/ARGS={args["arg_num"]}/Anomalous/{new["filenames"][0][-9:-4]}/'
-                    f'{new["slices"][slice_number].numpy()[0]}'
-                    )
-
+            ani = animation.ArtistAnimation(fig, imgs, interval=50, blit=True,
+                                            repeat_delay=1000)
+            temp = os.listdir(f'./diffusion-videos/ARGS={args["arg_num"]}/Anomalous/{new["filenames"][0][-9:-4]}/'
+                              f'{new["slices"][slice_number].numpy()[0]}')
             output_name = f'./diffusion-videos/ARGS={args["arg_num"]}/Anomalous/' \
                           f'{new["filenames"][0][-9:-4]}/{new["slices"][slice_number].numpy()[0]}/t={timestep}-attemp' \
                           f't={len(temp) + 1}'
@@ -919,17 +903,18 @@ def ce_sliding_window(img, netG, input_cropped, args):
 
     return recon_image
 
-
-if __name__ == "__main__":
-    import sys
-    from matplotlib import font_manager
-
+def main(args) :
     font_path = "./times new roman.ttf"
     font_manager.fontManager.addfont(font_path)
     prop = font_manager.FontProperties(fname=font_path)
-
     plt.rcParams['font.family'] = 'sans-serif'
     plt.rcParams['font.sans-serif'] = prop.get_name()
+
+
+if __name__ == "__main__":
+
+
+
     DATASET_PATH = 'DATASETS/CancerousDataset/EdinburghDataset/Anomalous-T1'
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
