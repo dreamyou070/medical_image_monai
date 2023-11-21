@@ -10,6 +10,7 @@ from helpers import *
 from UNet import UNetModel
 import sys
 from matplotlib import font_manager
+import argparse
 
 def anomalous_metric_calculation():
     """
@@ -143,8 +144,6 @@ def anomalous_metric_calculation():
         f.write("dice,ssim,iou,precision,recall,fpr,auc\n")
         for METRIC in [dice_data, ssim_data, IOU, precision, recall, FPR, AUC_scores]:
             f.write(f"{np.mean(METRIC):.4f} +- {np.std(METRIC):.4f},")
-
-
 def graph_data():
     args, output = load_parameters(device)
     print(f"args{args['arg_num']}")
@@ -284,8 +283,6 @@ def graph_data():
                                 )
                         )
                 f.write("\n")
-
-
 def roc_data():
     sys.argv[1] = "28"
     args_simplex, output_simplex = load_parameters(device)
@@ -536,8 +533,6 @@ def roc_data():
     print(f"Simplex hybrid AUC {np.mean(hybrid_AUC)} +- {np.std(hybrid_AUC)}")
     print(f"Gauss AUC {np.mean(gauss_AUC)} +- {np.std(gauss_AUC)}")
     print(f"CE AUC {np.mean(GAN_AUC)} +- {np.std(GAN_AUC)}")
-
-
 def gan_anomalous():
     import Comparative_models.CE as CE
     args, output = load_parameters(device)
@@ -755,8 +750,6 @@ def gan_anomalous():
     print(f"Recall: {np.mean(recall)} +- {np.std(recall)}")
     print(f"FPR: {np.mean(FPR)} +- {np.std(FPR)}")
     print(f"IOU: {np.mean(IOU)} +- {np.std(IOU)}")
-
-
 def ce_sliding_window(img, netG, input_cropped, args):
     input_cropped.resize_(img.size()).copy_(img)
     recon_image = input_cropped.clone()
@@ -777,28 +770,43 @@ def ce_sliding_window(img, netG, input_cropped, args):
 
     return recon_image
 
-import argparse
+
 
 
 def anomalous_validation_1(args):
 
+    print(f'\n step 1. device')
+    device = args.device
 
-    print(f'\n step 1. check argument')
-
-    dataset_path = args.dataset_path
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    args, output = load_parameters(device)
-    print(f"args{args['arg_num']}")
-    """
-    unet = UNetModel(args['img_size'][0], args['base_channels'], channel_mults=args['channel_mults'])
-    betas = get_beta_schedule(args['T'], args['beta_schedule'])
-    diff = GaussianDiffusionModel(args['img_size'], betas, loss_weight=args['loss_weight'],
-                                  loss_type=args['loss-type'], noise=args["noise_fn"])
-    unet.load_state_dict(output["ema"])
+    print(f'\n step 2. model')
+    print(f' (2.1) unet model')
+    w, h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
+    in_channels = args.in_channels
+    unet = UNetModel(img_size=int(w),
+                      base_channels=args.base_channels,
+                      dropout=args.dropout,
+                      n_heads=args.num_heads,
+                      n_head_channels=args.num_head_channels,
+                      in_channels=in_channels)
+    unet_state_dict_dir = args.unet_state_dict_dir
+    unet.load_state_dict(unet_state_dict_dir)
     unet.to(device)
     unet.eval()
-    ano_dataset = dataset.AnomalousMRIDataset(ROOT_DIR=f'{DATASET_PATH}',
-                                              img_size=args['img_size'],
+
+    print(f' (2.2) scheduler')
+    betas = get_beta_schedule(args.timestep, args.beta_schedule)
+
+    print(f' (2.3) diffusion model')
+    diffusion = GaussianDiffusionModel([w, h],  # [128, 128]
+                                       betas,  # 1
+                                       img_channels=in_channels,
+                                       loss_type=args.loss_type,  # l2
+                                       loss_weight=args.loss_weight,  # none
+                                       noise=args.noise_fn, )  # 1
+
+    print(f'\n step 3. dataset')
+    ano_dataset = dataset.AnomalousMRIDataset(args.dataset_path,
+                                              img_size=args.img_size,
                                               slice_selection="iterateKnown_restricted",
                                               resized=False)
     loader = dataset.init_dataset_loader(ano_dataset, args)
@@ -905,11 +913,33 @@ def anomalous_validation_1(args):
                 f"elapsed time: {int(time_taken / 3600)}:{((time_taken / 3600) % 1) * 60:02.0f}, "
                 f"remaining time: {hours}:{mins:02.0f}"
                 )
-    """
 
 
 if __name__ == "__main__" :
     parser = argparse.ArgumentParser()
+    # step 1
+    parser.add_argument('--device', type=str, default='cuda:1')
+
+    # step 2
+    parser.add_argument('--img_size', type=str)
+    parser.add_argument('--in_channels', type=int, default=1)
+    parser.add_argument('--base_channels', type=int, default=256)
+    parser.add_argument('--channel_mults', type=str, default='1,2,3,4')
+    parser.add_argument('--dropout', type=float, default=0.0)
+    parser.add_argument('--num_heads', type=int, default=2)
+    parser.add_argument('--num_head_channels', type=int, default=-1)
+    # (2) scaheduler
+    parser.add_argument('--timestep', type=int, default=1000)
+    parser.add_argument('--beta_schedule', type=str, default='linear')
+    # (3) diffusion
+    parser.add_argument('--loss_weight', type=str, default="none")
+    parser.add_argument('--loss_type', type=str, default='l2')
+    parser.add_argument('--noise_fn', type=str, default='simplex')
+
+    # step 3 dataset
+
+
+
     parser.add_argument('--dataset_path', type=str,
                         default='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/original')
     parser.add_argument('--device',

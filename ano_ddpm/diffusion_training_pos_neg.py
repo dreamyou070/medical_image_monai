@@ -8,7 +8,7 @@ from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule
 from helpers import *
 from tqdm import tqdm
 from monai import transforms
-import numpy  as np
+import numpy as np
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from data_module import SYDataLoader, SYDataset_masking
@@ -23,32 +23,31 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
 
 
-
 def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
-    model_save_base_dir = os.path.join(args.experiment_dir,'diffusion-models')
+    model_save_base_dir = os.path.join(args.experiment_dir, 'diffusion-models')
     os.makedirs(model_save_base_dir, exist_ok=True)
     if final:
-        save_dir = os.path.join(model_save_base_dir,f'unet_final.pt')
-        torch.save({'n_epoch':              args.train_epochs,
-                    'model_state_dict':     unet.state_dict(),
+        save_dir = os.path.join(model_save_base_dir, f'unet_final.pt')
+        torch.save({'n_epoch': args.train_epochs,
+                    'model_state_dict': unet.state_dict(),
                     'optimizer_state_dict': optimiser.state_dict(),
-                    "ema":                  ema.state_dict(),
-                    "args":                 args},save_dir)
+                    "ema": ema.state_dict(),
+                    "args": args}, save_dir)
     else:
         save_dir = os.path.join(model_save_base_dir, f'unet_epoch_{epoch}.pt')
-        torch.save({'n_epoch':              epoch,
-                    'model_state_dict':     unet.state_dict(),
+        torch.save({'n_epoch': epoch,
+                    'model_state_dict': unet.state_dict(),
                     'optimizer_state_dict': optimiser.state_dict(),
-                    "args":                 args,
-                    "ema":                  ema.state_dict(),
-                    'loss':                 loss,},save_dir)
+                    "args": args,
+                    "ema": ema.state_dict(),
+                    'loss': loss, }, save_dir)
+
 
 def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                      save_imgs=False, is_train_data=True, device='cuda'):
-
-    if is_train_data :
+    if is_train_data:
         train_data = 'training_data'
-    else :
+    else:
         train_data = 'test_data'
 
     video_save_dir = os.path.join(args.experiment_dir, 'diffusion-videos')
@@ -66,7 +65,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         noise = torch.rand_like(x).float().to(x.device)
 
         # 2) select random int
-        t = torch.randint(args.sample_distance-1, args.sample_distance, (x.shape[0],), device=x.device)
+        t = torch.randint(args.sample_distance - 1, args.sample_distance, (x.shape[0],), device=x.device)
         time_step = t[0].item()
         with torch.no_grad():
             # 3) q sampling = noising & p sampling = denoising
@@ -74,49 +73,48 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             temp = diffusion.sample_p(ema, x_t, t)
 
         # 4) what is sample_p do ?
-        real_images = x[:num_images, ...].cpu().permute(0,1,3,2) # [Batch, 1, W, H]
+        real_images = x[:num_images, ...].cpu().permute(0, 1, 3, 2)  # [Batch, 1, W, H]
         sample_images = temp["sample"][:num_images, ...].cpu().permute(0, 1, 3, 2)  # [Batch, 1, W, H]
-        pred_images = temp["pred_x_0"][:num_images, ...].cpu().permute(0,1,3,2)
+        pred_images = temp["pred_x_0"][:num_images, ...].cpu().permute(0, 1, 3, 2)
         merge_images = []
-        #num_images = min(len(normal_info), num_images)
+        # num_images = min(len(normal_info), num_images)
         for img_index in range(num_images):
             normal_info_ = normal_info[img_index]
             if normal_info_ == 1:
                 is_normal = 'normal'
-            else :
+            else:
                 is_normal = 'abnormal'
-            real = real_images[img_index,...].squeeze()
-            real= real.unsqueeze(0)
+            real = real_images[img_index, ...].squeeze()
+            real = real.unsqueeze(0)
             real = torch_transforms.ToPILImage()(real)
-            sample = sample_images[img_index,...].squeeze()
+            sample = sample_images[img_index, ...].squeeze()
             sample = sample.unsqueeze(0)
             sample = torch_transforms.ToPILImage()(sample)
-            pred = pred_images[img_index,...].squeeze()
+            pred = pred_images[img_index, ...].squeeze()
             pred = pred.unsqueeze(0)
             pred = torch_transforms.ToPILImage()(pred)
-            new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
+            new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]), 250)
             new_image.paste(real, (0, 0))
             new_image.paste(sample, (real.size[0], 0))
-            new_image.paste(pred, (real.size[0]+sample.size[0], 0))
-            new_image.save(os.path.join(image_save_dir, f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
+            new_image.paste(pred, (real.size[0] + sample.size[0], 0))
+            new_image.save(os.path.join(image_save_dir,
+                                        f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
             loading_image = wandb.Image(new_image,
                                         caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
             wandb.log({"inference": loading_image})
-            #merge_images.append(new_image)
+            # merge_images.append(new_image)
 
-        #new_image = PIL.Image.new('RGB', (merge_images[0].size[0], len(merge_images) * merge_images[0].size[1]), (250, 250, 250))
-        #for i, img in enumerate(merge_images) :
+        # new_image = PIL.Image.new('RGB', (merge_images[0].size[0], len(merge_images) * merge_images[0].size[1]), (250, 250, 250))
+        # for i, img in enumerate(merge_images) :
         #    new_image.paste(img, (0, i * img.size[1]))
-        #img_save_dir = os.path.join(image_save_dir, f'epoch_{epoch}_{train_data}.png')
-        #new_image.save(img_save_dir)
-        #loading_image = wandb.Image(new_image,
+        # img_save_dir = os.path.join(image_save_dir, f'epoch_{epoch}_{train_data}.png')
+        # new_image.save(img_save_dir)
+        # loading_image = wandb.Image(new_image,
         #                            caption=f"epoch : {epoch + 1}")
-        #wandb.log({"train_data": loading_image})
+        # wandb.log({"train_data": loading_image})
 
 
-
-def main(args) :
-
+def main(args):
     print(f'\n step 1. setting')
     if args.process_title:
         setproctitle(args.process_title)
@@ -147,25 +145,26 @@ def main(args) :
     train_datas = os.listdir(args.train_data_folder)
     val_datas = os.listdir(args.val_data_folder)
     train_datalist = [{"image": os.path.join(args.train_data_folder, train_data)} for train_data in train_datas]
-    w,h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
+    w, h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
     train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
                                            transforms.EnsureChannelFirstd(keys=["image"]),
                                            transforms.ScaleIntensityRanged(keys=["image"],
                                                                            a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
                                                                            clip=True),
                                            transforms.RandAffined(keys=["image"],
-                                              spatial_size=[w, h], # output image spatial size ...........
-                                              rotate_range=[(-np.pi / 36, np.pi / 36),(-np.pi / 36, np.pi / 36)],
-                                              translate_range=[(-1, 1), (-1, 1)],
-                                              scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-                                              padding_mode="zeros",
-                                              prob=0.5, ), ])
-    train_ds = SYDataset_masking(data=train_datalist,transform=train_transforms,
-                                 base_mask_dir=args.train_mask_dir,image_size = args.img_size)
-    training_dataset_loader = SYDataLoader(train_ds,batch_size=args.batch_size,
-                                         shuffle=True, num_workers=4, persistent_workers=True)
+                                                                  spatial_size=[w, h],
+                                                                  # output image spatial size ...........
+                                                                  rotate_range=[(-np.pi / 36, np.pi / 36),
+                                                                                (-np.pi / 36, np.pi / 36)],
+                                                                  translate_range=[(-1, 1), (-1, 1)],
+                                                                  scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
+                                                                  padding_mode="zeros",
+                                                                  prob=0.5, ), ])
+    train_ds = SYDataset_masking(data=train_datalist, transform=train_transforms,
+                                 base_mask_dir=args.train_mask_dir, image_size=args.img_size)
+    training_dataset_loader = SYDataLoader(train_ds, batch_size=args.batch_size,
+                                           shuffle=True, num_workers=4, persistent_workers=True)
     check_data = first(training_dataset_loader)
-
 
     # ## Prepare validation set data loader
     val_datalist = [{"image": os.path.join(args.val_data_folder, val_data)} for val_data in val_datas]
@@ -179,11 +178,10 @@ def main(args) :
     val_ds = SYDataset_masking(data=val_datalist,
                                transform=val_transforms,
                                base_mask_dir=args.val_mask_dir, image_size=args.img_size)
-    test_dataset_loader = SYDataLoader(val_ds,batch_size=args.batch_size,
+    test_dataset_loader = SYDataLoader(val_ds, batch_size=args.batch_size,
                                        shuffle=True, num_workers=4, persistent_workers=True)
 
     print(f'\n step 3. resume or not')
-
 
     print(f'\n step 4. model')
     in_channels = args.in_channels
@@ -199,12 +197,12 @@ def main(args) :
     # (2) scaheduler
     betas = get_beta_schedule(args.timestep, args.beta_schedule)
     # (3) scaheduler
-    diffusion = GaussianDiffusionModel([w,h], #  [128, 128]
-                                       betas,            #  1
+    diffusion = GaussianDiffusionModel([w, h],  # [128, 128]
+                                       betas,  # 1
                                        img_channels=in_channels,
                                        loss_type=args.loss_type,  # l2
-                                       loss_weight=args.loss_weight, # none
-                                       noise= args.noise_fn,)        # 1
+                                       loss_weight=args.loss_weight,  # none
+                                       noise=args.noise_fn, )  # 1
 
     print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
@@ -222,55 +220,33 @@ def main(args) :
             # -----------------------------------------------------------------------------------------
             # 0) data check
             x_0 = data["image_info"]['image'].to(device)  # batch, channel, w, h
-            normal_info = data['normal'] # if 1 = normal, 0 = abnormal
-            mask_info = data['mask'].unsqueeze(dim=1)    # if 1 = normal, 0 = abnormal
-            if args.only_normal_training :
+            normal_info = data['normal']  # if 1 = normal, 0 = abnormal
+            mask_info = data['mask'].unsqueeze(dim=1)  # if 1 = normal, 0 = abnormal
+            if args.only_normal_training:
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
             # -----------------------------------------------------------------------------------------
             # 1) check random t
-            if x_0.shape[0] != 0 :
-                t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device = x_0.device)
-                if args.use_simplex_noise :
+            if x_0.shape[0] != 0:
+                t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=x_0.device)
+                if args.use_simplex_noise:
                     noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
-                else :
+                else:
                     noise = torch.randn_like(x)
                 # 2) make noisy latent
                 x_t = diffusion.sample_q(x_0, t, noise)
                 # 3) model prediction
                 noise_pred = model(x_t, t)
                 target = noise
-
-
-
-
-                if args.masked_loss:
-                    noise_pred = noise_pred * mask_info.to(device)
-                    target = target * mask_info.to(device)
-                # 4) loss
-                loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
-
-                if args.inverse_loss:
-                    inverse_mask_info = (1-mask_info).to(device)
-                    noise_pred_ood = noise_pred * inverse_mask_info
-
-                    shuffled_target = torch.roll(noise, shifts=args.roll_intense, dims=2)
-                    shuffled_target = torch.roll(shuffled_target, shifts=args.roll_intense, dims=3)
-                    target_ood = shuffled_target * inverse_mask_info
-
-                    inverse_loss = torch.nn.functional.mse_loss(noise_pred_ood.float(),
-                                                                target_ood.float(), reduction="none")
-
-                    loss += args.inverse_loss_weight * inverse_loss
+                if args.pos_neg_loss :
+                    pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
+                                                             (target * mask_info.to(device)).float(),
+                                                            reduction="none")
+                    neg_loss = torch.nn.functional.mse_loss((noise_pred * (1-mask_info).to(device)).float(),
+                                                            (target * (1-mask_info).to(device)).float(),
+                                                            reduction="none")
+                    loss = pos_loss + args.pos_neg_loss_scale * (pos_loss - neg_loss)
                 loss = loss.mean()
-
-                """
-                predicted noise = unconditional noise + guidance factor(conditioned noise -unconditioned noise)
-                """
-
-
-
-
                 wandb.log({"loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
@@ -288,16 +264,16 @@ def main(args) :
                             model.eval()
                             inference_num = min(args.inference_num, args.batch_size)
                             training_outputs(diffusion, test_data, epoch, inference_num, save_imgs=args.save_imgs,
-                                             ema=ema, args=args, is_train_data = False, device = device)
+                                             ema=ema, args=args, is_train_data=False, device=device)
                             training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
-                                             ema=ema, args=args, is_train_data=True, device = device)
+                                             ema=ema, args=args, is_train_data=True, device=device)
 
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
         print(f'vlb loss calculating ... ')
         if epoch % args.vlb_freq == 0:
-            for i, test_data in enumerate(test_dataset_loader) :
-                if i == 0 :
+            for i, test_data in enumerate(test_dataset_loader):
+                if i == 0:
                     x = test_data["image_info"]['image'].to(device)
                     normal_info_ = test_data['normal']  # if 1 = normal, 0 = abnormal
                     mask_info_ = test_data['mask']  # if 1 = normal, 0 = abnormal
@@ -312,30 +288,31 @@ def main(args) :
                     # --------------------------------------------------------------------------------------------------
                     # calculate vlb loss
                     # x = [Batch, Channel, 128, 128]
-                    if normal_x_.shape[0] != 0 :
+                    if normal_x_.shape[0] != 0:
                         vlb_terms = diffusion.calc_total_vlb(normal_x_, model, args)
-                        #total_vlb = vlb_terms["total_vlb"] # [Batch]
-                        #prior_vlb = vlb_terms["prior_vlb"] # [Batch]
-                        #vb = vlb_terms["vb"]               # vb = [Batch, number of timestps = 1000]
-                        #x_0_mse = vlb_terms["x_0_mse"]
-                        #noise_mse = vlb_terms["mse"]
-                        whole_vb = vlb_terms["whole_vb"].squeeze().mean(dim=1) # batch, 1000, 1, W, H
+                        # total_vlb = vlb_terms["total_vlb"] # [Batch]
+                        # prior_vlb = vlb_terms["prior_vlb"] # [Batch]
+                        # vb = vlb_terms["vb"]               # vb = [Batch, number of timestps = 1000]
+                        # x_0_mse = vlb_terms["x_0_mse"]
+                        # noise_mse = vlb_terms["mse"]
+                        whole_vb = vlb_terms["whole_vb"].squeeze().mean(dim=1)  # batch, 1000, 1, W, H
                         efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
                         whole_vb = whole_vb.flatten(start_dim=1)  # batch, 1000, W*H
-                        whole_vb = whole_vb.sum(dim=-1) / efficient_pixel_num # shape = [batch]
+                        whole_vb = whole_vb.sum(dim=-1) / efficient_pixel_num  # shape = [batch]
                         wandb.log({"total_vlb (test data normal sample)": whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
-                    if abnormal_x_.shape[0] != 0 :
+                    if abnormal_x_.shape[0] != 0:
                         ab_vlb_terms = diffusion.calc_total_vlb(abnormal_x_, model, args)
-                        #ab_total_vlb = ab_vlb_terms["total_vlb"]  # [Batch]
-                        ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze().mean(dim=1)  # whole_vb = [Batch, number of timestps = 1000, W, H]
+                        # ab_total_vlb = ab_vlb_terms["total_vlb"]  # [Batch]
+                        ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze().mean(
+                            dim=1)  # whole_vb = [Batch, number of timestps = 1000, W, H]
                         ab_whole_vb = ab_whole_vb.unsqueeze(dim=1)  # Batch, 1, W, H
                         efficient_pixel_num = abnormal_mask.sum(dim=-1).sum(dim=-1).to(device)
                         normal_portion_ab_whole_vb = abnormal_mask * ab_whole_vb
                         normal_portion_ab_whole_vb = normal_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
                         normal_portion_ab_whole_vb = normal_portion_ab_whole_vb / efficient_pixel_num
                         wandb.log({"normal portion of *ab*normal sample kl":
-                                    normal_portion_ab_whole_vb.mean().cpu().item()})
+                                       normal_portion_ab_whole_vb.mean().cpu().item()})
 
                         # --------------------------------------------------------------------------------------------------
                         inverse_abnormal_mask = 1 - abnormal_mask
@@ -344,7 +321,7 @@ def main(args) :
                         ab_portion_ab_whole_vb = ab_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
                         ab_portion_ab_whole_vb = ab_portion_ab_whole_vb / efficient_pixel_num
                         wandb.log({"abnormal portion of *ab*normal sample kl":
-                                    ab_portion_ab_whole_vb.mean().cpu().item()})
+                                       ab_portion_ab_whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
                     # collecting total vlb in deque collections
                     """
@@ -361,8 +338,8 @@ def main(args) :
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # step 1. wandb login
@@ -373,7 +350,7 @@ if __name__ == '__main__':
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", type=str)
     parser.add_argument('--experiment_dir', type=str,
-                        default = f'/data7/sooyeon/medical_image/anoddpm_result/20231119_dental_test')
+                        default=f'/data7/sooyeon/medical_image/anoddpm_result/20231119_dental_test')
 
     # step 2. dataset and dataloatder
     parser.add_argument('--train_data_folder', type=str)
@@ -384,17 +361,17 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int)
 
     # step 3. model
-    parser.add_argument('--in_channels', type=int, default = 1)
-    parser.add_argument('--base_channels', type=int, default = 256)
-    parser.add_argument('--channel_mults', type=str, default = '1,2,3,4')
-    parser.add_argument('--dropout', type=float, default = 0.0)
-    parser.add_argument('--num_heads', type=int, default = 2)
-    parser.add_argument('--num_head_channels', type=int, default = -1)
+    parser.add_argument('--in_channels', type=int, default=1)
+    parser.add_argument('--base_channels', type=int, default=256)
+    parser.add_argument('--channel_mults', type=str, default='1,2,3,4')
+    parser.add_argument('--dropout', type=float, default=0.0)
+    parser.add_argument('--num_heads', type=int, default=2)
+    parser.add_argument('--num_head_channels', type=int, default=-1)
     # (2) scaheduler
     parser.add_argument('--timestep', type=int, default=1000)
     parser.add_argument('--beta_schedule', type=str, default='linear')
     # (3) diffusion
-    parser.add_argument('--loss_weight', type=str, default = "none")
+    parser.add_argument('--loss_weight', type=str, default="none")
     parser.add_argument('--loss_type', type=str, default='l2')
     parser.add_argument('--noise_fn', type=str, default='simplex')
 
@@ -405,14 +382,16 @@ if __name__ == '__main__':
     # step 6. training
     parser.add_argument('--start_epoch', type=int, default=0)
     parser.add_argument('--train_epochs', type=int, default=3000)
-    parser.add_argument('--train_start', action = 'store_true')
+    parser.add_argument('--train_start', action='store_true')
     parser.add_argument('--use_simplex_noise', action='store_true')
-    parser.add_argument('--sample_distance', type=int, default = 800)
+    parser.add_argument('--sample_distance', type=int, default=800)
     parser.add_argument('--only_normal_training', action='store_true')
     parser.add_argument('--masked_loss', action='store_true')
     parser.add_argument('--inverse_loss', action='store_true')
-    parser.add_argument('--roll_intense', type=int, default = 8)
+    parser.add_argument('--roll_intense', type=int, default=8)
     parser.add_argument('--inverse_loss_weight', type=float, default=1.0)
+    parser.add_argument('--pos_neg_loss', action='store_true')
+    parser.add_argument('--pos_neg_loss_scale', type=float, default = 1.0)
 
     # step 7. inference
     parser.add_argument('--inference_num', type=int, default=4)
