@@ -245,6 +245,19 @@ def main(args) :
                     target = target * mask_info.to(device)
                 # 4) loss
                 loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
+
+                if args.inverse_loss:
+                    inverse_mask_info = (1-mask_info).to(device)
+                    noise_pred_ood = noise_pred * inverse_mask_info
+
+                    shuffled_target = torch.roll(noise, shifts=args.roll_intense, dims=2)
+                    shuffled_target = torch.roll(shuffled_target, shifts=args.roll_intense, dims=3)
+                    target_ood = shuffled_target * inverse_mask_info
+
+                    inverse_loss = torch.nn.functional.mse_loss(noise_pred_ood.float(),
+                                                                target_ood.float(), reduction="none")
+
+                    loss += inverse_loss
                 loss = loss.mean()
                 wandb.log({"loss": loss.item()})
                 optimiser.zero_grad()
@@ -385,6 +398,8 @@ if __name__ == '__main__':
     parser.add_argument('--sample_distance', type=int, default = 800)
     parser.add_argument('--only_normal_training', action='store_true')
     parser.add_argument('--masked_loss', action='store_true')
+    parser.add_argument('--inverse_loss', action='store_true')
+    parser.add_argument('--roll_intense', type=int, default = 8)
 
 
     # step 7. inference
