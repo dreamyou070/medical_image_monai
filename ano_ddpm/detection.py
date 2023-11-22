@@ -65,34 +65,33 @@ def anomalous_validation_1(args):
     dice_data = []
     start_time = time.time()
     for data in loader :
-
-        x_0 = data["image_info"]['image'][0].to(device)  # batch, channel, w, h
-        x_0 = x_0.unsqueeze(0)
-        normal_info = data['normal'][0]  # if 1 = normal, 0 = abnormal
-        mask_info = data['mask'][0].unsqueeze(0).unsqueeze(0)  # if 1 = normal, 0 = abnormal
-        print(f'x_0 (1,1,128,128) : {x_0.shape}')
-        print(f'mask_info (1,1,128,128) : {mask_info.shape}')
-        # -----------------------------------------------------------------------------------------------------------
-        # 1) make noisy image
-        t = torch.randint(int(args.sample_distance * 0.3), int(args.sample_distance * 0.8), (x_0.shape[0],), device=x_0.device)  # random timestep 45~120
-        noise = torch.randn_like(x_0).to(device)
-        x_t = diffusion.sample_q(x_0, t, noise)
-
-        # -----------------------------------------------------------------------------------------------------------
-        # 2) unet iteratively recon image
-        for time_step in reversed(range(t)):
-            with torch.no_grad():
-                temp = diffusion.sample_p(unet, x_t, t)
-                x_t = temp['sample']
-        pred_x_0 = x_t
-        real = torch_transforms.ToPILImage()(x_0.permute(0, 1, 3, 2)[0])
-        pred_x_0 = torch_transforms.ToPILImage()(pred_x_0.permute(0, 1, 3, 2)[0])
-        mask = torch_transforms.ToPILImage()(mask_info.permute(0, 1, 3, 2)[0].float())
-        new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]), 250)
-        new_image.paste(real, (0, 0))
-        new_image.paste(pred_x_0, (real.size[0], 0))
-        new_image.paste(mask, (real.size[0] + pred_x_0.size[0], 0))
-        new_image.save('test.png')
+        batch_size = data["image_info"]['image'].shape[0]
+        for i in range(batch_size) :
+            x_0 = data["image_info"]['image'][i].to(device)  # batch, channel, w, h
+            x_0 = x_0.unsqueeze(0)
+            normal_info = data['normal'][i]  # if 1 = normal, 0 = abnormal
+            mask_info = data['mask'][i].unsqueeze(0).unsqueeze(0)  # if 1 = normal, 0 = abnormal
+            if normal_info != 1 :
+                # -----------------------------------------------------------------------------------------------------------
+                # 1) make noisy image
+                t = torch.randint(int(args.sample_distance * 0.3), int(args.sample_distance * 0.8), (x_0.shape[0],), device=x_0.device)  # random timestep 45~120
+                noise = torch.randn_like(x_0).to(device)
+                x_t = diffusion.sample_q(x_0, t, noise)
+                # -----------------------------------------------------------------------------------------------------------
+                # 2) unet iteratively recon image
+                for time_step in reversed(range(t)):
+                    with torch.no_grad():
+                        temp = diffusion.sample_p(unet, x_t, t)
+                        x_t = temp['sample']
+                pred_x_0 = x_t
+                real = torch_transforms.ToPILImage()(x_0.permute(0, 1, 3, 2)[0])
+                pred_x_0 = torch_transforms.ToPILImage()(pred_x_0.permute(0, 1, 3, 2)[0])
+                mask = torch_transforms.ToPILImage()(mask_info.permute(0, 1, 3, 2)[0].float())
+                new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]), 250)
+                new_image.paste(real, (0, 0))
+                new_image.paste(pred_x_0, (real.size[0], 0))
+                new_image.paste(mask, (real.size[0] + pred_x_0.size[0], 0))
+                new_image.save('test.png')
 
 
 
