@@ -84,7 +84,7 @@ def anomalous_validation_1(args):
                 temp = diffusion.sample_p(unet, x_t, t)
                 x_t = temp['sample']
         pred_x_0 = x_t
-        real = torch_transforms.ToPILImage()(x_0.permute(0, 1, 3, 2))
+        real = torch_transforms.ToPILImage()(x_0.permute(0, 1, 3, 2)[0])
         #series = [,
         #          pred_x_0.permute(0, 1, 3, 2),
         #          mask_info.permute(0, 1, 3, 2)]
