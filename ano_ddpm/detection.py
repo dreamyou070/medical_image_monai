@@ -79,7 +79,9 @@ def anomalous_validation_1(args):
         # -----------------------------------------------------------------------------------------------------------
         # 2) unet iteratively recon image
         for time_step in reversed(range(t)):
-            print(f'time_step : {time_step}')
+            temp = diffusion.sample_p(unet, x_t, t)
+            x_t = temp['sample']
+            print(f'time_step : {time_step} | x_t : {x_t.shape}')
         break
 
 

@@ -216,6 +216,39 @@ class GaussianDiffusionModel:
         self.posterior_mean_coef1 = ( betas * np.sqrt(self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod))
         self.posterior_mean_coef2 = ((1.0 - self.alphas_cumprod_prev) * np.sqrt(alphas) / (1.0 - self.alphas_cumprod))
 
+    """
+    def step(
+        self,
+        model_output: torch.FloatTensor,
+        timestep: int,
+        sample: torch.FloatTensor,
+        generator=None,
+        return_dict: bool = True,
+        **kwargs, ) :
+        
+        Args:
+            model_output (`torch.FloatTensor`): direct output from learned diffusion model.
+            timestep (`int`): current discrete timestep in the diffusion chain.
+            sample (`torch.FloatTensor`): current instance of sample being created by diffusion process.
+            generator: random number generator.
+            return_dict (`bool`): option for returning tuple rather than DDPMSchedulerOutput class
+        
+
+        t = timestep
+        # ------------------------------------------------------------------------------------
+        # (1) pred original sample of formula (15) from https://arxiv.org/pdf/2006.11239.pdf
+        pred_original_sample = self.predict_x_0_from_eps(sample, t, model_output)
+        
+        # (2) Compute coefficients for pred_original_sample x_0 :See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
+        pred_original_sample_coeff = (alpha_prod_t_prev ** (0.5) * self.betas[t]) / beta_prod_t
+        
+        # (3) Compute coefficients for x_t :See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
+        current_sample_coeff = self.alphas[t] ** (0.5) * beta_prod_t_prev / beta_prod_t
+
+        # (4) Compute predicted previous sample µ_t : See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
+        pred_prev_sample = pred_original_sample_coeff * pred_original_sample + current_sample_coeff * sample        
+        return pred_prev_sample
+    """
     def p_loss(self, model, x_0, args):
         """ calculate total loss """
         if self.loss_weight == "none":
@@ -308,12 +341,10 @@ class GaussianDiffusionModel:
 
     # -----------------------------------------------------------------------------------------------------------------
     def predict_x_0_from_eps(self, x_t, t, eps):
-        return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t
-                - extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape, x_t.device) * eps)
+        return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t - extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape, x_t.device) * eps)
 
     def predict_eps_from_x_0(self, x_t, t, pred_x_0):
-        return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t
-                - pred_x_0) / extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape, x_t.device)
+        return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t - pred_x_0) / extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape, x_t.device)
 
     # -----------------------------------------------------------------------------------------------------------------
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
