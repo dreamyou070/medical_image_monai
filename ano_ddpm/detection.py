@@ -65,7 +65,7 @@ def anomalous_validation_1(args):
     for data in loader :
 
         x_0 = data["image_info"]['image'][0].to(device)  # batch, channel, w, h
-        x_0 = x_0.unsqueeze(0).unsqueeze(0)
+        x_0 = x_0.unsqueeze(0)
         normal_info = data['normal'][0]  # if 1 = normal, 0 = abnormal
         mask_info = data['mask'][0].unsqueeze(0).unsqueeze(0)  # if 1 = normal, 0 = abnormal
         print(f'x_0 (1,1,128,128) : {x_0.shape}')
