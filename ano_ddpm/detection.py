@@ -50,6 +50,7 @@ def anomalous_validation_1(args):
     mask_dir = os.path.join(os.path.split(data_dir)[0], 'mask')
     ano_dataset = dataset.DentalDataset(img_dir=args.dataset_path,
                                         mask_dir = mask_dir,
+                                        jaw_mask_dir=None,
                                         transform=None,
                                         img_size=(w,h))
     loader = torch.utils.data.DataLoader(ano_dataset,
