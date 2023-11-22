@@ -30,6 +30,9 @@ python diffusion_training.py --device cuda:2 \
          --val_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/mask' \
          --img_siz '128,128' --batch_size 6 --train_start --save_imgs --sample_distance 150 --loss_type 'l2' --masked_loss \
          --inference_num 4 --inference_freq 10 --vlb_freq 1 --model_save_freq 50 --save_imgs --train_epochs 3000
+
+
+         --beta_schedule
 # ------------------------------------------------------------------------------------------------------------------------------------------------------
 [Screen 05]
 python diffusion_training.py --device cuda:3 \
@@ -66,3 +69,17 @@ python diffusion_training.py --device cuda:5 \
          --val_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/mask' \
          --img_siz '128,128' --batch_size 6 --train_start --save_imgs --sample_distance 150 --loss_type 'l2' --pos_neg_loss --pos_neg_loss_scale 4.0 \
          --inference_num 4 --inference_freq 10 --vlb_freq 1 --model_save_freq 50 --save_imgs --train_epochs 3000
+# ------------------------------------------------------------------------------------------------------------------------------------------------------
+python diffusion_training.py --device cuda:6 \
+         --wandb_api_key '3a3bc2f629692fa154b9274a5bbe5881d47245dc' \
+         --wandb_project_name 'dental_experiment_anoddpm' --wandb_run_name '3_2_masked_loss_gaussian_extreme_cosine_schedule' \
+         --experiment_dir /data7/sooyeon/medical_image/anoddpm_result/3_2_masked_loss_gaussian_extreme_cosine_schedule \
+         --train_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/original' \
+         --train_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/mask' \
+         --val_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/original' \
+         --val_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/mask' \
+         --img_siz '128,128' --batch_size 6 --train_start --save_imgs --sample_distance 150 --loss_type 'l2' --masked_loss --beta_schedule 'extreme_cosine' \
+         --inference_num 4 --inference_freq 10 --vlb_freq 1 --model_save_freq 50 --save_imgs --train_epochs 3000
+
+
+

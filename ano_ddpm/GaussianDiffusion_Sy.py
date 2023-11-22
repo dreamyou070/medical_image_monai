@@ -153,6 +153,7 @@ class GaussianDiffusionModel:
         super().__init__()
         if noise == "gauss":
             self.noise_fn = lambda x, t: torch.randn_like(x)
+
         else:
             self.simplex = Simplex_CLASS()
             if noise == "simplex_randParam":
@@ -161,14 +162,17 @@ class GaussianDiffusionModel:
                 self.noise_fn = lambda x, t: random_noise(self.simplex, x, t)
             else:
                 self.noise_fn = lambda x, t: generate_simplex_noise(self.simplex, x, t, False, in_channels=img_channels)
+
         self.img_size = img_size
         self.img_channels = img_channels
         self.loss_type = loss_type
         self.num_timesteps = len(betas)
+
         if loss_weight == 'prop-t':
             self.weights = np.arange(self.num_timesteps, 0, -1)
         elif loss_weight == "uniform":
             self.weights = np.ones(self.num_timesteps)
+
         self.loss_weight = loss_weight
         alphas = 1 - betas
         self.betas = betas
@@ -187,12 +191,22 @@ class GaussianDiffusionModel:
         self.sqrt_recipm1_alphas_cumprod = np.sqrt(1.0 / self.alphas_cumprod - 1)
 
         # calculations for posterior q(x_{t-1} | x_t, x_0)
-        self.posterior_variance = (betas * (1.0 - self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod))
+        self.posterior_variance = (
+                betas * (1.0 - self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod)
+        )
         # log calculation clipped because the posterior variance is 0 at the
         # beginning of the diffusion chain.
-        self.posterior_log_variance_clipped = np.log( np.append(self.posterior_variance[1], self.posterior_variance[1:]) )
-        self.posterior_mean_coef1 = (betas * np.sqrt(self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod))
-        self.posterior_mean_coef2 = ((1.0 - self.alphas_cumprod_prev)* np.sqrt(alphas)/ (1.0 - self.alphas_cumprod))
+        self.posterior_log_variance_clipped = np.log(
+            np.append(self.posterior_variance[1], self.posterior_variance[1:])
+        )
+        self.posterior_mean_coef1 = (
+                betas * np.sqrt(self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod)
+        )
+        self.posterior_mean_coef2 = (
+                (1.0 - self.alphas_cumprod_prev)
+                * np.sqrt(alphas)
+                / (1.0 - self.alphas_cumprod)
+        )
 
     def sample_t_with_weights(self, b_size, device):
         p = self.weights / np.sum(self.weights)
@@ -232,8 +246,12 @@ class GaussianDiffusionModel:
         Compute the mean and variance of the diffusion posterior:
             q(x_{t-1} | x_t, x_0)
         """
+
+        # mu (x_t,x_0) = \frac{\sqrt{alphacumprod prev} betas}{1-alphacumprod} *x_0
+        # + \frac{\sqrt{alphas}(1-alphacumprod prev)}{ 1- alphacumprod} * x_t
         posterior_mean = (extract(self.posterior_mean_coef1, t, x_t.shape, x_t.device) * x_0
-                        + extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device) * x_t)
+                          + extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device) * x_t)
+
         # var = \frac{1-alphacumprod prev}{1-alphacumprod} * betas
         posterior_var = extract(self.posterior_variance, t, x_t.shape, x_t.device)
         posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
@@ -591,3 +609,4 @@ class GaussianDiffusionModel:
             output[(i - 1) * 6:i * 6, ...] = torch.cat((x_0, x_noised, x, mse, mse_threshold, mask))
 
         return output
+

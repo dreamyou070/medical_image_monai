@@ -191,7 +191,8 @@ def main(args) :
     model.to(device)
     ema.to(device)
     # (2) scaheduler
-    betas = get_beta_schedule(args.timestep, args.beta_schedule)
+    betas = get_beta_schedule(args.timestep,
+                              args.beta_schedule)
     # (3) scaheduler
     diffusion = GaussianDiffusionModel([w, h],  # [128, 128]
                                        betas,  # 1
