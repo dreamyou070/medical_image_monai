@@ -59,7 +59,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
     if save_imgs:
 
         # 1) make random noise
-        x = test_data["image_info"]['image'].to(device)  # batch, channel, w, h
+        x = test_data["image_info"].to(device)  # batch, channel, w, h
         normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
 
