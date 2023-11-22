@@ -2,14 +2,12 @@ import random
 import time
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import animation
+from data_module import SYDataLoader, SYDataset_masking
 import dataset
-import evaluation
 from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule
 from helpers import *
 from UNet import UNetModel
-import sys
-from matplotlib import font_manager
+from monai import transforms
 import argparse
 
 def anomalous_validation_1(args):
@@ -46,12 +44,39 @@ def anomalous_validation_1(args):
                                        noise=args.noise_fn, )  # 1
 
     print(f'\n step 3. dataset')
+    datas = os.listdir(args.dataset_path)
+    datalist = [{"image": os.path.join(args.dataset_path, data)} for data in datas]
+    data_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
+                                     transforms.EnsureChannelFirstd(keys=["image"]),
+                                     transforms.ScaleIntensityRanged(keys=["image"],
+                                                                     a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
+                                                                     clip=True),
+                                     transforms.RandAffined(keys=["image"],
+                                                            spatial_size=[w, h], ), ])
+    mask_dir = os.path.join(os.path.split(args.dataset_path)[0], 'mask')
+    val_ds = SYDataset_masking(data=datalist,
+                               transform=data_transforms,
+                               base_mask_dir=mask_dir,
+                               image_size=args.img_size)
+    test_dataset_loader = SYDataLoader(val_ds,
+                                       batch_size=args.batch_size,
+                                       shuffle=True, num_workers=4, persistent_workers=True)
+
+
+
     data_dir = args.dataset_path
     mask_dir = os.path.join(os.path.split(data_dir)[0], 'mask')
-    ano_dataset = dataset.DentalDataset(img_dir=args.dataset_path,
+    val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
+                                         transforms.EnsureChannelFirstd(keys=["image"]),
+                                         transforms.ScaleIntensityRanged(keys=["image"],
+                                                                         a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
+                                                                         clip=True),
+                                         transforms.RandAffined(keys=["image"],
+                                                                spatial_size=[w, h], ), ])
+    ano_dataset = dataset.DentalDataset(img_dir = args.dataset_path,
                                         mask_dir = mask_dir,
                                         jaw_mask_dir=None,
-                                        transform=None,
+                                        transform=val_transforms,
                                         img_size=(w,h))
     loader = torch.utils.data.DataLoader(ano_dataset,
                                          batch_size=args.batch_size,
@@ -63,16 +88,18 @@ def anomalous_validation_1(args):
     dice_data = []
     start_time = time.time()
     for data in loader :
-        img = data['image'][0].to(device)
-        img = img.unsqueeze(0).unsqueeze(0)
-        filenames = data['filenames'][0]
-        abnormal_mask = data['mask'][0].unsqueeze(0).unsqueeze(0)
 
+        x_0 = data["image_info"]['image'][0].to(device)  # batch, channel, w, h
+        x_0 = x_0.unsqueeze(0).unsqueeze(0)
+        normal_info = data['normal'][0]  # if 1 = normal, 0 = abnormal
+        mask_info = data['mask'][0].unsqueeze(0).unsqueeze(0)  # if 1 = normal, 0 = abnormal
+        print(f'x_0 (1,1,128,128) : {x_0.shape}')
+        print(f'mask_info (1,1,128,128) : {mask_info.shape}')
         # -----------------------------------------------------------------------------------------------------------
         # 1) make noisy image
         t = random.randint(int(args.sample_distance * 0.3), int(args.sample_distance * 0.8))  # random timestep 45~120
-        noise = torch.randn_like(img)
-        x_t = diffusion.sample_q(img, t, noise)
+        noise = torch.randn_like(x_0)
+        x_t = diffusion.sample_q(x_0, t, noise)
 
         # -----------------------------------------------------------------------------------------------------------
         # 2) unet iteratively recon image

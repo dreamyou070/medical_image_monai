@@ -588,8 +588,10 @@ class DentalDataset(Dataset):
     def __getitem__(self, idx):
 
         img_dir = os.path.join(self.img_dir, self.img_list[idx])
+
         mask_dir = os.path.join(self.mask_dir, self.img_list[idx])
         img = cv2.imread(img_dir, cv2.IMREAD_GRAYSCALE)
+
         mask = cv2.imread(mask_dir, cv2.IMREAD_GRAYSCALE)
         """
         y1,x1, h,w = self.getBox(self.img_list[idx])
