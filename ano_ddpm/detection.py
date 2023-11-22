@@ -1,7 +1,5 @@
 import random
 import time
-import matplotlib.pyplot as plt
-import numpy as np
 from data_module import SYDataLoader, SYDataset_masking
 import dataset
 from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule

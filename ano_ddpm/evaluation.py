@@ -226,7 +226,7 @@ if __name__ == '__main__':
     import numpy as np
     from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule
     from UNet import UNetModel
-    from detection import load_parameters
+    from ano_ddpm.detection import load_parameters
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     main()

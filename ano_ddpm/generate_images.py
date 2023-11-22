@@ -934,7 +934,7 @@ def gauss_varyingT_outputs():
 
 def make_gan_outputs():
     import Comparative_models.CE as CE
-    import detection
+    from ano_ddpm import detection
 
     # Figure for context encoder model
     args, output = load_parameters(device)
