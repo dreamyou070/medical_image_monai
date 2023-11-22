@@ -67,11 +67,26 @@ def anomalous_validation_1(args):
         img = img.unsqueeze(0).unsqueeze(0)
         filenames = data['filenames'][0]
         abnormal_mask = data['mask'][0].unsqueeze(0).unsqueeze(0)
-        print(f'img  (1,1,128,128) : {img.shape}')
-        print(f'abnormal_mask (1,1,128,128) : {abnormal_mask.shape}')
+
+        # -----------------------------------------------------------------------------------------------------------
+        # 1) make noisy image
+        t = random.randint(int(args.sample_distance * 0.3), int(args.sample_distance * 0.8))  # random timestep 45~120
+        noise = torch.randn_like(img)
+        x_t = diffusion.sample_q(img, t, noise)
+
+        # -----------------------------------------------------------------------------------------------------------
+        # 2) unet iteratively recon image
+        for time_step in reversed(range(t)):
+            print(f'time_step : {time_step}')
+        break
+
+
+
+        #print(f'img  (1,1,128,128) : {img.shape}')
+        #print(f'abnormal_mask (1,1,128,128) : {abnormal_mask.shape}')
         # -----------------------------------------------------------------------------------------------------------
         """
-        timestep = random.randint(int(args.sample_distance * 0.3),int(args.sample_distance * 0.8)) # random timestep 45~120
+        
         output = diffusion.forward_backward(unet,
                                             img[slice_number, ...].reshape(1, 1, *args["img_size"]),
                                             see_whole_sequence="whole",
