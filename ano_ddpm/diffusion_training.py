@@ -206,7 +206,7 @@ def main(args) :
             model.train()
             # -----------------------------------------------------------------------------------------
             # 0) data check
-            x_0 = data["image_info"]['image'].to(device)  # batch, channel, w, h
+            x_0 = data["image_info"].to(device)  # batch, channel, w, h
             normal_info = data['normal'] # if 1 = normal, 0 = abnormal
             mask_info = data['mask'].unsqueeze(dim=1)    # if 1 = normal, 0 = abnormal
             if args.only_normal_training :
@@ -268,7 +268,7 @@ def main(args) :
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader) :
                 if i == 0 :
-                    x = test_data["image_info"]['image'].to(device)
+                    x = test_data["image_info"].to(device)
                     normal_info_ = test_data['normal']  # if 1 = normal, 0 = abnormal
                     mask_info_ = test_data['mask']  # if 1 = normal, 0 = abnormal
                     normal_x_ = x[normal_info_ == 1]
