@@ -64,6 +64,7 @@ def anomalous_validation_1(args):
     start_time = time.time()
     for data in loader :
         img = data['image'][0].to(device)
+        img = img.unsqueeze(0).unsqueeze(0)
         filenames = data['filenames'][0]
         mask = data['mask'][0]
         print(f'img  (1,1,128,128) : {img.shape}')
