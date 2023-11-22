@@ -8,6 +8,7 @@ num_diffusion_steps = 1000
 # ---------------------------------------------------------------
 def get_beta_schedule(num_diffusion_steps, name="cosine"):
     betas = []
+
     if name == "cosine":
         max_beta = 0.999
         f = lambda t: np.cos((t + 0.008) / (1+0.008) * np.pi / 2) ** 2
@@ -16,6 +17,7 @@ def get_beta_schedule(num_diffusion_steps, name="cosine"):
             t2 = (i + 1) / num_diffusion_steps
             betas.append(min(1 - f(t2) / f(t1), max_beta))
         betas = np.array(betas)
+
     elif name == 'extreme_cosine' :
         max_beta = 0.999
         f = lambda t: (1 + np.cos((((t + 0.008) / (1 + 0.008) * np.pi / 2) + np.pi / 2))) ** 2
@@ -54,7 +56,7 @@ def main() :
     betas = get_beta_schedule(num_diffusion_steps, name="linear")
     alphas, alphas_cumprod = get_alphas(betas)
     snr = alphas_cumprod / (1-alphas_cumprod)
-    print(snr[0])
+    print(f'first snr : { snr[0]} last snr : {snr[-1]}')
     plt.plot(timestep, snr, label='SNR')
     plt.plot(timestep, betas, label='betas')
     plt.plot(timestep, alphas_cumprod, label='alphas_cumprod')
@@ -68,7 +70,7 @@ def main() :
     betas = get_beta_schedule(num_diffusion_steps, name="cosine")
     alphas, alphas_cumprod = get_alphas(betas)
     snr = alphas_cumprod / (1 - alphas_cumprod)
-    print(snr[0])
+    print(f'first snr : {snr[0]} last snr : {snr[-1]}')
     plt.plot(timestep, snr, label='SNR')
     plt.plot(timestep, betas, label='betas')
     plt.plot(timestep, alphas_cumprod, label='alphas_cumprod')
@@ -82,7 +84,7 @@ def main() :
     betas = get_beta_schedule(num_diffusion_steps, name="extreme_cosine")
     alphas, alphas_cumprod = get_alphas(betas)
     snr = alphas_cumprod / (1 - alphas_cumprod)
-    print(snr[0])
+    print(f'first snr : {snr[0]} last snr : {snr[-1]}')
     plt.plot(timestep, snr, label='SNR')
     plt.plot(timestep, betas, label='betas')
     plt.plot(timestep, alphas_cumprod, label='alphas_cumprod')
