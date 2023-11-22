@@ -72,8 +72,8 @@ def anomalous_validation_1(args):
         print(f'mask_info (1,1,128,128) : {mask_info.shape}')
         # -----------------------------------------------------------------------------------------------------------
         # 1) make noisy image
-        t = random.randint(int(args.sample_distance * 0.3), int(args.sample_distance * 0.8))  # random timestep 45~120
-        noise = torch.randn_like(x_0)
+        t = random.randint(int(args.sample_distance * 0.3), int(args.sample_distance * 0.8), device=x_0.device)  # random timestep 45~120
+        noise = torch.randn_like(x_0).to(device)
         x_t = diffusion.sample_q(x_0, t, noise)
 
         # -----------------------------------------------------------------------------------------------------------
