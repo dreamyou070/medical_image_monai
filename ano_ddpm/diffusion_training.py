@@ -140,10 +140,10 @@ def main(args) :
 
     print(f'\n step 2. dataset and dataloatder')
     w,h = int(args.img_size.split(',')[0].strip()),int(args.img_size.split(',')[1].strip())
-    train_transforms = transforms.Compose([transforms.ToPILImage(),
-                                          transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
-                                          transforms.ToTensor(),
-                                          transforms.Normalize((0.5), (0.5))])
+    train_transforms = transforms.Compose([#transforms.ToPILImage(),
+                                           transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
+                                           transforms.ToTensor(), # pil image to tensor (
+                                           transforms.Normalize((0.5), (0.5))])
     train_ds = SYDataset(data_folder=args.train_data_folder,
                          transform=train_transforms,
                          base_mask_dir=args.train_mask_dir,
@@ -155,7 +155,7 @@ def main(args) :
                                            persistent_workers=True)
     check_data = first(training_dataset_loader)
     # ## Prepare validation set data loader
-    val_transforms = transforms.Compose([transforms.ToPILImage(),
+    val_transforms = transforms.Compose([#transforms.ToPILImage(),
                                          transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
                                          transforms.ToTensor(),
                                          transforms.Normalize((0.5), (0.5))])

@@ -153,7 +153,7 @@ class SYDataset(Dataset):
 
         # (1) Read Image
         data_dir = self.img_dirs[idx]
-        torch_img = self.transform(np.array(Image.open(data_dir)))
+        torch_img = self.transform(Image.open(data_dir))
 
         # (2) maskRead Image
         parent, net_name = os.path.split(data_dir)
