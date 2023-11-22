@@ -139,7 +139,7 @@ def main(args) :
             f.write(f"{key}: {var_args[key]}\n")
 
     print(f'\n step 2. dataset and dataloatder')
-    w,h = int(args.img_size.shape[0].strip()),int(args.img_size.shape[1].strip())
+    w,h = int(args.img_size.split(',')[0].strip()),int(args.img_size.split(',')[1].strip())
     train_transforms = transforms.Compose([transforms.ToPILImage(),
                                           transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
                                           transforms.ToTensor(),
