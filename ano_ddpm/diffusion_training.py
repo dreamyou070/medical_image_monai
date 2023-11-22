@@ -7,7 +7,7 @@ from torch import optim
 from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule
 from helpers import *
 from tqdm import tqdm
-from monai import transforms
+from torchvision import transforms
 import numpy  as np
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
