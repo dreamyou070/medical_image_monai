@@ -146,7 +146,7 @@ def main(args) :
                                           transforms.Normalize((0.5), (0.5))])
     train_ds = SYDataset(data_folder=args.train_data_folder,
                          transform=train_transforms,
-                         base_mask_dir=args.train_mask_folder,
+                         base_mask_dir=args.train_mask_dir,
                          image_size=args.img_size)
     training_dataset_loader = SYDataLoader(train_ds,
                                            batch_size=args.batch_size,
@@ -161,7 +161,7 @@ def main(args) :
                                          transforms.Normalize((0.5), (0.5))])
     val_ds = SYDataset(data_folder=args.val_data_folder,
                          transform=val_transforms,
-                         base_mask_dir=args.val_mask_folder,
+                         base_mask_dir=args.val_mask_dir,
                          image_size=args.img_size)
     test_dataset_loader = SYDataLoader(val_ds,
                                        batch_size=args.batch_size,
