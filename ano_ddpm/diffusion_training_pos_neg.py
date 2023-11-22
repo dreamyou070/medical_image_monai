@@ -7,11 +7,11 @@ from torch import optim
 from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule
 from helpers import *
 from tqdm import tqdm
-from monai import transforms
-import numpy as np
+from torchvision import transforms
+import numpy  as np
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from data_module import SYDataLoader, SYDataset_masking
+from data_module import SYDataLoader, SYDataset
 from monai.utils import first
 from UNet import UNetModel, update_ema_params
 import torch.multiprocessing
@@ -45,9 +45,10 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
 
 def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                      save_imgs=False, is_train_data=True, device='cuda'):
-    if is_train_data:
+
+    if is_train_data :
         train_data = 'training_data'
-    else:
+    else :
         train_data = 'test_data'
 
     video_save_dir = os.path.join(args.experiment_dir, 'diffusion-videos')
@@ -58,14 +59,14 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
     if save_imgs:
 
         # 1) make random noise
-        x = test_data["image_info"]['image'].to(device)  # batch, channel, w, h
+        x = test_data["image_info"].to(device)  # batch, channel, w, h
         normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
 
         noise = torch.rand_like(x).float().to(x.device)
 
         # 2) select random int
-        t = torch.randint(args.sample_distance - 1, args.sample_distance, (x.shape[0],), device=x.device)
+        t = torch.randint(args.sample_distance-1, args.sample_distance, (x.shape[0],), device=x.device)
         time_step = t[0].item()
         with torch.no_grad():
             # 3) q sampling = noising & p sampling = denoising
@@ -73,45 +74,34 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             temp = diffusion.sample_p(ema, x_t, t)
 
         # 4) what is sample_p do ?
-        real_images = x[:num_images, ...].cpu().permute(0, 1, 3, 2)  # [Batch, 1, W, H]
-        sample_images = temp["sample"][:num_images, ...].cpu().permute(0, 1, 3, 2)  # [Batch, 1, W, H]
-        pred_images = temp["pred_x_0"][:num_images, ...].cpu().permute(0, 1, 3, 2)
+        real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
+        sample_images = temp["sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
+        pred_images = temp["pred_x_0"][:num_images, ...].cpu()#.permute(0,1,3,2)
         merge_images = []
-        # num_images = min(len(normal_info), num_images)
+        #num_images = min(len(normal_info), num_images)
         for img_index in range(num_images):
             normal_info_ = normal_info[img_index]
             if normal_info_ == 1:
                 is_normal = 'normal'
-            else:
+            else :
                 is_normal = 'abnormal'
-            real = real_images[img_index, ...].squeeze()
-            real = real.unsqueeze(0)
+            real = real_images[img_index,...].squeeze()
+            real= real.unsqueeze(0)
             real = torch_transforms.ToPILImage()(real)
-            sample = sample_images[img_index, ...].squeeze()
+            sample = sample_images[img_index,...].squeeze()
             sample = sample.unsqueeze(0)
             sample = torch_transforms.ToPILImage()(sample)
-            pred = pred_images[img_index, ...].squeeze()
+            pred = pred_images[img_index,...].squeeze()
             pred = pred.unsqueeze(0)
             pred = torch_transforms.ToPILImage()(pred)
-            new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]), 250)
+            new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
             new_image.paste(real, (0, 0))
             new_image.paste(sample, (real.size[0], 0))
-            new_image.paste(pred, (real.size[0] + sample.size[0], 0))
-            new_image.save(os.path.join(image_save_dir,
-                                        f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
+            new_image.paste(pred, (real.size[0]+sample.size[0], 0))
+            new_image.save(os.path.join(image_save_dir, f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
             loading_image = wandb.Image(new_image,
                                         caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
             wandb.log({"inference": loading_image})
-            # merge_images.append(new_image)
-
-        # new_image = PIL.Image.new('RGB', (merge_images[0].size[0], len(merge_images) * merge_images[0].size[1]), (250, 250, 250))
-        # for i, img in enumerate(merge_images) :
-        #    new_image.paste(img, (0, i * img.size[1]))
-        # img_save_dir = os.path.join(image_save_dir, f'epoch_{epoch}_{train_data}.png')
-        # new_image.save(img_save_dir)
-        # loading_image = wandb.Image(new_image,
-        #                            caption=f"epoch : {epoch + 1}")
-        # wandb.log({"train_data": loading_image})
 
 
 def main(args):
@@ -137,49 +127,36 @@ def main(args):
             f.write(f"{key}: {var_args[key]}\n")
 
     print(f'\n step 2. dataset and dataloatder')
-    """
-    training_dataset, testing_dataset = dataset.init_datasets(ROOT_DIR, args)
-    training_dataset_loader = dataset.init_dataset_loader(training_dataset, args)
-    testing_dataset_loader = dataset.init_dataset_loader(testing_dataset, args)
-    """
-    train_datas = os.listdir(args.train_data_folder)
-    val_datas = os.listdir(args.val_data_folder)
-    train_datalist = [{"image": os.path.join(args.train_data_folder, train_data)} for train_data in train_datas]
     w, h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
-    train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
-                                           transforms.EnsureChannelFirstd(keys=["image"]),
-                                           transforms.ScaleIntensityRanged(keys=["image"],
-                                                                           a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
-                                                                           clip=True),
-                                           transforms.RandAffined(keys=["image"],
-                                                                  spatial_size=[w, h],
-                                                                  # output image spatial size ...........
-                                                                  rotate_range=[(-np.pi / 36, np.pi / 36),
-                                                                                (-np.pi / 36, np.pi / 36)],
-                                                                  translate_range=[(-1, 1), (-1, 1)],
-                                                                  scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-                                                                  padding_mode="zeros",
-                                                                  prob=0.5, ), ])
-    train_ds = SYDataset_masking(data=train_datalist, transform=train_transforms,
-                                 base_mask_dir=args.train_mask_dir, image_size=args.img_size)
-    training_dataset_loader = SYDataLoader(train_ds, batch_size=args.batch_size,
-                                           shuffle=True, num_workers=4, persistent_workers=True)
+    train_transforms = transforms.Compose([  # transforms.ToPILImage(),
+        transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
+        transforms.ToTensor(),  # pil image to tensor (
+        # transforms.Normalize((0.5), (0.5))
+    ])
+    train_ds = SYDataset(data_folder=args.train_data_folder,
+                         transform=train_transforms,
+                         base_mask_dir=args.train_mask_dir,
+                         image_size=(w, h))
+    training_dataset_loader = SYDataLoader(train_ds,
+                                           batch_size=args.batch_size,
+                                           shuffle=True,
+                                           num_workers=4,
+                                           persistent_workers=True)
     check_data = first(training_dataset_loader)
-
     # ## Prepare validation set data loader
-    val_datalist = [{"image": os.path.join(args.val_data_folder, val_data)} for val_data in val_datas]
-    val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
-                                         transforms.EnsureChannelFirstd(keys=["image"]),
-                                         transforms.ScaleIntensityRanged(keys=["image"],
-                                                                         a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
-                                                                         clip=True),
-                                         transforms.RandAffined(keys=["image"],
-                                                                spatial_size=[w, h], ), ])
-    val_ds = SYDataset_masking(data=val_datalist,
-                               transform=val_transforms,
-                               base_mask_dir=args.val_mask_dir, image_size=args.img_size)
-    test_dataset_loader = SYDataLoader(val_ds, batch_size=args.batch_size,
-                                       shuffle=True, num_workers=4, persistent_workers=True)
+    val_transforms = transforms.Compose([  # transforms.ToPILImage(),
+        transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
+        transforms.ToTensor(),  # pil image to tensor (
+        # transforms.Normalize((0.5), (0.5))
+    ])
+    val_ds = SYDataset(data_folder=args.val_data_folder,
+                       transform=val_transforms,
+                       base_mask_dir=args.val_mask_dir, image_size=(w, h))
+    test_dataset_loader = SYDataLoader(val_ds,
+                                       batch_size=args.batch_size,
+                                       shuffle=False,
+                                       num_workers=4,
+                                       persistent_workers=True)
 
     print(f'\n step 3. resume or not')
 
@@ -219,7 +196,7 @@ def main(args):
             model.train()
             # -----------------------------------------------------------------------------------------
             # 0) data check
-            x_0 = data["image_info"]['image'].to(device)  # batch, channel, w, h
+            x_0 = data["image_info"].to(device)  # batch, channel, w, h
             normal_info = data['normal']  # if 1 = normal, 0 = abnormal
             mask_info = data['mask'].unsqueeze(dim=1)  # if 1 = normal, 0 = abnormal
             if args.only_normal_training:
@@ -274,7 +251,7 @@ def main(args):
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader):
                 if i == 0:
-                    x = test_data["image_info"]['image'].to(device)
+                    x = test_data["image_info"].to(device)
                     normal_info_ = test_data['normal']  # if 1 = normal, 0 = abnormal
                     mask_info_ = test_data['mask']  # if 1 = normal, 0 = abnormal
                     normal_x_ = x[normal_info_ == 1]
