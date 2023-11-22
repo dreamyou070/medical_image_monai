@@ -11,7 +11,7 @@ from monai import transforms
 import numpy  as np
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from data_module import SYDataLoader, SYDataset_masking
+from data_module import SYDataLoader, SYDataset
 from monai.utils import first
 from UNet import UNetModel, update_ema_params
 import torch.multiprocessing
@@ -139,43 +139,35 @@ def main(args) :
             f.write(f"{key}: {var_args[key]}\n")
 
     print(f'\n step 2. dataset and dataloatder')
-    train_datas = os.listdir(args.train_data_folder)
-    val_datas = os.listdir(args.val_data_folder)
-    train_datalist = [{"image": os.path.join(args.train_data_folder, train_data)} for train_data in train_datas]
-    w,h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
-    train_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
-                                           transforms.EnsureChannelFirstd(keys=["image"]),
-                                           transforms.ScaleIntensityRanged(keys=["image"],
-                                                                           a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
-                                                                           clip=True),
-                                           transforms.RandAffined(keys=["image"],
-                                              spatial_size=[w, h], # output image spatial size ...........
-                                              rotate_range=[(-np.pi / 36, np.pi / 36),(-np.pi / 36, np.pi / 36)],
-                                              translate_range=[(-1, 1), (-1, 1)],
-                                              scale_range=[(-0.05, 0.05), (-0.05, 0.05)],
-                                              padding_mode="zeros",
-                                              prob=0.5, ), ])
-    train_ds = SYDataset_masking(data=train_datalist,transform=train_transforms,
-                                 base_mask_dir=args.train_mask_dir,image_size = args.img_size)
-    training_dataset_loader = SYDataLoader(train_ds,batch_size=args.batch_size,
-                                         shuffle=True, num_workers=4, persistent_workers=True)
+    w,h = int(args.img_size.shape[0].strip()),int(args.img_size.shape[1].strip())
+    train_transforms = transforms.Compose([transforms.ToPILImage(),
+                                          transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
+                                          transforms.ToTensor(),
+                                          transforms.Normalize((0.5), (0.5))])
+    train_ds = SYDataset(data_folder=args.train_data_folder,
+                         transform=train_transforms,
+                         base_mask_dir=args.train_mask_folder,
+                         image_size=args.img_size)
+    training_dataset_loader = SYDataLoader(train_ds,
+                                           batch_size=args.batch_size,
+                                           shuffle=True,
+                                           num_workers=4,
+                                           persistent_workers=True)
     check_data = first(training_dataset_loader)
-
-
     # ## Prepare validation set data loader
-    val_datalist = [{"image": os.path.join(args.val_data_folder, val_data)} for val_data in val_datas]
-    val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
-                                         transforms.EnsureChannelFirstd(keys=["image"]),
-                                         transforms.ScaleIntensityRanged(keys=["image"],
-                                                                         a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
-                                                                         clip=True),
-                                         transforms.RandAffined(keys=["image"],
-                                                                spatial_size=[w, h], ), ])
-    val_ds = SYDataset_masking(data=val_datalist,
-                               transform=val_transforms,
-                               base_mask_dir=args.val_mask_dir, image_size=args.img_size)
-    test_dataset_loader = SYDataLoader(val_ds,batch_size=args.batch_size,
-                                       shuffle=True, num_workers=4, persistent_workers=True)
+    val_transforms = transforms.Compose([transforms.ToPILImage(),
+                                         transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
+                                         transforms.ToTensor(),
+                                         transforms.Normalize((0.5), (0.5))])
+    val_ds = SYDataset(data_folder=args.val_data_folder,
+                         transform=val_transforms,
+                         base_mask_dir=args.val_mask_folder,
+                         image_size=args.img_size)
+    test_dataset_loader = SYDataLoader(val_ds,
+                                       batch_size=args.batch_size,
+                                       shuffle=False,
+                                       num_workers=4,
+                                       persistent_workers=True)
 
     print(f'\n step 3. data check')
 

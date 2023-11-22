@@ -125,6 +125,54 @@ class SYDataset_masking(_TorchDataset):
         data_dict['normal'] = int(normal)               # normal = 1, abnormal = 0
         data_dict['mask'] = torch.from_numpy(binary_mask) # normal = 1, abnormal = 0
         return data_dict
+###########
+class SYDataset(Dataset):
+    """ Custom Image Dataset Class """
+    def __init__(self,
+                 data_folder,
+                 transform,
+                 base_mask_dir):
+        self.img_dir = data_folder
+        self.transform = transform
+        self.base_mask_dir = base_mask_dir
+        images = os.listdir(self.img_dir)
+        img_dirs = []
+        for image in images:
+            image_dir = os.path.join(self.img_dir, image)
+            img_dirs.append(image_dir)
+        self.img_dirs = img_dirs
+
+    def __len__(self):
+        return len(self.img_dirs)
+
+    def __getitem__(self, idx):
+
+        data_dict = {}
+
+        # (1) Read Image
+        data_dir = self.img_dirs[idx]
+        pil_img = Image.open(data_dir)
+        torch_img = self.transform(pil_img)
+
+        # (2) maskRead Image
+        parent, net_name = os.path.split(data_dir)
+        mask_dir = os.path.join(self.base_mask_dir, net_name)
+        mask_pil = Image.open(mask_dir)
+        mask_np = np.array(mask_pil)
+        criterion = np.sum(mask_np)
+        normal = True
+        if criterion > 0:
+            normal = False
+        mask_np = np.array(mask_pil.resize((int(self.w), int(self.h))))
+        binary_mask = np.where(mask_np > 100, 0, 1)
+        data_dict['image_dir'] = data_dir
+        data_dict['image_info'] = torch_img
+        data_dict['normal'] = int(normal)  # normal = 1, abnormal = 0
+        data_dict['mask'] = torch.from_numpy(binary_mask)  # normal = 1, abnormal = 0
+
+        return data_dict
+
+"""
 
 class SYDataset(_TorchDataset):
 
@@ -159,7 +207,7 @@ class SYDataset(_TorchDataset):
 
         return self.data_transform(index)
 
-
+"""
 
 
 class SYDataLoader(_TorchDataLoader):
