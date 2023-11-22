@@ -87,7 +87,7 @@ def anomalous_validation_1(args):
         pred_x_0 = x_t
         real = torch_transforms.ToPILImage()(x_0.permute(0, 1, 3, 2)[0])
         pred_x_0 = torch_transforms.ToPILImage()(pred_x_0.permute(0, 1, 3, 2)[0])
-        mask = torch_transforms.ToPILImage()(mask_info.permute(0, 1, 3, 2)[0].long())
+        mask = torch_transforms.ToPILImage()(mask_info.permute(0, 1, 3, 2)[0].float())
         new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]), 250)
         new_image.paste(real, (0, 0))
         new_image.paste(pred_x_0, (real.size[0], 0))
