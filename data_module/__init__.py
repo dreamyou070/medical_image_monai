@@ -131,7 +131,8 @@ class SYDataset(Dataset):
     def __init__(self,
                  data_folder,
                  transform,
-                 base_mask_dir):
+                 base_mask_dir,
+                 image_size = (128,128)) :
         self.img_dir = data_folder
         self.transform = transform
         self.base_mask_dir = base_mask_dir
@@ -141,6 +142,7 @@ class SYDataset(Dataset):
             image_dir = os.path.join(self.img_dir, image)
             img_dirs.append(image_dir)
         self.img_dirs = img_dirs
+        self.w, self.h = image_size
 
     def __len__(self):
         return len(self.img_dirs)
