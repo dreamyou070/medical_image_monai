@@ -351,15 +351,14 @@ def init_datasets(ROOT_DIR, args):
     testing_dataset = MRIDataset(ROOT_DIR=f'{ROOT_DIR}DATASETS/Test/', img_size=args['img_size'], random_slice=args['random_slice'])
     return training_dataset, testing_dataset
 
-
+def cycle(iterable):
+    while True:
+        for x in iterable:
+            yield x
 def init_dataset_loader(mri_dataset, args, shuffle=True):
-    dataset_loader = cycle(
-            torch.utils.data.DataLoader(
-                    mri_dataset,
-                    batch_size=args['Batch_Size'], shuffle=shuffle,
-                    num_workers=0, drop_last=True
-                    )
-            )
+    dataset_loader = cycle(torch.utils.data.DataLoader(mri_dataset,
+                                                       batch_size=args['Batch_Size'], shuffle=shuffle,
+                                                       num_workers=0, drop_last=True))
 
     return dataset_loader
 
@@ -564,11 +563,15 @@ class MVTec(Dataset):
 
         return sample
 
-class PanoXrayDataset(Dataset):
-    "Custom Image Dataset Class"
+class DentalDataset(Dataset):
+    """ Custom Image Dataset Class """
 
-    def __init__(self, ROOT_DIR, transform=None, img_size=(256, 256)):
-        self.img_dir = ROOT_DIR
+    def __init__(self, img_dir, mask_dir, jaw_mask_dir,
+                 transform=None, img_size=(256, 256)):
+
+        self.img_dir = img_dir
+        self.mask_dir = mask_dir
+        self.jaw_mask_dir = jaw_mask_dir
         self.img_size = img_size
         self.transform = transforms.Compose(
                 [transforms.ToPILImage(),
@@ -576,39 +579,29 @@ class PanoXrayDataset(Dataset):
                  transforms.Resize(img_size, transforms.InterpolationMode.BILINEAR),
                  # transforms.CenterCrop(256),
                  transforms.ToTensor(),
-                 transforms.Normalize((0.5), (0.5))
-                 ]
-                ) if not transform else transform
+                 transforms.Normalize((0.5), (0.5))]) if not transform else transform
         self.img_list = sorted(os.listdir(self.img_dir))
-
-        #read two json file and combine as one
-        json1="/home/jerry0110/AnoDDPM/dataset/Tufts/Radiographs/normal/test_labels.json"
-        json2="/home/jerry0110/AnoDDPM/dataset/Tufts/Radiographs/normal/train_labels.json"
-        with open(json1) as f:
-            data1 = json.load(f)
-        
-        with open(json2) as f:
-            data2 = json.load(f)
-        data1.update(data2)
-        filter_dict = data1
-        
-        for key, value in filter_dict.items():
-            if value =='bad' and key in self.img_list:
-                self.img_list.remove(key)
         
     def __len__(self):
         return len(self.img_list)
 
     def __getitem__(self, idx):
-        img_name = os.path.join(self.img_dir, self.img_list[idx])
-        img = cv2.imread(img_name, cv2.IMREAD_GRAYSCALE)
+
+        img_dir = os.path.join(self.img_dir, self.img_list[idx])
+        mask_dir = os.path.join(self.mask_dir, self.img_list[idx])
+        img = cv2.imread(img_dir, cv2.IMREAD_GRAYSCALE)
+        mask = cv2.imread(mask_dir, cv2.IMREAD_GRAYSCALE)
+        """
         y1,x1, h,w = self.getBox(self.img_list[idx])
         img =img[y1:y1+h,x1:x1+w]
         img = cv2.resize(img, self.img_size, interpolation=cv2.INTER_CUBIC)
 
         if self.transform:
             img = self.transform(img)
-        sample = {'image': img, "filenames": self.img_list[idx]}
+        """
+        sample = {'image': img,
+                  "filenames": self.img_list[idx],
+                  "mask": mask,}
         return sample
     
     def getBox(self,i):
@@ -621,6 +614,7 @@ class PanoXrayDataset(Dataset):
         h=y2-y1
         w=x2-x1
         return y1,x1, h,w
+
 class AnomalyPanoXrayDataset(Dataset):
     "Custom Image Dataset Class"
 
