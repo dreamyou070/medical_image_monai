@@ -79,9 +79,11 @@ def anomalous_validation_1(args):
         # -----------------------------------------------------------------------------------------------------------
         # 2) unet iteratively recon image
         for time_step in reversed(range(t)):
-            temp = diffusion.sample_p(unet, x_t, t)
-            x_t = temp['sample']
-            print(f'time_step : {time_step} | x_t : {x_t.shape}')
+            with torch.no_grad():
+                temp = diffusion.sample_p(unet, x_t, t)
+                x_t = temp['sample']
+        pred_x_0 = x_t
+        print(f'time_step : {time_step} | pred_x_0 : {pred_x_0.shape}')
         break
 
 
