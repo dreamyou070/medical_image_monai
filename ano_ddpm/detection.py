@@ -8,6 +8,7 @@ from helpers import *
 from UNet import UNetModel
 from monai import transforms
 import argparse
+import torchvision.transforms as torch_transforms
 
 def anomalous_validation_1(args):
 
@@ -83,8 +84,13 @@ def anomalous_validation_1(args):
                 temp = diffusion.sample_p(unet, x_t, t)
                 x_t = temp['sample']
         pred_x_0 = x_t
-        print(f'time_step : {time_step} | pred_x_0 : {pred_x_0.shape}')
-        break
+        real = torch_transforms.ToPILImage()(x_0.permute(0, 1, 3, 2))
+        #series = [,
+        #          pred_x_0.permute(0, 1, 3, 2),
+        #          mask_info.permute(0, 1, 3, 2)]
+        #series = torch.cat(series, dim=0)
+
+
 
 
 
