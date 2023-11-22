@@ -74,9 +74,9 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             temp = diffusion.sample_p(ema, x_t, t)
 
         # 4) what is sample_p do ?
-        real_images = x[:num_images, ...].cpu().permute(0,1,3,2) # [Batch, 1, W, H]
-        sample_images = temp["sample"][:num_images, ...].cpu().permute(0, 1, 3, 2)  # [Batch, 1, W, H]
-        pred_images = temp["pred_x_0"][:num_images, ...].cpu().permute(0,1,3,2)
+        real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
+        sample_images = temp["sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
+        pred_images = temp["pred_x_0"][:num_images, ...].cpu()#.permute(0,1,3,2)
         merge_images = []
         #num_images = min(len(normal_info), num_images)
         for img_index in range(num_images):
