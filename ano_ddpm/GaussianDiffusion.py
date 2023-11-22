@@ -34,6 +34,15 @@ def get_beta_schedule(num_diffusion_steps, name="cosine"):
             betas.append(min(1 - f(t2) / f(t1), max_beta))
         betas = np.array(betas)
 
+    elif name == 'sinusoidal' :
+        max_beta = 0.999
+        f = lambda t: (1 + np.sin((((t + 0.008) / (1 + 0.008) * np.pi / 2) + np.pi / 2))) ** 2
+        for i in range(num_diffusion_steps):
+            t1 = i / num_diffusion_steps
+            t2 = (i + 1) / num_diffusion_steps
+            betas.append(min(1 - f(t2) / f(t1), max_beta))
+        betas = np.array(betas)
+
     else:
         raise NotImplementedError(f"unknown beta schedule: {name}")
     return betas
