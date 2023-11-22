@@ -59,6 +59,15 @@ def anomalous_validation_1(args):
                                          num_workers=0,
                                          drop_last=True)
 
+    print(f'\n step 4. ... ')
+    dice_data = []
+    start_time = time.time()
+    for data in loader :
+        img = data['image'].to(device)
+        filenames = data['filenames']
+        mask = data['mask']
+
+
 
 
 if __name__ == "__main__" :
@@ -87,6 +96,7 @@ if __name__ == "__main__" :
                         default='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/original')
     parser.add_argument('--dataset_path', type=str,
                         default='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/original')
+    parser.add_argument('--batch_size', type=int, default=16)
 
     args = parser.parse_args()
 
