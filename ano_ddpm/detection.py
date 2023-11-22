@@ -1,5 +1,6 @@
 import random
-import time
+import time, sys, os
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from data_module import SYDataLoader, SYDataset_masking
 import dataset
 from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule
