@@ -63,9 +63,20 @@ def anomalous_validation_1(args):
     dice_data = []
     start_time = time.time()
     for data in loader :
-        img = data['image'].to(device)
-        filenames = data['filenames']
-        mask = data['mask']
+        img = data['image'][0].to(device)
+        filenames = data['filenames'][0]
+        mask = data['mask'][0]
+        print(f'img  (1,1,128,128) : {img.shape}')
+        print(f'mask (1,1,128,128) : {mask.shape}')
+        # -----------------------------------------------------------------------------------------------------------
+        """
+        timestep = random.randint(int(args.sample_distance * 0.3),int(args.sample_distance * 0.8)) # random timestep 45~120
+        output = diffusion.forward_backward(unet,
+                                            img[slice_number, ...].reshape(1, 1, *args["img_size"]),
+                                            see_whole_sequence="whole",
+                                            t_distance=timestep,
+                                            denoise_fn=args["noise_fn"])
+        """
 
 
 
@@ -97,6 +108,7 @@ if __name__ == "__main__" :
     parser.add_argument('--dataset_path', type=str,
                         default='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/original')
     parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--sample_distance', type=int, default=150)
 
     args = parser.parse_args()
 
