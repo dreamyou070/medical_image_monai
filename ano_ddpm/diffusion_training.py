@@ -237,9 +237,9 @@ def main(args) :
                 if args.masked_loss:
                     noise_pred = noise_pred * mask_info.to(device)
                     target = target * mask_info.to(device)
-
                 loss = torch.nn.functional.mse_loss(noise_pred.float(),
-                                                    target.float(), reduction="none")
+                                                    target.float(),
+                                                    reduction="none")
                 if args.pos_neg_loss:
                     pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
                                                             (target * mask_info.to(device)).float(),
