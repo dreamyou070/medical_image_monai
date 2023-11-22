@@ -28,7 +28,7 @@ def anomalous_validation_1(args):
                       n_head_channels=args.num_head_channels,
                       in_channels=in_channels)
     unet_state_dict = torch.load(args.unet_state_dict_dir,
-                                     map_location='cpu')
+                                     map_location='cpu')['ema']
     unet.load_state_dict(unet_state_dict)
     unet.to(device)
     unet.eval()
