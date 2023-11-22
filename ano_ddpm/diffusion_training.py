@@ -235,13 +235,8 @@ def main(args) :
                 target = noise
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss:
-                    # 왜 masked loss 는 이렇게 큰 것일까?? (오히려 작아야 할 거 같은데...)
-                    print(f'before masking , noise_pred : {noise_pred.shape}')
                     noise_pred = noise_pred * mask_info.to(device)
-                    print(f'aftere masking , noise_pred : {noise_pred.shape}')
-                    print(f'before masking, target : {target.shape}')
                     target = target * mask_info.to(device)
-                    print(f'after masking, target : {target.shape}')
 
                 loss = torch.nn.functional.mse_loss(noise_pred.float(),
                                                     target.float(), reduction="none")
