@@ -57,31 +57,7 @@ def anomalous_validation_1(args):
                                transform=data_transforms,
                                base_mask_dir=mask_dir,
                                image_size=args.img_size)
-    test_dataset_loader = SYDataLoader(val_ds,
-                                       batch_size=args.batch_size,
-                                       shuffle=True, num_workers=4, persistent_workers=True)
-
-
-
-    data_dir = args.dataset_path
-    mask_dir = os.path.join(os.path.split(data_dir)[0], 'mask')
-    val_transforms = transforms.Compose([transforms.LoadImaged(keys=["image"]),
-                                         transforms.EnsureChannelFirstd(keys=["image"]),
-                                         transforms.ScaleIntensityRanged(keys=["image"],
-                                                                         a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0,
-                                                                         clip=True),
-                                         transforms.RandAffined(keys=["image"],
-                                                                spatial_size=[w, h], ), ])
-    ano_dataset = dataset.DentalDataset(img_dir = args.dataset_path,
-                                        mask_dir = mask_dir,
-                                        jaw_mask_dir=None,
-                                        transform=val_transforms,
-                                        img_size=(w,h))
-    loader = torch.utils.data.DataLoader(ano_dataset,
-                                         batch_size=args.batch_size,
-                                         shuffle=False,
-                                         num_workers=0,
-                                         drop_last=True)
+    loader = SYDataLoader(val_ds,batch_size=args.batch_size,shuffle=True, num_workers=4, persistent_workers=True)
 
     print(f'\n step 4. ... ')
     dice_data = []
