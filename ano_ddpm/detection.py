@@ -66,9 +66,9 @@ def anomalous_validation_1(args):
         img = data['image'][0].to(device)
         img = img.unsqueeze(0).unsqueeze(0)
         filenames = data['filenames'][0]
-        mask = data['mask'][0]
+        abnormal_mask = data['mask'][0].unsqueeze(0).unsqueeze(0)
         print(f'img  (1,1,128,128) : {img.shape}')
-        print(f'mask (1,1,128,128) : {mask.shape}')
+        print(f'abnormal_mask (1,1,128,128) : {abnormal_mask.shape}')
         # -----------------------------------------------------------------------------------------------------------
         """
         timestep = random.randint(int(args.sample_distance * 0.3),int(args.sample_distance * 0.8)) # random timestep 45~120
