@@ -250,6 +250,7 @@ def main(args) :
                     loss = pos_loss + args.pos_neg_loss_scale * (pos_loss - neg_loss)
 
                 loss = loss.mean()
+                print(f'training loss : {loss.item()}')
                 wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
