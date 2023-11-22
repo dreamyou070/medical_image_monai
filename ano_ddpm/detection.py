@@ -80,6 +80,8 @@ if __name__ == "__main__" :
     parser.add_argument('--noise_fn', type=str, default='simplex')
 
     # step 3 dataset
+    parser.add_argument('--unet_state_dict_dir', type=str,
+                        default='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/original')
     parser.add_argument('--dataset_path', type=str,
                         default='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/original')
 
