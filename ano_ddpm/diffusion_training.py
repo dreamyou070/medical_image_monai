@@ -213,9 +213,9 @@ def main(args) :
             if x_0.shape[0] != 0 :
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device = x_0.device)
                 if args.use_simplex_noise:
-                    noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
+                    noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
                 else:
-                    noise = torch.rand_like(x).float().to(x.device)
+                    noise = torch.rand_like(x_0).float().to(x.device)
                 # --------------------------------------------------------------------------------
                 # 2) make noisy latent
                 x_t = diffusion.sample_q(x_0, t, noise)

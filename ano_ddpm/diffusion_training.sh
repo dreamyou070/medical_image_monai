@@ -76,7 +76,7 @@ python diffusion_training.py --device cuda:3 \
 [Screen 07]
 python diffusion_training.py --device cuda:6 \
          --wandb_api_key '3a3bc2f629692fa154b9274a5bbe5881d47245dc' \
-         --wandb_project_name 'dental_experiment_anoddpm' --wandb_run_name '3_2_2_use_gaussian_float_noise' \
+         --wandb_project_name 'dental_experiment_anoddpm' --wandb_run_name '3_2_2_masked_loss_gaussian_cosine_schedule_change_kl_cal' \
          --experiment_dir /data7/sooyeon/medical_image/anoddpm_result/3_2_2_masked_loss_gaussian_cosine_schedule_change_kl_cal \
          --train_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/original' \
          --train_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/mask' \
