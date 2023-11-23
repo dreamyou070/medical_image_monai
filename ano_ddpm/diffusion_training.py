@@ -63,16 +63,14 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
 
-        # 2) select random int
-        t = torch.randint(args.sample_distance - 1, args.sample_distance, (x.shape[0],), device=x.device)
-        time_step = t[0].item()
-
-        # 3) select noise
+        noise = torch.rand_like(x).float().to(x.device)
         if args.use_simplex_noise:
-            noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float().to(x.device)
+            noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
         else:
-            noise = torch.randn_like(x).to(x.device)
-
+            noise = torch.randn_like(x)
+        # 2) select random int
+        t = torch.randint(args.sample_distance-1, args.sample_distance, (x.shape[0],), device=x.device)
+        time_step = t[0].item()
         with torch.no_grad():
             # 3) q sampling = noising & p sampling = denoising
             x_t = diffusion.sample_q(x, t, noise)
