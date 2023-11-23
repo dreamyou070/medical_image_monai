@@ -233,6 +233,8 @@ def main(args):
                     loss = pos_loss / (pos_loss + neg_loss)
                 elif args.classifier_free_loss :
                     loss = neg_loss + args.guidance_scale * (pos_loss - neg_loss)
+                elif args.advanced_masked_loss :
+                    loss = pos_loss - neg_loss + args.margin
                 loss = loss.mean()
                 wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
@@ -368,6 +370,8 @@ if __name__ == '__main__':
     parser.add_argument('--infonce_losss', action='store_true')
     parser.add_argument('--classifier_free_loss', action='store_true')
     parser.add_argument('--guidance_scale', type=float, default=1.0)
+    parser.add_argument('--advanced_masked_loss', action='store_true')
+    parser.add_argument('--margin', type=float, default = 0.2)
     parser.add_argument('--roll_intense', type=int, default=8)
     parser.add_argument('--inverse_loss_weight', type=float, default=1.0)
     # step 7. inference

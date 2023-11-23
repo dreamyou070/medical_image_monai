@@ -57,4 +57,30 @@ python diffusion_training_infonce.py --device cuda:4 \
          --val_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/original' \
          --val_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/mask' \
          --img_siz '128,128' --batch_size 6 --train_start --save_imgs --sample_distance 150 --loss_type 'l2' --masked_loss --beta_schedule 'linear' \
+         --inference_num 4 --inference_freq 10 --vlb_freq 1 --model_save_freq 50 --save_imgs --train_epochs
+# ------------------------------------------------------------------------------------------------------------------------------------------------------
+[Screen 10]
+python diffusion_training_infonce.py --device cuda:5 \
+         --wandb_api_key '3a3bc2f629692fa154b9274a5bbe5881d47245dc' \
+         --wandb_project_name 'dental_experiment_anoddpm' --wandb_run_name '5_gaussian_linear_classifier_free_strength_5' \
+         --experiment_dir /data7/sooyeon/medical_image/anoddpm_result/5_gaussian_linear_classifier_free_strength_5 \
+         --train_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/original' \
+         --train_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/mask' \
+         --val_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/original' \
+         --val_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/mask' \
+         --img_siz '128,128' --batch_size 6 --train_start --save_imgs --sample_distance 150 --loss_type 'l2' --masked_loss --beta_schedule 'linear' \
+         --classifier_free_loss --guidance_scale 5.0 \
+         --inference_num 4 --inference_freq 10 --vlb_freq 1 --model_save_freq 50 --save_imgs --train_epochs 3000
+# ------------------------------------------------------------------------------------------------------------------------------------------------------
+[Screen 11]
+python diffusion_training_infonce.py --device cuda:6 \
+         --wandb_api_key '3a3bc2f629692fa154b9274a5bbe5881d47245dc' \
+         --wandb_project_name 'dental_experiment_anoddpm' --wandb_run_name '6_gaussian_linear_advanced_masked_loss' \
+         --experiment_dir /data7/sooyeon/medical_image/anoddpm_result/6_gaussian_linear_advanced_masked_loss \
+         --train_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/original' \
+         --train_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/mask' \
+         --val_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/original' \
+         --val_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/mask' \
+         --img_siz '128,128' --batch_size 6 --train_start --save_imgs --sample_distance 150 --loss_type 'l2' --masked_loss --beta_schedule 'linear' \
+         --advanced_masked_loss --margin 0.2 \
          --inference_num 4 --inference_freq 10 --vlb_freq 1 --model_save_freq 50 --save_imgs --train_epochs 3000
