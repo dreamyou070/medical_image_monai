@@ -524,6 +524,7 @@ class GaussianDiffusionModel:
                                                                 log_scales=0.5 * output["log_variance"])
 
         decoder_nll = mean_flat(decoder_nll_) / np.log(2.0)
+        print(f"decoder_nll : {decoder_nll.shape} | kl : {kl.shape} | t : {t} type of t : {type(t)}", )
         nll = torch.where((t == 0), decoder_nll, kl)
         return {"output": nll,
                 "pred_x_0": output["pred_x_0"],
