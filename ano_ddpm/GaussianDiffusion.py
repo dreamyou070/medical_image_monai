@@ -25,31 +25,12 @@ def get_beta_schedule(num_diffusion_steps, name="cosine"):
         beta_end = scale * 0.02
         betas = np.linspace(beta_start, beta_end, num_diffusion_steps, dtype=np.float64)
 
-    elif name == 'extreme_cosine' :
-        max_beta = 0.999
-        f = lambda t: (1 + np.cos((((t + 0.008) / (1 + 0.008) * np.pi / 2) + np.pi / 2))) ** 2
-        for i in range(num_diffusion_steps):
-            t1 = i / num_diffusion_steps
-            t2 = (i + 1) / num_diffusion_steps
-            betas.append(min(1 - f(t2) / f(t1), max_beta))
-        betas = np.array(betas)
-
     elif name == 'sinusoidal' :
-        max_beta = 0.999
-        f = lambda t: (1 + np.sin((((t + 0.008) / (1 + 0.008) * np.pi / 2) + np.pi / 2))) ** 2
+        # want green should be zero
+        # that means alphas be zero
+        f = lambda t: (np.pi / 2) * (t/num_diffusion_steps)
         for i in range(num_diffusion_steps):
-            t1 = i / num_diffusion_steps
-            t2 = (i + 1) / num_diffusion_steps
-            betas.append(min(1 - f(t2) / f(t1), max_beta))
-        betas = np.array(betas)
-
-    elif name == 'new_sinusoidal' :
-        max_beta = 0.999
-        base_angle = np.pi / 2
-        f = lambda t: np.sin(t * np.pi / 2)
-        for i in range(num_diffusion_steps):
-            t1 = i / num_diffusion_steps
-            value = (f(t1) + 0.0008) / 2
+            value = np.sin(f(i)) * 0.02
             betas.append(value)
         betas = np.array(betas)
 
