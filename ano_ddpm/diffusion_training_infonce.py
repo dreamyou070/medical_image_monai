@@ -231,7 +231,7 @@ def main(args):
                                                         reduction="none")
                 loss = pos_loss / (pos_loss + neg_loss)
                 loss = loss.mean()
-                wandb.log({"loss": loss.item()})
+                wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
