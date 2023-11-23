@@ -28,7 +28,7 @@ def get_beta_schedule(num_diffusion_steps, name="cosine"):
     elif name == 'sinusoidal' :
         # want green should be zero
         # that means alphas be zero
-        f = lambda t: (np.pi / 2) * (t/num_diffusion_steps)
+        f = lambda t: (np.pi / 2) * ((t / num_diffusion_steps) + 0.0008 / 1 + 0.0008)
         for i in range(num_diffusion_steps):
             value = np.sin(f(i)) * 0.02
             betas.append(value)

@@ -33,20 +33,14 @@ def get_beta_schedule(num_diffusion_steps, name="cosine"):
         beta_end = scale * 0.02
         betas = np.linspace(beta_start, beta_end, num_diffusion_steps, dtype=np.float64)
 
-    elif name == 'sinusoidal' :
-        max_beta = 0.999
-        f = lambda t: (1 + np.sin((((t + 0.008) / (1 + 0.008) * np.pi / 2) + np.pi / 2))) ** 2
-        for i in range(num_diffusion_steps):
-            t1 = i / num_diffusion_steps
-            t2 = (i + 1) / num_diffusion_steps
-            betas.append(min(1 - f(t2) / f(t1), max_beta))
-        betas = np.array(betas)
+
 
     elif name == 'sinusoidal' :
 
         # want green should be zero
         # that means alphas be zero
-        f = lambda t: (np.pi / 2) * (t/num_diffusion_steps)
+        f = lambda t: (np.pi / 2) * ((t / num_diffusion_steps)+0.0008/1+0.0008)
+
         for i in range(num_diffusion_steps):
             value = np.sin(f(i)) * 0.02
             betas.append(value)
@@ -76,9 +70,10 @@ def main() :
     betas = get_beta_schedule(num_diffusion_steps, name="linear")
     alphas, alphas_cumprod = get_alphas(betas)
     snr = alphas_cumprod / (1-alphas_cumprod)
+    print(f'alphas_cumprod_50 = {alphas_cumprod[50]}')
     #plt.plot(timestep, snr, label='SNR')
     #plt.plot(timestep, betas, label='betas')
-    plt.plot(timestep[:150], alphas_cumprod[:150], label='linear')
+    #plt.plot(timestep[:150], alphas_cumprod[:150], label='linear')
     #plt.xlabel('timestep')
     #plt.yscale('log', base=10)
     #plt.title('linear schedule')
@@ -89,12 +84,13 @@ def main() :
     betas = get_beta_schedule(num_diffusion_steps, name="cosine")
     alphas, alphas_cumprod = get_alphas(betas)
     snr = alphas_cumprod / (1 - alphas_cumprod)
+    print(f'alphas_cumprod_50 = {alphas_cumprod[50]}')
     #print(f'alphas_cumprod_0 = {alphas_cumprod[0]}')
     #print(f'alphas_cumprod_150 = {alphas_cumprod[150]}')
     #print(f'alphas_cumprod_T = {alphas_cumprod[-1]}')
     #plt.plot(timestep, snr, label='SNR')
     #plt.plot(timestep, betas, label='betas')
-    plt.plot(timestep[:150], alphas_cumprod[:150], label='cosine')
+    #plt.plot(timestep[:150], alphas_cumprod[:150], label='cosine')
     #plt.xlabel('timestep')
     #plt.yscale('log', base=10)
     #plt.title('alphas cumprod compare')
@@ -102,20 +98,22 @@ def main() :
     #plt.show()
 
     print(f'\n (3) new_sinusoidal')
-    betas = get_beta_schedule(num_diffusion_steps, name="new_sinusoidal")
+    betas = get_beta_schedule(num_diffusion_steps, name="sinusoidal")
+    print(f'betas_0 = {betas[0]}')
     alphas, alphas_cumprod = get_alphas(betas)
     snr = alphas_cumprod / (1 - alphas_cumprod)
     print(f'alphas_cumprod_0 = {alphas_cumprod[0]}')
     print(f'alphas_cumprod_150 = {alphas_cumprod[150]}')
     print(f'alphas_cumprod_T = {alphas_cumprod[-1]}')
+    print(f'alphas_cumprod_50 = {alphas_cumprod[50]}')
     #plt.plot(timestep, snr, label='SNR')
     #plt.plot(timestep, betas, label='betas')
-    plt.plot(timestep[:150], alphas_cumprod[:150], label='sinusoidal')
-    plt.xlabel('timestep')
-    plt.yscale('log', base=10)
-    plt.title('alphas cumprod compare')
-    plt.legend()
-    plt.show()
+    #plt.plot(timestep[:150], alphas_cumprod[:150], label='sinusoidal')
+    #plt.xlabel('timestep')
+    #plt.yscale('log', base=10)
+    #plt.title('alphas cumprod compare')
+    #plt.legend()
+    #plt.show()
     """
     print(f'\n (4) sinusoidal')
     betas = get_beta_schedule(num_diffusion_steps, name="sinusoidal")
