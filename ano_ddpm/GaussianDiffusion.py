@@ -514,6 +514,7 @@ class GaussianDiffusionModel:
         # --------------------------------------------------------------------------------------------------------------
         # 3) calculate kl between two different probability
         whole_kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
+        print(f'true_mean : {true_mean.shape} | true_log_var : {true_log_var.shape} | whole_kl : {whole_kl.shape}')
         kl = mean_flat(whole_kl) / np.log(2.0)
         # independent discrete decoder (log likelihood)
         decoder_nll_ = -discretised_gaussian_log_likelihood(x_0,output["mean"],log_scales=0.5 * output["log_variance"])
