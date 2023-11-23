@@ -224,14 +224,14 @@ def main(args):
                 pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
                                                         (target * mask_info.to(device)).float(),
                                                         reduction="none").mean([1, 2, 3])
-                pixel_num = mask_info.sum([1, 2, 3])
+                pixel_num = mask_info.sum([1, 2, 3]).to(device)
                 pos_loss = pos_loss / pixel_num
                 # -----------------------------------------------------------------------------------------
                 # neg_loss measure distance between abnormal position
                 neg_loss = torch.nn.functional.mse_loss((noise_pred * (1-mask_info).to(device)).float(),
                                                         (target * (1-mask_info).to(device)).float(),
                                                         reduction="none").mean([1, 2, 3])
-                pixel_num = (1-mask_info).sum([1, 2, 3])
+                pixel_num = (1-mask_info).sum([1, 2, 3]).to(device)
                 neg_loss = neg_loss / pixel_num
                 if args.infonce_loss :
                     loss = pos_loss / (pos_loss + neg_loss)
