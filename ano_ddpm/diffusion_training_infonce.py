@@ -209,32 +209,33 @@ def main(args):
             # -----------------------------------------------------------------------------------------
             # 1) check random t
             if x_0.shape[0] != 0:
-
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=device)
-
                 if args.use_simplex_noise:
                     noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
                 else:
                     noise = torch.rand_like(x_0).float().to(device)
-
                 # 2) make noisy latent
                 x_t = diffusion.sample_q(x_0, t, noise)
                 # 3) model prediction
                 noise_pred = model(x_t, t)
                 target = noise
-
+                # -----------------------------------------------------------------------------------------
+                # pos_loss measure distance between normal position
                 pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
                                                         (target * mask_info.to(device)).float(),
-                                                        reduction="none")
+                                                        reduction="none").mean([1, 2, 3])
+                # -----------------------------------------------------------------------------------------
+                # neg_loss measure distance between abnormal position
                 neg_loss = torch.nn.functional.mse_loss((noise_pred * (1-mask_info).to(device)).float(),
                                                         (target * (1-mask_info).to(device)).float(),
-                                                        reduction="none")
-                if args.infonce_losss :
+                                                        reduction="none").mean([1, 2, 3])
+                if args.infonce_loss :
                     loss = pos_loss / (pos_loss + neg_loss)
                 elif args.classifier_free_loss :
                     loss = neg_loss + args.guidance_scale * (pos_loss - neg_loss)
                 elif args.advanced_masked_loss :
                     loss = pos_loss - neg_loss + args.margin
+
                 loss = loss.mean()
                 wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
@@ -367,7 +368,7 @@ if __name__ == '__main__':
     parser.add_argument('--sample_distance', type=int, default=800)
     parser.add_argument('--only_normal_training', action='store_true')
     parser.add_argument('--masked_loss', action='store_true')
-    parser.add_argument('--infonce_losss', action='store_true')
+    parser.add_argument('--infonce_loss', action='store_true')
     parser.add_argument('--classifier_free_loss', action='store_true')
     parser.add_argument('--guidance_scale', type=float, default=1.0)
     parser.add_argument('--advanced_masked_loss', action='store_true')
