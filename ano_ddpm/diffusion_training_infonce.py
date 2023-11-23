@@ -229,7 +229,10 @@ def main(args):
                 neg_loss = torch.nn.functional.mse_loss((noise_pred * (1-mask_info).to(device)).float(),
                                                         (target * (1-mask_info).to(device)).float(),
                                                         reduction="none")
-                loss = pos_loss / (pos_loss + neg_loss)
+                if args.infonce_losss :
+                    loss = pos_loss / (pos_loss + neg_loss)
+                elif args.classifier_free_loss :
+                    loss = neg_loss + args.guidance_scale * (pos_loss - neg_loss)
                 loss = loss.mean()
                 wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
@@ -362,13 +365,11 @@ if __name__ == '__main__':
     parser.add_argument('--sample_distance', type=int, default=800)
     parser.add_argument('--only_normal_training', action='store_true')
     parser.add_argument('--masked_loss', action='store_true')
-    parser.add_argument('--inverse_loss', action='store_true')
-    parser.add_argument('--pos_neg_loss', action='store_true')
-    parser.add_argument('--pos_neg_loss_scale', type=float, default=1.0)
-
+    parser.add_argument('--infonce_losss', action='store_true')
+    parser.add_argument('--classifier_free_loss', action='store_true')
+    parser.add_argument('--guidance_scale', type=float, default=1.0)
     parser.add_argument('--roll_intense', type=int, default=8)
     parser.add_argument('--inverse_loss_weight', type=float, default=1.0)
-
     # step 7. inference
     parser.add_argument('--inference_num', type=int, default=4)
     parser.add_argument('--inference_freq', type=int, default=50)
