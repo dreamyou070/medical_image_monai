@@ -280,6 +280,7 @@ def main(args) :
                     # calculate vlb loss
                     # x = [Batch, Channel, 128, 128]
                     if normal_x_.shape[0] != 0 :
+                        # normal and abnormal ...
                         vlb_terms = diffusion.calc_total_vlb(normal_x_, model, args)
                         vlb = vlb_terms["whole_vb"]          # [batch, 1000, 1, W, H]
                         # ---------------------------------------------------------------------------

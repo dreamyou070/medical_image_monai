@@ -514,10 +514,15 @@ class GaussianDiffusionModel:
         # --------------------------------------------------------------------------------------------------------------
         # 3) calculate kl between two different probability
         whole_kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
-        print(f'true_mean : {true_mean.shape} | true_log_var : {true_log_var.shape} | whole_kl : {whole_kl.shape}')
         kl = mean_flat(whole_kl) / np.log(2.0)
+
+        # --------------------------------------------------------------------------------------------------------------
+        # 4) x_0 and x_t_1
         # independent discrete decoder (log likelihood)
-        decoder_nll_ = -discretised_gaussian_log_likelihood(x_0,output["mean"],log_scales=0.5 * output["log_variance"])
+        decoder_nll_ = -1 * discretised_gaussian_log_likelihood(x_0,
+                                                                output["mean"],
+                                                                log_scales=0.5 * output["log_variance"])
+
         decoder_nll = mean_flat(decoder_nll_) / np.log(2.0)
         nll = torch.where((t == 0), decoder_nll, kl)
         return {"output": nll,
@@ -538,7 +543,13 @@ class GaussianDiffusionModel:
             # ----------------------------------------------------------------------------------------------------------
             # 1) Calculate VLB term at the current timestep
             with torch.no_grad():
-                out = self.calc_vlb_xt(model,x_0=x_0,x_t=x_t,t=t_batch,)
+                # when t != 0 : original kl divergence
+                # when t == 0 : deconer negative log likelihood
+                print(f'calculate negative log likelihood at t = {t} | t type : {type(t)}')
+                out = self.calc_vlb_xt(model,
+                                       x_0=x_0,
+                                       x_t=x_t,
+                                       t=t_batch,)
                 kl_divergence = out["output"]
                 whole_kl = out["whole_kl"]
             vb.append(kl_divergence)
