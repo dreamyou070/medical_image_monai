@@ -504,25 +504,21 @@ class GaussianDiffusionModel:
         t_batch_patch = (torch.ones_like(x_0) * timestep).to(x_0.device)
 
         # --------------------------------------------------------------------------------------------------------------
-        # 1) calculating from scheduler (one step forward)
+        # 1) compare scheduling one step reverse and model one step reverse
         true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
-
-        # --------------------------------------------------------------------------------------------------------------
-        # 2) calculating from model (x_0 is not from the original but from prediction)
         output = self.p_mean_variance(model, x_t, t, estimate_noise)
         model_mean = output["mean"]
         model_log_var = output["log_variance"]
         whole_kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
         kl = mean_flat(whole_kl) / np.log(2.0)
-
+        # --------------------------------------------------------------------------------------------------------------
         # if timestep is 0, it compare with x_0
         # independent discrete decoder (log likelihood)
         decoder_nll_ = -1 * discretised_gaussian_log_likelihood(x_0,output["mean"],log_scales=0.5 * output["log_variance"])
         decoder_nll = mean_flat(decoder_nll_) / np.log(2.0)
-        # if t == 0 : the value is decoder negative log likelihood
-        # else : kl between schedule value and model value
-        print(f"decoder_nll : {decoder_nll.shape} | kl : {kl.shape} | t : {t} type of t : {type(t)}", )
-
+        # --------------------------------------------------------------------------------------------------------------
+        # 3) if t == 0 : the value is decoder negative log likelihood
+        #    else : kl between schedule value and model value
         patch_nll = torch.where((t_batch_patch == 0), decoder_nll_, whole_kl)
         nll = torch.where((t == 0), decoder_nll, kl)
         return {"output": nll,
@@ -530,6 +526,50 @@ class GaussianDiffusionModel:
                 #"whole_kl" : whole_kl,
                 "whole_kl": patch_nll
                 }
+
+    def calc_total_vlb_in_sample_distance(self, x_0, model, args):
+        sample_distance = args.sample_distance
+        vb, vb_whole = [], []
+        x_0_mse = []
+        noise_mse = []
+        for t in reversed(list(range(sample_distance))):
+            # from 1000 to 0  (that means generating)
+            t_batch = torch.tensor([t] * x_0.shape[0], device=x_0.device)
+            noise = torch.randn_like(x_0)
+            x_t = self.sample_q(x_0=x_0, t=t_batch, noise=noise)
+            # ----------------------------------------------------------------------------------------------------------
+            # 1) Calculate VLB term at the current timestep
+            with torch.no_grad():
+                # when t != 0 : original kl divergence
+                # when t == 0 : deconer negative log likelihood
+                out = self.calc_vlb_xt(model, x_0=x_0, x_t=x_t, t=t_batch, )
+                kl_divergence = out["output"]
+                whole_kl = out["whole_kl"]
+            vb.append(kl_divergence)
+            vb_whole.append(whole_kl)
+            # ----------------------------------------------------------------------------------------------------------
+            # 2) every timestep, MSE between model_x0 and true_x)
+            model_x0 = out['pred_x_0']
+            true_x0 = x_0
+            x_0_mse.append(mean_flat((model_x0 - true_x0) ** 2))
+            # ----------------------------------------------------------------------------------------------------------
+            # 3) every timestep, MSE between model_noise and true_noise
+            model_noise = self.predict_eps_from_x_0(x_t, t_batch, out["pred_x_0"])
+            true_noise = noise
+            noise_mse.append(mean_flat((model_noise - true_noise) ** 2))
+        # vb = [Batch, number of timestps = 1000]
+        whole_vb = torch.stack(vb_whole, dim=1)  # [batch, 1000, 1, W, H]
+        vb = torch.stack(vb, dim=1)  # [batch, 1000]
+        x_0_mse = torch.stack(x_0_mse, dim=1)
+        noise_mse = torch.stack(noise_mse, dim=1)
+        prior_vlb = self.prior_vlb(x_0, args)  # [batch]
+        total_vlb = vb.sum(dim=1) + prior_vlb  # [batch]
+        return {"total_vlb": total_vlb,
+                "prior_vlb": prior_vlb,
+                "vb": vb,
+                "whole_vb": whole_vb,
+                "x_0_mse": x_0_mse,
+                "mse": noise_mse, }
 
     def calc_total_vlb(self, x_0, model, args):
         vb, vb_whole = [], []
@@ -545,11 +585,7 @@ class GaussianDiffusionModel:
             with torch.no_grad():
                 # when t != 0 : original kl divergence
                 # when t == 0 : deconer negative log likelihood
-                print(f'calculate negative log likelihood at t = {t} | t type : {type(t)}')
-                out = self.calc_vlb_xt(model,
-                                       x_0=x_0,
-                                       x_t=x_t,
-                                       t=t_batch,)
+                out = self.calc_vlb_xt(model,x_0=x_0,x_t=x_t,t=t_batch,)
                 kl_divergence = out["output"]
                 whole_kl = out["whole_kl"]
             vb.append(kl_divergence)

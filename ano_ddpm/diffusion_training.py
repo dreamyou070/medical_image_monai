@@ -280,8 +280,10 @@ def main(args) :
                     # calculate vlb loss
                     # x = [Batch, Channel, 128, 128]
                     if normal_x_.shape[0] != 0 :
+                        # ---------------------------------------------------------------------------------------------
+                        # should i calculate whole timestep ???
                         # normal and abnormal ...
-                        vlb_terms = diffusion.calc_total_vlb(normal_x_, model, args)
+                        vlb_terms = diffusion.calc_total_vlb_in_sample_distance(normal_x_, model, args)
                         vlb = vlb_terms["whole_vb"]          # [batch, 1000, 1, W, H]
                         # ---------------------------------------------------------------------------
                         # timewise averaging ...
@@ -293,7 +295,7 @@ def main(args) :
                         wandb.log({"total_vlb (test data normal sample)": whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
                     if abnormal_x_.shape[0] != 0 :
-                        ab_vlb_terms = diffusion.calc_total_vlb(abnormal_x_, model, args)
+                        ab_vlb_terms = diffusion.calc_total_vlb_in_sample_distance(abnormal_x_, model, args)
                         ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze(dim=2).mean(dim=1)  # [Batch, W, H]
                         # ----------------------------------------------------------------------------------------------
                         normal_efficient_pixel_num = abnormal_mask.sum(dim=-1).sum(dim=-1).to(device)
