@@ -236,7 +236,7 @@ def main(args):
                 pixel_num = torch.where(pixel_num == 0, 1, pixel_num)
                 neg_loss = neg_loss / pixel_num
                 if args.infonce_loss :
-                    loss = pos_loss / (pos_loss + neg_loss)
+                    loss = pos_loss / (pos_loss + args.neg_loss_scale * neg_loss)
                 elif args.classifier_free_loss :
                     loss = neg_loss + args.guidance_scale * (pos_loss - neg_loss)
                 elif args.advanced_masked_loss :
@@ -381,6 +381,8 @@ if __name__ == '__main__':
     parser.add_argument('--margin', type=float, default = 0.2)
     parser.add_argument('--roll_intense', type=int, default=8)
     parser.add_argument('--inverse_loss_weight', type=float, default=1.0)
+    parser.add_argument('--neg_loss_scale', type=float, default=1.0)
+
     # step 7. inference
     parser.add_argument('--inference_num', type=int, default=4)
     parser.add_argument('--inference_freq', type=int, default=50)
