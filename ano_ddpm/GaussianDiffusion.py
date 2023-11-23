@@ -521,8 +521,8 @@ class GaussianDiffusionModel:
         nll = torch.where((t == 0), decoder_nll, kl)
         return {"output": nll,
                 "pred_x_0": output["pred_x_0"],
-                #"whole_kl" : whole_kl,
-                "whole_kl": decoder_nll_
+                "whole_kl" : whole_kl,
+                #"whole_kl": decoder_nll_
                 }
 
     def calc_total_vlb(self, x_0, model, args):
