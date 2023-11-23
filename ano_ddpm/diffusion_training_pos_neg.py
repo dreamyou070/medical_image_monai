@@ -63,11 +63,13 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
 
-        noise = torch.rand_like(x).float().to(x.device)
-
         # 2) select random int
         t = torch.randint(args.sample_distance-1, args.sample_distance, (x.shape[0],), device=x.device)
         time_step = t[0].item()
+        if args.use_simplex_noise:
+            noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
+        else:
+            noise = torch.rand_like(x).float().to(x.device)
         with torch.no_grad():
             # 3) q sampling = noising & p sampling = denoising
             x_t = diffusion.sample_q(x, t, noise)
@@ -207,9 +209,9 @@ def main(args):
             if x_0.shape[0] != 0:
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=x_0.device)
                 if args.use_simplex_noise:
-                    noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
+                    noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
                 else:
-                    noise = torch.randn_like(x_0)
+                    noise = torch.rand_like(x).float().to(x.device)
                 # 2) make noisy latent
                 x_t = diffusion.sample_q(x_0, t, noise)
                 # 3) model prediction

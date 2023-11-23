@@ -65,6 +65,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 
         t = torch.randint(args.sample_distance - 1, args.sample_distance, (x.shape[0],), device=x.device)
         time_step = t[0].item()
+
         if args.use_simplex_noise:
             noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
         else:
@@ -105,16 +106,6 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             loading_image = wandb.Image(new_image,
                                         caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
             wandb.log({"inference": loading_image})
-            #merge_images.append(new_image)
-
-        #new_image = PIL.Image.new('RGB', (merge_images[0].size[0], len(merge_images) * merge_images[0].size[1]), (250, 250, 250))
-        #for i, img in enumerate(merge_images) :
-        #    new_image.paste(img, (0, i * img.size[1]))
-        #img_save_dir = os.path.join(image_save_dir, f'epoch_{epoch}_{train_data}.png')
-        #new_image.save(img_save_dir)
-        #loading_image = wandb.Image(new_image,
-        #                            caption=f"epoch : {epoch + 1}")
-        #wandb.log({"train_data": loading_image})
 
 
 
@@ -221,10 +212,10 @@ def main(args) :
             # 1) check random t
             if x_0.shape[0] != 0 :
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device = x_0.device)
-                if args.use_simplex_noise :
-                    noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
-                else :
-                    noise = torch.randn_like(x_0)
+                if args.use_simplex_noise:
+                    noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
+                else:
+                    noise = torch.rand_like(x).float().to(x.device)
                 # --------------------------------------------------------------------------------
                 # 2) make noisy latent
                 x_t = diffusion.sample_q(x_0, t, noise)
