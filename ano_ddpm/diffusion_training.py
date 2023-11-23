@@ -63,11 +63,16 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
 
-        noise = torch.rand_like(x).float().to(x.device)
-
         # 2) select random int
-        t = torch.randint(args.sample_distance-1, args.sample_distance, (x.shape[0],), device=x.device)
+        t = torch.randint(args.sample_distance - 1, args.sample_distance, (x.shape[0],), device=x.device)
         time_step = t[0].item()
+
+        # 3) select noise
+        if args.use_simplex_noise:
+            noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float().to(x.device)
+        else:
+            noise = torch.randn_like(x).to(x.device)
+
         with torch.no_grad():
             # 3) q sampling = noising & p sampling = denoising
             x_t = diffusion.sample_q(x, t, noise)
@@ -192,7 +197,7 @@ def main(args) :
                                        img_channels=in_channels,
                                        loss_type=args.loss_type,  # l2
                                        loss_weight=args.loss_weight,  # none
-                                       noise=args.noise_fn, )  # 1
+                                       noise='simplex' )  # 1
 
     print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
@@ -222,8 +227,11 @@ def main(args) :
                     noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
                 else :
                     noise = torch.randn_like(x_0)
+                # --------------------------------------------------------------------------------
                 # 2) make noisy latent
                 x_t = diffusion.sample_q(x_0, t, noise)
+
+
                 # 3) model prediction
                 noise_pred = model(x_t, t)
                 target = noise
@@ -285,6 +293,8 @@ def main(args) :
                     if normal_x_.shape[0] != 0 :
                         vlb_terms = diffusion.calc_total_vlb(normal_x_, model, args)
                         vlb = vlb_terms["whole_vb"]          # [batch, 1000, 1, W, H]
+                        # ---------------------------------------------------------------------------
+                        # timewise averaging ...
                         whole_vb = vlb.squeeze(dim=2).mean(dim=1) # batch, W, H
                         efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
                         whole_vb = whole_vb.flatten(start_dim=1)  # batch, W*H
@@ -355,7 +365,7 @@ if __name__ == '__main__':
     # (3) diffusion
     parser.add_argument('--loss_weight', type=str, default = "none")
     parser.add_argument('--loss_type', type=str, default='l2')
-    parser.add_argument('--noise_fn', type=str, default='simplex')
+    #parser.add_argument('--noise_fn', type=str, default='simplex')
 
     # step 5. optimizer
     parser.add_argument('--lr', type=float, default=1e-4)

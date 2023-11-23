@@ -43,6 +43,16 @@ def get_beta_schedule(num_diffusion_steps, name="cosine"):
             betas.append(min(1 - f(t2) / f(t1), max_beta))
         betas = np.array(betas)
 
+    elif name == 'new_sinusoidal' :
+        max_beta = 0.999
+        base_angle = np.pi / 2
+        f = lambda t: np.sin(t * np.pi / 2)
+        for i in range(num_diffusion_steps):
+            t1 = i / num_diffusion_steps
+            value = (f(t1) + 0.0008) / 2
+            betas.append(value)
+        betas = np.array(betas)
+
     else:
         raise NotImplementedError(f"unknown beta schedule: {name}")
     return betas
@@ -56,7 +66,8 @@ def extract(arr, timesteps, broadcast_shape, device):
 
 
 def mean_flat(tensor):
-    return torch.mean(tensor, dim=list(range(1, len(tensor.shape))))
+    return torch.mean(tensor,
+                      dim=list(range(1, len(tensor.shape))))
 
 
 def normal_kl(mean1, logvar1, mean2, logvar2):
@@ -161,9 +172,7 @@ def generate_simplex_noise(Simplex_instance, x, t,
 
 
 def random_noise(Simplex_instance, x, t):
-    param = random.choice(
-            ["gauss", "simplex"]
-            )
+    param = random.choice(["gauss", "simplex"])
     if param == "gauss":
         return torch.randn_like(x)
     else:
@@ -289,10 +298,7 @@ class GaussianDiffusionModel:
         first_noise = noise[0, ...]
         return first_noise
     def calc_loss(self, model, x_0, t):
-
         noise = self.noise_fn(x_0, t).float()
-
-
         x_t = self.sample_q(x_0, t, noise)
         estimate_noise = model(x_t, t)
         loss = {}
@@ -496,23 +502,28 @@ class GaussianDiffusionModel:
     def calc_vlb_xt(self, model, x_0, x_t, t, estimate_noise=None):
 
         # --------------------------------------------------------------------------------------------------------------
-        # 1) calculating from scheduler
+        # 1) calculating from scheduler (one step forward)
         true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
 
         # --------------------------------------------------------------------------------------------------------------
-        # 2) calculating from model
+        # 2) calculating from model (x_0 is not from the original but from prediction)
         output = self.p_mean_variance(model, x_t, t, estimate_noise)
         model_mean = output["mean"]
         model_log_var = output["log_variance"]
 
+        # --------------------------------------------------------------------------------------------------------------
+        # 3) calculate kl between two different probability
         whole_kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
         kl = mean_flat(whole_kl) / np.log(2.0)
-        decoder_nll = -discretised_gaussian_log_likelihood(x_0, output["mean"], log_scales=0.5 * output["log_variance"])
-        decoder_nll = mean_flat(decoder_nll) / np.log(2.0)
+        # independent discrete decoder (log likelihood)
+        decoder_nll_ = -discretised_gaussian_log_likelihood(x_0,output["mean"],log_scales=0.5 * output["log_variance"])
+        decoder_nll = mean_flat(decoder_nll_) / np.log(2.0)
         nll = torch.where((t == 0), decoder_nll, kl)
         return {"output": nll,
                 "pred_x_0": output["pred_x_0"],
-                "whole_kl" : whole_kl}
+                #"whole_kl" : whole_kl,
+                "whole_kl": decoder_nll_
+                }
 
     def calc_total_vlb(self, x_0, model, args):
         vb, vb_whole = [], []
