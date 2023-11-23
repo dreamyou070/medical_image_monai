@@ -500,6 +500,8 @@ class GaussianDiffusionModel:
         return mean_flat(kl_prior) / np.log(2.0)
 
     def calc_vlb_xt(self, model, x_0, x_t, t, estimate_noise=None):
+        timestep = int(t[0])
+        t_batch_patch = (torch.ones_like(x_0) * timestep).to(x_0.device)
 
         # --------------------------------------------------------------------------------------------------------------
         # 1) calculating from scheduler (one step forward)
@@ -510,26 +512,23 @@ class GaussianDiffusionModel:
         output = self.p_mean_variance(model, x_t, t, estimate_noise)
         model_mean = output["mean"]
         model_log_var = output["log_variance"]
-
-        # --------------------------------------------------------------------------------------------------------------
-        # 3) calculate kl between two different probability
         whole_kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
         kl = mean_flat(whole_kl) / np.log(2.0)
 
-        # --------------------------------------------------------------------------------------------------------------
-        # 4) x_0 and x_t_1
+        # if timestep is 0, it compare with x_0
         # independent discrete decoder (log likelihood)
-        decoder_nll_ = -1 * discretised_gaussian_log_likelihood(x_0,
-                                                                output["mean"],
-                                                                log_scales=0.5 * output["log_variance"])
-
+        decoder_nll_ = -1 * discretised_gaussian_log_likelihood(x_0,output["mean"],log_scales=0.5 * output["log_variance"])
         decoder_nll = mean_flat(decoder_nll_) / np.log(2.0)
+        # if t == 0 : the value is decoder negative log likelihood
+        # else : kl between schedule value and model value
         print(f"decoder_nll : {decoder_nll.shape} | kl : {kl.shape} | t : {t} type of t : {type(t)}", )
+
+        patch_nll = torch.where((t_batch_patch == 0), decoder_nll_, whole_kl)
         nll = torch.where((t == 0), decoder_nll, kl)
         return {"output": nll,
                 "pred_x_0": output["pred_x_0"],
                 #"whole_kl" : whole_kl,
-                "whole_kl": decoder_nll_
+                "whole_kl": patch_nll
                 }
 
     def calc_total_vlb(self, x_0, model, args):
