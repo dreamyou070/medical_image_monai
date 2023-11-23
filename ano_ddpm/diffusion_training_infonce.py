@@ -233,6 +233,7 @@ def main(args):
                                                         (target * (1-mask_info).to(device)).float(),
                                                         reduction="none").mean([1, 2, 3])
                 pixel_num = (1-mask_info).sum([1, 2, 3]).float().to(device)
+                print(f'neg pixel num : {pixel_num}')
                 neg_loss = neg_loss / pixel_num
                 print(f'neg_loss : {neg_loss}')
                 if args.infonce_loss :
