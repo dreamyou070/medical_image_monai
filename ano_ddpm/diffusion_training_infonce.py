@@ -221,12 +221,12 @@ def main(args):
                 target = noise
                 # -----------------------------------------------------------------------------------------
                 # pos_loss measure distance between normal position
-                pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
+                pos_loss_ = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
                                                         (target * mask_info.to(device)).float(),
                                                         reduction="none").mean([1, 2, 3])
                 pixel_num = mask_info.sum([1, 2, 3]).float().to(device)
                 pixel_num = torch.where(pixel_num == 0, 1, pixel_num)
-                pos_loss = pos_loss / pixel_num
+                pos_loss = pos_loss_ / pixel_num
                 # -----------------------------------------------------------------------------------------
                 # neg_loss measure distance between abnormal position
                 neg_loss = torch.nn.functional.mse_loss((noise_pred * (1-mask_info).to(device)).float(),
@@ -235,6 +235,8 @@ def main(args):
                 pixel_num = (1-mask_info).sum([1, 2, 3]).float().to(device)
                 pixel_num = torch.where(pixel_num == 0, 1, pixel_num)
                 neg_loss = neg_loss / pixel_num
+                if args.pos_infonce_loss :
+                    loss = pos_loss_ + (pos_loss / (pos_loss + args.neg_loss_scale * neg_loss))
                 if args.infonce_loss :
                     loss = pos_loss / (pos_loss + args.neg_loss_scale * neg_loss)
                 elif args.classifier_free_loss :
@@ -382,7 +384,7 @@ if __name__ == '__main__':
     parser.add_argument('--roll_intense', type=int, default=8)
     parser.add_argument('--inverse_loss_weight', type=float, default=1.0)
     parser.add_argument('--neg_loss_scale', type=float, default=1.0)
-
+    parser.add_argument('--pos_infonce_loss', action='store_true')
     # step 7. inference
     parser.add_argument('--inference_num', type=int, default=4)
     parser.add_argument('--inference_freq', type=int, default=50)
