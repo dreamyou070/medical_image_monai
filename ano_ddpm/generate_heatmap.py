@@ -166,10 +166,9 @@ def main(args):
     model_epoch = str(int(os.path.splitext(args.model_name)[0].split('_')[-1]))
 
     if os.path.exists(state_dict_path):
-        print(f' (3.1) model load state dict')
         state_dict = torch.load(state_dict_path)
         model.load_state_dict(state_dict['model_state_dict'])
-        ema.load_state_dict(state_dict['ema'])
+        #ema.load_state_dict(state_dict['ema'])
 
     print(f'\n step 4. diffusion')
     betas = get_beta_schedule(args.timestep, args.beta_schedule)
