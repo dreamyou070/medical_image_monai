@@ -12,8 +12,10 @@ def _convert_heat_map_colors(heat_map: torch.Tensor):
     heat_map = (heat_map * 255).long()
     return color_map[heat_map]
 
-def expand_image(im: torch.Tensor, h = 512, w = 512,
-                 absolute: bool = False, threshold: float = None) -> torch.Tensor:
+def expand_image(im: torch.Tensor,
+                 h = 512, w = 512,
+                 absolute: bool = False,
+                 threshold: float = None) -> torch.Tensor:
     im = im.unsqueeze(0).unsqueeze(0)
     im = F.interpolate(im.float().detach(), size=(h, w), mode='bicubic')
     if not absolute:
