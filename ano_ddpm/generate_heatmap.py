@@ -135,7 +135,6 @@ def main(args):
                                            shuffle=True,
                                            num_workers=4,
                                            persistent_workers=True)
-    test_data = first(training_dataset_loader)
     # ## Prepare validation set data loader
     val_transforms = transforms.Compose([transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
                                          transforms.ToTensor(),])
@@ -178,11 +177,12 @@ def main(args):
 
     print(f'\n step 5. inference')
     print(f' (5.1) training data')
-    # = first(training_dataset_loader)
-    x = test_data["image_info"].to(device)
-    image = test_data['image'][0]
-    print(f'x  [Batch, 1, W, H] : {x.shape}')
-    print(f'image [Batch, W, H] : {image.shape}')
+    for i, data in enumerate(training_dataset_loader):
+        if i == 0:
+            x = data["image_info"].to(device)
+            image = data['image'][0]
+            print(f'x  [Batch, 1, W, H] : {x.shape}')
+            print(f'image [Batch, W, H] : {image.shape}')
     """
     normal_info_ = test_data['normal']  # if 1 = normal, 0 = abnormal
     mask_info_ = test_data['mask']  # if 1 = normal, 0 = abnormal
