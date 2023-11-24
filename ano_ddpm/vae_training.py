@@ -11,7 +11,7 @@ from monai.utils import first
 from setproctitle import *
 from generative.networks.nets import AutoencoderKL, PatchDiscriminator
 from generative.losses.adversarial_loss import PatchAdversarialLoss
-from generative.losses.perceptual import PerceptualLoss
+from loss_module import PerceptualLoss
 
 print_config()
 
