@@ -244,6 +244,7 @@ def main(args):
 
                 if args.pos_infonce_loss :
                     reg_loss = pos_loss / (pos_loss + args.neg_loss_scale * neg_loss)
+                    reg_loss = torch.where(neg_loss == 0, 0, reg_loss)
                     print(f'reg_loss : {reg_loss}')
                     loss = pos_loss_ + reg_loss
                 if args.infonce_loss :
