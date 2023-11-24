@@ -6,4 +6,4 @@ python vae_training.py --device cuda:2 \
          --train_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/mask' \
          --val_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/original' \
          --val_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/mask' \
-         --img_siz '128,128' --batch_size 6 --train_start --loss_type 'l2'
+         --img_siz '128,128' --batch_size 6
