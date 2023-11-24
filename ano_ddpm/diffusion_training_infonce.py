@@ -312,15 +312,17 @@ def main(args):
                     if abnormal_x.shape[0] != 0:
                         ab_vlb_terms = diffusion.calc_total_vlb_in_sample_distance(abnormal_x, model, args)
                         ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze(dim=2).mean(dim=1)  # [Batch, W, H]
-                        ab_whole_vb = ab_whole_vb.flatten(start_dim=1)  # [batch, W*H]
-                        # ----------------------------------------------------------------------------------------------
+                        ab_whole_vb = ab_whole_vb.flatten(start_dim=1)                     # [Batch, WH]
                         # [1] normal portion
-                        abnormal_normalporton_mask = abnormal_mask.flatten(start_dim=1)
+                        abnormal_normalporton_mask = abnormal_mask.flatten(start_dim=1)    # [Batch, WH]
                         print(f' ab_whole_vb : {ab_whole_vb.shape} | abnormal_normalporton_mask : {abnormal_normalporton_mask.shape}')
+
                         abnormal_normal_vlb = ab_whole_vb * abnormal_normalporton_mask  # [Batch, WH]
                         print(f' abnormal_normal_vlb : {abnormal_normal_vlb.shape}')
-                        abnormal_normal_pix_num = abnormal_normalporton_mask.sum(dim=-1)
+
+                        abnormal_normal_pix_num = abnormal_normalporton_mask.sum(dim=-1).unsqueeze(-1)
                         print(f' abnormal_normal_pix_num : {abnormal_normal_pix_num}')
+
                         abnormal_normal_pix_num = torch.where(abnormal_normal_pix_num == 0, 1, abnormal_normal_pix_num)
                         abnormal_normal_vlb = abnormal_normal_vlb / abnormal_normal_pix_num
 
@@ -329,7 +331,7 @@ def main(args):
                         # [2] abnormal portion
                         abnormal_abporton_mask = (1-abnormal_normalporton_mask).flatten(start_dim=1)
                         abnormal_abnormal_vlb = ab_whole_vb * abnormal_abporton_mask
-                        abnormal_avnormal_pix_num = abnormal_abporton_mask.sum(dim=-1)
+                        abnormal_avnormal_pix_num = abnormal_abporton_mask.sum(dim=-1).unsqueeze(-1)
                         abnormal_avnormal_pix_num = torch.where(abnormal_avnormal_pix_num == 0, 1, abnormal_avnormal_pix_num)
                         abnormal_abnormal_vlb = abnormal_abnormal_vlb / abnormal_avnormal_pix_num
                         #wandb.log({"abnormal portion of *ab*normal sample kl" : abnormal_abnormal_vlb.mean().cpu().item()})
