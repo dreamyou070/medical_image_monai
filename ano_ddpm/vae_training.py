@@ -22,7 +22,8 @@ def main(args) :
         setproctitle('parksooyeon')
     print(f' (1.1) wandb')
     wandb.login(key=args.wandb_api_key)
-    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, )
+    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name,
+               dir=args.experiment_dir)
     os.environ["WANDB_DATA_DIR"] = args.experiment_dir
 
     print(f' (1.2) seed and device')
