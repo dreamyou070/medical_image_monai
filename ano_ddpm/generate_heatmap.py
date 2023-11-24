@@ -217,25 +217,23 @@ def main(args):
         # ------------------------------------------------------------------------------------------------------------------------------
         # [128,128] torch
         heat_map = expand_image(im=anormal_detect_background, h=h, w=w, absolute=False)
-        heat_map = (heat_map * 255).long()
         heat_map = _convert_heat_map_colors(heat_map)                             # [128,128,3], device = cuda, type = torch
-        print(f'heat_map : {heat_map}')
-        print(f'heat_map.shape [128,128,3] : {heat_map.shape}')
-        #np_heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [128, 128]
-        #heat_map_img = Image.fromarray(np_heat_map)
-        #blended_img = Image.blend(original_img, heat_map_img, 0.5)
+        np_heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [128, 128]
+        heat_map_img = Image.fromarray(np_heat_map)
+        blended_img = Image.blend(original_img, heat_map_img, 0.5)
 
-        #print(f' (3) answer')
-        #mask_np = mask_info[img_index].squeeze().to('cpu').detach().numpy().copy().astype(np.uint8)
-        #mask_np = mask_np * 255
-        #mask_img = Image.fromarray(mask_np).convert('RGB')  # [128, 128, 3]
+        print(f' (3) answer')
+        mask_np = mask_info[img_index].squeeze().to('cpu').detach().numpy().copy().astype(np.uint8)
+        mask_np = mask_np * 255
+        mask_img = Image.fromarray(mask_np).convert('RGB')  # [128, 128, 3]
 
-        #print(f' (4) save image')
-        #new_image = PIL.Image.new('RGB', (3 * w, h), (0,0,0))
-        #new_image.paste(original_img, (0, 0))
-        #new_image.paste(blended_img, (w, 0))
-        #new_image.paste(mask_img, (2*w, 0))
-        #new_image.save(os.path.join(img_base_dir, f'real_heatmap_answer_train_{is_train}_{img_index}.png'))
+        print(f' (4) save image')
+        new_image = PIL.Image.new('RGB', (4 * w, h), (0,0,0))
+        new_image.paste(original_img, (0, 0))
+        new_image.paste(heat_map_img, (w, 0))
+        new_image.paste(blended_img, (2*w, 0))
+        new_image.paste(mask_img, (3*w, 0))
+        new_image.save(os.path.join(img_base_dir, f'test.png'))
 
 
 
