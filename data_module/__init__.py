@@ -173,44 +173,6 @@ class SYDataset(Dataset):
 
         return data_dict
 
-"""
-
-class SYDataset(_TorchDataset):
-
-    def __init__(self,
-                 data: Sequence,
-                 transform: Callable | None = None,
-                 image_size = 64) -> None:
-
-        self.data = data # list of datas
-        self.transform: Any = transform
-        self.reverse_indexing = True
-        self.image_size = image_size
-
-    def __len__(self) -> int:
-        return len(self.data)
-
-    def data_transform(self, index: int):
-
-        data_i = self.data[index]
-        preprocessed_data = apply_transform(self.transform, data_i)
-        return preprocessed_data
-
-    def __getitem__(self, index: int | slice | Sequence[int]):
-
-        if isinstance(index, slice):
-            start, stop, step = index.indices(len(self))
-            indices = range(start, stop, step)
-            return Subset(dataset=self, indices=indices)
-
-        if isinstance(index, collections.abc.Sequence):
-            return Subset(dataset=self, indices=index)
-
-        return self.data_transform(index)
-
-"""
-
-
 class SYDataLoader(_TorchDataLoader):
 
     def __init__(self, dataset: Dataset, num_workers: int = 0, **kwargs) -> None:
@@ -240,4 +202,3 @@ class SYDataLoader(_TorchDataLoader):
             )
 
         super().__init__(dataset=dataset, num_workers=num_workers, **kwargs)
-

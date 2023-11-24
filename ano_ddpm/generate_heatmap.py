@@ -187,11 +187,12 @@ def main(args):
                          transform=train_transforms,
                          base_mask_dir=args.train_mask_dir,
                          image_size=(w, h))
-    training_dataset_loader = SYDataLoader(train_ds,
+    from torch.utils.data import DataLoader
+    training_dataset_loader = DataLoader(train_ds,
                                            batch_size=args.batch_size,
                                            shuffle=True,
-                                           num_workers=4,
-                                           persistent_workers=True)
+                                           num_workers=4,)
+                                           #persistent_workers=True)
     # ## Prepare validation set data loader
     val_transforms = transforms.Compose([transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
                                          transforms.ToTensor(),])
