@@ -221,9 +221,11 @@ def main(args):
                 pos_loss_ = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
                                                          (target * mask_info.to(device)).float(),
                                                          reduction="none").mean([1, 2, 3])
-                print(f'positive loss : {pos_loss_} ')
+                print(f'\n positive loss : {pos_loss_} ')
                 pixel_num = mask_info.sum([1, 2, 3]).float().to(device)
+                print(f'\n positive sample num : {pixel_num}')
                 pixel_num = torch.where(pixel_num == 0, 1, pixel_num)
+                print(f'\n positive sample num (after small add) : {pixel_num}')
                 pos_loss = pos_loss_ / pixel_num
 
                 # -----------------------------------------------------------------------------------------
