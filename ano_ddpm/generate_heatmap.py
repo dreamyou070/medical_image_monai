@@ -179,6 +179,7 @@ def main(args):
 
     print(f'\n step 5. inference')
     img_base_dir = os.path.join(args.experiment_dir, 'inference')
+    os.makedirs(img_base_dir, exist_ok=True)
     print(f' (5.1) training data')
     data = first(training_dataset_loader)
     is_train = 'true'
