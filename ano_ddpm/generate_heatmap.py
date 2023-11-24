@@ -187,12 +187,13 @@ def main(args):
     data = first(training_dataset_loader)
     is_train = 'true'
     x = data["image_info"].to(device)
+    img_dirs = data['image_dir']
     normal_info = data['normal']  # if 1 = normal, 0 = abnormal
     mask_info = data['mask']  # if 1 = normal, 0 = abnormal -> shape [ batch, 128, 128 ]
     print(f' (5.1.1) abnormal sample')
     # only abnormal sample
-    #abnormal_x = x[normal_info == 0]
-    #abnormal_mask = mask_info[normal_info == 0]
+    x = x[normal_info == 0]
+    mask_info = mask_info[normal_info == 0]
 
     print(f' [1] get anormal score')
     thredhold = args.thredhold
@@ -211,6 +212,7 @@ def main(args):
                 if abnormal_score < thredhold :
                     anormal_detect_background[i, j] = 0
                 else :
+                    print(f' abnormal_score : {abnormal_score}')
                     anormal_detect_background[i, j] = abnormal_score
         print(f' (1) original image')
         image = data["image_info"][img_index].squeeze()                           # [1, 128, 128]
