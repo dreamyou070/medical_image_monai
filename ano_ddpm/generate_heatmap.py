@@ -19,6 +19,7 @@ import sys, os
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from data_module import SYDataLoader, SYDataset
 from heatmap_module import _convert_heat_map_colors, expand_image
+from PIL import Image
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
@@ -180,13 +181,6 @@ def main(args):
     print(f' (5.1) training data')
     data = first(training_dataset_loader)
     x = data["image_info"].to(device)
-
-    image = data["image_info"][0]  # [1, 128, 128]
-    np_img = image.numpy()         # [1, 128, 128]
-    print(np_img.shape)
-    from PIL import Image
-    #Image.fromarray(np_img).save('test.png')
-
     normal_info_ = data['normal']  # if 1 = normal, 0 = abnormal
     mask_info_ = data['mask']  # if 1 = normal, 0 = abnormal
 
@@ -205,16 +199,16 @@ def main(args):
                     anormal_detect_background[img_index, i, j] = 0
                 else :
                     anormal_detect_background[img_index, i, j] = anormal_score
-
         print(f' [2] normalizing the score')
         image = data["image_info"][img_index].squeeze()                        # [1, 128, 128]
         np_img = image.to('cpu').detach().numpy().copy().astype(np.uint8)      # [128, 128]
     
         heat_map = anormal_detect_background[img_index].squeeze()
         heat_map = expand_image(im=heat_map,h=h, w=w,absolute=True)            # [128, 128]
-        heat_map = _convert_heat_map_colors(heat_map)
-        np_heat_map = heat_map.cpu().numpy()                                   # [128, 128]
-        heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [128, 128]
+        heat_map = _convert_heat_map_colors(heat_map)                          # [128,128], device = cuda, type = torch
+        print(f' heat_map : {heat_map.shape}, device : {heat_map.device}, type : {type(heat_map)}')
+
+        np_heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [128, 128]
         print(f' heat_map : {heat_map.shape}')
         heat_map_img = Image.fromarray(heat_map)
         break
