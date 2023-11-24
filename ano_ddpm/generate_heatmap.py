@@ -22,8 +22,8 @@ from heatmap_module import _convert_heat_map_colors, expand_image
 from PIL import Image
 from matplotlib import cm
 
-torch.multiprocessing.set_sharing_strategy('file_system')
-torch.cuda.empty_cache()
+#torch.multiprocessing.set_sharing_strategy('file_system')
+#torch.cuda.empty_cache()
 
 def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
     model_save_base_dir = os.path.join(args.experiment_dir,'diffusion-models')
@@ -190,8 +190,8 @@ def main(args):
     from torch.utils.data import DataLoader
     training_dataset_loader = DataLoader(train_ds,
                                            batch_size=args.batch_size,
-                                           shuffle=True,
-                                           num_workers=2,)
+                                           shuffle=True,)
+                                           #num_workers=0,)
                                            #persistent_workers=True)
     # ## Prepare validation set data loader
     val_transforms = transforms.Compose([transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
@@ -201,9 +201,9 @@ def main(args):
                        base_mask_dir=args.val_mask_dir, image_size=(w, h))
     test_dataset_loader = SYDataLoader(val_ds,
                                        batch_size=args.batch_size,
-                                       shuffle=False,
-                                       num_workers=4,
-                                       persistent_workers=True)
+                                       shuffle=False,)
+                                       #num_workers=4,
+                                      # persistent_workers=True)
 
     print(f'\n step 3. unet model')
     in_channels = args.in_channels
