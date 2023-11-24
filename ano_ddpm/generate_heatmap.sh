@@ -8,6 +8,7 @@ val_data_folder='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_d
 val_mask_dir='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/mask'
 batch_size=10
 thredhold=0.0005
+
 python generate_heatmap.py --device=${device} \
                            --experiment_dir=${experiment_dir} \
                            --model_name=${model_name} \
