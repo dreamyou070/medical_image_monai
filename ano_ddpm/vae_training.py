@@ -76,11 +76,12 @@ def main(args) :
                                   with_encoder_nonlocal_attn=False,
                                   with_decoder_nonlocal_attn=False, )
     autoencoderkl = autoencoderkl.to(device)
+
     perceptual_loss = PerceptualLoss(spatial_dims=2,
                                      network_type="alex")
     perceptual_loss.to(device)
     perceptual_weight = 0.001
-
+    """
     discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,
                                        in_channels=1, out_channels=1)
     discriminator = discriminator.to(device)
@@ -94,7 +95,7 @@ def main(args) :
     scaler_g = torch.cuda.amp.GradScaler()
     scaler_d = torch.cuda.amp.GradScaler()
 
-    """
+    
     print(f'\n step 4. model training')
     """
 
