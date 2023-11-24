@@ -233,7 +233,7 @@ def main(args):
         new_image.paste(heat_map_img, (w, 0))
         new_image.paste(blended_img, (2*w, 0))
         new_image.paste(mask_img, (3*w, 0))
-        new_image.save(os.path.join(img_base_dir, f'test.png'))
+        new_image.save(os.path.join(img_base_dir, f'heatmap_{img_index}.png'))
 
 
 
