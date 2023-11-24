@@ -10,8 +10,8 @@ from data_module import SYDataLoader, SYDataset
 from monai.utils import first
 from setproctitle import *
 from generative.networks.nets import AutoencoderKL, PatchDiscriminator
-from generative.losses.adversarial_loss import PatchAdversarialLoss
-from loss_module import PerceptualLoss
+from loss_module import PerceptualLoss, PatchAdversarialLoss
+
 
 print_config()
 
