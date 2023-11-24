@@ -217,9 +217,14 @@ def main(args):
         # ------------------------------------------------------------------------------------------------------------------------------
         # [128,128] torch
         heat_map = expand_image(im=anormal_detect_background, h=h, w=w, absolute=False)
-        heat_map = _convert_heat_map_colors(heat_map)                             # [128,128,3], device = cuda, type = torch
-        np_heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [128, 128]
-        heat_map_img = Image.fromarray(np_heat_map)
+        from matplotlib import cm
+        np_heatmap = cm.turbo(heat_map)[:, :, :-1]
+        np_heatmap = np_heatmap  # .transpose((2,0,1))
+        heat_map_img = Image.fromarray(np.uint8(np_heatmap * 255))
+
+        #heat_map = _convert_heat_map_colors(heat_map)                             # [128,128,3], device = cuda, type = torch
+        #np_heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [128, 128]
+        #heat_map_img = Image.fromarray(np_heat_map)
         blended_img = Image.blend(original_img, heat_map_img, 0.5)
 
         print(f' (3) answer')

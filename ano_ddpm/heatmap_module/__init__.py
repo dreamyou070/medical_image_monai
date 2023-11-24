@@ -4,7 +4,10 @@ from matplotlib import cm
 import numpy as np
 
 def _convert_heat_map_colors(heat_map: torch.Tensor):
+
+
     def get_color(value):
+        """ 256 colors, (R,G,B) """
         return np.array(cm.turbo(value / 255)[0:3])
     # ------------------------------------------------------------------------------------------------------------------
     # color_map = torch, [256,3]
