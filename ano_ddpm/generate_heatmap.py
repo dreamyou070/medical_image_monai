@@ -199,7 +199,7 @@ def main(args):
     pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
     w,h = pixelwise_anormal_score.shape[-2], pixelwise_anormal_score.shape[-1]
 
-    abnormal_pixel_num_file = open(os.path.join(save_base_dir, f'abnormal_pixel_num.txt'), 'w')
+    abnormal_pixel_num_file = os.path.join(save_base_dir, f'abnormal_pixel_num.txt')
     with open(abnormal_pixel_num_file, 'w') as f :
         for img_index in range(x.shape[0]):
             img_dir = img_dirs[img_index]
