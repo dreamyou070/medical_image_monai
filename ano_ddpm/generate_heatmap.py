@@ -20,6 +20,7 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from data_module import SYDataLoader, SYDataset
 from heatmap_module import _convert_heat_map_colors, expand_image
 from PIL import Image
+from matplotlib import cm
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
@@ -162,6 +163,8 @@ def main(args):
     ema.to(device)
     print(f' (3.1) model load state dict')
     state_dict_path = os.path.join(args.experiment_dir, 'diffusion-models', args.model_name)
+    model_epoch = str(int(os.path.splitext(args.model_name)[0].split('_')[-1]))
+
     if os.path.exists(state_dict_path):
         print(f' (3.1) model load state dict')
         state_dict = torch.load(state_dict_path)
@@ -217,14 +220,9 @@ def main(args):
         # ------------------------------------------------------------------------------------------------------------------------------
         # [128,128] torch
         heat_map = expand_image(im=anormal_detect_background, h=h, w=w, absolute=False)
-        from matplotlib import cm
         np_heatmap = cm.turbo(heat_map)[:, :, :-1]
-        np_heatmap = np_heatmap  # .transpose((2,0,1))
-        heat_map_img = Image.fromarray(np.uint8(np_heatmap * 255))
-
-        #heat_map = _convert_heat_map_colors(heat_map)                             # [128,128,3], device = cuda, type = torch
-        #np_heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [128, 128]
-        #heat_map_img = Image.fromarray(np_heat_map)
+        np_heatmap = np.uint8(np_heatmap * 255)
+        heat_map_img = Image.fromarray(np_heatmap)
         blended_img = Image.blend(original_img, heat_map_img, 0.5)
 
         print(f' (3) answer')
@@ -238,9 +236,7 @@ def main(args):
         new_image.paste(heat_map_img, (w, 0))
         new_image.paste(blended_img, (2*w, 0))
         new_image.paste(mask_img, (3*w, 0))
-        new_image.save(os.path.join(img_base_dir, f'heatmap_{img_index}.png'))
-
-
+        new_image.save(os.path.join(img_base_dir, f'heatmap_thred_{args.thredhold}_model_{model_epoch}_{img_index}.png'))
 
 
 if __name__ == '__main__':
