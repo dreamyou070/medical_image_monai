@@ -203,7 +203,7 @@ def main(args):
     pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
     w,h = pixelwise_anormal_score.shape[-2], pixelwise_anormal_score.shape[-1]
 
-    for img_index in range(args.batch_size):
+    for img_index in range(x.shape[0]):
         score_patch = pixelwise_anormal_score[img_index].squeeze()
         anormal_detect_background = torch.zeros_like(score_patch)
         for i in range(w):
