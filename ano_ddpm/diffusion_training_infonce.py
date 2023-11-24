@@ -243,7 +243,9 @@ def main(args):
                 print(f'\n regularized negative loss  : {neg_loss} ')
 
                 if args.pos_infonce_loss :
-                    loss = pos_loss_ + (pos_loss / (pos_loss + args.neg_loss_scale * neg_loss))
+                    reg_loss = pos_loss / (pos_loss + args.neg_loss_scale * neg_loss)
+                    print(f'reg_loss : {reg_loss}')
+                    loss = pos_loss_ + reg_loss
                 if args.infonce_loss :
                     loss = pos_loss / (pos_loss + args.neg_loss_scale * neg_loss)
                 elif args.classifier_free_loss :
