@@ -24,8 +24,9 @@ def main(args) :
     print(f' (1.1) wandb')
     default_dir = appdirs.user_data_dir("wandb")
     print(default_dir)
+    print(os.environ)
     #os.environ["WANDB_DIR"] = default_dir
-    print(env.get_data_dir())
+    #print(env.get_data_dir())
     """
     wandb.login(key=args.wandb_api_key)
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name,
