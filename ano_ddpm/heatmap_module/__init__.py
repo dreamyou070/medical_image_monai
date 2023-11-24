@@ -13,7 +13,6 @@ def _convert_heat_map_colors(heat_map: torch.Tensor):
     # ------------------------------------------------------------------------------------------------------------------
     # before, heat_map is from 0 to 1
     heat_map = (heat_map * 255).long()
-    print(f'after m')
     # after, heat_map is from 0 to 255
     return color_map[heat_map]
 

@@ -215,20 +215,12 @@ def main(args):
         image = data["image_info"][img_index].squeeze()                           # [1, 128, 128]
         original_img = torch_transforms.ToPILImage()(image).convert('RGB')
 
-        #np_img = image.to('cpu').detach().numpy().copy().astype(np.uint8)         # [128, 128]
-
         print(f' (2) blended image')
         # ------------------------------------------------------------------------------------------------------------------------------
         # [128,128] torch
-        heat_map = expand_image(im=anormal_detect_background, h=h, w=w,absolute=True)
+        heat_map = expand_image(im=anormal_detect_background, h=h, w=w,absolute=False)
         heat_map = (heat_map * 255).long()
-        print(f'after multiplying , max : : {heat_map.max()}')
-        # ------------------------------------------------------------------------------------------------------------------------------
         heat_map = _convert_heat_map_colors(heat_map)                             # [128,128,3], device = cuda, type = torch
-        print(f'coloring, heat_map shape [1,1,128,128] : {heat_map.shape}')
-        print(f'value from 0 to 255')
-        print(f'max : {heat_map.max()}')
-        # ------------------------------------------------------------------------------------------------------------------------------
         np_heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [128, 128]
         heat_map_img = Image.fromarray(np_heat_map)
         blended_img = Image.blend(original_img, heat_map_img, 0.5)
