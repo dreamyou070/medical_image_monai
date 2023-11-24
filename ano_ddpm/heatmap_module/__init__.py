@@ -6,11 +6,14 @@ import numpy as np
 def _convert_heat_map_colors(heat_map: torch.Tensor):
     def get_color(value):
         return np.array(cm.turbo(value / 255)[0:3])
+    # ------------------------------------------------------------------------------------------------------------------
+    # color_map = torch, [256,3]
+    color_map = torch.tensor(np.array([get_color(i) * 255 for i in range(256)]),device=heat_map.device)
 
-    color_map = torch.tensor(np.array([get_color(i) * 255 for i in range(256)]),
-                             device=heat_map.device)
+    # ------------------------------------------------------------------------------------------------------------------
     # before, heat_map is from 0 to 1
     heat_map = (heat_map * 255).long()
+    print(f'after m')
     # after, heat_map is from 0 to 255
     return color_map[heat_map]
 

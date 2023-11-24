@@ -218,9 +218,11 @@ def main(args):
         #np_img = image.to('cpu').detach().numpy().copy().astype(np.uint8)         # [128, 128]
 
         print(f' (2) blended image')
+        # ------------------------------------------------------------------------------------------------------------------------------
         # [128,128] torch
         heat_map = expand_image(im=anormal_detect_background, h=h, w=w,absolute=True)
-        print(f'after expanding, heat_map shape [1,1,128,128] : {heat_map.shape}')
+        heat_map = (heat_map * 255).long()
+        print(f'after multiplying , max : : {heat_map.max()}')
         # ------------------------------------------------------------------------------------------------------------------------------
         heat_map = _convert_heat_map_colors(heat_map)                             # [128,128,3], device = cuda, type = torch
         print(f'coloring, heat_map shape [1,1,128,128] : {heat_map.shape}')
