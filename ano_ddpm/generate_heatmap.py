@@ -112,6 +112,7 @@ def generate_heatmap_image(data, device, diffusion, model, args,save_base_dir, i
     caption = 'train'
     if not is_train :
         caption = 'test'
+    print(f'generate heatmap image {caption} data')
     contents = []
     x = data["image_info"].to(device)
     img_dirs = data['image_dir']
@@ -244,13 +245,14 @@ def main(args):
     print(f' (5.2) inferencing')
     train_data = first(training_dataset_loader)
     train_content = generate_heatmap_image(train_data, device, diffusion, model, args,save_base_dir, is_train= 'true' )
+    """
     test_data = first(training_dataset_loader)
     test_content = generate_heatmap_image(test_data, device, diffusion, model, args, save_base_dir, is_train= 'false')
     total_content = train_content + test_content
     with open(abnormal_pixel_num_file, 'w') as f:
         for content in total_content:
             f.write(content)
-
+    """
 
 
 if __name__ == '__main__':
