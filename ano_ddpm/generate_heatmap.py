@@ -108,6 +108,59 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                                         caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
             wandb.log({"inference": loading_image})
 
+def generate_heatmap_image(data, device, diffusion, model, args,save_base_dir, is_train ) :
+    caption = 'train'
+    if not is_train :
+        caption = 'test'
+    contents = []
+    x = data["image_info"].to(device)
+    img_dirs = data['image_dir']
+    mask_info = data['mask']  # if 1 = normal, 0 = abnormal -> shape [ batch, 128, 128 ]
+    with torch.no_grad():
+        vlb_terms = diffusion.calc_total_vlb_in_sample_distance(x, model, args)
+    vlb = vlb_terms["whole_vb"]                # [batch, 1000, 1, W, H]
+    pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
+    w,h = pixelwise_anormal_score.shape[-2], pixelwise_anormal_score.shape[-1]
+    for img_index in range(x.shape[0]):
+        img_dir = img_dirs[img_index]
+        img_name = os.path.split(img_dir)[-1]
+        abnormal_pixel_num = 0
+        score_patch = pixelwise_anormal_score[img_index].squeeze()
+        anormal_detect_background = torch.zeros_like(score_patch)
+        for i in range(w):
+            for j in range(h):
+                abnormal_score = score_patch[i, j]
+                if abnormal_score < args.thredhold :
+                    anormal_detect_background[i, j] = 0
+                else :
+                    abnormal_pixel_num += 1
+                    anormal_detect_background[i, j] = 1.0 #abnormal_score
+        line = f'[train] {img_name} | abnormal pixel num : {abnormal_pixel_num}'
+        contents.append(line)
+        # --------------------------------------------------------------------------------------------------------------
+        image = data["image_info"][img_index].squeeze()                           # [1, 128, 128]
+        original_img = torch_transforms.ToPILImage()(image).convert('RGB')
+        # --------------------------------------------------------------------------------------------------------------
+        # [128,128] torch
+        heat_map = expand_image(im=anormal_detect_background, h=h, w=w, absolute=False).to('cpu').detach()
+        max_value = heat_map.max()
+        np_heatmap = cm.turbo(heat_map)[:, :, :-1]
+        np_heatmap = np.uint8(np_heatmap * 255)
+        heat_map_img = Image.fromarray(np_heatmap)
+        blended_img = Image.blend(original_img, heat_map_img, 0.5)
+        # --------------------------------------------------------------------------------------------------------------
+        mask_np = mask_info[img_index].squeeze().to('cpu').detach().numpy().copy().astype(np.uint8)
+        mask_np = mask_np * 255
+        mask_img = Image.fromarray(mask_np).convert('RGB')  # [128, 128, 3]
+        # --------------------------------------------------------------------------------------------------------------
+        new_image = PIL.Image.new('RGB', (4 * w, h), (0,0,0))
+        new_image.paste(original_img, (0, 0))
+        new_image.paste(heat_map_img, (w, 0))
+        new_image.paste(blended_img, (2*w, 0))
+        new_image.paste(mask_img, (3*w, 0))
+        new_image.save(os.path.join(save_base_dir, f'heatmap_{caption}_data_{img_index}.png'))
+    return contents
+
 
 def main(args):
 
@@ -184,120 +237,20 @@ def main(args):
     os.makedirs(img_base_dir, exist_ok=True)
     save_base_dir = os.path.join(img_base_dir, f'model_epoch_{model_epoch}_thredhold_{args.thredhold}')
     os.makedirs(save_base_dir, exist_ok=True)
-    print(f' (5.1) training data')
-    data = first(training_dataset_loader)
-    is_train = 'true'
-    x = data["image_info"].to(device)
-    img_dirs = data['image_dir']
-    normal_info = data['normal']  # if 1 = normal, 0 = abnormal
-    mask_info = data['mask']  # if 1 = normal, 0 = abnormal -> shape [ batch, 128, 128 ]
-    print(f' [1] get anormal score')
-    thredhold = args.thredhold
-    with torch.no_grad():
-        vlb_terms = diffusion.calc_total_vlb_in_sample_distance(x, model, args)
-    vlb = vlb_terms["whole_vb"]                # [batch, 1000, 1, W, H]
-    pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
-    w,h = pixelwise_anormal_score.shape[-2], pixelwise_anormal_score.shape[-1]
 
+    print(f' (5.1) where to write')
     abnormal_pixel_num_file = os.path.join(save_base_dir, f'abnormal_pixel_num.txt')
-    with open(abnormal_pixel_num_file, 'w') as f :
-        for img_index in range(x.shape[0]):
-            img_dir = img_dirs[img_index]
-            img_name = os.path.split(img_dir)[-1]
-            abnormal_pixel_num = 0
-            score_patch = pixelwise_anormal_score[img_index].squeeze()
-            anormal_detect_background = torch.zeros_like(score_patch)
-            for i in range(w):
-                for j in range(h):
-                    abnormal_score = score_patch[i, j]
-                    if abnormal_score < thredhold :
-                        anormal_detect_background[i, j] = 0
-                    else :
-                        abnormal_pixel_num += 1
-                        anormal_detect_background[i, j] = abnormal_score
-            line = f'[train] {img_name} | abnormal pixel num : {abnormal_pixel_num} \n'
-            f.write(line)
-            print(f' (1) original image')
-            image = data["image_info"][img_index].squeeze()                           # [1, 128, 128]
-            original_img = torch_transforms.ToPILImage()(image).convert('RGB')
 
-            print(f' (2) blended image')
-            # ------------------------------------------------------------------------------------------------------------------------------
-            # [128,128] torch
-            heat_map = expand_image(im=anormal_detect_background, h=h, w=w, absolute=False).to('cpu').detach()
-            max_value = heat_map.max()
-            print(max_value)
-            np_heatmap = cm.turbo(heat_map)[:, :, :-1]
-            np_heatmap = np.uint8(np_heatmap * 255)
-            heat_map_img = Image.fromarray(np_heatmap)
-            blended_img = Image.blend(original_img, heat_map_img, 0.5)
+    print(f' (5.2) inferencing')
+    train_data = first(training_dataset_loader)
+    train_content = generate_heatmap_image(train_data, device, diffusion, model, args,save_base_dir, is_train= 'true' )
+    test_data = first(training_dataset_loader)
+    test_content = generate_heatmap_image(test_data, device, diffusion, model, args, save_base_dir, is_train= 'false')
+    total_content = train_content + test_content
+    with open(abnormal_pixel_num_file, 'w') as f:
+        for content in total_content:
+            f.write(content)
 
-            print(f' (3) answer')
-            mask_np = mask_info[img_index].squeeze().to('cpu').detach().numpy().copy().astype(np.uint8)
-            mask_np = mask_np * 255
-            mask_img = Image.fromarray(mask_np).convert('RGB')  # [128, 128, 3]
-
-            print(f' (4) save image')
-            new_image = PIL.Image.new('RGB', (4 * w, h), (0,0,0))
-            new_image.paste(original_img, (0, 0))
-            new_image.paste(heat_map_img, (w, 0))
-            new_image.paste(blended_img, (2*w, 0))
-            new_image.paste(mask_img, (3*w, 0))
-            new_image.save(os.path.join(save_base_dir, f'heatmap_train_data_{img_index}.png'))
-
-        print(f' (5.2) valid data')
-        data = first(test_dataset_loader)
-        x = data["image_info"].to(device)
-        img_dirs = data['image_dir']
-        normal_info = data['normal']  # if 1 = normal, 0 = abnormal
-        mask_info = data['mask']  # if 1 = normal, 0 = abnormal -> shape [ batch, 128, 128 ]
-        print(f' [1] get anormal score')
-        thredhold = args.thredhold
-        with torch.no_grad():
-            vlb_terms = diffusion.calc_total_vlb_in_sample_distance(x, model, args)
-        vlb = vlb_terms["whole_vb"]  # [batch, 1000, 1, W, H]
-        pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
-        w, h = pixelwise_anormal_score.shape[-2], pixelwise_anormal_score.shape[-1]
-        for img_index in range(x.shape[0]):
-            img_dir = img_dirs[img_index]
-            img_name = os.path.split(img_dir)[-1]
-            score_patch = pixelwise_anormal_score[img_index].squeeze()
-            anormal_detect_background = torch.zeros_like(score_patch)
-            for i in range(w):
-                for j in range(h):
-                    abnormal_score = score_patch[i, j]
-                    if abnormal_score < thredhold:
-                        anormal_detect_background[i, j] = 0
-                    else:
-                        abnormal_pixel_num += 1
-                        anormal_detect_background[i, j] = abnormal_score
-            line = f'[valid] {img_name} | abnormal pixel num : {abnormal_pixel_num} \n'
-            f.write(line)
-            print(f' (1) original image')
-            image = data["image_info"][img_index].squeeze()  # [1, 128, 128]
-            original_img = torch_transforms.ToPILImage()(image).convert('RGB')
-
-            print(f' (2) blended image')
-            # ------------------------------------------------------------------------------------------------------------------------------
-            # [128,128] torch
-            heat_map = expand_image(im=anormal_detect_background, h=h, w=w, absolute=False).to('cpu').detach()
-            np_heatmap = cm.turbo(heat_map)[:, :, :-1]
-            np_heatmap = np.uint8(np_heatmap * 255)
-            heat_map_img = Image.fromarray(np_heatmap)
-            blended_img = Image.blend(original_img, heat_map_img, 0.5)
-
-            print(f' (3) answer')
-            mask_np = mask_info[img_index].squeeze().to('cpu').detach().numpy().copy().astype(np.uint8)
-            mask_np = mask_np * 255
-            mask_img = Image.fromarray(mask_np).convert('RGB')  # [128, 128, 3]
-
-            print(f' (4) save image')
-            new_image = PIL.Image.new('RGB', (4 * w, h), (0, 0, 0))
-            new_image.paste(original_img, (0, 0))
-            new_image.paste(heat_map_img, (w, 0))
-            new_image.paste(blended_img, (2 * w, 0))
-            new_image.paste(mask_img, (3 * w, 0))
-            new_image.save(os.path.join(save_base_dir, f'heatmap_valid_data_{img_index}.png'))
 
 
 if __name__ == '__main__':

@@ -289,9 +289,11 @@ def main(args):
                         # normal and abnormal ...
                         vlb_terms = diffusion.calc_total_vlb_in_sample_distance(normal_x_, model, args)
                         vlb = vlb_terms["whole_vb"]  # [batch, 1000, 1, W, H]
+                        print(f'vlb.shape [batch, sample_length, 1, W, H] : {vlb.shape}')
                         # ---------------------------------------------------------------------------
                         # timewise averaging ...
                         whole_vb = vlb.squeeze(dim=2).mean(dim=1)  # batch, W, H
+
                         efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
                         whole_vb = whole_vb.flatten(start_dim=1)  # batch, W*H
                         batch_vb = whole_vb.sum(dim=-1)  # batch
@@ -303,14 +305,16 @@ def main(args):
                         ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze(dim=2).mean(dim=1)  # [Batch, W, H]
                         # ----------------------------------------------------------------------------------------------
                         normal_efficient_pixel_num = abnormal_mask.sum(dim=-1).sum(dim=-1).to(device)
+                        print(f'normal_efficient_pixel_num [batch, 1]: {normal_efficient_pixel_num.shape}')
                         # abnormal_mask = [batch, w, h]
                         # ab_whole_vb =   [batch, w, h]
                         normal_portion_ab_whole_vb = abnormal_mask * ab_whole_vb
-
                         normal_portion_ab_whole_vb = normal_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
+                        print(f'normal_portion_ab_whole_vb [batch, 1]: {normal_portion_ab_whole_vb.shape}')
+                        # Batch,
                         normal_portion_ab_whole_vb = normal_portion_ab_whole_vb / normal_efficient_pixel_num
-                        wandb.log({
-                                      "normal portion of *ab*normal sample kl": normal_portion_ab_whole_vb.mean().cpu().item()})
+                        print(f'normal_portion_ab_whole_vb [batch, 1]: {normal_portion_ab_whole_vb.shape}')
+                        wandb.log({"normal portion of *ab*normal sample kl": normal_portion_ab_whole_vb.mean().cpu().item()})
 
                         # --------------------------------------------------------------------------------------------------
                         inverse_abnormal_mask = 1 - abnormal_mask
