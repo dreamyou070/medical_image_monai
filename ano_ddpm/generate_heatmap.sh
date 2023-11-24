@@ -1,4 +1,3 @@
-device='cuda:1'
 model_name='unet_epoch_250.pt'
 experiment_dir='/data7/sooyeon/medical_image/anoddpm_result/7_gaussian_linear_pos_infonce'
 img_size='128,128'
@@ -9,7 +8,7 @@ val_mask_dir='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data
 batch_size=10
 thredhold=0.0005
 
-CUDA_VISIBLE_DEVICES=1 python generate_heatmap.py --device=${device} \
+python generate_heatmap.py --device 'cuda:1' \
                            --experiment_dir=${experiment_dir} \
                            --model_name=${model_name} \
                            --img_size=${img_size} \
