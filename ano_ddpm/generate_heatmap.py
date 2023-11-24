@@ -243,8 +243,9 @@ def main(args):
     abnormal_pixel_num_file = os.path.join(save_base_dir, f'abnormal_pixel_num.txt')
 
     print(f' (5.2) inferencing')
-    train_data = first(training_dataset_loader)
-    train_content = generate_heatmap_image(train_data, device, diffusion, model, args,save_base_dir, is_train= 'true' )
+    for i, train_data in training_dataset_loader :
+        if i == 0 :
+            train_content = generate_heatmap_image(train_data, device, diffusion, model, args,save_base_dir, is_train= 'true' )
     """
     test_data = first(training_dataset_loader)
     test_content = generate_heatmap_image(test_data, device, diffusion, model, args, save_base_dir, is_train= 'false')
