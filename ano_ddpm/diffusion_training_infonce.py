@@ -19,8 +19,8 @@ import torchvision.transforms as torch_transforms
 import PIL
 from setproctitle import *
 
-torch.multiprocessing.set_sharing_strategy('file_system')
-torch.cuda.empty_cache()
+#torch.multiprocessing.set_sharing_strategy('file_system')
+#torch.cuda.empty_cache()
 
 def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
     model_save_base_dir = os.path.join(args.experiment_dir,'diffusion-models')
