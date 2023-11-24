@@ -1,4 +1,4 @@
-device='cuda:3'
+device='cuda:4'
 model_name='unet_epoch_250.pt'
 experiment_dir='/data7/sooyeon/medical_image/anoddpm_result/7_gaussian_linear_pos_infonce'
 img_size='128,128'
