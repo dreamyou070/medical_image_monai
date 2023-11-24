@@ -47,7 +47,7 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
 def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                      save_imgs=False, is_train_data=True, device='cuda'):
 
-    if is_train_data :
+    if is_train_data == 'true':
         train_data = 'training_data'
     else :
         train_data = 'test_data'
@@ -254,7 +254,7 @@ def main(args):
 
     with open(abnormal_pixel_num_file, 'w') as f:
         for content in total_content:
-            f.write(content)
+            f.write(f'{content}\n')
 
 
 if __name__ == '__main__':
