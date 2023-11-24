@@ -302,10 +302,9 @@ def main(args):
                         vlb = vlb_terms["whole_vb"]  # [batch, 1000, 1, W, H]
                         # ---------------------------------------------------------------------------
                         # timewise averaging ...
-                        whole_vb = vlb.squeeze(dim=2).mean(dim=1)  # batch, W, H
-                        print(f'normal test sample, whole_vb [batch, w, h] : {whole_vb.shape}')
+                        whole_vb = vlb.squeeze(dim=2).mean(dim=1)                        # batch, W, H
                         efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
-                        print(f'normal test sample, efficient_pixel_num [batch, 1] : {efficient_pixel_num.shape}')
+                        print(f'normal test sample, efficient_pixel_num [batch, 1] : {efficient_pixel_num}')
                         whole_vb = whole_vb.flatten(start_dim=1)  # batch, W*H
                         print(f'normal test sample, whole_vb [batch, w*h] : {whole_vb.shape}')
                         whole_vb = whole_vb / efficient_pixel_num  # shape = [batch]
