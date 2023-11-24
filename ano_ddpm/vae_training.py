@@ -82,7 +82,7 @@ def main(args) :
                                      cache_dir='/data7/sooyeon/medical_image/pretrained')
     perceptual_loss.to(device)
     perceptual_weight = 0.001
-    """
+
     discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,
                                        in_channels=1, out_channels=1)
     discriminator = discriminator.to(device)
@@ -98,7 +98,7 @@ def main(args) :
 
     
     print(f'\n step 4. model training')
-    """
+    
 
 
 
