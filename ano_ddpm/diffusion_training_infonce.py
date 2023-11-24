@@ -303,33 +303,31 @@ def main(args):
                         # ---------------------------------------------------------------------------
                         # timewise averaging ...
                         whole_vb = vlb.squeeze(dim=2).mean(dim=1)                        # batch, W, H
-                        efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
-                        print(f'normal test sample, efficient_pixel_num [batch, 1] : {efficient_pixel_num}')
-                        whole_vb = whole_vb.flatten(start_dim=1)  # batch, W*H
-                        print(f'normal test sample, whole_vb [batch, w*h] : {whole_vb.shape}')
-                        whole_vb = whole_vb / efficient_pixel_num  # shape = [batch]
-                        print(f'normal test sample, whole_vb [batch, w*h] : {whole_vb.shape}')
+                        efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]    # WH
+                        whole_vb = whole_vb.flatten(start_dim=1)                         # [batch, W*H]
+                        whole_vb = whole_vb / efficient_pixel_num                        # [batch, W*H]
                         #wandb.log({"total_vlb (test data normal sample)": whole_vb.mean().cpu().item()})
 
                     # --------------------------------------------------------------------------------------------------
                     if abnormal_x.shape[0] != 0:
                         ab_vlb_terms = diffusion.calc_total_vlb_in_sample_distance(abnormal_x, model, args)
                         ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze(dim=2).mean(dim=1)  # [Batch, W, H]
-                        ab_whole_vb = ab_whole_vb.flatten(start_dim=1)  # batch, W*H
-                        print(f'abnormal test sample, ab_whole_vb [batch, wh] : {ab_whole_vb.shape}')
+                        ab_whole_vb = ab_whole_vb.flatten(start_dim=1)  # [batch, W*H]
                         # ----------------------------------------------------------------------------------------------
                         # [1] normal portion
-                        abnormal_mask = abnormal_mask.sum(dim=-1).sum(dim=-1).to(device)
-                        print(f'abnormal test sample, abnormal_mask [batch, 1] : {abnormal_mask.shape}')
                         abnormal_normalporton_mask = abnormal_mask.flatten(start_dim=1)
-                        abnormal_normal_vlb = ab_whole_vb * abnormal_normalporton_mask
+                        print(f' ab_whole_vb : {ab_whole_vb.shape} | abnormal_normalporton_mask : {abnormal_normalporton_mask.shape}')
+                        abnormal_normal_vlb = ab_whole_vb * abnormal_normalporton_mask  # [Batch, WH]
+                        print(f' abnormal_normal_vlb : {abnormal_normal_vlb.shape}')
                         abnormal_normal_pix_num = abnormal_normalporton_mask.sum(dim=-1)
+                        print(f' abnormal_normal_pix_num : {abnormal_normal_pix_num}')
                         abnormal_normal_pix_num = torch.where(abnormal_normal_pix_num == 0, 1, abnormal_normal_pix_num)
                         abnormal_normal_vlb = abnormal_normal_vlb / abnormal_normal_pix_num
+
                         #wandb.log({"normal portion of *ab*normal sample kl": abnormal_normal_vlb.mean().cpu().item()})
 
                         # [2] abnormal portion
-                        abnormal_abporton_mask = 1-abnormal_normalporton_mask
+                        abnormal_abporton_mask = (1-abnormal_normalporton_mask).flatten(start_dim=1)
                         abnormal_abnormal_vlb = ab_whole_vb * abnormal_abporton_mask
                         abnormal_avnormal_pix_num = abnormal_abporton_mask.sum(dim=-1)
                         abnormal_avnormal_pix_num = torch.where(abnormal_avnormal_pix_num == 0, 1, abnormal_avnormal_pix_num)
