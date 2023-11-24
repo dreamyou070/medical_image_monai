@@ -221,6 +221,7 @@ def main(args):
                 pos_loss_ = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
                                                          (target * mask_info.to(device)).float(),
                                                          reduction="none").mean([1, 2, 3])
+                print(f'positive loss : {pos_loss_}')
                 pixel_num = mask_info.sum([1, 2, 3]).float().to(device)
                 pixel_num = torch.where(pixel_num == 0, 1, pixel_num)
                 pos_loss = pos_loss_ / pixel_num
@@ -244,6 +245,7 @@ def main(args):
                     loss = pos_loss - neg_loss + args.margin
                 print(f'before mean, loss [number of batch, 1dim torch] : {loss}')
                 print(f'normal_info : {normal_info}')
+                time.sleep(10)
                 loss = loss.mean()
                 #wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
