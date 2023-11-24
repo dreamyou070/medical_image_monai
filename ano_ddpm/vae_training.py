@@ -188,7 +188,8 @@ def main(args) :
         if epoch > args.model_save_base_epoch :
             model_save_dir = os.path.join(experiment_dir, f'autoencoderkl')
             os.makedirs(model_save_dir, exist_ok=True)
-            torch.save(autoencoderkl.state_dict(), os.path.join(args.model_save_dir, f'autoencoderkl_{epoch}.pth'))
+            torch.save(autoencoderkl.state_dict(),
+                       os.path.join(model_save_dir, f'autoencoderkl_{epoch}.pth'))
 
     progress_bar.close()
 
