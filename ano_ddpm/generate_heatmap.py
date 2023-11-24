@@ -182,8 +182,9 @@ def main(args):
 
     image = data["image_info"][0]  # [1, 128, 128]
     np_img = image.numpy()
+    print(np_img.shape)
     from PIL import Image
-    Image.fromarray(np_img).save('test.png')
+    #Image.fromarray(np_img).save('test.png')
     """
     normal_info_ = data['normal']  # if 1 = normal, 0 = abnormal
     mask_info_ = data['mask']  # if 1 = normal, 0 = abnormal
