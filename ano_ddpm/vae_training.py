@@ -103,13 +103,6 @@ def main(args) :
     n_epochs = 100
     val_interval = 10
     autoencoder_warm_up_n_epochs = 10
-
-    epoch_recon_losses = []
-    epoch_gen_losses = []
-    epoch_disc_losses = []
-    val_recon_losses = []
-    intermediary_images = []
-    num_example_images = 4
     records = []
     for epoch in range(n_epochs):
         autoencoderkl.train()
