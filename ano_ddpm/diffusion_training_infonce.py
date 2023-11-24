@@ -101,7 +101,6 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 
 
 
-
 def main(args):
 
     print(f'\n step 1. setting')
@@ -113,7 +112,6 @@ def main(args):
     wandb.login(key=args.wandb_api_key)
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name,)
     os.environ["WANDB_DATA_DIR"] = args.experiment_dir
-
 
 
     print(f' (1.2) seed and device')
@@ -132,9 +130,7 @@ def main(args):
     w, h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
     train_transforms = transforms.Compose([  # transforms.ToPILImage(),
         transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
-        transforms.ToTensor(),  # pil image to tensor (
-        # transforms.Normalize((0.5), (0.5))
-    ])
+        transforms.ToTensor(),])
     train_ds = SYDataset(data_folder=args.train_data_folder,
                          transform=train_transforms,
                          base_mask_dir=args.train_mask_dir,
@@ -148,9 +144,7 @@ def main(args):
     # ## Prepare validation set data loader
     val_transforms = transforms.Compose([  # transforms.ToPILImage(),
         transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
-        transforms.ToTensor(),  # pil image to tensor (
-        # transforms.Normalize((0.5), (0.5))
-    ])
+        transforms.ToTensor()])
     val_ds = SYDataset(data_folder=args.val_data_folder,
                        transform=val_transforms,
                        base_mask_dir=args.val_mask_dir, image_size=(w, h))

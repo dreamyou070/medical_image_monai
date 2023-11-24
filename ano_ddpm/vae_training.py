@@ -13,10 +13,8 @@ from generative.networks.nets import AutoencoderKL, PatchDiscriminator
 from loss_module import PerceptualLoss, PatchAdversarialLoss
 
 
-print_config()
-
 def main(args) :
-    
+
     print(f'\n step 1. setting')
     if args.process_title:
         setproctitle(args.process_title)
@@ -76,6 +74,7 @@ def main(args) :
                                   with_encoder_nonlocal_attn=False,
                                   with_decoder_nonlocal_attn=False,)
     autoencoderkl = autoencoderkl.to(device)
+    """
 
     perceptual_loss = PerceptualLoss(spatial_dims=2,
                                      network_type="alex")
@@ -97,6 +96,7 @@ def main(args) :
     scaler_d = torch.cuda.amp.GradScaler()
 
     print(f'\n step 4. model training')
+    """
 
 
 
