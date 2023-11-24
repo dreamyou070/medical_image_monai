@@ -116,7 +116,7 @@ def main(args):
     else:
         setproctitle('parksooyeon')
     print(f' (1.1) wandb')
-    wandb.login(key=args.wandb_api_key)
+    #wandb.login(key=args.wandb_api_key)
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
 
     print(f' (1.2) seed and device')
