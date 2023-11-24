@@ -103,7 +103,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             new_image.save(os.path.join(image_save_dir, f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
             loading_image = wandb.Image(new_image,
                                         caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
-            wandb.log({"inference": loading_image})
+            #wandb.log({"inference": loading_image})
 
 
 
@@ -243,8 +243,9 @@ def main(args):
                 elif args.advanced_masked_loss :
                     loss = pos_loss - neg_loss + args.margin
                 print(f'before mean, loss [number of batch, 1dim torch] : {loss}')
+                print(f'normal_info : {normal_info}')
                 loss = loss.mean()
-                wandb.log({"training loss": loss.item()})
+                #wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
@@ -304,7 +305,7 @@ def main(args):
                         print(f'normal test sample, whole_vb [batch, w*h] : {whole_vb.shape}')
                         whole_vb = whole_vb / efficient_pixel_num  # shape = [batch]
                         print(f'normal test sample, whole_vb [batch, w*h] : {whole_vb.shape}')
-                        wandb.log({"total_vlb (test data normal sample)": whole_vb.mean().cpu().item()})
+                        #wandb.log({"total_vlb (test data normal sample)": whole_vb.mean().cpu().item()})
 
                     # --------------------------------------------------------------------------------------------------
                     if abnormal_x.shape[0] != 0:
@@ -321,8 +322,7 @@ def main(args):
                         abnormal_normal_pix_num = abnormal_normalporton_mask.sum(dim=-1)
                         abnormal_normal_pix_num = torch.where(abnormal_normal_pix_num == 0, 1, abnormal_normal_pix_num)
                         abnormal_normal_vlb = abnormal_normal_vlb / abnormal_normal_pix_num
-                        wandb.log(
-                            {"normal portion of *ab*normal sample kl": abnormal_normal_vlb.mean().cpu().item()})
+                        #wandb.log({"normal portion of *ab*normal sample kl": abnormal_normal_vlb.mean().cpu().item()})
 
                         # [2] abnormal portion
                         abnormal_abporton_mask = 1-abnormal_normalporton_mask
@@ -330,8 +330,7 @@ def main(args):
                         abnormal_avnormal_pix_num = abnormal_abporton_mask.sum(dim=-1)
                         abnormal_avnormal_pix_num = torch.where(abnormal_avnormal_pix_num == 0, 1, abnormal_avnormal_pix_num)
                         abnormal_abnormal_vlb = abnormal_abnormal_vlb / abnormal_avnormal_pix_num
-                        wandb.log({"abnormal portion of *ab*normal sample kl" :
-                                       abnormal_abnormal_vlb.mean().cpu().item()})
+                        #wandb.log({"abnormal portion of *ab*normal sample kl" : abnormal_abnormal_vlb.mean().cpu().item()})
         if epoch >= args.save_base_epoch :
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch, global_step = global_step)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema, global_step = global_step)
