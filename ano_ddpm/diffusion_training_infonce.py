@@ -110,13 +110,13 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 
 def main(args):
     print(f'\n step 1. setting')
-    if args.process_title:
-        setproctitle(args.process_title)
-    else:
-        setproctitle('parksooyeon')
+    #if args.process_title:
+    #    setproctitle(args.process_title)
+    #else:
+    #    setproctitle('parksooyeon')
     print(f' (1.1) wandb')
-    wandb.login(key=args.wandb_api_key)
-    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
+    #wandb.login(key=args.wandb_api_key)
+    #wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
 
     print(f' (1.2) seed and device')
     seed(args.seed)
