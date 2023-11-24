@@ -78,17 +78,23 @@ def approx_standard_normal_cdf(x):
 def discretised_gaussian_log_likelihood(x, means, log_scales):
 
     assert x.shape == means.shape == log_scales.shape
+
     centered_x = x - means
+
     inv_stdv = torch.exp(-log_scales)
+
     plus_in = inv_stdv * (centered_x + 1.0 / 255.0)
     cdf_plus = approx_standard_normal_cdf(plus_in)
-    min_in = inv_stdv * (centered_x - 1.0 / 255.0)
-    cdf_min = approx_standard_normal_cdf(min_in)
     log_cdf_plus = torch.log(cdf_plus.clamp(min=1e-12))
 
+    min_in = inv_stdv * (centered_x - 1.0 / 255.0)
+    cdf_min = approx_standard_normal_cdf(min_in)
     log_one_minus_cdf_min = torch.log((1.0 - cdf_min).clamp(min=1e-12))
+
     cdf_delta = cdf_plus - cdf_min
-    log_probs = torch.where(x < -0.999, log_cdf_plus, torch.where(x > 0.999, log_one_minus_cdf_min, torch.log(cdf_delta.clamp(min=1e-12))),)
+    log_probs = torch.where(x < -0.999, log_cdf_plus,
+                            torch.where(x > 0.999, log_one_minus_cdf_min,
+                                        torch.log(cdf_delta.clamp(min=1e-12))),)
     assert log_probs.shape == x.shape
     return log_probs
 
@@ -487,16 +493,30 @@ class GaussianDiffusionModel:
         # --------------------------------------------------------------------------------------------------------------
         # 1) compare scheduling one step reverse and model one step reverse
         true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
+
+
         output = self.p_mean_variance(model, x_t, t, estimate_noise)
         model_mean = output["mean"]
         model_log_var = output["log_variance"]
+
         whole_kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
         kl = mean_flat(whole_kl) / np.log(2.0)
+
+
+
+
+
+
+
         # --------------------------------------------------------------------------------------------------------------
         # if timestep is 0, it compare with x_0
         # independent discrete decoder (log likelihood)
-        decoder_nll_ = -1 * discretised_gaussian_log_likelihood(x_0,output["mean"],log_scales=0.5 * output["log_variance"])
+        decoder_nll_ = -1 * discretised_gaussian_log_likelihood(x_0,output["mean"],
+                                                                log_scales=0.5 * output["log_variance"])
         decoder_nll = mean_flat(decoder_nll_) / np.log(2.0)
+
+
+
         # --------------------------------------------------------------------------------------------------------------
         # 3) if t == 0 : the value is decoder negative log likelihood
         #    else : kl between schedule value and model value

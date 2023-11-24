@@ -10,7 +10,7 @@ train_images = os.listdir(train_data_dir)
 
 train_save_data_dir = os.path.join(data_base_dir, 'test_preprocessed')
 os.makedirs(train_save_data_dir, exist_ok=True)
-thred  = 200
+thred  = 220
 
 for image in train_images :
     name, ext = os.path.split(image)

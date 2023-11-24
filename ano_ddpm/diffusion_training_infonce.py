@@ -242,6 +242,7 @@ def main(args):
 
                 elif args.advanced_masked_loss :
                     loss = pos_loss - neg_loss + args.margin
+
                 loss = loss.mean()
                 wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
