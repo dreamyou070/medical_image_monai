@@ -205,8 +205,9 @@ def main(args):
                     anormal_detect_background[img_index, i, j] = anormal_score
         print(f' (1) original image')
         image = data["image_info"][img_index].squeeze()                           # [1, 128, 128]
-        np_img = image.to('cpu').detach().numpy().copy().astype(np.uint8)         # [128, 128]
-        original_img = Image.fromarray(np_img).convert('RGB')                     # [128, 128, 3]
+        original_img = torch_transforms.ToPILImage()(image).convert('RGB')
+
+        #np_img = image.to('cpu').detach().numpy().copy().astype(np.uint8)         # [128, 128]
 
         print(f' (2) blended image')
         heat_map = anormal_detect_background[img_index].squeeze()
@@ -255,7 +256,7 @@ if __name__ == '__main__':
     parser.add_argument('--dropout', type=float, default=0.0)
     parser.add_argument('--num_heads', type=int, default=2)
     parser.add_argument('--num_head_channels', type=int, default=-1)
-    parser.add_argument('--model_name', type=str, default='unet_epoch_350.pt')
+    parser.add_argument('--model_name', type=str, default='unet_epoch_500.pt')
 
     # step 4. model
     parser.add_argument('--timestep', type=int, default=1000)
@@ -263,7 +264,7 @@ if __name__ == '__main__':
     parser.add_argument('--loss_weight', type=str, default="none")
     parser.add_argument('--loss_type', type=str, default='l2')
     parser.add_argument('--sample_distance', type=int, default=800)
-    parser.add_argument('--thredhold', type=float, default=0.35)
+    parser.add_argument('--thredhold', type=float, default=0.05)
 
     args = parser.parse_args()
     main(args)
