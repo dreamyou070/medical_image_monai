@@ -219,6 +219,8 @@ def main(args):
         # ------------------------------------------------------------------------------------------------------------------------------
         # [128,128] torch
         heat_map = expand_image(im=anormal_detect_background, h=h, w=w, absolute=False).to('cpu').detach()
+        max_value = heat_map.max()
+        print(max_value)
         np_heatmap = cm.turbo(heat_map)[:, :, :-1]
         np_heatmap = np.uint8(np_heatmap * 255)
         heat_map_img = Image.fromarray(np_heatmap)
