@@ -76,15 +76,6 @@ def main(args) :
                                   with_encoder_nonlocal_attn=False,
                                   with_decoder_nonlocal_attn=False, )
     autoencoderkl = autoencoderkl.to(device)
-
-
-    #print(env.get_data_dir())
-    """
-    
-
-    
-    
-
     perceptual_loss = PerceptualLoss(spatial_dims=2,
                                      network_type="alex")
     perceptual_loss.to(device)
@@ -100,10 +91,10 @@ def main(args) :
     optimizer_g = torch.optim.Adam(autoencoderkl.parameters(), lr=1e-4)
     optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=5e-4)
 
-    # For mixed precision training
     scaler_g = torch.cuda.amp.GradScaler()
     scaler_d = torch.cuda.amp.GradScaler()
 
+    """
     print(f'\n step 4. model training')
     """
 
