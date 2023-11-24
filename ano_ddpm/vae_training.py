@@ -78,7 +78,8 @@ def main(args) :
     autoencoderkl = autoencoderkl.to(device)
 
     perceptual_loss = PerceptualLoss(spatial_dims=2,
-                                     network_type="alex")
+                                     network_type="alex",
+                                     cache_dir='/data7/sooyeon/medical_image/pretrained')
     perceptual_loss.to(device)
     perceptual_weight = 0.001
     """
