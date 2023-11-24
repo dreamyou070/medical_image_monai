@@ -1,4 +1,4 @@
-model_name='unet_epoch_250.pt'
+model_name='unet_epoch_200.pt'
 experiment_dir='/data7/sooyeon/medical_image/anoddpm_result/7_gaussian_linear_pos_infonce'
 img_size='128,128'
 train_data_folder='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/original'
@@ -8,7 +8,7 @@ val_mask_dir='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data
 batch_size=10
 thredhold=0.0005
 
-python generate_heatmap.py --device 'cuda:1' \
+python generate_heatmap.py --device 'cuda:0' \
                            --experiment_dir=${experiment_dir} \
                            --model_name=${model_name} \
                            --img_size=${img_size} \
