@@ -185,7 +185,8 @@ def main(args):
     mask_info_ = data['mask']  # if 1 = normal, 0 = abnormal
 
     print(f' [1] get anormal score')
-    vlb_terms = diffusion.calc_total_vlb_in_sample_distance(x, model, args)
+    with torch.no_grad():
+        vlb_terms = diffusion.calc_total_vlb_in_sample_distance(x, model, args)
     vlb = vlb_terms["whole_vb"]                # [batch, 1000, 1, W, H]
     pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
     W, H = pixelwise_anormal_score.shape[1], pixelwise_anormal_score.shape[2]
@@ -200,19 +201,19 @@ def main(args):
                 else :
                     anormal_detect_background[img_index, i, j] = anormal_score
         print(f' [2] normalizing the score')
-        image = data["image_info"][img_index].squeeze()                        # [1, 128, 128]
-        np_img = image.to('cpu').detach().numpy().copy().astype(np.uint8)      # [128, 128]
+        image = data["image_info"][img_index].squeeze()                           # [1, 128, 128]
+        np_img = image.to('cpu').detach().numpy().copy().astype(np.uint8)         # [128, 128]
+        original_img = Image.fromarray(np_img).convert('RGB')                     # [128, 128, 3]
     
         heat_map = anormal_detect_background[img_index].squeeze()
-        heat_map = expand_image(im=heat_map,h=h, w=w,absolute=True)            # [128, 128]
-        heat_map = _convert_heat_map_colors(heat_map)                          # [128,128], device = cuda, type = torch
-        print(f' heat_map : {heat_map.shape}, device : {heat_map.device}, type : {type(heat_map)}')
-
+        heat_map = expand_image(im=heat_map,h=h, w=w,absolute=True)               # [128, 128]
+        heat_map = _convert_heat_map_colors(heat_map)                             # [128,128,3], device = cuda, type = torch
         np_heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [128, 128]
-        print(f' heat_map : {heat_map.shape}')
-        heat_map_img = Image.fromarray(heat_map)
+        heat_map_img = Image.fromarray(np_heat_map)
+
+        img = Image.blend(original_img, heat_map_img, 0.5)
         break
-        #img = Image.blend(np_img, heat_map_img, 0.5)
+
 
 
 if __name__ == '__main__':
