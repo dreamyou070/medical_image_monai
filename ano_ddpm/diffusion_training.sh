@@ -1,7 +1,7 @@
 [Screen 01]
 python diffusion_training_infonce.py --device cuda:0 \
          --wandb_api_key '3a3bc2f629692fa154b9274a5bbe5881d47245dc' \
-         --wandb_project_name 'dental_ddpm' --wandb_run_name '4_pos_infonce_loss' \
+         --wandb_project_name 'dental_experiment_anoddpm' --wandb_run_name '4_pos_infonce_loss' \
          --experiment_dir /data7/sooyeon/medical_image/anoddpm_result/4_pos_infonce_loss \
          --train_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/original' \
          --train_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/mask' \
