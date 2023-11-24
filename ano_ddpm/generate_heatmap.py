@@ -176,6 +176,39 @@ def main(args):
                                        noise='simplex')  # 1
 
     print(f'\n step 5. inference')
+    print(f' (5.1) training data')
+    test_data = first(training_dataset_loader)
+    x = test_data["image_info"].to(device)
+    image = test_data['image'][0]
+    print(f'x  [Batch, 1, W, H] : {x.shape}')
+    print(f'image [Batch, W, H] : {image.shape}')
+    """
+    normal_info_ = test_data['normal']  # if 1 = normal, 0 = abnormal
+    mask_info_ = test_data['mask']  # if 1 = normal, 0 = abnormal
+
+    print(f' [1] get anormal score')
+    vlb_terms = diffusion.calc_total_vlb_in_sample_distance(x, model, args)
+    vlb = vlb_terms["whole_vb"]                # [batch, 1000, 1, W, H]
+    pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
+    W, H = pixelwise_anormal_score.shape[1], pixelwise_anormal_score.shape[2]
+    thredhold = args.thredhold
+    anormal_detect_background = torch.zeros_like(pixelwise_anormal_score)
+    for img_index in range(args.batch_size):
+        for i in range(W):
+            for j in range(H):
+                anormal_score = pixelwise_anormal_score[img_index, i, j]
+                if anormal_score < thredhold :
+                    anormal_detect_background[img_index, i, j] = 0
+                else :
+                    anormal_detect_background[img_index, i, j] = anormal_score
+        print(f' [2] normalizing the score')
+        
+        heat_map = anormal_detect_background[img_index]
+        np_heat_map = heat_map.cpu().numpy()
+        img = image_overlay_heat_map(img=image, heat_map=heat_map)
+    """
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -209,6 +242,7 @@ if __name__ == '__main__':
     parser.add_argument('--beta_schedule', type=str, default='linear')
     parser.add_argument('--loss_weight', type=str, default="none")
     parser.add_argument('--loss_type', type=str, default='l2')
+    parser.add_argument('--sample_distance', type=int, default=800)
 
     args = parser.parse_args()
     main(args)
