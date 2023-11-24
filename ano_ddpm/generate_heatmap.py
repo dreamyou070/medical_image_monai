@@ -191,7 +191,7 @@ def main(args):
     training_dataset_loader = DataLoader(train_ds,
                                            batch_size=args.batch_size,
                                            shuffle=True,
-                                           num_workers=4,)
+                                           num_workers=2,)
                                            #persistent_workers=True)
     # ## Prepare validation set data loader
     val_transforms = transforms.Compose([transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
