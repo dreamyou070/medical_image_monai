@@ -9,7 +9,7 @@ val_mask_dir='/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data
 batch_size=10
 thredhold=0.0005
 
-python generate_heatmap.py --device=${device} \
+CUDA_VISIBLE_DEVICES=1 python generate_heatmap.py --device=${device} \
                            --experiment_dir=${experiment_dir} \
                            --model_name=${model_name} \
                            --img_size=${img_size} \
