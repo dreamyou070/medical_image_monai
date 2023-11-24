@@ -204,8 +204,7 @@ def main(args):
         print(f' [2] normalizing the score')
         image = data["image_info"][img_index]  # [1, 128, 128]
         np_img = image.numpy()
-    """
-        """
+    
         heat_map = anormal_detect_background[img_index]
         np_heat_map = heat_map.cpu().numpy()
         #img = image_overlay_heat_map(img=image, heat_map=heat_map)
@@ -233,7 +232,7 @@ def main(args):
                 size = (int(x * image_scale), int(y * image_scale))
                 img = img.resize(size, Image.BICUBIC)
             return img
-        """
+    """
 
 
 if __name__ == '__main__':
