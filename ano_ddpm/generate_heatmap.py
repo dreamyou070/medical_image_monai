@@ -185,29 +185,30 @@ def main(args):
     is_train = 'true'
     x = data["image_info"].to(device)
     normal_info = data['normal']  # if 1 = normal, 0 = abnormal
-    mask_info = data['mask']  # if 1 = normal, 0 = abnormal
+    mask_info = data['mask']  # if 1 = normal, 0 = abnormal -> shape [ batch, 128, 128 ]
     print(f' (5.1.1) abnormal sample')
     # only abnormal sample
-    abnormal_x = x[normal_info == 0]
-    abnormal_mask = mask_info[normal_info == 0]
-    print(f' abnormal_x shape : {abnormal_x.shape} | abnormal_mask : {abnormal_mask.shape}')
+    #abnormal_x = x[normal_info == 0]
+    #abnormal_mask = mask_info[normal_info == 0]
+
 
     print(f' [1] get anormal score')
     thredhold = args.thredhold
     with torch.no_grad():
         print(f'calculate vlb')
-        vlb_terms = diffusion.calc_total_vlb_in_sample_distance(abnormal_x, model, args)
+        vlb_terms = diffusion.calc_total_vlb_in_sample_distance(x, model, args)
     vlb = vlb_terms["whole_vb"]                # [batch, 1000, 1, W, H]
-    """
+    print(f'vlb shape [batch, 1000, 1, w, h] : {vlb.shape}')
     pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
-
-    W, H = pixelwise_anormal_score.shape[1], pixelwise_anormal_score.shape[2]
+    print(f'pixelwise_anormal_score shape [batch, 1000, w, h] : {pixelwise_anormal_score.shape}')
+    w,h = pixelwise_anormal_score.shape[-2], pixelwise_anormal_score.shape[-1]
 
     for img_index in range(args.batch_size):
-        score_patch = pixelwise_anormal_score[img_index]
-        anormal_detect_background = torch.zeros_like(pixelwise_anormal_score)[img_index].squeeze()
-        for i in range(W):
-            for j in range(H):
+        score_patch = pixelwise_anormal_score[img_index].squeeze()
+        print(f'score_patch shape (128,128) : {score_patch.shape}')
+        anormal_detect_background = torch.zeros_like(score_patch)
+        for i in range(w):
+            for j in range(h):
                 abnormal_score = score_patch[i, j]
                 print(f'abnormal score : {abnormal_score}')
                 if abnormal_score < thredhold :
