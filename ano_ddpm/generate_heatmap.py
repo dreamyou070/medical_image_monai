@@ -196,14 +196,17 @@ def main(args):
     thredhold = args.thredhold
     anormal_detect_background = torch.zeros_like(pixelwise_anormal_score)
     for img_index in range(args.batch_size):
+        score_patch = pixelwise_anormal_score[img_index]
+        anormal_detect_background = torch.zeros_like(pixelwise_anormal_score)[img_index].squeeze()
         for i in range(W):
             for j in range(H):
-                anormal_score = pixelwise_anormal_score[img_index, i, j]
+                anormal_score = score_patch[i, j]
                 if anormal_score < thredhold :
-                    anormal_detect_background[img_index, i, j] = 0
+                    print(f' [normal] {i},{j} pixel is normal')
+                    anormal_detect_background[i, j] = 0
                 else :
                     print(f' {i},{j} pixel is anormal')
-                    anormal_detect_background[img_index, i, j] = anormal_score
+                    anormal_detect_background[i, j] = anormal_score
         print(f' (1) original image')
         image = data["image_info"][img_index].squeeze()                           # [1, 128, 128]
         original_img = torch_transforms.ToPILImage()(image).convert('RGB')
@@ -211,8 +214,8 @@ def main(args):
         #np_img = image.to('cpu').detach().numpy().copy().astype(np.uint8)         # [128, 128]
 
         print(f' (2) blended image')
-        heat_map = anormal_detect_background[img_index].squeeze()
-        heat_map = expand_image(im=heat_map,h=h, w=w,absolute=True)               # [128, 128]
+        heat_map = expand_image(im=anormal_detect_background,
+                                h=h, w=w,absolute=True)               # [128, 128]
         heat_map = _convert_heat_map_colors(heat_map)                             # [128,128,3], device = cuda, type = torch
         np_heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [128, 128]
         heat_map_img = Image.fromarray(np_heat_map)
