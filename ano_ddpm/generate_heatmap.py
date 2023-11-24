@@ -198,24 +198,18 @@ def main(args):
         print(f'calculate vlb')
         vlb_terms = diffusion.calc_total_vlb_in_sample_distance(x, model, args)
     vlb = vlb_terms["whole_vb"]                # [batch, 1000, 1, W, H]
-    print(f'vlb shape [batch, 1000, 1, w, h] : {vlb.shape}')
     pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
-    print(f'pixelwise_anormal_score shape [batch, 1000, w, h] : {pixelwise_anormal_score.shape}')
     w,h = pixelwise_anormal_score.shape[-2], pixelwise_anormal_score.shape[-1]
 
     for img_index in range(args.batch_size):
         score_patch = pixelwise_anormal_score[img_index].squeeze()
-        print(f'score_patch shape (128,128) : {score_patch.shape}')
         anormal_detect_background = torch.zeros_like(score_patch)
         for i in range(w):
             for j in range(h):
                 abnormal_score = score_patch[i, j]
-                print(f'abnormal score : {abnormal_score}')
                 if abnormal_score < thredhold :
-                    print(f' [normal] {i},{j} pixel is normal')
                     anormal_detect_background[i, j] = 0
                 else :
-                    print(f' {i},{j} pixel is anormal')
                     anormal_detect_background[i, j] = abnormal_score
         print(f' (1) original image')
         image = data["image_info"][img_index].squeeze()                           # [1, 128, 128]
@@ -224,9 +218,15 @@ def main(args):
         #np_img = image.to('cpu').detach().numpy().copy().astype(np.uint8)         # [128, 128]
 
         print(f' (2) blended image')
-        heat_map = expand_image(im=anormal_detect_background,
-                                h=h, w=w,absolute=True)               # [128, 128]
+        # [128,128] torch
+        heat_map = expand_image(im=anormal_detect_background, h=h, w=w,absolute=True)
+        print(f'after expanding, heat_map shape [1,1,128,128] : {heat_map.shape}')
+        # ------------------------------------------------------------------------------------------------------------------------------
         heat_map = _convert_heat_map_colors(heat_map)                             # [128,128,3], device = cuda, type = torch
+        print(f'coloring, heat_map shape [1,1,128,128] : {heat_map.shape}')
+        print(f'value from 0 to 255')
+        print(f'max : {heat_map.max()}')
+        # ------------------------------------------------------------------------------------------------------------------------------
         np_heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [128, 128]
         heat_map_img = Image.fromarray(np_heat_map)
         blended_img = Image.blend(original_img, heat_map_img, 0.5)
@@ -242,7 +242,7 @@ def main(args):
         new_image.paste(blended_img, (w, 0))
         new_image.paste(mask_img, (2*w, 0))
         new_image.save(os.path.join(img_base_dir, f'real_heatmap_answer_train_{is_train}_{img_index}.png'))
-    
+
 
 
 

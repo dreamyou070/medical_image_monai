@@ -9,7 +9,9 @@ def _convert_heat_map_colors(heat_map: torch.Tensor):
 
     color_map = torch.tensor(np.array([get_color(i) * 255 for i in range(256)]),
                              device=heat_map.device)
+    # before, heat_map is from 0 to 1
     heat_map = (heat_map * 255).long()
+    # after, heat_map is from 0 to 255
     return color_map[heat_map]
 
 def expand_image(im: torch.Tensor,
