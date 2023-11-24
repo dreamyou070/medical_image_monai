@@ -190,7 +190,8 @@ def main(args):
     # only abnormal sample
     abnormal_x = x[normal_info == 0]
     abnormal_mask = mask_info[normal_info == 0]
-
+    print(f' abnormal_x shape : {abnormal_x.shape}')
+    """
     print(f' [1] get anormal score')
     thredhold = args.thredhold
     with torch.no_grad():
@@ -238,6 +239,7 @@ def main(args):
         new_image.paste(blended_img, (w, 0))
         new_image.paste(mask_img, (2*w, 0))
         new_image.save(os.path.join(img_base_dir, f'real_heatmap_answer_train_{is_train}_{img_index}.png'))
+    """
 
 
 
