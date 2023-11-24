@@ -200,7 +200,13 @@ def main(args):
     pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
     w,h = pixelwise_anormal_score.shape[-2], pixelwise_anormal_score.shape[-1]
 
+    abnormal_pixel_num_file = open(os.path.join(save_base_dir, f'abnormal_pixel_num.txt'), 'w')
+    file_data = open(abnormal_pixel_num_file, 'w')
+
     for img_index in range(x.shape[0]):
+        img_dir = img_dirs[img_index]
+        img_name = os.path.split(img_dir)[-1]
+        abnormal_pixel_num = 0
         score_patch = pixelwise_anormal_score[img_index].squeeze()
         anormal_detect_background = torch.zeros_like(score_patch)
         for i in range(w):
@@ -209,8 +215,10 @@ def main(args):
                 if abnormal_score < thredhold :
                     anormal_detect_background[i, j] = 0
                 else :
-                    print(f' abnormal_score : {abnormal_score}')
+                    abnormal_pixel_num += 1
                     anormal_detect_background[i, j] = abnormal_score
+        line = f'[train] {img_name} | abnormal pixel num : {abnormal_pixel_num} \n'
+        file_data.write(line)
         print(f' (1) original image')
         image = data["image_info"][img_index].squeeze()                           # [1, 128, 128]
         original_img = torch_transforms.ToPILImage()(image).convert('RGB')
@@ -252,8 +260,9 @@ def main(args):
     vlb = vlb_terms["whole_vb"]  # [batch, 1000, 1, W, H]
     pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
     w, h = pixelwise_anormal_score.shape[-2], pixelwise_anormal_score.shape[-1]
-
     for img_index in range(x.shape[0]):
+        img_dir = img_dirs[img_index]
+        img_name = os.path.split(img_dir)[-1]
         score_patch = pixelwise_anormal_score[img_index].squeeze()
         anormal_detect_background = torch.zeros_like(score_patch)
         for i in range(w):
@@ -262,8 +271,10 @@ def main(args):
                 if abnormal_score < thredhold:
                     anormal_detect_background[i, j] = 0
                 else:
-                    print(f' abnormal_score : {abnormal_score}')
+                    abnormal_pixel_num += 1
                     anormal_detect_background[i, j] = abnormal_score
+        line = f'[valid] {img_name} | abnormal pixel num : {abnormal_pixel_num} \n'
+        file_data.write(line)
         print(f' (1) original image')
         image = data["image_info"][img_index].squeeze()  # [1, 128, 128]
         original_img = torch_transforms.ToPILImage()(image).convert('RGB')
@@ -289,7 +300,7 @@ def main(args):
         new_image.paste(blended_img, (2 * w, 0))
         new_image.paste(mask_img, (3 * w, 0))
         new_image.save(os.path.join(save_base_dir, f'heatmap_valid_data_{img_index}.png'))
-
+    file_data.close()
 
 
 
