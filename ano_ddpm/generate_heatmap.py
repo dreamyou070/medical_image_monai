@@ -207,14 +207,14 @@ def main(args):
                     anormal_detect_background[img_index, i, j] = anormal_score
 
         print(f' [2] normalizing the score')
-        image = data["image_info"][img_index]  # [1, 128, 128]
-        np_img = image.to('cpu').detach().numpy().copy().astype(np.uint8)
+        image = data["image_info"][img_index].squeeze()  # [1, 128, 128]
+        np_img = image.to('cpu').detach().numpy().copy().astype(np.uint8)      # [1, 128, 128]
         print(f' np_img : {np_img.shape}')
     
-        heat_map = anormal_detect_background[img_index]
+        heat_map = anormal_detect_background[img_index].squeeze()
         np_heat_map = heat_map.cpu().numpy()
         heat_map = _convert_heat_map_colors(np_heat_map)
-        heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8)
+        heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [1, 128, 128]
         print(f' heat_map : {heat_map.shape}')
 
         heat_map_img = Image.fromarray(heat_map)
@@ -256,6 +256,7 @@ if __name__ == '__main__':
     parser.add_argument('--loss_weight', type=str, default="none")
     parser.add_argument('--loss_type', type=str, default='l2')
     parser.add_argument('--sample_distance', type=int, default=800)
+    parser.add_argument('--thredhold', type=float, default=0.35)
 
     args = parser.parse_args()
     main(args)
