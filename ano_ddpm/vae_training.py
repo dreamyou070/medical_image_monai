@@ -22,6 +22,7 @@ def main(args) :
     else:
         setproctitle('parksooyeon')
     print(f' (1.1) wandb')
+    os.environ = args.experiment_dir
     print(env.get_data_dir())
     """
     wandb.login(key=args.wandb_api_key)
