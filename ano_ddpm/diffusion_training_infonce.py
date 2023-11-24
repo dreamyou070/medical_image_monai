@@ -116,8 +116,8 @@ def main(args):
     else:
         setproctitle('parksooyeon')
     print(f' (1.1) wandb')
-    #wandb.login(key=args.wandb_api_key)
-    #wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
+    wandb.login(key=args.wandb_api_key)
+    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
 
     print(f' (1.2) seed and device')
     seed(args.seed)
@@ -199,14 +199,12 @@ def main(args):
         for step, data in progress_bar:
             global_step += 1
             model.train()
-
             x_0 = data["image_info"].to(device)  # batch, channel, w, h
             normal_info = data['normal']  # if 1 = normal, 0 = abnormal
             mask_info = data['mask'].unsqueeze(dim=1)  # if 1 = normal, 0 = abnormal
             if args.only_normal_training:
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
-
             if x_0.shape[0] != 0:
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=device)
                 if args.use_simplex_noise:
@@ -216,7 +214,6 @@ def main(args):
                 x_t = diffusion.sample_q(x_0, t, noise)
                 noise_pred = model(x_t, t)
                 target = noise
-
                 # -----------------------------------------------------------------------------------------
                 # [1] pos_loss
                 pos_loss_ = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
@@ -248,9 +245,8 @@ def main(args):
 
                 elif args.advanced_masked_loss :
                     loss = pos_loss - neg_loss + args.margin
-
                 loss = loss.mean()
-                #wandb.log({"training loss": loss.item()})
+                wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
@@ -306,7 +302,7 @@ def main(args):
                         efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]    # WH
                         whole_vb = whole_vb.flatten(start_dim=1)                         # [batch, W*H]
                         whole_vb = whole_vb / efficient_pixel_num                        # [batch, W*H]
-                        #wandb.log({"total_vlb (test data normal sample)": whole_vb.mean().cpu().item()})
+                        wandb.log({"total_vlb (test data normal sample)": whole_vb.mean().cpu().item()})
 
                     # --------------------------------------------------------------------------------------------------
                     if abnormal_x.shape[0] != 0:
@@ -320,7 +316,7 @@ def main(args):
                         abnormal_normal_pix_num = torch.where(abnormal_normal_pix_num == 0, 1, abnormal_normal_pix_num)
                         abnormal_normal_vlb = abnormal_normal_vlb / abnormal_normal_pix_num
 
-                        #wandb.log({"normal portion of *ab*normal sample kl": abnormal_normal_vlb.mean().cpu().item()})
+                        wandb.log({"normal portion of *ab*normal sample kl": abnormal_normal_vlb.mean().cpu().item()})
 
                         # [2] abnormal portion
                         abnormal_abporton_mask = (1-abnormal_normalporton_mask).flatten(start_dim=1)
@@ -328,7 +324,7 @@ def main(args):
                         abnormal_avnormal_pix_num = abnormal_abporton_mask.sum(dim=-1).unsqueeze(-1)
                         abnormal_avnormal_pix_num = torch.where(abnormal_avnormal_pix_num == 0, 1, abnormal_avnormal_pix_num)
                         abnormal_abnormal_vlb = abnormal_abnormal_vlb / abnormal_avnormal_pix_num
-                        #wandb.log({"abnormal portion of *ab*normal sample kl" : abnormal_abnormal_vlb.mean().cpu().item()})
+                        wandb.log({"abnormal portion of *ab*normal sample kl" : abnormal_abnormal_vlb.mean().cpu().item()})
         if epoch >= args.save_base_epoch :
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch, global_step = global_step)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema, global_step = global_step)
