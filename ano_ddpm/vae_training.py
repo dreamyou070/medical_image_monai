@@ -11,6 +11,7 @@ from monai.utils import first
 from setproctitle import *
 from generative.networks.nets import AutoencoderKL, PatchDiscriminator
 from loss_module import PerceptualLoss, PatchAdversarialLoss
+from wandb import env
 
 
 def main(args) :
@@ -21,6 +22,8 @@ def main(args) :
     else:
         setproctitle('parksooyeon')
     print(f' (1.1) wandb')
+    print(env.get_data_dir())
+    """
     wandb.login(key=args.wandb_api_key)
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name,
                dir=args.experiment_dir)
@@ -75,7 +78,7 @@ def main(args) :
                                   with_encoder_nonlocal_attn=False,
                                   with_decoder_nonlocal_attn=False,)
     autoencoderkl = autoencoderkl.to(device)
-    """
+    
 
     perceptual_loss = PerceptualLoss(spatial_dims=2,
                                      network_type="alex")
