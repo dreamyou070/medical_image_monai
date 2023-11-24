@@ -59,17 +59,15 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         # 1) make random noise
         x = test_data["image_info"].to(device)  # batch, channel, w, h
         normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
+        print(f'normal_info : {normal_info}')
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
 
         t = torch.randint(args.sample_distance - 1, args.sample_distance, (x.shape[0],), device=x.device)
-        time_step = t[0].item()
-
         if args.use_simplex_noise:
             noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
         else:
             noise = torch.rand_like(x).float().to(x.device)
         # 2) select random int
-
         with torch.no_grad():
             # 3) q sampling = noising & p sampling = denoising
             x_t = diffusion.sample_q(x, t, noise)
@@ -79,9 +77,8 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
         sample_images = temp["sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
         pred_images = temp["pred_x_0"][:num_images, ...].cpu()#.permute(0,1,3,2)
-        merge_images = []
-        #num_images = min(len(normal_info), num_images)
         for img_index in range(num_images):
+            print(f'img_index : {img_index}')
             normal_info_ = normal_info[img_index]
             if normal_info_ == 1:
                 is_normal = 'normal'
@@ -266,7 +263,8 @@ def main(args):
                         if i == 0:
                             ema.eval()
                             model.eval()
-                            inference_num = min(args.inference_num, args.batch_size)
+                            inference_num = min(args.inference_num,
+                                                args.batch_size)
                             training_outputs(diffusion, test_data, epoch, inference_num, save_imgs=args.save_imgs,
                                              ema=ema, args=args, is_train_data=False, device=device)
                             training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
