@@ -16,16 +16,16 @@ from loss_module import PerceptualLoss, PatchAdversarialLoss
 print_config()
 
 def main(args) :
-
+    
     print(f'\n step 1. setting')
     if args.process_title:
         setproctitle(args.process_title)
     else:
         setproctitle('parksooyeon')
-
     print(f' (1.1) wandb')
     wandb.login(key=args.wandb_api_key)
-    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
+    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name, )
+    os.environ["WANDB_DATA_DIR"] = args.experiment_dir
 
     print(f' (1.2) seed and device')
     seed(args.seed)
