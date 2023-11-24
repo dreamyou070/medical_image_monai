@@ -186,27 +186,33 @@ def main(args):
     x = data["image_info"].to(device)
     normal_info = data['normal']  # if 1 = normal, 0 = abnormal
     mask_info = data['mask']  # if 1 = normal, 0 = abnormal
+    print(f' (5.1.1) abnormal sample')
+    # only abnormal sample
+    abnormal_x = x[normal_info == 0]
+    abnormal_mask = mask_info[normal_info == 0]
 
     print(f' [1] get anormal score')
+    thredhold = args.thredhold
     with torch.no_grad():
-        vlb_terms = diffusion.calc_total_vlb_in_sample_distance(x, model, args)
+        vlb_terms = diffusion.calc_total_vlb_in_sample_distance(abnormal_x, model, args)
     vlb = vlb_terms["whole_vb"]                # [batch, 1000, 1, W, H]
     pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
+
     W, H = pixelwise_anormal_score.shape[1], pixelwise_anormal_score.shape[2]
-    thredhold = args.thredhold
-    anormal_detect_background = torch.zeros_like(pixelwise_anormal_score)
+
     for img_index in range(args.batch_size):
         score_patch = pixelwise_anormal_score[img_index]
         anormal_detect_background = torch.zeros_like(pixelwise_anormal_score)[img_index].squeeze()
         for i in range(W):
             for j in range(H):
-                anormal_score = score_patch[i, j]
-                if anormal_score < thredhold :
+                abnormal_score = score_patch[i, j]
+                print(f'abnormal score : {abnormal_score}')
+                if abnormal_score < thredhold :
                     print(f' [normal] {i},{j} pixel is normal')
                     anormal_detect_background[i, j] = 0
                 else :
                     print(f' {i},{j} pixel is anormal')
-                    anormal_detect_background[i, j] = anormal_score
+                    anormal_detect_background[i, j] = abnormal_score
         print(f' (1) original image')
         image = data["image_info"][img_index].squeeze()                           # [1, 128, 128]
         original_img = torch_transforms.ToPILImage()(image).convert('RGB')
