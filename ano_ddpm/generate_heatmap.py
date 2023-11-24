@@ -191,11 +191,9 @@ def main(args):
     #abnormal_x = x[normal_info == 0]
     #abnormal_mask = mask_info[normal_info == 0]
 
-
     print(f' [1] get anormal score')
     thredhold = args.thredhold
     with torch.no_grad():
-        print(f'calculate vlb')
         vlb_terms = diffusion.calc_total_vlb_in_sample_distance(x, model, args)
     vlb = vlb_terms["whole_vb"]                # [batch, 1000, 1, W, H]
     pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
@@ -218,24 +216,26 @@ def main(args):
         print(f' (2) blended image')
         # ------------------------------------------------------------------------------------------------------------------------------
         # [128,128] torch
-        heat_map = expand_image(im=anormal_detect_background, h=h, w=w,absolute=False)
+        heat_map = expand_image(im=anormal_detect_background, h=h, w=w, absolute=False)
         heat_map = (heat_map * 255).long()
         heat_map = _convert_heat_map_colors(heat_map)                             # [128,128,3], device = cuda, type = torch
-        np_heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [128, 128]
-        heat_map_img = Image.fromarray(np_heat_map)
-        blended_img = Image.blend(original_img, heat_map_img, 0.5)
+        print(f'heat_map : {heat_map}')
+        print(f'heat_map.shape [128,128,3] : {heat_map.shape}')
+        #np_heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8) # [128, 128]
+        #heat_map_img = Image.fromarray(np_heat_map)
+        #blended_img = Image.blend(original_img, heat_map_img, 0.5)
 
-        print(f' (3) answer')
-        mask_np = mask_info[img_index].squeeze().to('cpu').detach().numpy().copy().astype(np.uint8)
-        mask_np = mask_np * 255
-        mask_img = Image.fromarray(mask_np).convert('RGB')  # [128, 128, 3]
+        #print(f' (3) answer')
+        #mask_np = mask_info[img_index].squeeze().to('cpu').detach().numpy().copy().astype(np.uint8)
+        #mask_np = mask_np * 255
+        #mask_img = Image.fromarray(mask_np).convert('RGB')  # [128, 128, 3]
 
-        print(f' (4) save image')
-        new_image = PIL.Image.new('RGB', (3 * w, h), (0,0,0))
-        new_image.paste(original_img, (0, 0))
-        new_image.paste(blended_img, (w, 0))
-        new_image.paste(mask_img, (2*w, 0))
-        new_image.save(os.path.join(img_base_dir, f'real_heatmap_answer_train_{is_train}_{img_index}.png'))
+        #print(f' (4) save image')
+        #new_image = PIL.Image.new('RGB', (3 * w, h), (0,0,0))
+        #new_image.paste(original_img, (0, 0))
+        #new_image.paste(blended_img, (w, 0))
+        #new_image.paste(mask_img, (2*w, 0))
+        #new_image.save(os.path.join(img_base_dir, f'real_heatmap_answer_train_{is_train}_{img_index}.png'))
 
 
 
