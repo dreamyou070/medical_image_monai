@@ -81,16 +81,12 @@ class PatchAdversarialLoss(_Loss):
         for disc_ind, disc_out in enumerate(input):
 
             if self.activation is not None:
-                print(f'does self.activation?? ')
                 disc_out = self.activation(disc_out)
 
             if self.criterion == AdversarialCriterions.HINGE.value and not target_is_real:
 
                 loss_ = self.forward_single(-disc_out, target_[disc_ind])
             else:
-                # ----------------------------------------------------------------------------------------
-                # ----------------------------------------------------------------------------------------
-                # ----------------------------------------------------------------------------------------
                 loss_ = self.forward_single(disc_out,
                                             target_[disc_ind])
             loss.append(loss_)
@@ -108,8 +104,6 @@ class PatchAdversarialLoss(_Loss):
                        target: torch.FloatTensor) -> torch.Tensor | None:
 
         if (self.criterion == AdversarialCriterions.BCE.value or self.criterion == AdversarialCriterions.LEAST_SQUARE.value):
-            print(f'in forward single, inpurt : {input}')
-            print(f'self.loss_fct : {self.loss_fct}')
             loss = self.loss_fct(input, target)
             return loss
 

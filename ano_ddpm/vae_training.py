@@ -134,6 +134,7 @@ def main(args) :
                     logits_fake = discriminator(reconstruction.contiguous().float())[-1]
                     generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
                     loss_g += adv_weight * generator_loss
+            wandb.log({"reconstruction_loss": recons_loss.item(),})
             scaler_g.scale(loss_g).backward()
             scaler_g.step(optimizer_g)
             scaler_g.update()
@@ -147,43 +148,49 @@ def main(args) :
                     loss_d_real = adv_loss(logits_real, target_is_real=True, for_discriminator=True)
                     discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
                     loss_d = adv_weight * discriminator_loss
+
                 scaler_d.scale(loss_d).backward()
+                wandb.log({"discriminator_loss": loss_d.item(), })
                 scaler_d.step(optimizer_d)
                 scaler_d.update()
             epoch_loss += recons_loss.item()
             if epoch > autoencoder_warm_up_n_epochs:
                 gen_epoch_loss += generator_loss.item()
                 disc_epoch_loss += discriminator_loss.item()
+
             progress_bar.set_postfix(
                 {
                     "recons_loss": epoch_loss / (step + 1),
                     "gen_loss": gen_epoch_loss / (step + 1),
                     "disc_loss": disc_epoch_loss / (step + 1),
-                }
-            )
-        epoch_recon_losses.append(epoch_loss / (step + 1))
-        epoch_gen_losses.append(gen_epoch_loss / (step + 1))
-        epoch_disc_losses.append(disc_epoch_loss / (step + 1))
-
-
+                })
         autoencoderkl.eval()
         val_loss = 0
         with torch.no_grad():
             for val_step, batch in enumerate(test_dataset_loader, start=1):
                 images = batch["image_info"].to(device)
-
                 with autocast(enabled=True):
                     reconstruction, z_mu, z_sigma = autoencoderkl(images)
-                    # Get the first reconstruction from the first validation batch for visualisation purposes
-                    if val_step == 1:
-                        intermediary_images.append(reconstruction[:num_example_images, 0])
+                    if val_step == 0 :
+                        import torchvision.transforms as torch_transforms
+                        from PIL import Image
+                        #real = torch_transforms.ToPILImage()(real)
+                        org_img = images[0].squeeze()
+                        org_img = torch_transforms.ToPILImage()(org_img.unsqueeze(0))
+                        recon = reconstruction[0].squeeze()
+                        recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
+                        new = Image.new('RGB', (org_img.width + recon.width, org_img.height))
+                        new.paste(org_img, (0, 0))
+                        new.paste(recon, (org_img.width, 0))
+                        loading_image = wandb.Image(new,
+                                                    caption=f"(real-recon) epoch {epoch + 1} ")
+                        wandb.log({"vae inference": loading_image})
                     recons_loss = F.l1_loss(images.float(), reconstruction.float())
                 val_loss += recons_loss.item()
         val_loss /= val_step
-        val_recon_losses.append(val_loss)
+        wandb.log({"val_loss": val_loss, })
         line = f"epoch {epoch + 1} val loss: {val_loss:.4f}"
         records.append(line)
-
         # save model
         if epoch > args.model_save_base_epoch :
             model_save_dir = os.path.join(experiment_dir, f'autoencoderkl')
@@ -200,10 +207,6 @@ def main(args) :
     with open(os.path.join(experiment_dir, f'records.txt'), 'w') as f:
         for line in records:
             f.write(line + '\n')
-
-
-
-
 
 if __name__ == '__main__' :
 
