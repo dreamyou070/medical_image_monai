@@ -182,7 +182,6 @@ if __name__ == '__main__':
 
     # step 1. wandb login
     parser.add_argument("--process_title", type=str, default='parksooyeon')
-    parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", type=str)
     parser.add_argument('--experiment_dir', type=str,
