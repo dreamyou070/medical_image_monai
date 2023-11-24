@@ -314,15 +314,9 @@ def main(args):
                         ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze(dim=2).mean(dim=1)  # [Batch, W, H]
                         ab_whole_vb = ab_whole_vb.flatten(start_dim=1)                     # [Batch, WH]
                         # [1] normal portion
-                        abnormal_normalporton_mask = abnormal_mask.flatten(start_dim=1)    # [Batch, WH]
-                        print(f' ab_whole_vb : {ab_whole_vb.shape} | abnormal_normalporton_mask : {abnormal_normalporton_mask.shape}')
-
-                        abnormal_normal_vlb = ab_whole_vb * abnormal_normalporton_mask  # [Batch, WH]
-                        print(f' abnormal_normal_vlb : {abnormal_normal_vlb.shape}')
-
-                        abnormal_normal_pix_num = abnormal_normalporton_mask.sum(dim=-1).unsqueeze(-1)
-                        print(f' abnormal_normal_pix_num : {abnormal_normal_pix_num}')
-
+                        abnormal_normalporton_mask = abnormal_mask.flatten(start_dim=1)                # [Batch, WH]
+                        abnormal_normal_vlb = ab_whole_vb * abnormal_normalporton_mask                 # [Batch, WH]
+                        abnormal_normal_pix_num = abnormal_normalporton_mask.sum(dim=-1).unsqueeze(-1) # [Batch, 1]
                         abnormal_normal_pix_num = torch.where(abnormal_normal_pix_num == 0, 1, abnormal_normal_pix_num)
                         abnormal_normal_vlb = abnormal_normal_vlb / abnormal_normal_pix_num
 
@@ -400,7 +394,7 @@ if __name__ == '__main__':
     parser.add_argument('--inference_num', type=int, default=4)
     parser.add_argument('--inference_freq', type=int, default=50)
     parser.add_argument('--vlb_freq', type=int, default=200)
-    parser.add_argument('--model_save_freq', type=int, default=1000)
+    parser.add_argument('--save_base_epoch', type=int, default=1000)
     parser.add_argument('--save_imgs', action='store_true')
     parser.add_argument('--save_vids', action='store_true')
     args = parser.parse_args()
