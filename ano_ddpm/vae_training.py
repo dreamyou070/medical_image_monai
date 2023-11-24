@@ -27,11 +27,6 @@ def main(args) :
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name,
                dir=args.experiment_dir)
 
-
-    #print(env.get_data_dir())
-    """
-    
-
     print(f' (1.2) seed and device')
     seed(args.seed)
     device = args.device
@@ -79,8 +74,15 @@ def main(args) :
                                   num_res_blocks=2,
                                   attention_levels=(False, False, False),
                                   with_encoder_nonlocal_attn=False,
-                                  with_decoder_nonlocal_attn=False,)
+                                  with_decoder_nonlocal_attn=False, )
     autoencoderkl = autoencoderkl.to(device)
+
+
+    #print(env.get_data_dir())
+    """
+    
+
+    
     
 
     perceptual_loss = PerceptualLoss(spatial_dims=2,
