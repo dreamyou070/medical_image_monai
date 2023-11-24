@@ -177,15 +177,14 @@ def main(args):
 
     print(f'\n step 5. inference')
     print(f' (5.1) training data')
-    for i, data in enumerate(training_dataset_loader):
-        if i == 0:
-            x = data["image_info"].to(device)
-            image = data["image_info"][0]
-            print(f'x  [Batch, 1, W, H] : {x.shape}')
-            print(f'image [Batch, W, H] : {image.shape}')
+    data = first(training_dataset_loader)
+    x = data["image_info"].to(device)
+
+    image = data["image_info"][0]  # [1, 128, 128]
+    np_img = image.numpy()
     """
-    normal_info_ = test_data['normal']  # if 1 = normal, 0 = abnormal
-    mask_info_ = test_data['mask']  # if 1 = normal, 0 = abnormal
+    normal_info_ = data['normal']  # if 1 = normal, 0 = abnormal
+    mask_info_ = data['mask']  # if 1 = normal, 0 = abnormal
 
     print(f' [1] get anormal score')
     vlb_terms = diffusion.calc_total_vlb_in_sample_distance(x, model, args)
@@ -203,12 +202,38 @@ def main(args):
                 else :
                     anormal_detect_background[img_index, i, j] = anormal_score
         print(f' [2] normalizing the score')
-        
+        image = data["image_info"][img_index]  # [1, 128, 128]
+        np_img = image.numpy()
+    """
+        """
         heat_map = anormal_detect_background[img_index]
         np_heat_map = heat_map.cpu().numpy()
-        img = image_overlay_heat_map(img=image, heat_map=heat_map)
-    """
+        #img = image_overlay_heat_map(img=image, heat_map=heat_map)
+        def image_overlay_heat_map(img,
+                                   heat_map,
+                                   word=None, out_file=None, crop=None, alpha=0.5, caption=None, image_scale=1.0):
+            # type: (Image.Image | np.ndarray, torch.Tensor, str, Path, int, float, str, float) -> Image.Image
+            assert (img is not None)
 
+            if heat_map is not None:
+                shape: torch.Size = heat_map.shape
+                # heat_map = heat_map.unsqueeze(-1).expand(shape[0], shape[1], 3).clone()
+                heat_map = _convert_heat_map_colors(heat_map)
+                heat_map = heat_map.to('cpu').detach().numpy().copy().astype(np.uint8)
+                heat_map_img = Image.fromarray(heat_map)
+                img = Image.blend(img, heat_map_img, alpha)
+            else:
+                img = img.copy()
+
+            if caption:
+                img = _write_on_image(img, caption)
+
+            if image_scale != 1.0:
+                x, y = img.size
+                size = (int(x * image_scale), int(y * image_scale))
+                img = img.resize(size, Image.BICUBIC)
+            return img
+        """
 
 
 if __name__ == '__main__':
