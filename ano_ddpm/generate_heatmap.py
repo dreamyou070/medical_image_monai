@@ -242,7 +242,7 @@ def main(args):
         new_image.paste(blended_img, (w, 0))
         new_image.paste(mask_img, (2*w, 0))
         new_image.save(os.path.join(img_base_dir, f'real_heatmap_answer_train_{is_train}_{img_index}.png'))
-    """
+    
 
 
 
