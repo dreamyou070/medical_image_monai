@@ -15,4 +15,4 @@ python generate_heatmap.py --device=${device} \
                            --train_mask_dir=${train_mask_dir} \
                            --val_data_folder=${val_data_folder} \
                            --val_mask_dir=${val_mask_dir} \
-                           -thredhold=${thredhold}
+                           --thredhold=${thredhold}
