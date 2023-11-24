@@ -1,5 +1,17 @@
 import torch
 import torch.nn.functional as F
+from matplotlib import cm
+import numpy as np
+
+def _convert_heat_map_colors(heat_map: torch.Tensor):
+    def get_color(value):
+        return np.array(cm.turbo(value / 255)[0:3])
+
+    color_map = torch.tensor(np.array([get_color(i) * 255 for i in range(256)]),
+                             device=heat_map.device)
+    heat_map = (heat_map * 255).long()
+    return color_map[heat_map]
+
 def expand_image(im: torch.Tensor, h = 512, w = 512,
                  absolute: bool = False, threshold: float = None) -> torch.Tensor:
     im = im.unsqueeze(0).unsqueeze(0)
