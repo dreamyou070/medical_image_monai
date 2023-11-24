@@ -202,6 +202,7 @@ def main(args):
                 if anormal_score < thredhold :
                     anormal_detect_background[img_index, i, j] = 0
                 else :
+                    print(f' {i},{j} pixel is anormal')
                     anormal_detect_background[img_index, i, j] = anormal_score
         print(f' (1) original image')
         image = data["image_info"][img_index].squeeze()                           # [1, 128, 128]
