@@ -22,7 +22,7 @@ from setproctitle import *
 #torch.multiprocessing.set_sharing_strategy('file_system')
 #torch.cuda.empty_cache()
 
-def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
+def save(final, unet, optimiser, args, ema, loss=0, epoch=0, global_step=0):
     model_save_base_dir = os.path.join(args.experiment_dir,'diffusion-models')
     os.makedirs(model_save_base_dir, exist_ok=True)
     if final:
@@ -33,7 +33,7 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     "ema":                  ema.state_dict(),
                     "args":                 args},save_dir)
     else:
-        save_dir = os.path.join(model_save_base_dir, f'unet_epoch_{epoch}.pt')
+        save_dir = os.path.join(model_save_base_dir, f'unet_global_step_{global_step}.pt')
         torch.save({'n_epoch':              epoch,
                     'model_state_dict':     unet.state_dict(),
                     'optimizer_state_dict': optimiser.state_dict(),
@@ -190,51 +190,50 @@ def main(args):
     optimiser = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
 
     print(f'\n step 6. training')
+    global_step = 0
     tqdm_epoch = range(args.start_epoch, args.train_epochs + 1)
-    start_time = time.time()
-    vlb = collections.deque([], maxlen=10)
     for epoch in tqdm_epoch:
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=200)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, data in progress_bar:
+            global_step += 1
             model.train()
-            # -----------------------------------------------------------------------------------------
-            # 0) data check
+
             x_0 = data["image_info"].to(device)  # batch, channel, w, h
             normal_info = data['normal']  # if 1 = normal, 0 = abnormal
             mask_info = data['mask'].unsqueeze(dim=1)  # if 1 = normal, 0 = abnormal
             if args.only_normal_training:
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
-            # -----------------------------------------------------------------------------------------
-            # 1) check random t
+
             if x_0.shape[0] != 0:
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=device)
                 if args.use_simplex_noise:
                     noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
                 else:
                     noise = torch.rand_like(x_0).float().to(device)
-                # 2) make noisy latent
                 x_t = diffusion.sample_q(x_0, t, noise)
-                # 3) model prediction
                 noise_pred = model(x_t, t)
                 target = noise
+
                 # -----------------------------------------------------------------------------------------
-                # pos_loss measure distance between normal position
+                # [1] pos_loss
                 pos_loss_ = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
-                                                        (target * mask_info.to(device)).float(),
-                                                        reduction="none").mean([1, 2, 3])
+                                                         (target * mask_info.to(device)).float(),
+                                                         reduction="none").mean([1, 2, 3])
                 pixel_num = mask_info.sum([1, 2, 3]).float().to(device)
                 pixel_num = torch.where(pixel_num == 0, 1, pixel_num)
                 pos_loss = pos_loss_ / pixel_num
+
                 # -----------------------------------------------------------------------------------------
-                # neg_loss measure distance between abnormal position
+                # [2] neg_loss
                 neg_loss = torch.nn.functional.mse_loss((noise_pred * (1-mask_info).to(device)).float(),
                                                         (target * (1-mask_info).to(device)).float(),
                                                         reduction="none").mean([1, 2, 3])
-                pixel_num = (1-mask_info).sum([1, 2, 3]).float().to(device)
-                pixel_num = torch.where(pixel_num == 0, 1, pixel_num)
-                neg_loss = neg_loss / pixel_num
+                abnormal_pixel_num = (1-mask_info).sum([1, 2, 3]).float().to(device)
+                abnormal_pixel_num = torch.where(abnormal_pixel_num == 0, 1, abnormal_pixel_num)
+                neg_loss = neg_loss / abnormal_pixel_num
+
                 if args.pos_infonce_loss :
                     loss = pos_loss_ + (pos_loss / (pos_loss + args.neg_loss_scale * neg_loss))
                 if args.infonce_loss :
@@ -243,16 +242,18 @@ def main(args):
                     loss = neg_loss + args.guidance_scale * (pos_loss - neg_loss)
                 elif args.advanced_masked_loss :
                     loss = pos_loss - neg_loss + args.margin
-
+                print(f'before mean, loss [number of batch, 1dim torch] : {loss}')
                 loss = loss.mean()
                 wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
                 optimiser.step()
+
                 # ----------------------------------------------------------------------------------------- #
                 # EMA model updating
                 update_ema_params(ema, model)
+
                 # ----------------------------------------------------------------------------------------- #
                 # Inference
                 if epoch % args.inference_freq == 0 and step == 0:
@@ -265,8 +266,8 @@ def main(args):
                                              ema=ema, args=args, is_train_data=False, device=device)
                             training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
                                              ema=ema, args=args, is_train_data=True, device=device)
-            # ----------------------------------------------------------------------------------------- #
-            # vlb loss calculating
+        # ----------------------------------------------------------------------------------------- #
+        # vlb loss calculating
         print(f'vlb loss calculating ... ')
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader):
@@ -274,63 +275,66 @@ def main(args):
                     x = test_data["image_info"].to(device)
                     normal_info_ = test_data['normal']  # if 1 = normal, 0 = abnormal
                     mask_info_ = test_data['mask']  # if 1 = normal, 0 = abnormal
-                    normal_x_ = x[normal_info_ == 1]
-                    abnormal_x_ = x[normal_info_ != 1]
+                    normal_x = x[normal_info_ == 1]
+                    abnormal_x = x[normal_info_ != 1]
                     # ----------------------------------------------------------------------------------------- #
-                    # [mask] 1 = normal, 0 = abnormal
-                    # abnormal_mask = [Batch, W, H]
+                    normal_mask = mask_info_[normal_info_ == 1].to(device)
                     abnormal_mask = mask_info_[normal_info_ != 1].to(device)
+
+
+
+
+
                     # --------------------------------------------------------------------------------------------------
                     # calculate vlb loss
                     # x = [Batch, Channel, 128, 128]
-                    if normal_x_.shape[0] != 0:
+                    if normal_x.shape[0] != 0:
                         # ---------------------------------------------------------------------------------------------
                         # should i calculate whole timestep ???
                         # normal and abnormal ...
-                        vlb_terms = diffusion.calc_total_vlb_in_sample_distance(normal_x_, model, args)
+                        vlb_terms = diffusion.calc_total_vlb_in_sample_distance(normal_x, model, args)
                         vlb = vlb_terms["whole_vb"]  # [batch, 1000, 1, W, H]
-                        print(f'vlb.shape [batch, sample_length, 1, W, H] : {vlb.shape}')
                         # ---------------------------------------------------------------------------
                         # timewise averaging ...
                         whole_vb = vlb.squeeze(dim=2).mean(dim=1)  # batch, W, H
-
+                        print(f'normal test sample, whole_vb [batch, w, h] : {whole_vb.shape}')
                         efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
+                        print(f'normal test sample, efficient_pixel_num [batch, 1] : {efficient_pixel_num.shape}')
                         whole_vb = whole_vb.flatten(start_dim=1)  # batch, W*H
-                        batch_vb = whole_vb.sum(dim=-1)  # batch
-                        whole_vb = batch_vb / efficient_pixel_num  # shape = [batch]
+                        print(f'normal test sample, whole_vb [batch, w*h] : {whole_vb.shape}')
+                        whole_vb = whole_vb / efficient_pixel_num  # shape = [batch]
+                        print(f'normal test sample, whole_vb [batch, w*h] : {whole_vb.shape}')
                         wandb.log({"total_vlb (test data normal sample)": whole_vb.mean().cpu().item()})
+
                     # --------------------------------------------------------------------------------------------------
-                    if abnormal_x_.shape[0] != 0:
-                        ab_vlb_terms = diffusion.calc_total_vlb_in_sample_distance(abnormal_x_, model, args)
+                    if abnormal_x.shape[0] != 0:
+                        ab_vlb_terms = diffusion.calc_total_vlb_in_sample_distance(abnormal_x, model, args)
                         ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze(dim=2).mean(dim=1)  # [Batch, W, H]
+                        ab_whole_vb = ab_whole_vb.flatten(start_dim=1)  # batch, W*H
+                        print(f'abnormal test sample, ab_whole_vb [batch, wh] : {ab_whole_vb.shape}')
                         # ----------------------------------------------------------------------------------------------
-                        normal_efficient_pixel_num = abnormal_mask.sum(dim=-1).sum(dim=-1).to(device)
-                        print(f'normal_efficient_pixel_num [batch, 1]: {normal_efficient_pixel_num.shape}')
-                        # abnormal_mask = [batch, w, h]
-                        # ab_whole_vb =   [batch, w, h]
-                        normal_portion_ab_whole_vb = abnormal_mask * ab_whole_vb
-                        normal_portion_ab_whole_vb = normal_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
-                        print(f'normal_portion_ab_whole_vb [batch, 1]: {normal_portion_ab_whole_vb.shape}')
-                        # Batch,
-                        normal_portion_ab_whole_vb = normal_portion_ab_whole_vb / normal_efficient_pixel_num
-                        print(f'normal_portion_ab_whole_vb [batch, 1]: {normal_portion_ab_whole_vb.shape}')
-                        wandb.log({"normal portion of *ab*normal sample kl": normal_portion_ab_whole_vb.mean().cpu().item()})
+                        # [1] normal portion
+                        abnormal_mask = abnormal_mask.sum(dim=-1).sum(dim=-1).to(device)
+                        print(f'abnormal test sample, abnormal_mask [batch, 1] : {abnormal_mask.shape}')
+                        abnormal_normalporton_mask = abnormal_mask.flatten(start_dim=1)
+                        abnormal_normal_vlb = ab_whole_vb * abnormal_normalporton_mask
+                        abnormal_normal_pix_num = abnormal_normalporton_mask.sum(dim=-1)
+                        abnormal_normal_pix_num = torch.where(abnormal_normal_pix_num == 0, 1, abnormal_normal_pix_num)
+                        abnormal_normal_vlb = abnormal_normal_vlb / abnormal_normal_pix_num
+                        wandb.log(
+                            {"normal portion of *ab*normal sample kl": abnormal_normal_vlb.mean().cpu().item()})
 
-                        # --------------------------------------------------------------------------------------------------
-                        inverse_abnormal_mask = 1 - abnormal_mask
-                        efficient_pixel_num = (inverse_abnormal_mask).sum(dim=-1).sum(dim=-1).to(device)
-                        ab_portion_ab_whole_vb = inverse_abnormal_mask * ab_whole_vb
-
-                        ab_portion_ab_whole_vb = ab_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
-
-                        ab_portion_ab_whole_vb = ab_portion_ab_whole_vb / efficient_pixel_num
-                        wandb.log({
-                                      "abnormal portion of *ab*normal sample kl": ab_portion_ab_whole_vb.mean().cpu().item()})
-                    # --------------------------------------------------------------------------------------------------
-                    # collecting total vlb in deque collections
-        if epoch % args.model_save_freq == 0 and epoch >= 0:
-            save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
-    save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
+                        # [2] abnormal portion
+                        abnormal_abporton_mask = 1-abnormal_normalporton_mask
+                        abnormal_abnormal_vlb = ab_whole_vb * abnormal_abporton_mask
+                        abnormal_avnormal_pix_num = abnormal_abporton_mask.sum(dim=-1)
+                        abnormal_avnormal_pix_num = torch.where(abnormal_avnormal_pix_num == 0, 1, abnormal_avnormal_pix_num)
+                        abnormal_abnormal_vlb = abnormal_abnormal_vlb / abnormal_avnormal_pix_num
+                        wandb.log({"abnormal portion of *ab*normal sample kl" :
+                                       abnormal_abnormal_vlb.mean().cpu().item()})
+        if epoch >= args.save_base_epoch :
+            save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch, global_step = global_step)
+    save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema, global_step = global_step)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
