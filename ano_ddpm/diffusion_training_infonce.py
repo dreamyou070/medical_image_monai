@@ -235,9 +235,12 @@ def main(args):
                 neg_loss = torch.nn.functional.mse_loss((noise_pred * (1-mask_info).to(device)).float(),
                                                         (target * (1-mask_info).to(device)).float(),
                                                         reduction="none").mean([1, 2, 3])
+                print(f'\n neg_loss : {neg_loss} ')
                 abnormal_pixel_num = (1-mask_info).sum([1, 2, 3]).float().to(device)
                 abnormal_pixel_num = torch.where(abnormal_pixel_num == 0, 1, abnormal_pixel_num)
+                print(f'\n abnormal_pixel_num : {abnormal_pixel_num} ')
                 neg_loss = neg_loss / abnormal_pixel_num
+                print(f'\n regularized negative loss  : {neg_loss} ')
 
                 if args.pos_infonce_loss :
                     loss = pos_loss_ + (pos_loss / (pos_loss + args.neg_loss_scale * neg_loss))
