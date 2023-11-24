@@ -227,6 +227,7 @@ def main(args):
                 pixel_num = torch.where(pixel_num == 0, 1, pixel_num)
                 print(f'\n positive sample num (after small add) : {pixel_num}')
                 pos_loss = pos_loss_ / pixel_num
+                print(f'\n regularized positive loss  : {pos_loss}')
 
                 # -----------------------------------------------------------------------------------------
                 # [2] neg_loss
