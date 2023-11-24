@@ -164,7 +164,7 @@ def main(args) :
                 images = batch["image_info"].to(device)
                 with autocast(enabled=True):
                     reconstruction, z_mu, z_sigma = autoencoderkl(images)
-                    if val_step == 0 :
+                    if val_step == 1 :
                         import torchvision.transforms as torch_transforms
                         from PIL import Image
                         #real = torch_transforms.ToPILImage()(real)
