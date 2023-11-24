@@ -59,9 +59,6 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         # 1) make random noise
         x = test_data["image_info"].to(device)  # batch, channel, w, h
         normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
-        print(f'normal_info : {normal_info}')
-        mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
-
         t = torch.randint(args.sample_distance - 1, args.sample_distance, (x.shape[0],), device=x.device)
         if args.use_simplex_noise:
             noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
@@ -78,29 +75,29 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         sample_images = temp["sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
         pred_images = temp["pred_x_0"][:num_images, ...].cpu()#.permute(0,1,3,2)
         for img_index in range(num_images):
-            print(f'img_index : {img_index}')
-            normal_info_ = normal_info[img_index]
-            if normal_info_ == 1:
-                is_normal = 'normal'
-            else :
-                is_normal = 'abnormal'
-            real = real_images[img_index,...].squeeze()
-            real= real.unsqueeze(0)
-            real = torch_transforms.ToPILImage()(real)
-            sample = sample_images[img_index,...].squeeze()
-            sample = sample.unsqueeze(0)
-            sample = torch_transforms.ToPILImage()(sample)
-            pred = pred_images[img_index,...].squeeze()
-            pred = pred.unsqueeze(0)
-            pred = torch_transforms.ToPILImage()(pred)
-            new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
-            new_image.paste(real, (0, 0))
-            new_image.paste(sample, (real.size[0], 0))
-            new_image.paste(pred, (real.size[0]+sample.size[0], 0))
-            new_image.save(os.path.join(image_save_dir, f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
-            loading_image = wandb.Image(new_image,
-                                        caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
-            #wandb.log({"inference": loading_image})
+            if img_index < len(normal_info) :
+                normal_info_ = normal_info[img_index]
+                if normal_info_ == 1:
+                    is_normal = 'normal'
+                else :
+                    is_normal = 'abnormal'
+                real = real_images[img_index,...].squeeze()
+                real= real.unsqueeze(0)
+                real = torch_transforms.ToPILImage()(real)
+                sample = sample_images[img_index,...].squeeze()
+                sample = sample.unsqueeze(0)
+                sample = torch_transforms.ToPILImage()(sample)
+                pred = pred_images[img_index,...].squeeze()
+                pred = pred.unsqueeze(0)
+                pred = torch_transforms.ToPILImage()(pred)
+                new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
+                new_image.paste(real, (0, 0))
+                new_image.paste(sample, (real.size[0], 0))
+                new_image.paste(pred, (real.size[0]+sample.size[0], 0))
+                new_image.save(os.path.join(image_save_dir, f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
+                loading_image = wandb.Image(new_image,
+                                            caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
+                wandb.log({"inference": loading_image})
 
 
 
