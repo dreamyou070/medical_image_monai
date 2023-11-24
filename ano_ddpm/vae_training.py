@@ -22,17 +22,15 @@ def main(args) :
     else:
         setproctitle('parksooyeon')
     print(f' (1.1) wandb')
-    os.environ["WANDB_DIR"] = './'
-    default_dir = appdirs.user_data_dir("wandb")
-    print(default_dir)
-    #print(os.environ)
-
-    #print(env.get_data_dir())
-    """
+    os.environ["WANDB_DATA_DIR"] = args.experiment_dir
     wandb.login(key=args.wandb_api_key)
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name,
                dir=args.experiment_dir)
-    os.environ["WANDB_DATA_DIR"] = args.experiment_dir
+
+
+    #print(env.get_data_dir())
+    """
+    
 
     print(f' (1.2) seed and device')
     seed(args.seed)
