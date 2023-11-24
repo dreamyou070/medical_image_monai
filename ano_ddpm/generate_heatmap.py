@@ -180,7 +180,7 @@ def main(args):
     for i, data in enumerate(training_dataset_loader):
         if i == 0:
             x = data["image_info"].to(device)
-            image = data['image'][0]
+            image = data["image_info"][0]
             print(f'x  [Batch, 1, W, H] : {x.shape}')
             print(f'image [Batch, W, H] : {image.shape}')
     """
