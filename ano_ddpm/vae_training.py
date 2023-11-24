@@ -12,7 +12,7 @@ from setproctitle import *
 from generative.networks.nets import AutoencoderKL, PatchDiscriminator
 from loss_module import PerceptualLoss, PatchAdversarialLoss
 from wandb import env
-
+import appdirs
 
 def main(args) :
 
@@ -22,10 +22,9 @@ def main(args) :
     else:
         setproctitle('parksooyeon')
     print(f' (1.1) wandb')
-    from pathlib import Path
-    #str_path = "my_path"
-
-    #os.environ =path = Path(args.experiment_dir)
+    default_dir = appdirs.user_data_dir("wandb")
+    print(default_dir)
+    #os.environ["WANDB_DIR"] = default_dir
     print(env.get_data_dir())
     """
     wandb.login(key=args.wandb_api_key)
