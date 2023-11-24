@@ -190,13 +190,15 @@ def main(args):
     # only abnormal sample
     abnormal_x = x[normal_info == 0]
     abnormal_mask = mask_info[normal_info == 0]
-    print(f' abnormal_x shape : {abnormal_x.shape}')
-    """
+    print(f' abnormal_x shape : {abnormal_x.shape} | abnormal_mask : {abnormal_mask.shape}')
+
     print(f' [1] get anormal score')
     thredhold = args.thredhold
     with torch.no_grad():
+        print(f'calculate vlb')
         vlb_terms = diffusion.calc_total_vlb_in_sample_distance(abnormal_x, model, args)
     vlb = vlb_terms["whole_vb"]                # [batch, 1000, 1, W, H]
+    """
     pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
 
     W, H = pixelwise_anormal_score.shape[1], pixelwise_anormal_score.shape[2]
