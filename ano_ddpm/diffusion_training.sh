@@ -108,6 +108,22 @@ python diffusion_training_infonce.py --device cuda:1 \
          --img_siz '128,128' --batch_size 6 --train_start --save_imgs --sample_distance 150 --loss_type 'l2' --beta_schedule 'linear' \
           --pos_infonce_loss \
           --neg_loss_scale 1 --inference_num 4 --inference_freq 10 --vlb_freq 1 --model_save_freq 50 --save_imgs --train_epochs 3000
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # ------------------------------------------------------------------------------------------------------------------------------------------------------
 [Screen 08]
 python diffusion_training_infonce.py --device cuda:2 \

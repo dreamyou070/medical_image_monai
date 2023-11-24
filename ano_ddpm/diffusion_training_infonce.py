@@ -222,40 +222,33 @@ def main(args):
                 pos_loss_ = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
                                                          (target * mask_info.to(device)).float(),
                                                          reduction="none").mean([1, 2, 3])
-                print(f'\n positive loss : {pos_loss_} ')
                 pixel_num = mask_info.sum([1, 2, 3]).float().to(device)
-                print(f'\n positive sample num : {pixel_num}')
                 pixel_num = torch.where(pixel_num == 0, 1, pixel_num)
-                print(f'\n positive sample num (after small add) : {pixel_num}')
                 pos_loss = pos_loss_ / pixel_num
-                print(f'\n regularized positive loss  : {pos_loss}')
 
                 # -----------------------------------------------------------------------------------------
                 # [2] neg_loss
                 neg_loss = torch.nn.functional.mse_loss((noise_pred * (1-mask_info).to(device)).float(),
                                                         (target * (1-mask_info).to(device)).float(),
                                                         reduction="none").mean([1, 2, 3])
-                print(f'\n neg_loss : {neg_loss} ')
                 abnormal_pixel_num = (1-mask_info).sum([1, 2, 3]).float().to(device)
                 abnormal_pixel_num = torch.where(abnormal_pixel_num == 0, 1, abnormal_pixel_num)
-                print(f'\n abnormal_pixel_num : {abnormal_pixel_num} ')
                 neg_loss = neg_loss / abnormal_pixel_num
-                print(f'\n regularized negative loss  : {neg_loss} ')
 
                 if args.pos_infonce_loss :
                     reg_loss = pos_loss / (pos_loss + args.neg_loss_scale * neg_loss)
                     reg_loss = torch.where(neg_loss == 0, 0, reg_loss)
-                    print(f'reg_loss : {reg_loss}')
                     loss = pos_loss_ + reg_loss
+
                 if args.infonce_loss :
                     loss = pos_loss / (pos_loss + args.neg_loss_scale * neg_loss)
+
                 elif args.classifier_free_loss :
                     loss = neg_loss + args.guidance_scale * (pos_loss - neg_loss)
+
                 elif args.advanced_masked_loss :
                     loss = pos_loss - neg_loss + args.margin
-                print(f'before mean, loss [number of batch, 1dim torch] : {loss}')
-                print(f'normal_info : {normal_info}')
-                time.sleep(10)
+
                 loss = loss.mean()
                 #wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
