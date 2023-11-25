@@ -185,9 +185,9 @@ def main(args) :
                               beta_start = 0.0001,
                               beta_end = 0.02,
                               beta_schedule = "linear",
-                              variance_type = "fixed_small",)
+                              variance_type = "fixed_small",steps_offset = 1)
 
-    print(f' \n step 5. infererence scheduler pipeline')
+    print(f' \n step 6. infererence scheduler pipeline')
     pipeline = StableDiffusionPipeline(vae = vae,
                                        text_encoder = None,
                                        tokenizer = None,
@@ -195,8 +195,28 @@ def main(args) :
                                        scheduler = scheduler,
                                        safety_checker = None,
                                        feature_extractor=None)
-    scale_factor_ = pipeline.vae_scale_factor #= 2 ** (len(self.vae.config.block_out_channels) - 1)
-    print(f' (5.1) scale_factor : {scale_factor_}')
+    scale_factor_ = pipeline.vae_scale_factor #= 2 ** (len(self.vae.config.block_out_channels) - 1) # 1
+
+    print(f' \n step 7. optimizer')
+    optimizer = torch.optim.Adam(unet.parameters(), lr=1e-4)
+
+    print(f' \n step 8. training')
+    for epoch in range(args.n_epochs):
+        unet.train()
+        vae.eval()
+        epoch_loss = 0
+        progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=70)
+        progress_bar.set_description(f"Epoch {epoch}")
+        for step, batch in progress_bar:
+            x_0 = batch["image_info"].to(device)  # [64,1,160,80]
+            mask_info = batch["mask"].unsqueeze(dim=1)
+            normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
+            if args.only_normal_training:
+                x_0 = x_0[normal_info == 1]
+                mask_info = mask_info[normal_info == 1]
+
+
+
 
 if __name__ == '__main__':
 
@@ -233,9 +253,6 @@ if __name__ == '__main__':
     parser.add_argument('--weight_decay', type=float, default=0.0)
 
     # step 6. training
-    parser.add_argument('--start_epoch', type=int, default=0)
-    parser.add_argument('--train_epochs', type=int, default=3000)
-    parser.add_argument('--only_normal_training', action='store_true')
     parser.add_argument('--sample_distance', type=int, default=150)
     parser.add_argument('--use_simplex_noise', action='store_true')
     # --------------------------------------------------------------------------------------------------------------
@@ -255,6 +272,11 @@ if __name__ == '__main__':
 
     # step 7. save
     parser.add_argument('--model_save_freq', type=int, default=1000)
+
+
+    # step 8. training
+    parser.add_argument('--n_epochs', type=int, default=3000)
+    parser.add_argument('--only_normal_training', action='store_true')
 
 
     args = parser.parse_args()
