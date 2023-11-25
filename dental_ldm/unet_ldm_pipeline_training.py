@@ -75,6 +75,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
 
         # 5) denoising
         for t in range(int(args.sample_distance) , -1, -1):
+            print(f't : {t}')
             with torch.no_grad() :
                 timestep = torch.Tensor([t]).repeat(batch_size).long()
                 model_output = model(latents,
