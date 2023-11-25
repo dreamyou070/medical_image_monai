@@ -273,10 +273,9 @@ def main(args) :
                 if args.anormal_scoring :
                     anormal_score = torch.nn.functional.mse_loss(noise_pred_p.float(),target_p.float(),reduction="none")
                     anormal_score_answer = (1 - mask_info)
-                    print(f'Anormal score : {anormal_score.shape}')
-                    print(f'anormal_score_answer : {anormal_score_answer.shape}')
-
-
+                    loss = torch.nn.functional.mse_loss(anormal_score.to(device).float(),
+                                                        anormal_score_answer.to(device).float(),
+                                                        reduction="none")
                 loss = loss.mean()
 
                 wandb.log({"training loss": loss.item()})
