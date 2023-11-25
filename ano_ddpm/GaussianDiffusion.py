@@ -1,6 +1,6 @@
 # https://github.com/openai/guided-diffusion/tree/27c20a8fab9cb472df5d6bdd6c8d11c8f430b924
+from __future__ import annotations
 import random
-
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -156,6 +156,16 @@ def generate_simplex_noise(Simplex_instance, x, t,
         noise[:, i, ...] = torch_noise
     return noise
 
+class DDPMVarianceType():
+    """
+    Valid names for DDPM Scheduler's `variance_type` argument. Options to clip the variance used when adding noise
+    to the denoised sample.
+    """
+
+    FIXED_SMALL = "fixed_small"
+    FIXED_LARGE = "fixed_large"
+    LEARNED = "learned"
+    LEARNED_RANGE = "learned_range"
 
 
 def random_noise(Simplex_instance, x, t):
@@ -165,6 +175,11 @@ def random_noise(Simplex_instance, x, t):
     else:
         return generate_simplex_noise(Simplex_instance, x, t)
 
+class DDPMPredictionType():
+
+    EPSILON = "epsilon"
+    SAMPLE = "sample"
+    V_PREDICTION = "v_prediction"
 
 class GaussianDiffusionModel:
 
@@ -175,7 +190,7 @@ class GaussianDiffusionModel:
                  loss_type="l2",  # l2,l1 hybrid
                  loss_weight='none',  # prop t / uniform / None
                  noise="gauss",  # gauss / perlin / simplex
-                 ):
+                 clip_sample: bool = True,):
         super().__init__()
 
         if noise == "gauss":
@@ -230,41 +245,13 @@ class GaussianDiffusionModel:
         self.posterior_mean_coef1 = ( betas * np.sqrt(self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod))
         self.posterior_mean_coef2 = ((1.0 - self.alphas_cumprod_prev) * np.sqrt(alphas) / (1.0 - self.alphas_cumprod))
 
-    """
-    def step(
-        self,
-        model_output: torch.FloatTensor,
-        timestep: int,
-        sample: torch.FloatTensor,
-        generator=None,
-        return_dict: bool = True,
-        **kwargs, ) :
-        
-        Args:
-            model_output (`torch.FloatTensor`): direct output from learned diffusion model.
-            timestep (`int`): current discrete timestep in the diffusion chain.
-            sample (`torch.FloatTensor`): current instance of sample being created by diffusion process.
-            generator: random number generator.
-            return_dict (`bool`): option for returning tuple rather than DDPMSchedulerOutput class
-        
+        self.prediction_type = DDPMPredictionType.EPSILON
+        self.variance_type == DDPMVarianceType.FIXED_SMALL
+        self.clip_sample = clip_sample
 
-        t = timestep
-        # ------------------------------------------------------------------------------------
-        # (1) pred original sample of formula (15) from https://arxiv.org/pdf/2006.11239.pdf
-        pred_original_sample = self.predict_x_0_from_eps(sample, t, model_output)
-        
-        # (2) Compute coefficients for pred_original_sample x_0 :See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
-        pred_original_sample_coeff = (alpha_prod_t_prev ** (0.5) * self.betas[t]) / beta_prod_t
-        
-        # (3) Compute coefficients for x_t :See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
-        current_sample_coeff = self.alphas[t] ** (0.5) * beta_prod_t_prev / beta_prod_t
 
-        # (4) Compute predicted previous sample µ_t : See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
-        pred_prev_sample = pred_original_sample_coeff * pred_original_sample + current_sample_coeff * sample        
-        return pred_prev_sample
-    """
 
-    def _get_variance(self, timestep) -> torch.Tensor:
+    def _get_variance(self, timestep: int, predicted_variance: torch.Tensor | None = None) -> torch.Tensor:
         """
         Compute the variance of the posterior at timestep t.
 
@@ -283,7 +270,17 @@ class GaussianDiffusionModel:
         # x_{t-1} ~ N(pred_prev_sample, variance) == add variance to pred_sample
         variance = (1 - alpha_prod_t_prev) / (1 - alpha_prod_t) * self.betas[timestep]
         # hacks - were probably added for training stability
-        variance = torch.clamp(variance, min=1e-20)
+        if self.variance_type == DDPMVarianceType.FIXED_SMALL:
+            variance = torch.clamp(variance, min=1e-20)
+        elif self.variance_type == DDPMVarianceType.FIXED_LARGE:
+            variance = self.betas[timestep]
+        elif self.variance_type == DDPMVarianceType.LEARNED:
+            return predicted_variance
+        elif self.variance_type == DDPMVarianceType.LEARNED_RANGE:
+            min_log = variance
+            max_log = self.betas[timestep]
+            frac = (predicted_variance + 1) / 2
+            variance = frac * max_log + (1 - frac) * min_log
         return variance
 
     def p_loss(self, model, x_0, args):
@@ -422,7 +419,8 @@ class GaussianDiffusionModel:
                 "pred_x_0":     pred_x_0,}
 
     # -----------------------------------------------------------------------------------------------------------------
-    def step( self, model_output, timestep, sample, generator) :
+    def step( self, model_output: torch.Tensor, timestep: int, sample: torch.Tensor, generator: torch.Generator | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Predict the sample at the previous timestep by reversing the SDE. Core function to propagate the diffusion
         process from the learned model outputs (most often the predicted noise).
@@ -449,8 +447,16 @@ class GaussianDiffusionModel:
 
         # 2. compute predicted original sample from predicted noise also called
         # "predicted x_0" of formula (15) from https://arxiv.org/pdf/2006.11239.pdf
-        pred_original_sample = (sample - beta_prod_t ** (0.5) * model_output) / alpha_prod_t ** (0.5)
+        if self.prediction_type == DDPMPredictionType.EPSILON:
+            pred_original_sample = (sample - beta_prod_t ** (0.5) * model_output) / alpha_prod_t ** (0.5)
+        elif self.prediction_type == DDPMPredictionType.SAMPLE:
+            pred_original_sample = model_output
+        elif self.prediction_type == DDPMPredictionType.V_PREDICTION:
+            pred_original_sample = (alpha_prod_t**0.5) * sample - (beta_prod_t**0.5) * model_output
 
+        # 3. Clip "predicted x_0"
+        if self.clip_sample:
+            pred_original_sample = torch.clamp(pred_original_sample, -1, 1)
 
         # 4. Compute coefficients for pred_original_sample x_0 and current sample x_t
         # See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
@@ -467,8 +473,10 @@ class GaussianDiffusionModel:
             noise = torch.randn(
                 model_output.size(), dtype=model_output.dtype, layout=model_output.layout, generator=generator
             ).to(model_output.device)
-            variance = (self._get_variance(timestep) ** 0.5) * noise
+            variance = (self._get_variance(timestep, predicted_variance=predicted_variance) ** 0.5) * noise
+
         pred_prev_sample = pred_prev_sample + variance
+
         return pred_prev_sample, pred_original_sample
 
     def dental_forward_backward(self,
@@ -504,7 +512,7 @@ class GaussianDiffusionModel:
             with torch.no_grad():
                 model_output = model(x,t_tensor)
                 # 2. compute previous image: x_t -> x_t-1
-                x, _ = self.step(model_output, t, x, None)
+                x, _ = self.step(model_output, t, x)
                 first_sample = x[0]
                 print(f'first_sample shape : {first_sample.shape}')
                 # save intermediate result
