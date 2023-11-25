@@ -192,7 +192,9 @@ def main(args) :
                                        text_encoder = None,
                                        tokenizer = None,
                                        unet =unet,
-                                       scheduler = scheduler,)
+                                       scheduler = scheduler,
+                                       safety_checker = None,
+                                       feature_extractor=None)
     scale_factor_ = pipeline.vae_scale_factor #= 2 ** (len(self.vae.config.block_out_channels) - 1)
     print(f' (5.1) scale_factor : {scale_factor_}')
 
