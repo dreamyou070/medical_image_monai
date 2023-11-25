@@ -269,6 +269,14 @@ def main(args) :
                                                             reduction="none")
                     reg_loss = pos_loss / (pos_loss + neg_loss)
                     loss = pos_loss + args.reg_loss_scale * reg_loss
+
+                if args.anormal_scoring :
+                    anormal_score = torch.nn.functional.mse_loss(noise_pred_p.float(),target_p.float(),reduction="none")
+                    anormal_score_answer = (1 - mask_info)
+                    print(f'Anormal score : {anormal_score.shape}')
+                    print(f'anormal_score_answer : {anormal_score_answer.shape}')
+
+
                 loss = loss.mean()
 
                 wandb.log({"training loss": loss.item()})
@@ -400,6 +408,8 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--pos_info_nce_loss', action='store_true')
     parser.add_argument('--reg_loss_scale', type=float, default=1.0)
+    # --------------------------------------------------------------------------------------------------------------
+    parser.add_argument('--anormal_scoring', action='store_true')
 
     parser.add_argument('--inference_freq', type=int, default=50)
     parser.add_argument('--inference_num', type=int, default=4)
