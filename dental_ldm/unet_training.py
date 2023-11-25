@@ -195,7 +195,7 @@ def main(args) :
     # (3) scaheduler
     with torch.no_grad():
         with autocast(enabled=True):
-            z = autoencoderkl.encode_stage_2_inputs(check_data["image"].to(device))
+            z = autoencoderkl.encode_stage_2_inputs(check_data["image_info"].to(device))
     scale_factor = 1 / torch.std(z)
     diffusion = LatentDiffusionInferer(scheduler, scale_factor=scale_factor)
 
