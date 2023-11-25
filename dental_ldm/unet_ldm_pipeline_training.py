@@ -62,10 +62,9 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
         latents = vae.encode(x).latent_dist.sample()
         latents = (latents * vae_scale_factor).to(device)
     # 2) select random int
-    t = torch.randint(args.sample_distance - 1, args.sample_distance, (latents.shape[0],), device=x.device)
-    print(f'add t : {t}')
+    t = torch.randint(args.sample_distance - 1, args.sample_distance, (latents.shape[0],), device=x.device).long()
     # 3) noise
-    noise = torch.rand_like(latents).to(x.device)
+    noise = torch.rand_like(latents).float().to(x.device)
     batch_size = latents.shape[0]
     # 4) noise image generating
     with torch.no_grad() :
@@ -76,12 +75,13 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
 
         # 5) denoising
         for t in range(int(args.sample_distance)-1 , -1, -1):
-            print(f't : {t}')
             with torch.no_grad() :
                 timestep = torch.Tensor([t]).repeat(batch_size).long()
                 model_output = model(latents,
                                      timestep.to(device), None).sample
-                latents = scheduler.step(model_output,t,sample=latents).prev_sample
+                latents = scheduler.step(model_output,
+                                         t,
+                                         sample=latents).prev_sample
         recon_image = vae.decode(latents / vae_scale_factor,return_dict=False,generator=None)[0]
 
     for img_index in range(x.shape[0]):
@@ -98,7 +98,6 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
         recon = (recon / 2 + 0.5).clamp(0, 1)
         recon = recon.cpu().numpy()
         recon = (recon * 255).astype(np.uint8)
-        print(f'recon : {recon.shape}')
         recon = Image.fromarray(recon).convert('L')
 
         #recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
@@ -228,7 +227,7 @@ def main(args) :
                 latents = vae.encode(x_0).latent_dist.sample()
                 latents = (latents * vae_scale_factor).to(device)
                 # 2) t
-                timesteps = torch.randint(0, args.sample_distance, (latents.shape[0],),device=device).long()
+                timesteps = torch.randint(0, args.sample_distance, (latents.shape[0],),device=device)#.long()
                 # 3) noise
                 noise = torch.randn_like(latents).to(device)
                 # 4) x_t
