@@ -261,8 +261,8 @@ def main(args) :
                                                             (target * (1 - mask_info).to(device)).float(),
                                                             reduction="none")
                     loss = pos_loss + args.pos_neg_loss_scale * (pos_loss - neg_loss)
-
                 loss = loss.mean()
+                
                 wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
@@ -388,6 +388,9 @@ if __name__ == '__main__':
     parser.add_argument('--only_normal_training', action='store_true')
     parser.add_argument('--sample_distance', type=int, default=150)
     parser.add_argument('--use_simplex_noise', action='store_true')
+    parser.add_argument('--masked_loss', action='store_true')
+    parser.add_argument('--pos_neg_loss', action='store_true')
+    parser.add_argument('--pos_neg_loss_scale', type=float, default=1.0)
 
     args = parser.parse_args()
     main(args)
