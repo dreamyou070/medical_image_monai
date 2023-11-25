@@ -65,7 +65,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
     t = torch.randint(args.sample_distance - 1, args.sample_distance, (latents.shape[0],), device=x.device)
     print(f'add t : {t}')
     # 3) noise
-    noise = torch.rand_like(latents).float().to(x.device)
+    noise = torch.rand_like(latents).to(x.device)
     batch_size = latents.shape[0]
     # 4) noise image generating
     with torch.no_grad() :
@@ -230,9 +230,11 @@ def main(args) :
                 # 2) t
                 timesteps = torch.randint(0, args.sample_distance, (latents.shape[0],),device=device).long()
                 # 3) noise
-                noise = torch.randn_like(latents).float().to(device)
+                noise = torch.randn_like(latents).to(device)
                 # 4) x_t
-                noisy_samples = scheduler.add_noise(original_samples = latents,noise = noise,timesteps = timesteps,)
+                noisy_samples = scheduler.add_noise(original_samples = latents,
+                                                    noise = noise,
+                                                    timesteps = timesteps,)
                 # 5) unet inference
                 noise_pred = pipeline.unet(noisy_samples,timesteps).sample
                 target = noise
