@@ -202,7 +202,11 @@ def main(args) :
     with torch.no_grad():
         with autocast(enabled=True):
             z = vqvae_encoder(check_data["image_info"].to(device))
+            print(f'z.shape : {z.shape}')
+            qz = vqvae_quantizer(z)
+            print(f'qz : {type(qz)}')
     scale_factor = 1 / torch.std(z)
+    print(f'scale_factor : {scale_factor}')
     inferer = LatentDiffusionInferer(scheduler,
                                        scale_factor=scale_factor)
     """
