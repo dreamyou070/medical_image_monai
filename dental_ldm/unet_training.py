@@ -239,7 +239,6 @@ def main(args) :
 
                 # --------------------------------------------------------------------------------
                 # 2) make noisy latent
-                x_t = diffusion.sample_q(x_0, t, noise)
                 noisy_latent = scheduler.add_noise(original_samples=x_0,
                                                    noise=noise,
                                                    timesteps=t)
