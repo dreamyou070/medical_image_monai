@@ -151,9 +151,8 @@ def main(args) :
                                            persistent_workers=True)
     check_data = first(training_dataset_loader)
     # ## Prepare validation set data loader
-    val_transforms = transforms.Compose([#transforms.ToPILImage(),
-                                           transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
-                                           transforms.ToTensor()])
+    val_transforms = transforms.Compose([transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
+                                         transforms.ToTensor()])
     val_ds = SYDataset(data_folder=args.val_data_folder,
                          transform=val_transforms,
                          base_mask_dir=args.val_mask_dir,image_size=(w,h))
@@ -238,7 +237,8 @@ def main(args) :
                 mask_info = mask_info[normal_info == 1]
             with torch.no_grad():
                 z_0 = vqvae_encoder(x_0.to(device))
-            z_0 = z_0 * scale_factor
+            if args.use_scale :
+                z_0 = z_0 * scale_factor
             # 1) check random t
             if z_0.shape[0] != 0 :
                 t = torch.randint(0, args.sample_distance, (z_0.shape[0],), device =device)
@@ -252,8 +252,12 @@ def main(args) :
                                                              timestep = t[0].item(),
                                                              sample = noisy_latent)
                 #with torch.no_grad():
-                noise_pred_p = vqvae_decoder(noise_pred/scale_factor)
-                target_p = vqvae_decoder(noise/scale_factor)
+                if args.use_scale:
+                    noise_pred_p = vqvae_decoder(noise_pred/scale_factor)
+                    target_p = vqvae_decoder(noise/scale_factor)
+                else :
+                    noise_pred_p = vqvae_decoder(noise_pred)
+                    target_p = vqvae_decoder(noise)
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss_latent :
                     noise_pred = noise_pred * small_mask_info.to(device)
@@ -459,6 +463,7 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--anormal_scoring', action='store_true')
     parser.add_argument('--min_max_training', action='store_true')
+    parser.add_argument('--use_scale', action='store_true')
 
     parser.add_argument('--inference_freq', type=int, default=50)
     parser.add_argument('--inference_num', type=int, default=4)
