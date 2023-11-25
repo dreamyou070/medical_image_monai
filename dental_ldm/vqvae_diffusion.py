@@ -7,6 +7,7 @@ from torch import optim
 from helpers import *
 from torchvision import transforms
 import sys
+from tqdm import tqdm
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from data_module import SYDataLoader, SYDataset
 from monai.utils import first
@@ -205,10 +206,11 @@ def main(args) :
             loss, quantized = vqvae_quantizer(z)
             print(f'quantized : {quantized.shape}')
     scale_factor = 1 / torch.std(z)
+
     print(f'scale_factor : {scale_factor}')
     inferer = LatentDiffusionInferer(scheduler,
                                        scale_factor=scale_factor)
-    """
+
     print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(),
                             lr=args.lr,
@@ -236,9 +238,7 @@ def main(args) :
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
             with torch.no_grad():
-                z_mu, z_sigma = autoencoderkl.encode(x_0)
-                z_0 = autoencoderkl.sampling(z_mu, z_sigma)
-            # x_0 = [batch, 3, 128/4, 128/4]
+                z_0 = vqvae_encoder(x_0.to(device))
             z_0 = z_0 * scale_factor
 
             # 1) check random t
@@ -254,8 +254,8 @@ def main(args) :
                                                              timestep = t[0].item(),
                                                              sample = noisy_latent)
                 #with torch.no_grad():
-                noise_pred_p = autoencoderkl.decode_stage_2_outputs(noise_pred/scale_factor)
-                target_p = autoencoderkl.decode_stage_2_outputs(noise/scale_factor)
+                noise_pred_p = vqvae_decoder(noise_pred/scale_factor)
+                target_p = vqvae_decoder(noise/scale_factor)
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss_latent :
                     noise_pred = noise_pred * small_mask_info.to(device)
@@ -291,7 +291,7 @@ def main(args) :
                     reg_loss = pos_loss / (pos_loss + neg_loss)
                     loss = pos_loss + args.reg_loss_scale * reg_loss
                     loss = loss.mean([1, 2, 3])
-
+                """
                 if args.anormal_scoring :
                     pred_original_sample = autoencoderkl.decode_stage_2_outputs(pred_original_sample/scale_factor)
                     anormal_score = torch.nn.functional.mse_loss(pred_original_sample.float(),
@@ -327,8 +327,9 @@ def main(args) :
                     loss_diff = (pos_loss - neg_loss)
                     loss_diff = torch.where(loss_diff > 0, loss_diff, 0)
                     loss = pos_loss + loss_diff
+                
                 loss = loss.mean()
-
+                """
                 wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
@@ -408,7 +409,7 @@ def main(args) :
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-    """
+
 
 if __name__ == '__main__':
 
@@ -434,7 +435,7 @@ if __name__ == '__main__':
 
     # step 3. model
     parser.add_argument('--pretrained_vqvae_dir', type=str)
-    parser.add_argument('--latent_channels', type=int, default=3)
+    parser.add_argument('--latent_channels', type=int, default=32)
 
     # step 4. model
     parser.add_argument('--timestep', type=int, default=1000)

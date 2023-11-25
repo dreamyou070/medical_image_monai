@@ -5,4 +5,5 @@ python vqvae_diffusion.py --wandb_project_name 'vqvae_diffusion' --wandb_run_nam
                         --val_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/original' \
                         --val_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/mask' \
                         --pretrained_vqvae_dir '/data7/sooyeon/medical_image/anoddpm_result_vqvae/1_first_trial/vqvae/vqvae_99.pth' \
-                        --model_save_freq 50 --img_size '128,128' --batch_size 6 --masked_loss_latent
+                        --model_save_freq 50 --img_size '128,128' --batch_size 6 --latent_channels 32 \
+                        --masked_loss_latent
