@@ -96,7 +96,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
         # wrong in here ...
         recon = recon_image[img_index].squeeze()
         recon = (recon / 2 + 0.5).clamp(0, 1)
-        recon = recon.cpu().numpy().numpy()
+        recon = recon.cpu().numpy()
         recon = (recon * 255).astype(np.uint8)
         print(f'recon : {recon.shape}')
         recon = Image.fromarray(recon).convert('L')
