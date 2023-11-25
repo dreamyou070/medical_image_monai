@@ -150,7 +150,6 @@ class SYDataset(Dataset):
     def __getitem__(self, idx):
 
         data_dict = {}
-
         # (1) Read Image
         data_dir = self.img_dirs[idx]
         torch_img = self.transform(Image.open(data_dir))
@@ -159,18 +158,21 @@ class SYDataset(Dataset):
         parent, net_name = os.path.split(data_dir)
         mask_dir = os.path.join(self.base_mask_dir, net_name)
         mask_pil = Image.open(mask_dir)
+        small_mask_pil = mask_pil.resize((int(self.w / 4), int(self.h / 4 )))
         mask_np = np.array(mask_pil)
         criterion = np.sum(mask_np)
         normal = True
         if criterion > 0:
             normal = False
         mask_np = np.array(mask_pil.resize((int(self.w), int(self.h))))
+        small_mask_np = np.array(small_mask_pil)
         binary_mask = np.where(mask_np > 100, 0, 1)
+        small_binary_mask = np.where(small_mask_np > 100, 0, 1)
         data_dict['image_dir'] = data_dir
         data_dict['image_info'] = torch_img
         data_dict['normal'] = int(normal)  # normal = 1, abnormal = 0
         data_dict['mask'] = torch.from_numpy(binary_mask)  # normal = 1, abnormal = 0
-
+        data_dict['small_mask'] = torch.from_numpy(small_binary_mask)  # normal = 1, abnormal = 0
         return data_dict
 
 class SYDataLoader(_TorchDataLoader):

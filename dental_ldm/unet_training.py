@@ -222,7 +222,9 @@ def main(args) :
             # 0) data check
             x_0 = data["image_info"].to(device)  # batch, channel, w, h
             normal_info = data['normal'] # if 1 = normal, 0 = abnormal
-            mask_info = data['mask'].unsqueeze(dim=1)    # if 1 = normal, 0 = abnormal
+            mask_info = data['mask'].unsqueeze(dim=1)                # if 1 = normal, 0 = abnormal
+            small_mask_info = data['small_mask'].unsqueeze(dim=1)    # if 1 = normal, 0 = abnormal
+
             if args.only_normal_training :
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
@@ -247,6 +249,11 @@ def main(args) :
                 #with torch.no_grad():
                 noise_pred_p = autoencoderkl.decode_stage_2_outputs(noise_pred/scale_factor)
                 target_p = autoencoderkl.decode_stage_2_outputs(noise/scale_factor)
+                # ------------------------------------------------------------------------------------------------------
+                if args.masked_loss_latent :
+                    noise_pred = noise_pred * small_mask_info.to(device)
+                    target = noise * small_mask_info.to(device)
+                    loss = torch.nn.functional.mse_loss(noise_pred.float(),target.float(), reduction="none")
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss:
                     noise_pred_p = noise_pred_p * mask_info.to(device)
@@ -408,6 +415,7 @@ if __name__ == '__main__':
     parser.add_argument('--sample_distance', type=int, default=150)
     parser.add_argument('--use_simplex_noise', action='store_true')
     # --------------------------------------------------------------------------------------------------------------
+    parser.add_argument('--masked_loss_latent', action='store_true')
     parser.add_argument('--masked_loss', action='store_true')
     # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--info_nce_loss', action='store_true')
