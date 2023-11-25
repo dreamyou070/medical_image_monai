@@ -197,8 +197,6 @@ class GaussianDiffusionModel:
                                                                     frequency = frequency,
                                                                     in_channels=img_channels) # 1
 
-
-
         self.img_size = img_size
         self.img_channels = img_channels
         self.loss_type = loss_type
@@ -400,6 +398,56 @@ class GaussianDiffusionModel:
                 "pred_x_0":     pred_x_0,}
 
     # -----------------------------------------------------------------------------------------------------------------
+    def step(
+        self, model_output: torch.Tensor, timestep: int, sample: torch.Tensor, generator: torch.Generator) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Predict the sample at the previous timestep by reversing the SDE. Core function to propagate the diffusion
+        process from the learned model outputs (most often the predicted noise).
+
+        Args:
+            model_output: direct output from learned diffusion model.
+            timestep: current discrete timestep in the diffusion chain.
+            sample: current instance of sample being created by diffusion process.
+            generator: random number generator.
+
+        Returns:
+            pred_prev_sample: Predicted previous sample
+        """
+        if model_output.shape[1] == sample.shape[1] * 2 and self.variance_type in ["learned", "learned_range"]:
+            model_output, predicted_variance = torch.split(model_output, sample.shape[1], dim=1)
+        else:
+            predicted_variance = None
+
+        # 1. compute alphas, betas
+        alpha_prod_t = self.alphas_cumprod[timestep]
+        alpha_prod_t_prev = self.alphas_cumprod[timestep - 1] if timestep > 0 else self.one
+        beta_prod_t = 1 - alpha_prod_t
+        beta_prod_t_prev = 1 - alpha_prod_t_prev
+
+        # 2. compute predicted original sample from predicted noise also called
+        # "predicted x_0" of formula (15) from https://arxiv.org/pdf/2006.11239.pdf
+        pred_original_sample = (sample - beta_prod_t ** (0.5) * model_output) / alpha_prod_t ** (0.5)
+
+
+        # 4. Compute coefficients for pred_original_sample x_0 and current sample x_t
+        # See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
+        pred_original_sample_coeff = (alpha_prod_t_prev ** (0.5) * self.betas[timestep]) / beta_prod_t
+        current_sample_coeff = self.alphas[timestep] ** (0.5) * beta_prod_t_prev / beta_prod_t
+
+        # 5. Compute predicted previous sample µ_t
+        # See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
+        pred_prev_sample = pred_original_sample_coeff * pred_original_sample + current_sample_coeff * sample
+
+        # 6. Add noise
+        variance = 0
+        if timestep > 0:
+            noise = torch.randn(
+                model_output.size(), dtype=model_output.dtype, layout=model_output.layout, generator=generator
+            ).to(model_output.device)
+            variance = (self._get_variance(timestep, predicted_variance=predicted_variance) ** 0.5) * noise
+        pred_prev_sample = pred_prev_sample + variance
+        return pred_prev_sample, pred_original_sample
+
     def dental_forward_backward(self,
                                 model,
                                 x,
@@ -431,8 +479,9 @@ class GaussianDiffusionModel:
             print('t : ', t)
             t_batch = torch.tensor([t], device=x.device).repeat(x.shape[0])
             with torch.no_grad():
-                out = self.sample_p(model, x, t_batch, denoise_fn='gauss')
-                x = out["sample"]
+                model_output = model(x,t_tensor)
+                # 2. compute previous image: x_t -> x_t-1
+                x, _ = self.step(model_output, t, x)
                 first_sample = x[0]
                 print(f'first_sample shape : {first_sample.shape}')
                 # save intermediate result
