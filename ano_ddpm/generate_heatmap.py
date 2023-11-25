@@ -22,11 +22,30 @@ from heatmap_module import _convert_heat_map_colors, expand_image
 from PIL import Image
 from matplotlib import cm
 
-def recon_img(data, device, diffusion, model, args, save_base_dir, is_train) :
+def reconstructing(data, device, diffusion, model, args, save_base_dir, is_train) :
+    caption = 'train'
+    if is_train == 'false':
+        caption = 'test'
 
     x = data["image_info"].to(device)
+    normal_info = data['normal']
     recon = diffusion.dental_forward_backward(model,x,args,device,args.sample_distance)
-    return recon
+    for img_index in range(x.shape[0]):
+        is_normal = normal_info[img_index]
+        if is_normal == 1 :
+            normal_caption = 'normal'
+        else :
+            normal_caption = 'abnormal'
+        image = x[img_index].squeeze()  # [1, 128, 128]
+        original_img = torch_transforms.ToPILImage()(image).convert('RGB')
+        w,h = original_img.size
+        recon_img = torch_transforms.ToPILImage()(recon[img_index]).convert('RGB')
+        new_image = PIL.Image.new('RGB', (2 * w, h), (0, 0, 0))
+        new_image.paste(original_img, (0, 0))
+        new_image.paste(recon_img, (w, 0))
+        new_image.save(os.path.join(save_base_dir, f'{caption}_{normal_caption}_{img_index}.png'))
+
+
 def generate_heatmap_image(data, device, diffusion, model, args,save_base_dir, is_train ) :
     caption = 'train'
     if not is_train :
@@ -166,7 +185,13 @@ def main(args):
     print(f' (5.2) inferencing')
     train_data = first(training_dataset_loader)
     #train_content = generate_heatmap_image(train_data, device, diffusion, model, args,save_base_dir, is_train= 'true' )
-    recon = recon_img(train_data, device, diffusion, model, args, save_base_dir, is_train='true')
+
+    print(f' (5.3) reconstructing')
+    recon_save_base_dir = os.path.join(save_base_dir, 'reconstruct')
+    os.makedirs(recon_save_base_dir, exist_ok=True)
+    recon_save_base_dir = os.path.join(recon_save_base_dir, f'model_epoch_{model_epoch}')
+    os.makedirs(recon_save_base_dir, exist_ok=True)
+    reconstructing(train_data, device, diffusion, model, args, recon_save_base_dir, is_train='true')
 
     #test_data = first(test_dataset_loader)
     #test_content = generate_heatmap_image(test_data, device, diffusion, model, args, save_base_dir, is_train= 'false')
