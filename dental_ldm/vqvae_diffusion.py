@@ -164,17 +164,16 @@ def main(args) :
                                        persistent_workers=True)
 
     print(f'\n step 3. vqvae model')
-    vqvae = VQVAE(
-        spatial_dims=2,
-        in_channels=1,
-        out_channels=1,
-        num_channels=(256, 256),
-        num_res_channels=256,
-        num_res_layers=2,
-        downsample_parameters=((2, 4, 1, 1), (2, 4, 1, 1)),
-        upsample_parameters=((2, 4, 1, 1, 0), (2, 4, 1, 1, 0)),
-        num_embeddings=256,
-        embedding_dim=32, )
+    vqvae = VQVAE(spatial_dims=2,
+                  in_channels=1,
+                  out_channels=1,
+                  num_channels=(256, 256),
+                  num_res_channels=256,
+                  num_res_layers=2,
+                  downsample_parameters=((2, 4, 1, 1), (2, 4, 1, 1)),
+                  upsample_parameters=((2, 4, 1, 1, 0), (2, 4, 1, 1, 0)),
+                  num_embeddings=256,
+                  embedding_dim=32, )
     vqvae.load_state_dict(torch.load(args.pretrained_vqvae_dir))
     vqvae = vqvae.to(device)
     vqvae_encoder = vqvae.encoder
@@ -201,10 +200,10 @@ def main(args) :
     # (3) scaheduler
     with torch.no_grad():
         with autocast(enabled=True):
+            # [Batch, 32 channel, 32, 32]
             z = vqvae_encoder(check_data["image_info"].to(device))
-            print(f'z.shape : {z.shape}')
-            qz = vqvae_quantizer(z)
-            print(f'qz : {type(qz)}')
+            loss, quantized = vqvae_quantizer(z)
+            print(f'quantized : {quantized}')
     scale_factor = 1 / torch.std(z)
     print(f'scale_factor : {scale_factor}')
     inferer = LatentDiffusionInferer(scheduler,
