@@ -199,17 +199,19 @@ def main(args) :
     scale_factor = 1 / torch.std(z)
     diffusion = LatentDiffusionInferer(scheduler, scale_factor=scale_factor)
 
-    """
     print(f'\n step 5. optimizer')
-    optimiser = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
+    optimiser = optim.AdamW(model.parameters(),
+                            lr=args.lr,
+                            weight_decay=args.weight_decay,
+                            betas=(0.9, 0.999))
 
-    
     print(f'\n step 6. training')
     tqdm_epoch = range(args.start_epoch, args.train_epochs + 1)
-    start_time = time.time()
-    vlb = collections.deque([], maxlen=10)
+
     for epoch in tqdm_epoch:
-        progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=200)
+        progress_bar = tqdm(enumerate(training_dataset_loader),
+                            total=len(training_dataset_loader),
+                            ncols=200)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, data in progress_bar:
             model.train()
@@ -224,9 +226,10 @@ def main(args) :
             with torch.no_grad():
                 z_mu, z_sigma = autoencoderkl.encode(x_0)
                 x_0 = autoencoderkl.sampling(z_mu, z_sigma)
-
             x_0 = x_0 * scale_factor
+            print(f'x_0.shape [batch, 3, 128, 128]: {x_0.shape}')
             # ----------------------------------------------------------------------------------------------------------
+    """
             # 1) check random t
             if x_0.shape[0] != 0 :
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device =device)
@@ -371,6 +374,15 @@ if __name__ == '__main__':
     # step 4. model
     parser.add_argument('--timestep', type=int, default=1000)
     parser.add_argument('--schedule_type', type=str, default="linear_beta")
+
+    # step 5. optimizer
+    parser.add_argument('--lr', type=float, default=1e-4)
+    parser.add_argument('--weight_decay', type=float, default=0.0)
+
+    # step 6. training
+    parser.add_argument('--start_epoch', type=int, default=0)
+    parser.add_argument('--train_epochs', type=int, default=3000)
+    parser.add_argument('--only_normal_training', action='store_true')
 
     args = parser.parse_args()
     main(args)
