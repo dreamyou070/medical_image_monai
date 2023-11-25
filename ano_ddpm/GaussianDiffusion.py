@@ -480,7 +480,7 @@ class GaussianDiffusionModel:
             with torch.no_grad():
                 model_output = model(x,t_tensor)
                 # 2. compute previous image: x_t -> x_t-1
-                x, _ = self.step(model_output, t, x)
+                x, _ = self.step(model_output, t, x, None)
                 first_sample = x[0]
                 print(f'first_sample shape : {first_sample.shape}')
                 # save intermediate result
