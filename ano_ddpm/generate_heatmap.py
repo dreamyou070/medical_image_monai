@@ -130,6 +130,7 @@ def generate_heatmap_image(data, device, diffusion, model, args,save_base_dir, i
         for i in range(w):
             for j in range(h):
                 abnormal_score = score_patch[i, j]
+                print(f'abnormal score : {abnormal_score}')
                 if abnormal_score < args.thredhold :
                     anormal_detect_background[i, j] = 0
                 else :
