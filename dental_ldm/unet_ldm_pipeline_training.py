@@ -322,7 +322,6 @@ if __name__ == '__main__':
     parser.add_argument('--masked_loss', action='store_true')
     # inference
     parser.add_argument('--inference_freq', type=int, default=50)
-    parser.add_argument('--model_save_freq', type=int, default=50)
 
     args = parser.parse_args()
     main(args)
