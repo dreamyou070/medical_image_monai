@@ -285,10 +285,15 @@ def main(args) :
                     pred_original_sample = autoencoderkl.decode_stage_2_outputs(pred_original_sample/scale_factor)
                     anormal_score = torch.nn.functional.mse_loss(pred_original_sample.float(),
                                                                  target_p.float(),reduction="none")
+                    max = torch.max(anormal_score, dim=-1)
+                    max = torch.max(max.values, dim=-1)
+                    max = max.values.unsqueeze(-1).unsqueeze(-1)
+                    anormal_score = anormal_score / max
                     anormal_score_answer = (1 - mask_info)
                     loss = torch.nn.functional.mse_loss(anormal_score.to(device).float(),
                                                         anormal_score_answer.to(device).float(),
                                                         reduction="none")
+
                 loss = loss.mean([1,2,3])
                 loss = loss.mean()
 
