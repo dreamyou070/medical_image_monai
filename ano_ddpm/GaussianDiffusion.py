@@ -263,6 +263,29 @@ class GaussianDiffusionModel:
         pred_prev_sample = pred_original_sample_coeff * pred_original_sample + current_sample_coeff * sample        
         return pred_prev_sample
     """
+
+    def _get_variance(self, timestep: int, predicted_variance: torch.Tensor | None = None) -> torch.Tensor:
+        """
+        Compute the variance of the posterior at timestep t.
+
+        Args:
+            timestep: current timestep.
+            predicted_variance: variance predicted by the model.
+
+        Returns:
+            Returns the variance
+        """
+        alpha_prod_t = self.alphas_cumprod[timestep]
+        alpha_prod_t_prev = self.alphas_cumprod[timestep - 1] if timestep > 0 else self.one
+
+        # For t > 0, compute predicted variance βt (see formula (6) and (7) from https://arxiv.org/pdf/2006.11239.pdf)
+        # and sample from it to get previous sample
+        # x_{t-1} ~ N(pred_prev_sample, variance) == add variance to pred_sample
+        variance = (1 - alpha_prod_t_prev) / (1 - alpha_prod_t) * self.betas[timestep]
+        # hacks - were probably added for training stability
+        variance = torch.clamp(variance, min=1e-20)
+        return variance
+    
     def p_loss(self, model, x_0, args):
         """ calculate total loss """
         if self.loss_weight == "none":
