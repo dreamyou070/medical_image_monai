@@ -299,14 +299,27 @@ def main(args) :
                                                         reduction="none")
                     loss = loss.mean([1, 2, 3])
                 if args.min_max_training :
-                    noise_pred = noise_pred * small_mask_info.to(device)
+
+                    normal_pixel_num = small_mask_info.sum([1,2,3])
+                    normal_pixel_num = torch.where(normal_pixel_num == 0, 1, normal_pixel_num)
+                    #print(f'normal_pixel_num (batch, 1) : {normal_pixel_num.shape}')
+                    noise_pred = (noise_pred * small_mask_info.to(device))
                     target = noise * small_mask_info.to(device)
-                    pos_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
-                    neg_loss = torch.nn.functional.mse_loss(noise_pred * (1-small_mask_info).to(device).float(),
-                                                            noise * (1-small_mask_info).to(device), reduction="none")
-                    loss_diff = (pos_loss - neg_loss).mean([1,2,3])
+                    pos_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean([1,2,3])
+                    pos_loss = pos_loss / normal_pixel_num
+
+                    inverse_mask = (1-small_mask_info)
+                    abnormal_pixel_num = inverse_mask.sum([1,2,3])
+                    abnormal_pixel_num = torch.where(abnormal_pixel_num == 0, 1, abnormal_pixel_num)
+
+                    abnormal_noise_pred = (noise_pred * inverse_mask.to(device))
+                    abnormal_target = (noise * inverse_mask.to(device))
+                    neg_loss = torch.nn.functional.mse_loss(abnormal_noise_pred.float(),
+                                                            abnormal_target.float(), reduction="none").mean([1,2,3])
+                    neg_loss = neg_loss / abnormal_pixel_num
+                    loss_diff = (pos_loss - neg_loss)
                     loss_diff = torch.where(loss_diff > 0, loss_diff, 0)
-                    loss = pos_loss.mean([1,2,3]) + loss_diff
+                    loss = pos_loss + loss_diff
                 loss = loss.mean()
 
                 wandb.log({"training loss": loss.item()})
