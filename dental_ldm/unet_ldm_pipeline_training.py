@@ -80,7 +80,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
                 print(f'latents : {latents}')
                 model_output = model(latents,
                                      timestep.to(device), None).sample
-                latents = scheduler.step(model_output,t,sample=latents, return_dict=False).prev_sample
+                latents = scheduler.step(model_output,t,sample=latents).prev_sample
         recon_image = vae.decode(latents / vae_scale_factor,return_dict=False,generator=None)[0]
         print(f'recon_image : {recon_image}')
     """
