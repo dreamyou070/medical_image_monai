@@ -179,7 +179,9 @@ def main(args) :
     print(f'\n step 4. unet model')
     unet = UNet2DModel(sample_size = 32,in_channels = 4,out_channels =4,)
     unet = unet.to(device)
-
+    a = unet.config.sample_size
+    print(f'unet.config.sample_size : {unet.config.sample_size}')
+    
     print(f'\n step 5. scheduler')
     scheduler = DDPMScheduler(num_train_timesteps = 1000,
                               beta_start = 0.0001,
@@ -209,8 +211,9 @@ def main(args) :
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
             x_0 = batch["image_info"].to(device)  # [64,1,160,80]
+            print(f'x_0.shape : {x_0.shape}')
             mask_info = batch["mask"].unsqueeze(dim=1)
-            small_mask_info = batch['small_mask'].unsqueeze(dim=1)
+            #small_mask_info = batch['small_mask'].unsqueeze(dim=1)
             normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
             if args.only_normal_training:
                 x_0 = x_0[normal_info == 1]
@@ -227,7 +230,10 @@ def main(args) :
                 # 5) unet inference
                 noise_pred = unet(sample = noisy_samples, timestep = timesteps,)
                 target = noise
-                print(f'target : {target.shape}')
+                if args.masked_loss :
+                    noise_pred = noise_pred * mask_info
+                    target = target * mask_info
+                    print(f'target : {target.shape} | mask_info : {mask_info.shape}')
 
 
 
@@ -270,7 +276,7 @@ if __name__ == '__main__':
     parser.add_argument('--use_simplex_noise', action='store_true')
     # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--masked_loss_latent', action='store_true')
-    parser.add_argument('--masked_loss', action='store_true')
+
     # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--info_nce_loss', action='store_true')
     # --------------------------------------------------------------------------------------------------------------
@@ -290,6 +296,7 @@ if __name__ == '__main__':
     # step 8. training
     parser.add_argument('--n_epochs', type=int, default=3000)
     parser.add_argument('--only_normal_training', action='store_true')
+    parser.add_argument('--masked_loss', action='store_true')
 
 
     args = parser.parse_args()
