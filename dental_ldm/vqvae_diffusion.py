@@ -203,7 +203,7 @@ def main(args) :
             # [Batch, 32 channel, 32, 32]
             z = vqvae_encoder(check_data["image_info"].to(device))
             loss, quantized = vqvae_quantizer(z)
-            print(f'quantized : {quantized}')
+            print(f'quantized : {quantized.shape}')
     scale_factor = 1 / torch.std(z)
     print(f'scale_factor : {scale_factor}')
     inferer = LatentDiffusionInferer(scheduler,
