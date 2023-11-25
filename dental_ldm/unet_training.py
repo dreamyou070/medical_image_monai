@@ -306,7 +306,7 @@ def main(args) :
                     noise_pred = (noise_pred * small_mask_info.to(device))
                     target = noise * small_mask_info.to(device)
                     pos_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean([1,2,3])
-                    pos_loss = pos_loss / normal_pixel_num
+                    pos_loss = pos_loss / normal_pixel_num.to(device)
 
                     inverse_mask = (1-small_mask_info)
                     abnormal_pixel_num = inverse_mask.sum([1,2,3])
@@ -316,7 +316,7 @@ def main(args) :
                     abnormal_target = (noise * inverse_mask.to(device))
                     neg_loss = torch.nn.functional.mse_loss(abnormal_noise_pred.float(),
                                                             abnormal_target.float(), reduction="none").mean([1,2,3])
-                    neg_loss = neg_loss / abnormal_pixel_num
+                    neg_loss = neg_loss / abnormal_pixel_num.to(device)
                     loss_diff = (pos_loss - neg_loss)
                     loss_diff = torch.where(loss_diff > 0, loss_diff, 0)
                     loss = pos_loss + loss_diff
