@@ -300,7 +300,8 @@ def main(args) :
                     pos_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
                     neg_loss = torch.nn.functional.mse_loss(noise_pred * (1-small_mask_info).to(device).float(),
                                                             noise * (1-small_mask_info).to(device), reduction="none")
-                    loss = pos_loss + max(0, pos_loss - neg_loss + args.min_max_margin)
+                    compare = torch.zeros_like(pos_loss).to(device)
+                    loss = pos_loss + max(compare, pos_loss - neg_loss)
 
 
                 loss = loss.mean([1,2,3])

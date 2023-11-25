@@ -16,8 +16,8 @@ python unet_training.py --wandb_project_name 'anoddpm_result_ldm' --wandb_run_na
                         --val_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/mask' \
                         --model_save_freq 50 --img_size '128,128' --batch_size 6 --anormal_scoring
 
-[screen 02]
-python unet_training.py --wandb_project_name 'anoddpm_result_ldm' --wandb_run_name '3_min_max_training' --device 'cuda:2' \
+[screen 08]
+python unet_training.py --wandb_project_name 'anoddpm_result_ldm' --wandb_run_name '3_min_max_training' --device 'cuda:3' \
                         --experiment_dir '/data7/sooyeon/medical_image/anoddpm_result_ldm/3_min_max_training' \
                         --train_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/original' \
                         --train_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/mask' \
