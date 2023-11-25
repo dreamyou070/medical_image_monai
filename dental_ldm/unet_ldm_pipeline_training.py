@@ -7,9 +7,9 @@ from torch import optim
 from helpers import *
 from tqdm import tqdm
 from torchvision import transforms
-from nets.utils import update_ema_params
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+from nets.utils import update_ema_params
 from data_module import SYDataLoader, SYDataset
 from monai.utils import first
 import torch.multiprocessing
