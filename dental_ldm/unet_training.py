@@ -259,9 +259,11 @@ def main(args) :
                     neg_loss = torch.nn.functional.mse_loss((noise_pred_p * (1 - mask_info).to(device)).float(),
                                                             (target_p * (1 - mask_info).to(device)).float(),
                                                             reduction="none")
-                    print(f'[info nce loss] : {pos_loss} / {neg_loss}')
+                    print(f'[info nce loss] (pos) : {pos_loss}')
+                    print(f'[info nce loss] (neg) : {neg_loss}')
+                    print(f'[info nce loss] (pos+neg) : {pos_loss + neg_loss}')
                     loss = pos_loss / (pos_loss + neg_loss)
-                    print(f'[info nce loss] : {loss}')
+                    print(f'[info nce loss] (pos/neg) : {loss}')
                     import time
                     time.sleep(1)
                 # ------------------------------------------------------------------------------------------------------
