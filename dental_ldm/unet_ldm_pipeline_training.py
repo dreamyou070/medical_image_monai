@@ -75,15 +75,13 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
 
         # 5) denoising
         for t in range(int(args.sample_distance) , -1, -1):
-            print(f't : {t}')
             with torch.no_grad() :
                 timestep = torch.Tensor([t]).repeat(batch_size).long()
                 model_output = model(latents,
                                      timestep.to(device), None).sample
                 latents = scheduler.step(model_output,t,sample=latents).prev_sample
         recon_image = vae.decode(latents / vae_scale_factor,return_dict=False,generator=None)[0]
-        print(f'recon_image : {recon_image}')
-    """
+
     for img_index in range(x.shape[0]):
         normal_info_ = normal_info[img_index]
         if normal_info_ == 1:
@@ -113,7 +111,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
             wandb.log({"training data inference" : loading_image})
         else :
             wandb.log({"test data inference" : loading_image})
-    """
+
 
 def main(args) :
 
@@ -231,13 +229,11 @@ def main(args) :
                 noise_pred = pipeline.unet(noisy_samples,timesteps).sample
                 target = noise
                 if args.masked_loss :
+                    mask_info = mask_info.expand(target.shape)
                     noise_pred = noise_pred * mask_info.to(device)
                     target = target * mask_info.to(device)
-                    print(f'target : {target.shape} | mask_info : {mask_info.shape}')
                 loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean([1, 2, 3])
-
                 loss = loss.mean()
-
                 wandb.log({"training loss": loss.item()})
                 optimizer.zero_grad()
                 loss.backward()
@@ -248,7 +244,7 @@ def main(args) :
                 update_ema_params(ema, unet)
             break
         # inference ?
-        if epoch % args.inference_freq == 0 and epoch == 0:
+        if epoch % args.inference_freq == 0 :
             for i, test_data in enumerate(test_dataset_loader):
                 if i == 0:
                     ema.eval()
@@ -257,6 +253,9 @@ def main(args) :
                                      vae_scale_factor, epoch + 1)
                     training_outputs(args, batch, scheduler, 'training_data', device, ema, vae,
                                      vae_scale_factor, epoch + 1)
+        if epoch % args.model_save_freq == 0 and epoch >= 0:
+            save(unet=unet, args=args, optimiser=optimizer, final=False, ema=ema, epoch=epoch)
+    save(unet=unet, args=args, optimiser=optimizer, final=True, ema=ema)
 
 
 
