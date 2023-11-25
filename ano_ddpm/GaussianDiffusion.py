@@ -448,10 +448,11 @@ class GaussianDiffusionModel:
             with torch.no_grad():
                 out = self.sample_p(model, x, t_batch, denoise_fn='gauss')
                 x = out["sample"]
-                print(f'x shape : {x.shape}')
+                first_sample = x[0]
+                print(f'first_sample shape : {first_sample.shape}')
                 # save intermediate result
                 import torchvision.transforms as torch_transforms
-                torch_transforms.ToPILImage()(x.squeeze()).save(f'intermediate_{t.item()}.png')
+                torch_transforms.ToPILImage()(first_sample.squeeze()).save(f'intermediate_{t.item()}.png')
         return x.detach()
 
     # -----------------------------------------------------------------------------------------------------------------
