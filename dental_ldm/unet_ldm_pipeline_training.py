@@ -5,25 +5,20 @@ from PIL import Image
 from random import seed
 from torch import optim
 from helpers import *
-import torch
-import torch.nn.functional as F
+from tqdm import tqdm
 from torchvision import transforms
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from inferers import DiffusionInferer
-from schedulers.ddim import DDIMScheduler
 from data_module import SYDataLoader, SYDataset
 from monai.utils import first
-from nets import DiffusionModelUNet
-from nets.utils import update_ema_params
 import torch.multiprocessing
 import torchvision.transforms as torch_transforms
 import PIL
 from setproctitle import *
-
-
+from diffusers import AutoencoderKL, UNet2DModel, DDPMScheduler,StableDiffusionPipeline
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
+
 
 def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
     model_save_base_dir = os.path.join(args.experiment_dir,'diffusion-models')
@@ -72,15 +67,22 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
     with torch.no_grad() :
         noisy_latent = scheduler.add_noise(original_samples=latent, noise=noise, timesteps=t)
         latent = noisy_latent.clone().detach()
+
     # 5) denoising
-    for t in range(int(args.sample_distance) - 1, -1, -1):
+    for t in range(int(args.sample_distance) , -1, -1):
         with torch.no_grad() :
             # 5-1) model prediction
             model_output = model(latent, torch.Tensor((t,)).to(device), None)
         # 5-2) update latent
         latent, _ = scheduler.step(model_output, t, latent)
+    #latents =
+    #image = self.vae.decode(latent / scale_factor).sample
+    #image = (image / 2 + 0.5).clamp(0, 1)
+    # we always cast to float32 as this does not cause significant overhead and is compatible with bfloa16
+    #image = image.cpu().permute(0, 2, 3, 1).float().numpy()
+
     with torch.no_grad() :
-        recon_image = vae.decode_stage_2_outputs(latent / scale_factor)
+        recon_image = vae.decode_stage_2_outputs(latent/scale_factor)
 
     for img_index in range(x.shape[0]):
         normal_info_ = normal_info[img_index]
@@ -88,6 +90,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
             is_normal = 'normal'
         else :
             is_normal = 'abnormal'
+
         real = x[img_index].squeeze()
         real = torch_transforms.ToPILImage()(real.unsqueeze(0))
 
@@ -119,6 +122,7 @@ def main(args) :
         setproctitle(args.process_title)
     else:
         setproctitle('parksooyeon')
+
     print(f' (1.1) wandb')
     wandb.login(key=args.wandb_api_key)
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
@@ -137,8 +141,7 @@ def main(args) :
 
     print(f'\n step 2. dataset and dataloatder')
     w,h = int(args.img_size.split(',')[0].strip()),int(args.img_size.split(',')[1].strip())
-    train_transforms = transforms.Compose([#transforms.ToPILImage(),
-                                           transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
+    train_transforms = transforms.Compose([transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
                                            transforms.ToTensor()])
     train_ds = SYDataset(data_folder=args.train_data_folder,
                          transform=train_transforms,
@@ -151,9 +154,8 @@ def main(args) :
                                            persistent_workers=True)
     check_data = first(training_dataset_loader)
     # ## Prepare validation set data loader
-    val_transforms = transforms.Compose([#transforms.ToPILImage(),
-                                           transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
-                                           transforms.ToTensor()])
+    val_transforms = transforms.Compose([transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
+                                         transforms.ToTensor()])
     val_ds = SYDataset(data_folder=args.val_data_folder,
                          transform=val_transforms,
                          base_mask_dir=args.val_mask_dir,image_size=(w,h))
@@ -164,84 +166,31 @@ def main(args) :
                                        persistent_workers=True)
 
     print(f'\n step 3. latent_model')
+    vae = AutoencoderKL(in_channels=1,
+                        out_channels=1,
+                        latent_channels=4,
+                        norm_num_groups=32,
+                        sample_size=32,
+                        scaling_factor=0.18215)
+    vae.load_state_dict(torch.load(args.pretrained_vae_dir))
+    vae = vae.to(device)
+    scale_factor = 0.18215
 
+    print(f'\n step 4. unet model')
+    unet = UNet2DModel(sample_size = 32,in_channels = 4,out_channels =4,)
+    unet = unet.to(device)
 
-    class Diffusion_AE(torch.nn.Module):
-        def __init__(self, embedding_dimension=64):
-            super().__init__()
-            self.unet = DiffusionModelUNet(
-                spatial_dims=2,
-                in_channels=1,
-                out_channels=1,
-                num_channels=(128, 256, 256),
-                attention_levels=(False, True, True),
-                num_res_blocks=1,
-                num_head_channels=64,
-                with_conditioning=True,
-                cross_attention_dim=1,
-            )
-            self.semantic_encoder = torchvision.models.resnet18()
-            self.semantic_encoder.conv1 = torch.nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
-            self.semantic_encoder.fc = torch.nn.Linear(512, embedding_dimension)
+    print(f'\n step 5. scheduler')
+    scheduler = DDPMScheduler(num_train_timesteps=1000, schedule="linear_beta", beta_start=0.0015, beta_end=0.0195)
 
-        def forward(self, xt, x_cond, t):
-            latent = self.semantic_encoder(x_cond)
-            noise_pred = self.unet(x=xt, timesteps=t, context=latent.unsqueeze(2))
-            return noise_pred, latent
-
-    device = torch.device("cuda:2")
-    model = Diffusion_AE(embedding_dimension=512).to(device)
-    scheduler = DDIMScheduler(num_train_timesteps=1000)
-    optimizer = torch.optim.Adam(params=model.parameters(), lr=1e-5)
-    inferer = DiffusionInferer(scheduler)
-
-    print(f'\n step 4. model')
-    n_iterations = 1e4  # training for longer (1e4 ~ 3h) helps a lot with reconstruction quality, even if the loss is already low
-    batch_size = 64
-    val_interval = 100
-    iter_loss_list, val_iter_loss_list = [], []
-    iterations = []
-    iteration, iter_loss = 0, 0
-
-    while iteration < n_iterations:
-        for batch in training_dataset_loader :
-            iteration += 1
-            model.train()
-            optimizer.zero_grad(set_to_none=True)
-            images = batch["image_info"].to(device)
-            noise = torch.randn_like(images).to(device)
-            # Create timesteps
-            timesteps = torch.randint(0, args.sample_distance,
-                                      (batch_size,)).to(device).long()
-            latent = model.semantic_encoder(images)
-            noise_pred = inferer(inputs=images,
-                                 diffusion_model=model.unet, noise=noise, timesteps=timesteps,
-                                 condition=latent.unsqueeze(2))
-            loss = F.mse_loss(noise_pred.float(), noise.float())
-
-            loss.backward()
-            optimizer.step()
-
-            iter_loss += loss.item()
-            sys.stdout.write(f"Iteration {iteration}/{n_iterations} - train Loss {loss.item():.4f}" + "\r")
-            sys.stdout.flush()
-
-            # ----------------------------------------------------------------------------------------- #
-            # Inference
-            if iteration % args.inference_freq == 0 and iteration == 0:
-                for i, test_data in enumerate(test_dataset_loader):
-                    if i == 0:
-                        model.eval()
-                        training_outputs(args, test_data, scheduler, 'training_data', device, ema, vqvae, scale_factor,
-                                         epoch + 1)
-                        training_outputs(args, data, scheduler, 'test_data', device, ema, vqvae, scale_factor,
-                                         epoch + 1)
-
-
-            if epoch % args.model_save_freq == 0 and epoch >= 0:
-                save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
-    save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-
+    print(f' \n step 5. infererence scheduler pipeline')
+    pipeline = StableDiffusionPipeline(vae = vae,
+                                       text_encoder = None,
+                                       tokenizer = None,
+                                       unet =unet,
+                                       scheduler = scheduler,)
+    scale_factor_ = pipeline.vae_scale_factor #= 2 ** (len(self.vae.config.block_out_channels) - 1)
+    print(f' (5.1) scale_factor : {scale_factor_}')
 
 if __name__ == '__main__':
 
@@ -266,8 +215,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int)
 
     # step 3. model
-    parser.add_argument('--pretrained_vae_dir', type=str,
-                        default=f'/data7/sooyeon/medical_image/anoddpm_result_vae/1_first_training/autoencoderkl/autoencoderkl_99.pth')
+    parser.add_argument('--pretrained_vae_dir', type=str)
     parser.add_argument('--latent_channels', type=int, default=3)
 
     # step 4. model

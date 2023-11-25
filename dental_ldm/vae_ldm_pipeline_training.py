@@ -10,17 +10,9 @@ import torch.nn.functional as F
 from torchvision import transforms
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from data_module import SYDataLoader, SYDataset
-from monai.utils import first
-from nets import AutoencoderKL, DiffusionModelUNet
-from nets.utils import update_ema_params
 import torch.multiprocessing
 import torchvision.transforms as torch_transforms
 import PIL
-from setproctitle import *
-from schedulers import DDPMScheduler
-from inferers import LatentDiffusionInferer
-from torch.cuda.amp import GradScaler, autocast
 from data_module import SYDataLoader, SYDataset
 from monai.utils import first
 from setproctitle import *
@@ -28,6 +20,7 @@ from generative.networks.nets import AutoencoderKL, PatchDiscriminator
 from loss_module import PerceptualLoss, PatchAdversarialLoss
 from torch.cuda.amp import GradScaler, autocast
 from tqdm import tqdm
+from diffusers import AutoencoderKL
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
@@ -181,7 +174,6 @@ def main(args) :
                                        persistent_workers=True)
 
     print(f'\n step 3. latent_model')
-    from diffusers import AutoencoderKL
     vae = AutoencoderKL(in_channels = 1,
                         out_channels = 1,
                         latent_channels = 4,
