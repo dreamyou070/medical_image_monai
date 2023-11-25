@@ -398,8 +398,7 @@ class GaussianDiffusionModel:
                 "pred_x_0":     pred_x_0,}
 
     # -----------------------------------------------------------------------------------------------------------------
-    def step(
-        self, model_output: torch.Tensor, timestep: int, sample: torch.Tensor, generator: torch.Generator) -> tuple[torch.Tensor, torch.Tensor]:
+    def step( self, model_output, timestep, sample, generator) :
         """
         Predict the sample at the previous timestep by reversing the SDE. Core function to propagate the diffusion
         process from the learned model outputs (most often the predicted noise).
