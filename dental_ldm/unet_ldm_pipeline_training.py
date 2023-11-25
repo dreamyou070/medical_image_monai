@@ -210,6 +210,7 @@ def main(args) :
         for step, batch in progress_bar:
             x_0 = batch["image_info"].to(device)  # [64,1,160,80]
             mask_info = batch["mask"].unsqueeze(dim=1)
+            small_mask_info = batch['small_mask'].unsqueeze(dim=1)
             normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
             if args.only_normal_training:
                 x_0 = x_0[normal_info == 1]
@@ -226,7 +227,8 @@ def main(args) :
                 # 5) unet inference
                 noise_pred = unet(sample = noisy_samples, timestep = timesteps,)
                 target = noise
-                
+                print(f'target : {target.shape}')
+
 
 
 if __name__ == '__main__':
