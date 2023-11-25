@@ -306,10 +306,10 @@ def main(args) :
         records.append(line)
         # save model
         if epoch > args.model_save_base_epoch:
-            model_save_dir = os.path.join(experiment_dir, f'autoencoderkl')
+            model_save_dir = os.path.join(experiment_dir, f'vae')
             os.makedirs(model_save_dir, exist_ok=True)
             torch.save(vae.state_dict(),
-                       os.path.join(model_save_dir, f'autoencoderkl_{epoch}.pth'))
+                       os.path.join(model_save_dir, f'vae_{epoch}.pth'))
 
     progress_bar.close()
 
@@ -380,7 +380,6 @@ if __name__ == '__main__':
 
     # step 7. save
     parser.add_argument('--model_save_freq', type=int, default=1000)
-
-
+    parser.add_argument('--model_save_base_epoch', type=int, default=50)
     args = parser.parse_args()
     main(args)
