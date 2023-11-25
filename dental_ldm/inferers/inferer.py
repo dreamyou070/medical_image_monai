@@ -404,6 +404,7 @@ class LatentDiffusionInferer(DiffusionInferer):
 
         image = autoencoder_model.decode_stage_2_outputs(latent / self.scale_factor)
 
+
         if save_intermediates:
             intermediates = []
             for latent_intermediate in latent_intermediates:

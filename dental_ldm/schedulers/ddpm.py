@@ -243,19 +243,7 @@ class DDPMScheduler(Scheduler):
 
     def pred_origin(self, model_output: torch.Tensor, timestep: int, sample: torch.Tensor, generator: torch.Generator | None = None
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        Predict the sample at the previous timestep by reversing the SDE. Core function to propagate the diffusion
-        process from the learned model outputs (most often the predicted noise).
 
-        Args:
-            model_output: direct output from learned diffusion model.
-            timestep: current discrete timestep in the diffusion chain.
-            sample: current instance of sample being created by diffusion process.
-            generator: random number generator.
-
-        Returns:
-            pred_prev_sample: Predicted previous sample
-        """
         if model_output.shape[1] == sample.shape[1] * 2 and self.variance_type in ["learned", "learned_range"]:
             model_output, predicted_variance = torch.split(model_output, sample.shape[1], dim=1)
         else:
@@ -275,7 +263,6 @@ class DDPMScheduler(Scheduler):
             pred_original_sample = model_output
         elif self.prediction_type == DDPMPredictionType.V_PREDICTION:
             pred_original_sample = (alpha_prod_t**0.5) * sample - (beta_prod_t**0.5) * model_output
-
         # 3. Clip "predicted x_0"
         if self.clip_sample:
             pred_original_sample = torch.clamp(pred_original_sample, -1, 1)

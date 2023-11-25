@@ -74,15 +74,22 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
     with torch.no_grad() :
         noisy_latent = scheduler.add_noise(original_samples=latent, noise=noise, timesteps=t)
         latent = noisy_latent.clone().detach()
+
     # 5) denoising
-    for t in range(int(args.sample_distance) - 1, -1, -1):
+    for t in range(int(args.sample_distance) , -1, -1):
         with torch.no_grad() :
             # 5-1) model prediction
             model_output = model(latent, torch.Tensor((t,)).to(device), None)
         # 5-2) update latent
         latent, _ = scheduler.step(model_output, t, latent)
+    #latents =
+    #image = self.vae.decode(latent / scale_factor).sample
+    #image = (image / 2 + 0.5).clamp(0, 1)
+    # we always cast to float32 as this does not cause significant overhead and is compatible with bfloa16
+    #image = image.cpu().permute(0, 2, 3, 1).float().numpy()
+
     with torch.no_grad() :
-        recon_image = vae.decode_stage_2_outputs(latent / scale_factor)
+        recon_image = vae.decode_stage_2_outputs(latent/scale_factor)
 
     for img_index in range(x.shape[0]):
         normal_info_ = normal_info[img_index]
@@ -90,6 +97,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
             is_normal = 'normal'
         else :
             is_normal = 'abnormal'
+
         real = x[img_index].squeeze()
         real = torch_transforms.ToPILImage()(real.unsqueeze(0))
 
