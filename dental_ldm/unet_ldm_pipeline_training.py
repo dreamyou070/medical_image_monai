@@ -95,7 +95,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
         real = torch_transforms.ToPILImage()(real.unsqueeze(0))
         # wrong in here ...
         recon = recon_image[img_index].squeeze()
-        recon = (recon / 2 + 0.5).clamp(0, 1).unsqueeze(0)
+        recon = (recon / 2 + 0.5).clamp(0, 1).unsqueeze(0).unsqueeze(0)
         recon = recon.cpu().permute(0, 2, 3, 1).numpy()
         recon = (recon * 255).astype(np.uint8)
         print(f'recon : {recon}')
