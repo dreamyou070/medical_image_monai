@@ -268,7 +268,6 @@ def main(args) :
                 # ----------------------------------------------------------------------------------------- #
                 # EMA model updating
                 update_ema_params(ema, model)
-
                 # ----------------------------------------------------------------------------------------- #
                 # Inference
                 if epoch % args.inference_freq == 0 and step == 0:
@@ -276,11 +275,9 @@ def main(args) :
                         if i == 0:
                             ema.eval()
                             model.eval()
-                            training_outputs(args, test_data, scheduler, 'true',  device, model, autoencoderkl, scale_factor, epoch+1)
-                            training_outputs(args, data, scheduler, 'falce', device, model, autoencoderkl, scale_factor, epoch+1)
-
-
-    """
+                            training_outputs(args, test_data, scheduler, 'true',  device, ema, autoencoderkl, scale_factor, epoch+1)
+                            training_outputs(args, data, scheduler, 'falce', device, ema, autoencoderkl, scale_factor, epoch+1)
+        """
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
         print(f'vlb loss calculating ... ')
@@ -338,10 +335,11 @@ def main(args) :
                         wandb.log({"abnormal portion of *ab*normal sample kl" : ab_portion_ab_whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
                     # collecting total vlb in deque collections
+        """
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-    """
+
 
 if __name__ == '__main__':
 
@@ -390,5 +388,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--inference_freq', type=int, default=50)
     parser.add_argument('--inference_num', type=int, default=4)
+
+    # step 7. save
+    parser.add_argument('--model_save_freq', type=int, default=1000)
+
+
     args = parser.parse_args()
     main(args)
