@@ -436,7 +436,6 @@ class GaussianDiffusionModel:
         if args.use_simplex_noise:
             noise = self.noise_fn(x=x, t=t_tensor, octave=6, frequency=64).float()
         else:
-            print('make noise here')
             noise = torch.rand_like(x).float().to(device)
             #noise = torch.rand_like(x).float().to(device)
 
@@ -453,10 +452,8 @@ class GaussianDiffusionModel:
                 out = self.sample_p(model, x, t_batch, denoise_fn='gauss')
                 x = out["sample"]
                 # save intermediate result
-
                 import torchvision.transforms as torch_transforms
-                x_pil = torch_transforms.ToPILImage()(x.squeeze())
-                x_pil.save(os.path.join(f'intermediate_{t.item()}.png'))
+                torch_transforms.ToPILImage()(x.squeeze()).save(f'intermediate_{t.item()}.png')
         return x.detach()
 
     # -----------------------------------------------------------------------------------------------------------------
