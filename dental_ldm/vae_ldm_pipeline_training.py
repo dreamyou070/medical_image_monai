@@ -233,6 +233,9 @@ def main(args) :
                 reconstruction = vae(images).sample
                 recons_loss = F.l1_loss(reconstruction.float(), images.float())
                 p_loss = perceptual_loss(reconstruction.float(), images.float())
+                posterior = vae.encode(images).latent_dist
+                print(posterior)
+
                 kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
                 kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
                 loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
