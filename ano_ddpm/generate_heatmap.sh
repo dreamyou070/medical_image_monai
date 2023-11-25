@@ -7,4 +7,4 @@ python generate_heatmap.py --device 'cuda:6' \
                            --train_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/mask' \
                            --val_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/original' \
                            --val_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/mask' \
-                           --thredhold 0.00000216
+                           --beta_schedule 'linear' --sample_distance 150 --thredhold 0.06

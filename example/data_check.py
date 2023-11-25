@@ -1,50 +1,119 @@
 import os, json
+from PIL import Image
 
-"""
-{'title': 'Periapical',
- 'value': 'periapical',
- 'classifications': 
- [{
- 'featureId': 'ck2gj7kl4002e0q4n4jo9lr0n', 
- 'schemaId': 'ck1r3eeqs21jm0757v6v8te4t', 
- 'title': 'Level one', 'value': 'level_one', 'answer': {'featureId': 'ck2gj7klx002f0q4nxja9kkb6', 'schemaId': 'ck1r3ee9duodt0838gw5opzoz', 'title': 'Ill Defined', 'value': 'ill_defined'}}, 
- {'featureId': 'ck2gj7lhz002h0r6n4jx6acs9', 'schemaId': 'ck1r3eeqs21jn0757gp51g8wb', 
 
- 'title': 'Level two', 'value': 'level_two', 'answer': None},
- {'featureId': 'ck2gj7okr002j0r6nbk8wdgqi', 'schemaId': 'ck1s9qd65oun40721eenuvijo', 'title': 'Level three', 'value': 'level_three', 'answers': [{'featureId': 'ck2gj7olm002k0r6n6rl0yhrq', 'schemaId': 'ck1s9qctm9poz0725d6zvcvgs', 'title': 'None', 'value': 'none'}]}, {'featureId': 'ck2gj7p28002h0r55wbh965tc', 'schemaId': 'ck1s6cfai17eq0811jz58gdza', 'title': 'Level four', 'value': 'level_four', 'answers': [{'featureId': 'ck2gj7p3h002i0r55lyiikmxs', 'schemaId': 'ck1s6cexq8duz0725ml8y9utg', 'title': 'Inflammation', 'value': 'inflammation'}]}], 'polygons': [[[921, 599], [921, 602], [920, 603], [920, 606], [919, 607], [919, 609], [918, 610], [917, 610], [917, 613], [916, 614], [916, 615], [915, 616], [915, 621], [914, 622], [914, 627], [913, 628], [913, 631], [912, 632], [911, 632], [911, 635], [910, 636], [910, 638], [911, 639], [912, 639], [914, 641], [915, 641], [917, 643], [918, 643], [923, 648], [931, 648], [932, 649], [955, 649], [956, 648], [957, 648], [958, 647], [959, 647], [959, 646], [968, 637], [969, 637], [970, 636], [971, 636], [971, 635], [975, 631], [975, 628], [976, 627], [976, 626], [977, 625], [977, 616], [976, 615], [976, 614], [975, 615], [975, 617], [974, 618], [974, 619], [970, 623], [970, 624], [967, 627], [967, 628], [963, 632], [963, 633], [961, 635], [960, 635], [960, 636], [959, 637], [956, 637], [956, 638], [954, 640], [952, 640], [951, 641], [949, 641], [948, 642], [933, 642], [932, 641], [932, 640], [931, 639], [931, 637], [930, 636], [930, 611], [929, 610], [929, 607], [927, 605], [927, 604], [926, 603], [925, 603], [924, 602], [923, 602], [922, 601], [922, 600]]]}
+import numpy as np
+from PIL import Image
+import os
+import argparse
 
-"""
-def file_check(data_dir) :
-    with open(data_dir, 'r') as f:
-        file_data = f.readlines()
-    new_file_data = []
-    for elem in file_data :
-        new_file_data.append(elem.strip())
-    return new_file_data
+def main(args) :
 
-normal_data_dir = 'normal_check.txt'
-normal_data = file_check(normal_data_dir)
-ood_data_dir = 'oob_check.txt'
-ood_data = file_check(ood_data_dir)
+    img_dir = '1.JPG'
+    jaw_dir = 'jaw_1.JPG'
+    mask_dir = 'mask_1.JPG'
 
-text_dir = 'expert.json'
-with open(text_dir, 'r') as f:
-    json_data = json.load(f)
+    pil_img = Image.open(img_dir)
+    pil_img = pil_img.convert("RGBA")
+    np_img = np.array(pil_img)
 
-for data in json_data:
-    # -----------------------------------------------
-    expert_opinion = data['Description']
-    img_info = data['External ID']
-    label_info = data['Label']
-    # classifications = label_info['classifications']
-    objects = label_info['objects'][0]
-    title = objects['title']
-    if expert_opinion.lower() == 'Within normal limits'.lower() :
-        if img_info not in normal_data :
-            print(img_info)
-    else :
-        if img_info not in ood_data :
-            print(f'[{img_info}] except opinion : {expert_opinion.lower()}')
-            if img_info in normal_data :
-                print(f'[{img_info}] normal data')
+    pil_jaw = Image.open(jaw_dir)
+    np_jaw = np.array(pil_jaw)
+    # 255 = opaque
+    # 0 = trasparent
+    alpha_channel = np.where(np_jaw < 50, 0, 255)
+    # 1) massk bounding box
+    w, h = alpha_channel.shape
+    w_index_list = []
+    h_index_list = []
+    for w_index in range(w):
+        for h_index in range(h):
+            if alpha_channel[w_index, h_index] == 255:
+                w_index_list.append(w_index)
+                h_index_list.append(h_index)
+    w_min = min(w_index_list)
+    w_max = max(w_index_list)
+    h_min = min(h_index_list)
+    h_max = max(h_index_list)
+    np_img[:, :, 3] = alpha_channel
+    alpha_pil_img = Image.fromarray(np_img)
+    np_img = np.array(alpha_pil_img)
+    r, g, b, a = np_img[:, :, 0], np_img[:, :, 1], np_img[:, :, 2], np_img[:, :, 3]
+    i, j = a.shape
+    for i_index in range(i):
+        for j_index in range(j):
+            if np_img[i_index, j_index, 3] == 0:
+                np_img[i_index, j_index, 0] = 0
+                np_img[i_index, j_index, 1] = 0
+                np_img[i_index, j_index, 2] = 0
+    alpha_pil_img = Image.fromarray(np_img)
+    img = alpha_pil_img.convert('RGB')
+    # ----------------------------------------------------------------------------------------------------------------------------
+    # img crop
+    im1 = img.crop((h_min, w_min, h_max, w_max))
+    im1 = im1.resize((512,512))
+    im1 = im1.convert("L")
+    im1.save('test.jpg')
+    """
+    pil = Image.open(img_dir)
+    print(pil.size)
+    
+    
+    base_img_dir = r'../medical_data/experiment/dental/Radiographs'
+    save_img_dir = r'../medical_data/experiment/dental/Radiographs_masked'
+    os.makedirs(save_img_dir, exist_ok=True)
+    base_mask_dir = r'../medical_data/experiment/dental/Segmentation/maxillomandibular'
+    images = os.listdir(base_img_dir)
+    for image in images:
+        img_dir = os.path.join(base_img_dir, image)
+        mask_dir = os.path.join(base_mask_dir, image)
+
+        pil_img = Image.open(img_dir)
+        pil_img = pil_img.convert("RGBA")
+        np_img = np.array(pil_img)
+        pil_mask = Image.open(mask_dir)
+        np_mask = np.array(pil_mask)
+        # 255 = opaque
+        # 0 = trasparent
+        alpha_channel = np.where(np_mask < 50, 0, 255)
+        # 1) massk bounding box
+        w, h = alpha_channel.shape
+        w_index_list = []
+        h_index_list = []
+        for w_index in range(w):
+            for h_index in range(h):
+                if alpha_channel[w_index, h_index] == 255:
+                    w_index_list.append(w_index)
+                    h_index_list.append(h_index)
+        w_min = min(w_index_list)
+        w_max = max(w_index_list)
+        h_min = min(h_index_list)
+        h_max = max(h_index_list)
+        np_img[:, :, 3] = alpha_channel
+        alpha_pil_img = Image.fromarray(np_img)
+        np_img = np.array(alpha_pil_img)
+        r, g, b, a = np_img[:, :, 0], np_img[:, :, 1], np_img[:, :, 2], np_img[:, :, 3]
+        i, j = a.shape
+        for i_index in range(i):
+            for j_index in range(j):
+                if np_img[i_index, j_index, 3] == 0:
+                    np_img[i_index, j_index, 0] = 0
+                    np_img[i_index, j_index, 1] = 0
+                    np_img[i_index, j_index, 2] = 0
+        alpha_pil_img = Image.fromarray(np_img)
+        img = alpha_pil_img.convert('RGB')
+        # ----------------------------------------------------------------------------------------------------------------------------
+        # img crop
+        im1 = img.crop((h_min, w_min, h_max, w_max))
+        im1 = im1.resize((128, 128))
+        im1 = im1.convert("L")
+        im1.save(os.path.join(save_img_dir, image))
+    """
+
+if __name__ == '__main__' :
+
+    parser = argparse.ArgumentParser()
+    args = parser.parse_args()
+    main(args)
+
 
