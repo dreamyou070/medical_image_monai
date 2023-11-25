@@ -187,11 +187,13 @@ def main(args):
     #train_content = generate_heatmap_image(train_data, device, diffusion, model, args,save_base_dir, is_train= 'true' )
 
     print(f' (5.3) reconstructing')
-    recon_save_base_dir = os.path.join(save_base_dir, 'reconstruct')
+    recon_save_base_dir = os.path.join(experiment_dir, 'reconstruct')
     os.makedirs(recon_save_base_dir, exist_ok=True)
-    recon_save_base_dir = os.path.join(recon_save_base_dir, f'model_epoch_{model_epoch}')
-    os.makedirs(recon_save_base_dir, exist_ok=True)
-    reconstructing(train_data, device, diffusion, model, args, recon_save_base_dir, is_train='true')
+
+    recon_save_dir = os.path.join(recon_save_base_dir, f'model_epoch_{model_epoch}')
+    os.makedirs(recon_save_dir, exist_ok=True)
+
+    reconstructing(train_data, device, diffusion, model, args, recon_save_dir, is_train='true')
 
     #test_data = first(test_dataset_loader)
     #test_content = generate_heatmap_image(test_data, device, diffusion, model, args, save_base_dir, is_train= 'false')

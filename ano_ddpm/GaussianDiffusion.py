@@ -361,15 +361,14 @@ class GaussianDiffusionModel:
     # -----------------------------------------------------------------------------------------------------------------
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
         # -------------------------------------------------------------------------------------------------------------
+        # model predicting mean and variance
         out = self.p_mean_variance(model, x_t, t)
-        # out["mean"] = one step unnoised x mean
-        # out["variance"] = model variance about batas
-        # out["pred_x_0"] = model predict x_0
 
-        # noise = torch.randn_like(x_t)
+
         if type(denoise_fn) == str:
             if denoise_fn == "gauss":
-                noise = torch.randn_like(x_t)
+                print('when sampling, ')
+                noise = torch.randn_like(x_t).float()
             elif denoise_fn == "noise_fn":
                 noise = self.noise_fn(x_t, t).float()
             elif denoise_fn == "random":
@@ -390,7 +389,10 @@ class GaussianDiffusionModel:
         x_t_1_mean = out["mean"]                    # torch.Size([32, 1, 64, 64])
         model_log_variances = out["log_variance"]   # torch.Size([32, 1, 64, 64])
         std = torch.exp(0.5 * out["log_variance"])
+
+        # one step forwarding (reparamaterizatino technique)
         sample = out["mean"] + nonzero_mask * std * noise # torch.Size([32, 1, 64, 64])
+
         return {"sample": sample,                # (mean) + (std * noise)
                 "pred_x_0": out["pred_x_0"]}     # x_0
 
@@ -434,7 +436,9 @@ class GaussianDiffusionModel:
         if args.use_simplex_noise:
             noise = self.noise_fn(x=x, t=t_tensor, octave=6, frequency=64).float()
         else:
+            print('make noise here')
             noise = torch.rand_like(x).float().to(device)
+            #noise = torch.rand_like(x).float().to(device)
 
         # -------------------------------------------------------------------------------------------------------------
         # 2) noisy x
@@ -443,11 +447,16 @@ class GaussianDiffusionModel:
         # -------------------------------------------------------------------------------------------------------------
         # 3) generating
         for t in range(int(t_distance) - 1, -1, -1):
+            print('t : ', t)
             t_batch = torch.tensor([t], device=x.device).repeat(x.shape[0])
             with torch.no_grad():
-                # sample_p =
                 out = self.sample_p(model, x, t_batch, denoise_fn='gauss')
                 x = out["sample"]
+                # save intermediate result
+
+                import torchvision.transforms as torch_transforms
+                x_pil = torch_transforms.ToPILImage()(x.unsqueeze(0))
+                x_pil.save(os.path.join(f'intermediate_{t.item()}.png'))
         return x.detach()
 
     # -----------------------------------------------------------------------------------------------------------------
