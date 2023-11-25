@@ -264,7 +264,7 @@ class GaussianDiffusionModel:
         return pred_prev_sample
     """
 
-    def _get_variance(self, timestep: int, predicted_variance: torch.Tensor | None = None) -> torch.Tensor:
+    def _get_variance(self, timestep) -> torch.Tensor:
         """
         Compute the variance of the posterior at timestep t.
 
@@ -285,7 +285,7 @@ class GaussianDiffusionModel:
         # hacks - were probably added for training stability
         variance = torch.clamp(variance, min=1e-20)
         return variance
-    
+
     def p_loss(self, model, x_0, args):
         """ calculate total loss """
         if self.loss_weight == "none":
@@ -467,7 +467,7 @@ class GaussianDiffusionModel:
             noise = torch.randn(
                 model_output.size(), dtype=model_output.dtype, layout=model_output.layout, generator=generator
             ).to(model_output.device)
-            variance = (self._get_variance(timestep, predicted_variance=predicted_variance) ** 0.5) * noise
+            variance = (self._get_variance(timestep) ** 0.5) * noise
         pred_prev_sample = pred_prev_sample + variance
         return pred_prev_sample, pred_original_sample
 
