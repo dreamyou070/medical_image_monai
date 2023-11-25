@@ -228,8 +228,8 @@ def main(args) :
                 noise_pred = pipeline.unet(noisy_samples,timesteps).sample
                 target = noise
                 if args.masked_loss :
-                    noise_pred = noise_pred * mask_info
-                    target = target * mask_info
+                    noise_pred = noise_pred * mask_info.to(device)
+                    target = target * mask_info.to(device)
                     print(f'target : {target.shape} | mask_info : {mask_info.shape}')
                 loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean([1, 2, 3])
 
