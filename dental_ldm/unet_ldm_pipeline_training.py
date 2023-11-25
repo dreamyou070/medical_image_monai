@@ -226,9 +226,7 @@ def main(args) :
                 # 4) x_t
                 noisy_samples = scheduler.add_noise(original_samples = latents,noise = noise,timesteps = timesteps,)
                 # 5) unet inference
-                noise_pred = unet(sample = noisy_samples, timestep = timesteps,)
-                # predict the noise residual
-                noise_pred = pipeline.unet(noisy_samples,timesteps,encoder_hidden_states=None,timestep_cond=None).sample
+                noise_pred = pipeline.unet(noisy_samples,timesteps).sample
                 target = noise
                 if args.masked_loss :
                     noise_pred = noise_pred * mask_info
