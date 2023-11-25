@@ -77,7 +77,6 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
         for t in range(int(args.sample_distance) , -1, -1):
             with torch.no_grad() :
                 timestep = torch.Tensor([t]).repeat(batch_size).long()
-                print(f'latents : {latents}')
                 model_output = model(latents,
                                      timestep.to(device), None).sample
                 latents = scheduler.step(model_output,t,sample=latents).prev_sample
