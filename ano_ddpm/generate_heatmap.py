@@ -40,7 +40,7 @@ def generate_heatmap_image(data, device, diffusion, model, args,save_base_dir, i
     for img_index in range(x.shape[0]):
         img_dir = img_dirs[img_index]
         img_name = os.path.split(img_dir)[-1]
-        mask_info = mask_info[img_index]
+        mask_ = mask_info[img_index]
         abnormal_pixel_num = 0
         score_patch = pixelwise_anormal_score[img_index].squeeze()
         anormal_detect_background = torch.zeros_like(score_patch)
