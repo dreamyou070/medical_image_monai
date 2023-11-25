@@ -379,6 +379,7 @@ class GaussianDiffusionModel:
                 noise = generate_simplex_noise(self.simplex, x_t, t, False, in_channels=self.img_channels).float()
         else:
             noise = denoise_fn(x_t, t)
+
         # ---------------------------------------------------------------------------------
         # make mask : random time step, if t = 0, that means does not noised at all
         # therefore, except t =0 timestep, check all the other timestep
@@ -415,6 +416,41 @@ class GaussianDiffusionModel:
                 "pred_x_0":     pred_x_0,}
 
     # -----------------------------------------------------------------------------------------------------------------
+    def dental_forward_backward(self,
+                                model,
+                                x,
+                                args,
+                                device,
+                                t_distance=None, ):
+
+        # -------------------------------------------------------------------------------------------------------------
+        # 0) set t
+        if t_distance is None:
+            t_distance = self.num_timesteps
+        t_tensor = torch.tensor([t_distance - 1], device=x.device).repeat(x.shape[0])
+
+        # -------------------------------------------------------------------------------------------------------------
+        # 1) generate noise
+        if args.use_simplex_noise:
+            noise = self.noise_fn(x=x, t=t_tensor, octave=6, frequency=64).float()
+        else:
+            noise = torch.rand_like(x).float().to(device)
+
+        # -------------------------------------------------------------------------------------------------------------
+        # 2) noisy x
+        x = self.sample_q(x,t_tensor,noise).float()
+
+        # -------------------------------------------------------------------------------------------------------------
+        # 3) generating
+        for t in range(int(t_distance) - 1, -1, -1):
+            t_batch = torch.tensor([t], device=x.device).repeat(x.shape[0])
+            with torch.no_grad():
+                # sample_p =
+                out = self.sample_p(model, x, t_batch, denoise_fn='gauss')
+                x = out["sample"]
+        return x.detach()
+
+    # -----------------------------------------------------------------------------------------------------------------
     def forward_backward(self,
                          model,
                          x, see_whole_sequence="half", t_distance=None, denoise_fn="gauss",):
@@ -435,19 +471,21 @@ class GaussianDiffusionModel:
                     x = self.sample_q_gradual(x, t_batch, noise)
 
                 seq.append(x.cpu().detach())
+
+
         else:
             # x = self.sample_q(x,torch.tensor([t_distance], device=x.device).repeat(x.shape[0]),torch.randn_like(x))
             t_tensor = torch.tensor([t_distance - 1], device=x.device).repeat(x.shape[0])
-            x = self.sample_q(
-                    x, t_tensor,
-                    self.noise_fn(x, t_tensor).float()
-                    )
+            # ---------------------------------------------------------------------------------------------------------
+            # def sample_q = make noise latent
+            x = self.sample_q(x, t_tensor, self.noise_fn(x, t_tensor).float())
             if see_whole_sequence == "half":
                 seq.append(x.cpu().detach())
 
         for t in range(int(t_distance) - 1, -1, -1):
             t_batch = torch.tensor([t], device=x.device).repeat(x.shape[0])
             with torch.no_grad():
+                # sample_p =
                 out = self.sample_p(model, x, t_batch, denoise_fn)
                 x = out["sample"]
             if see_whole_sequence:
@@ -634,19 +672,15 @@ class GaussianDiffusionModel:
             for t_distance in range(50, int(args.T * 0.6), 50):
                 output = torch.empty((total_avg, 1, *args.img_size), device=x_0.device)
                 for avg in range(total_avg):
-
                     t_tensor = torch.tensor([t_distance], device=x_0.device).repeat(x_0.shape[0])
-                    x = self.sample_q(
-                        x_0, t_tensor,
-                        self.noise_fn(x_0, t_tensor).float()
-                    )
-
+                    x = self.sample_q(x_0, t_tensor,self.noise_fn(x_0, t_tensor).float())
                     for t in range(int(t_distance) - 1, -1, -1):
                         t_batch = torch.tensor([t], device=x.device).repeat(x.shape[0])
                         with torch.no_grad():
                             out = self.sample_p(model, x, t_batch)
+                            # ------------------------------------------------------------------------------------------
+                            # one step forward
                             x = out["sample"]
-
                     output[avg, ...] = x
 
                 # save image containing initial, each final denoised image, mean & mse
