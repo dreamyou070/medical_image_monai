@@ -95,10 +95,10 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
         real = torch_transforms.ToPILImage()(real.unsqueeze(0))
         # wrong in here ...
         recon = recon_image[img_index].squeeze()
-        recon = (recon / 2 + 0.5).clamp(0, 1).unsqueeze(0).unsqueeze(0)
-        recon = recon.cpu().permute(0, 2, 3, 1).numpy()
+        recon = (recon / 2 + 0.5).clamp(0, 1).unsqueeze(0)
+        recon = recon.cpu().permute(1,2,0).numpy()
         recon = (recon * 255).astype(np.uint8)
-        print(f'recon : {recon.shape}')
+        recon = Image.fromarray(recon).convert('L')
 
         #recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
 
@@ -108,10 +108,10 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
 
         new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
         new_image.paste(real,  (0, 0))
-        #new_image.paste(recon, (real.size[0], 0))
-        #new_image.paste(mask,  (real.size[0]+recon.size[0], 0))
-        #new_image.save(os.path.join(image_save_dir,
-        #                           f'real_recon_answer_{train_data}_epoch_{epoch}_{img_index}.png'))
+        new_image.paste(recon, (real.size[0], 0))
+        new_image.paste(mask,  (real.size[0]+recon.size[0], 0))
+        new_image.save(os.path.join(image_save_dir,
+                                   f'real_recon_answer_{train_data}_epoch_{epoch}_{img_index}.png'))
         loading_image = wandb.Image(new_image,
                                     caption=f"(real_recon_answer) epoch {epoch + 1} | {is_normal}")
         if train_data == 'training_data' :
