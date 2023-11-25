@@ -197,7 +197,8 @@ def main(args) :
         with autocast(enabled=True):
             z = autoencoderkl.encode_stage_2_inputs(check_data["image_info"].to(device))
     scale_factor = 1 / torch.std(z)
-    diffusion = LatentDiffusionInferer(scheduler, scale_factor=scale_factor)
+    diffusion = LatentDiffusionInferer(scheduler,
+                                       scale_factor=scale_factor)
 
     print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(),
@@ -226,25 +227,26 @@ def main(args) :
             with torch.no_grad():
                 z_mu, z_sigma = autoencoderkl.encode(x_0)
                 x_0 = autoencoderkl.sampling(z_mu, z_sigma)
+            # x_0 = [batch, 3, 128/4, 128/4]
             x_0 = x_0 * scale_factor
-            print(f'x_0.shape [batch, 3, 128, 128]: {x_0.shape}')
-            # ----------------------------------------------------------------------------------------------------------
-    """
             # 1) check random t
             if x_0.shape[0] != 0 :
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device =device)
-                if args.use_simplex_noise:
-                    noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
-                else:
-                    noise = torch.rand_like(x_0).float().to(device)
+                #if args.use_simplex_noise:
+                #    noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
+                #else:
+                noise = torch.rand_like(x_0).float().to(device)
+
                 # --------------------------------------------------------------------------------
                 # 2) make noisy latent
                 x_t = diffusion.sample_q(x_0, t, noise)
-
-
+                noisy_latent = scheduler.add_noise(original_samples=x_0,
+                                                   noise=noise,
+                                                   timesteps=t)
                 # 3) model prediction
-                noise_pred = model(x_t, t)
+                noise_pred = model(x=noisy_latent,timesteps=t,context=None)
                 target = noise
+
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss:
                     noise_pred = noise_pred * mask_info.to(device)
@@ -267,6 +269,7 @@ def main(args) :
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
                 optimiser.step()
+    """
                 # ----------------------------------------------------------------------------------------- #
                 # EMA model updating
                 update_ema_params(ema, model)
@@ -282,6 +285,7 @@ def main(args) :
                                              ema=ema, args=args, is_train_data = False, device = device)
                             training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
                                              ema=ema, args=args, is_train_data=True, device = device)
+        
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
         print(f'vlb loss calculating ... ')
@@ -383,6 +387,8 @@ if __name__ == '__main__':
     parser.add_argument('--start_epoch', type=int, default=0)
     parser.add_argument('--train_epochs', type=int, default=3000)
     parser.add_argument('--only_normal_training', action='store_true')
+    parser.add_argument('--sample_distance', type=int, default=150)
+    parser.add_argument('--use_simplex_noise', action='store_true')
 
     args = parser.parse_args()
     main(args)
