@@ -282,7 +282,6 @@ def main(args) :
                     loss = torch.nn.functional.mse_loss(anormal_score.to(device).float(),
                                                         anormal_score_answer.to(device).float(),
                                                         reduction="none")
-                    print(f'anormal_score [batch, 1, 128,128] : {anormal_score.shape} | anormal_score_answer : {anormal_score_answer.shape} | loss : {loss.shape}')
                 loss = loss.mean([1,2,3])
                 loss = loss.mean()
 
