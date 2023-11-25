@@ -207,6 +207,7 @@ class GaussianDiffusionModel:
             self.weights = np.ones(self.num_timesteps)
         self.loss_weight = loss_weight
         alphas = 1 - betas
+        self.alphas = alphas
         self.betas = betas
         self.sqrt_alphas = np.sqrt(alphas)
         self.sqrt_betas = np.sqrt(betas)
