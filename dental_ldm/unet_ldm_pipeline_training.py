@@ -179,9 +179,8 @@ def main(args) :
     print(f'\n step 4. unet model')
     unet = UNet2DModel(sample_size = 32,in_channels = 4,out_channels =4,)
     unet = unet.to(device)
-    a = unet.config.sample_size
-    print(f'unet.config.sample_size : {unet.config.sample_size}')
-    
+    #  unet.config.sample_size = 32
+
     print(f'\n step 5. scheduler')
     scheduler = DDPMScheduler(num_train_timesteps = 1000,
                               beta_start = 0.0001,
@@ -210,8 +209,7 @@ def main(args) :
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=70)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
-            x_0 = batch["image_info"].to(device)  # [64,1,160,80]
-            print(f'x_0.shape : {x_0.shape}')
+            x_0 = batch["image_info"].to(device)  # [Batch, 1, 128, 128]
             mask_info = batch["mask"].unsqueeze(dim=1)
             #small_mask_info = batch['small_mask'].unsqueeze(dim=1)
             normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
@@ -229,6 +227,8 @@ def main(args) :
                 noisy_samples = scheduler.add_noise(original_samples = latents,noise = noise,timesteps = timesteps,)
                 # 5) unet inference
                 noise_pred = unet(sample = noisy_samples, timestep = timesteps,)
+                # predict the noise residual
+                noise_pred = pipeline.unet(noisy_samples,timesteps,encoder_hidden_states=None,timestep_cond=None).sample
                 target = noise
                 if args.masked_loss :
                     noise_pred = noise_pred * mask_info
