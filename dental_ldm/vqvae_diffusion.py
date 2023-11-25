@@ -5,7 +5,6 @@ from PIL import Image
 from random import seed
 from torch import optim
 from helpers import *
-from nets import VQVAE
 from torchvision import transforms
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
@@ -20,6 +19,7 @@ from setproctitle import *
 from schedulers import DDPMScheduler
 from inferers import LatentDiffusionInferer
 from torch.cuda.amp import GradScaler, autocast
+from generative.networks.nets import VQVAE
 
 
 torch.multiprocessing.set_sharing_strategy('file_system')
