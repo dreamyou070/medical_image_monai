@@ -254,6 +254,7 @@ def main(args) :
                     noise_pred = noise_pred * small_mask_info.to(device)
                     target = noise * small_mask_info.to(device)
                     loss = torch.nn.functional.mse_loss(noise_pred.float(),target.float(), reduction="none")
+
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss:
                     noise_pred_p = noise_pred_p * mask_info.to(device)
