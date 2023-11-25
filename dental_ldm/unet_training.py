@@ -1,5 +1,4 @@
 import argparse, wandb
-import collections
 import copy
 import time
 from random import seed
@@ -11,7 +10,8 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from data_module import SYDataLoader, SYDataset
 from monai.utils import first
-from nets import AutoencoderKL, DiffusionModelUNet, PatchDiscriminator
+from nets import AutoencoderKL, DiffusionModelUNet
+from nets.utils import update_ema_params
 import torch.multiprocessing
 import torchvision.transforms as torch_transforms
 import PIL
@@ -46,8 +46,7 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     "ema":                  ema.state_dict(),
                     'loss':                 loss,},save_dir)
 
-def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
-                     save_imgs=False, is_train_data=True, device='cuda'):
+def training_outputs(args, test_data, scheduler, is_train_data, device, model, vae, scale_factor, epoch):
 
     if is_train_data :
         train_data = 'training_data'
@@ -59,57 +58,64 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
     os.makedirs(video_save_dir, exist_ok=True)
     os.makedirs(image_save_dir, exist_ok=True)
 
-    if save_imgs:
+    # 1) make random noise
+    x = test_data["image_info"].to(device)  # batch, channel, w, h
+    normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
+    mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
 
-        # 1) make random noise
-        x = test_data["image_info"].to(device)  # batch, channel, w, h
-        normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
-        mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
+    with torch.no_grad():
+        z_mu, z_sigma = vae.encode(x)
+        latent = vae.sampling(z_mu, z_sigma) * scale_factor
 
-        t = torch.randint(args.sample_distance - 1, args.sample_distance, (x.shape[0],), device=x.device)
-        time_step = t[0].item()
 
-        if args.use_simplex_noise:
-            noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
-        else:
-            noise = torch.rand_like(x).float().to(x.device)
-        # 2) select random int
+    # 2) select random int
+    t = torch.randint(args.sample_distance - 1,
+                      args.sample_distance, (x.shape[0],), device=x.device)
+    time_step = t[0].item()
 
-        with torch.no_grad():
-            # 3) q sampling = noising & p sampling = denoising
-            x_t = diffusion.sample_q(x, t, noise)
-            temp = diffusion.sample_p(ema, x_t, t)
+    # 3) noise
+    noise = torch.rand_like(x).float().to(x.device)
 
-        # 4) what is sample_p do ?
-        real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
-        sample_images = temp["sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
-        pred_images = temp["pred_x_0"][:num_images, ...].cpu()#.permute(0,1,3,2)
-        merge_images = []
-        #num_images = min(len(normal_info), num_images)
-        for img_index in range(num_images):
-            normal_info_ = normal_info[img_index]
-            if normal_info_ == 1:
-                is_normal = 'normal'
-            else :
-                is_normal = 'abnormal'
-            real = real_images[img_index,...].squeeze()
-            real= real.unsqueeze(0)
-            real = torch_transforms.ToPILImage()(real)
-            sample = sample_images[img_index,...].squeeze()
-            sample = sample.unsqueeze(0)
-            sample = torch_transforms.ToPILImage()(sample)
-            pred = pred_images[img_index,...].squeeze()
-            pred = pred.unsqueeze(0)
-            pred = torch_transforms.ToPILImage()(pred)
-            new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
-            new_image.paste(real, (0, 0))
-            new_image.paste(sample, (real.size[0], 0))
-            new_image.paste(pred, (real.size[0]+sample.size[0], 0))
-            new_image.save(os.path.join(image_save_dir, f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
-            loading_image = wandb.Image(new_image,
-                                        caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
-            wandb.log({"inference": loading_image})
+    # 4) noise image generating
+    noisy_latent = scheduler.add_noise(original_samples=latent,
+                                       noise=noise,
+                                       timesteps=t)
+    latent = noisy_latent.clone().detach()
+    # 5) denoising
+    for t in range(int(args.sample_distance) - 1, -1, -1):
+        # 5-1) model prediction
+        model_output = model(latent,torch.Tensor((t,)).to(device),None)
+        # 5-2) update latent
+        latent, _ = scheduler.step(model_output, t, latent)
+    recon_image = vae.decode_stage_2_outputs(latent / scale_factor)
 
+    for img_index in range(x.shape[0]):
+        normal_info_ = normal_info[img_index]
+        if normal_info_ == 1:
+            is_normal = 'normal'
+        else :
+            is_normal = 'abnormal'
+        real = x[img_index,...].squeeze()
+        real= real.unsqueeze(0)
+        real = torch_transforms.ToPILImage()(real)
+
+        recon = recon_image[img_index,...].squeeze()
+        recon = recon.unsqueeze(0)
+        recon = torch_transforms.ToPILImage()(recon)
+
+        mask = mask_info[img_index,...].squeeze()
+        mask = mask.unsqueeze(0)
+        mask = torch_transforms.ToPILImage()(mask)
+
+        new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
+        new_image.paste(real,  (0, 0))
+        new_image.paste(recon, (real.size[0], 0))
+        new_image.paste(mask,  (real.size[0]+recon.size[0], 0))
+        new_image.save(os.path.join(image_save_dir,
+                                    f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
+        loading_image = wandb.Image(new_image,
+                                    caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
+        wandb.log({"inference": loading_image})
 
 
 def main(args) :
@@ -197,7 +203,7 @@ def main(args) :
         with autocast(enabled=True):
             z = autoencoderkl.encode_stage_2_inputs(check_data["image_info"].to(device))
     scale_factor = 1 / torch.std(z)
-    diffusion = LatentDiffusionInferer(scheduler,
+    inferer = LatentDiffusionInferer(scheduler,
                                        scale_factor=scale_factor)
 
     print(f'\n step 5. optimizer')
@@ -262,13 +268,12 @@ def main(args) :
                                                             reduction="none")
                     loss = pos_loss + args.pos_neg_loss_scale * (pos_loss - neg_loss)
                 loss = loss.mean()
-                
+
                 wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
                 optimiser.step()
-    """
                 # ----------------------------------------------------------------------------------------- #
                 # EMA model updating
                 update_ema_params(ema, model)
@@ -280,11 +285,13 @@ def main(args) :
                             ema.eval()
                             model.eval()
                             inference_num = min(args.inference_num, args.batch_size)
-                            training_outputs(diffusion, test_data, epoch, inference_num, save_imgs=args.save_imgs,
-                                             ema=ema, args=args, is_train_data = False, device = device)
-                            training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
-                                             ema=ema, args=args, is_train_data=True, device = device)
-        
+                            training_outputs(args, test_data, scheduler, 'true',
+                                             device, model, autoencoderkl, scale_factor, epoch+1)
+                            training_outputs(args, data, scheduler, 'falce',
+                                             device, model, autoencoderkl, scale_factor, epoch+1)
+
+
+    """
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
         print(f'vlb loss calculating ... ')
@@ -391,6 +398,8 @@ if __name__ == '__main__':
     parser.add_argument('--masked_loss', action='store_true')
     parser.add_argument('--pos_neg_loss', action='store_true')
     parser.add_argument('--pos_neg_loss_scale', type=float, default=1.0)
+
+    parser.add_argument('--inference_freq', type=int, default=50)
 
     args = parser.parse_args()
     main(args)
