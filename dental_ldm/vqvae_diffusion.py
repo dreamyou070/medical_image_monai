@@ -5,7 +5,7 @@ from PIL import Image
 from random import seed
 from torch import optim
 from helpers import *
-from generative.networks.nets import VQVAE
+from nets import VQVAE
 from torchvision import transforms
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
