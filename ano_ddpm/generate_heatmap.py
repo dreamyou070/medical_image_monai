@@ -119,8 +119,7 @@ def generate_heatmap_image(data, device, diffusion, model, args,save_base_dir, i
     mask_info = data['mask']  # if 1 = normal, 0 = abnormal -> shape [ batch, 128, 128 ]
     with torch.no_grad():
         vlb_terms = diffusion.calc_total_vlb_in_sample_distance(x, model, args)
-    vlb = vlb_terms["whole_vb"]                # [batch, 1000, 1, W, H]
-    pixelwise_anormal_score = vlb.squeeze(dim=2).mean(dim=1)  # [batch, W, H]
+    pixelwise_anormal_score = vlb_terms["whole_vb"].squeeze(dim=2).mean(dim=1)     # [batch, W, H]
     w,h = pixelwise_anormal_score.shape[-2], pixelwise_anormal_score.shape[-1]
     for img_index in range(x.shape[0]):
         img_dir = img_dirs[img_index]
@@ -144,7 +143,6 @@ def generate_heatmap_image(data, device, diffusion, model, args,save_base_dir, i
         # --------------------------------------------------------------------------------------------------------------
         # [128,128] torch
         heat_map = expand_image(im=anormal_detect_background, h=h, w=w, absolute=False).to('cpu').detach()
-        max_value = heat_map.max()
         np_heatmap = cm.turbo(heat_map)[:, :, :-1]
         np_heatmap = np.uint8(np_heatmap * 255)
         heat_map_img = Image.fromarray(np_heatmap)
@@ -247,10 +245,10 @@ def main(args):
     train_data = first(training_dataset_loader)
     train_content = generate_heatmap_image(train_data, device, diffusion, model, args,save_base_dir, is_train= 'true' )
 
-    test_data = first(test_dataset_loader)
-    test_content = generate_heatmap_image(test_data, device, diffusion, model, args, save_base_dir, is_train= 'false')
+    #test_data = first(test_dataset_loader)
+    #test_content = generate_heatmap_image(test_data, device, diffusion, model, args, save_base_dir, is_train= 'false')
 
-    total_content = train_content + test_content
+    total_content = train_content #+ test_content
 
     with open(abnormal_pixel_num_file, 'w') as f:
         for content in total_content:
@@ -289,8 +287,8 @@ if __name__ == '__main__':
     parser.add_argument('--beta_schedule', type=str, default='linear')
     parser.add_argument('--loss_weight', type=str, default="none")
     parser.add_argument('--loss_type', type=str, default='l2')
-    parser.add_argument('--sample_distance', type=int, default=800)
-    parser.add_argument('--thredhold', type=float, default=0.05)
+    parser.add_argument('--sample_distance', type=int, default=150)
+    parser.add_argument('--thredhold', type=float, default=0.00000216)
 
     args = parser.parse_args()
     main(args)

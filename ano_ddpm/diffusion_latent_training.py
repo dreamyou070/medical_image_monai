@@ -175,7 +175,7 @@ def main(args) :
                                   attention_levels=(False, False, False),
                                   with_encoder_nonlocal_attn=False,
                                   with_decoder_nonlocal_attn=False, )
-    path = r'/data7/sooyeon/medical_image/anoddpm_result_vae/1_first_training/autoencoderkl_100.pth'
+    path = r'/data7/sooyeon/medical_image/anoddpm_result_vae/1_first_training/autoencoderkl/autoencoderkl_53.pth'
     autoencoderkl.load_state_dict(torch.load(path))
     autoencoderkl = autoencoderkl.to(device)
 
@@ -203,6 +203,11 @@ def main(args) :
     print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
 
+    with torch.no_grad():
+        z = autoencoderkl.encode_stage_2_inputs(check_data["image"].to(device))
+    print(f"Scaling factor set to {1 / torch.std(z)}")
+    scale_factor = 1 / torch.std(z)
+
     print(f'\n step 6. training')
     tqdm_epoch = range(args.start_epoch, args.train_epochs + 1)
     start_time = time.time()
@@ -220,6 +225,11 @@ def main(args) :
             if args.only_normal_training :
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
+            with torch.no_grad():
+                z_mu, z_sigma = autoencoderkl.encode(x_0)
+                x_0 = autoencoderkl.sampling(z_mu, z_sigma)
+
+            x_0 = x_0 * scale_factor
             # ----------------------------------------------------------------------------------------------------------
             # 1) check random t
             if x_0.shape[0] != 0 :
