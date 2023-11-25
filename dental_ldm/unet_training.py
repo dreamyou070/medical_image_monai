@@ -76,10 +76,11 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
     noise = torch.rand_like(latent).float().to(x.device)
 
     # 4) noise image generating
-    noisy_latent = scheduler.add_noise(original_samples=latent,
-                                       noise=noise,
-                                       timesteps=t)
-    latent = noisy_latent.clone().detach()
+    with torch.no_grad() :
+        noisy_latent = scheduler.add_noise(original_samples=latent,
+                                           noise=noise,
+                                           timesteps=t)
+        latent = noisy_latent.clone().detach()
     # 5) denoising
     for t in range(int(args.sample_distance) - 1, -1, -1):
         # 5-1) model prediction
