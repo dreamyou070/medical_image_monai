@@ -22,91 +22,6 @@ from heatmap_module import _convert_heat_map_colors, expand_image
 from PIL import Image
 from matplotlib import cm
 
-#torch.multiprocessing.set_sharing_strategy('file_system')
-#torch.cuda.empty_cache()
-
-def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
-    model_save_base_dir = os.path.join(args.experiment_dir,'diffusion-models')
-    os.makedirs(model_save_base_dir, exist_ok=True)
-    if final:
-        save_dir = os.path.join(model_save_base_dir,f'unet_final.pt')
-        torch.save({'n_epoch':              args.train_epochs,
-                    'model_state_dict':     unet.state_dict(),
-                    'optimizer_state_dict': optimiser.state_dict(),
-                    "ema":                  ema.state_dict(),
-                    "args":                 args},save_dir)
-    else:
-        save_dir = os.path.join(model_save_base_dir, f'unet_epoch_{epoch}.pt')
-        torch.save({'n_epoch':              epoch,
-                    'model_state_dict':     unet.state_dict(),
-                    'optimizer_state_dict': optimiser.state_dict(),
-                    "args":                 args,
-                    "ema":                  ema.state_dict(),
-                    'loss':                 loss,},save_dir)
-
-def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
-                     save_imgs=False, is_train_data=True, device='cuda'):
-
-    if is_train_data == 'true':
-        train_data = 'training_data'
-    else :
-        train_data = 'test_data'
-
-    video_save_dir = os.path.join(args.experiment_dir, 'diffusion-videos')
-    image_save_dir = os.path.join(args.experiment_dir, 'diffusion-training-images')
-    os.makedirs(video_save_dir, exist_ok=True)
-    os.makedirs(image_save_dir, exist_ok=True)
-
-    if save_imgs:
-
-        # 1) make random noise
-        x = test_data["image_info"].to(device)  # batch, channel, w, h
-        normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
-        mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
-
-        t = torch.randint(args.sample_distance - 1, args.sample_distance, (x.shape[0],), device=x.device)
-        time_step = t[0].item()
-
-        if args.use_simplex_noise:
-            noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
-        else:
-            noise = torch.rand_like(x).float().to(x.device)
-        # 2) select random int
-
-        with torch.no_grad():
-            # 3) q sampling = noising & p sampling = denoising
-            x_t = diffusion.sample_q(x, t, noise)
-            temp = diffusion.sample_p(ema, x_t, t)
-
-        # 4) what is sample_p do ?
-        real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
-        sample_images = temp["sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
-        pred_images = temp["pred_x_0"][:num_images, ...].cpu()#.permute(0,1,3,2)
-        merge_images = []
-        #num_images = min(len(normal_info), num_images)
-        for img_index in range(num_images):
-            normal_info_ = normal_info[img_index]
-            if normal_info_ == 1:
-                is_normal = 'normal'
-            else :
-                is_normal = 'abnormal'
-            real = real_images[img_index,...].squeeze()
-            real= real.unsqueeze(0)
-            real = torch_transforms.ToPILImage()(real)
-            sample = sample_images[img_index,...].squeeze()
-            sample = sample.unsqueeze(0)
-            sample = torch_transforms.ToPILImage()(sample)
-            pred = pred_images[img_index,...].squeeze()
-            pred = pred.unsqueeze(0)
-            pred = torch_transforms.ToPILImage()(pred)
-            new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
-            new_image.paste(real, (0, 0))
-            new_image.paste(sample, (real.size[0], 0))
-            new_image.paste(pred, (real.size[0]+sample.size[0], 0))
-            new_image.save(os.path.join(image_save_dir, f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
-            loading_image = wandb.Image(new_image,
-                                        caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
-            wandb.log({"inference": loading_image})
 
 def generate_heatmap_image(data, device, diffusion, model, args,save_base_dir, is_train ) :
     caption = 'train'
@@ -119,11 +34,13 @@ def generate_heatmap_image(data, device, diffusion, model, args,save_base_dir, i
     mask_info = data['mask']  # if 1 = normal, 0 = abnormal -> shape [ batch, 128, 128 ]
     with torch.no_grad():
         vlb_terms = diffusion.calc_total_vlb_in_sample_distance(x, model, args)
+
     pixelwise_anormal_score = vlb_terms["whole_vb"].squeeze(dim=2).mean(dim=1)     # [batch, W, H]
     w,h = pixelwise_anormal_score.shape[-2], pixelwise_anormal_score.shape[-1]
     for img_index in range(x.shape[0]):
         img_dir = img_dirs[img_index]
         img_name = os.path.split(img_dir)[-1]
+        mask_info = mask_info[img_index]
         abnormal_pixel_num = 0
         score_patch = pixelwise_anormal_score[img_index].squeeze()
         anormal_detect_background = torch.zeros_like(score_patch)
