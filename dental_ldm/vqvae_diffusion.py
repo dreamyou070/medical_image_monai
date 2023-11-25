@@ -61,10 +61,16 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
     x = test_data["image_info"].to(device)  # batch, channel, w, h
     normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
     mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
-
     with torch.no_grad():
-        z = vqvae.encoder(x)
-        latent = z * scale_factor
+        latent = vqvae.encoder(x)
+
+    if args.use_discretize:
+        loss, quantized = vqvae.quantizer(latent)
+        latent = quantized
+    if args.use_scale:
+        latent = latent * scale_factor
+
+
     # 2) select random int
     t = torch.randint(args.sample_distance - 1, args.sample_distance, (latent.shape[0],), device=x.device)
     # 3) noise
@@ -237,6 +243,9 @@ def main(args) :
                 mask_info = mask_info[normal_info == 1]
             with torch.no_grad():
                 z_0 = vqvae_encoder(x_0.to(device))
+            if args.use_discretize :
+                loss, quantized = vqvae_quantizer(z_0)
+                z_0 = quantized
             if args.use_scale :
                 z_0 = z_0 * scale_factor
             # 1) check random t
