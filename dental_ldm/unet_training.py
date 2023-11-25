@@ -48,7 +48,7 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
 
 def training_outputs(args, test_data, scheduler, is_train_data, device, model, vae, scale_factor, epoch):
 
-    if is_train_data :
+    if is_train_data == 'training_data':
         train_data = 'training_data'
     else :
         train_data = 'test_data'
@@ -286,8 +286,8 @@ def main(args) :
                         if i == 0:
                             ema.eval()
                             model.eval()
-                            training_outputs(args, test_data, scheduler, 'true',  device, ema, autoencoderkl, scale_factor, epoch+1)
-                            training_outputs(args, data, scheduler, 'falce', device, ema, autoencoderkl, scale_factor, epoch+1)
+                            training_outputs(args, test_data, scheduler, 'training_data',  device, ema, autoencoderkl, scale_factor, epoch+1)
+                            training_outputs(args, data, scheduler, 'test_data', device, ema, autoencoderkl, scale_factor, epoch+1)
         """
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
