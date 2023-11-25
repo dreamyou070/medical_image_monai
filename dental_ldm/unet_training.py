@@ -244,9 +244,9 @@ def main(args) :
                 noisy_latent = scheduler.add_noise(original_samples=z_0,noise=noise,timesteps=t)
                 # 3) model prediction
                 noise_pred = model(x=noisy_latent,timesteps=t,context=None)
-                with torch.no_grad():
-                    noise_pred_p = autoencoderkl.decode_stage_2_outputs(noise_pred/scale_factor)
-                    target_p = autoencoderkl.decode_stage_2_outputs(noise/scale_factor)
+                #with torch.no_grad():
+                noise_pred_p = autoencoderkl.decode_stage_2_outputs(noise_pred/scale_factor)
+                target_p = autoencoderkl.decode_stage_2_outputs(noise/scale_factor)
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss:
                     noise_pred_p = noise_pred_p * mask_info.to(device)
