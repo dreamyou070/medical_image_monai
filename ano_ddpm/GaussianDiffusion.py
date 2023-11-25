@@ -246,7 +246,7 @@ class GaussianDiffusionModel:
         self.posterior_mean_coef2 = ((1.0 - self.alphas_cumprod_prev) * np.sqrt(alphas) / (1.0 - self.alphas_cumprod))
 
         self.prediction_type = DDPMPredictionType.EPSILON
-        self.variance_type == DDPMVarianceType.FIXED_SMALL
+        self.variance_type = DDPMVarianceType.FIXED_SMALL
         self.clip_sample = clip_sample
 
 
