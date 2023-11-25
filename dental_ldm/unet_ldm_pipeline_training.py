@@ -212,7 +212,6 @@ def main(args) :
     for epoch in range(args.n_epochs):
         unet.train()
         vae.eval()
-        epoch_loss = 0
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=70)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
