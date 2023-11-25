@@ -108,6 +108,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
                                     f'real_recon_answer_{train_data}_epoch_{epoch}_{img_index}.png'))
         loading_image = wandb.Image(new_image,
                                     caption=f"(real_recon_answer) epoch {epoch + 1} | {is_normal}")
+        print(f'train_data word : {train_data}')
         if train_data == 'training_data' :
             wandb.log({"training data inference" : loading_image})
         else :
@@ -258,6 +259,7 @@ def main(args) :
                     neg_loss = torch.nn.functional.mse_loss((noise_pred_p * (1 - mask_info).to(device)).float(),
                                                             (target_p * (1 - mask_info).to(device)).float(),
                                                             reduction="none")
+                    print(f'[info nce loss] : {pos_loss} / {neg_loss}')
                     loss = pos_loss / (pos_loss + neg_loss)
                 # ------------------------------------------------------------------------------------------------------
                 if args.pos_info_nce_loss:
