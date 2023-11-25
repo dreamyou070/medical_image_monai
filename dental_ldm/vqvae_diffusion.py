@@ -45,7 +45,7 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     "ema":                  ema.state_dict(),
                     'loss':                 loss,},save_dir)
 
-def training_outputs(args, test_data, scheduler, is_train_data, device, model, vae, scale_factor, epoch):
+def training_outputs(args, test_data, scheduler, is_train_data, device, model, vqvae, scale_factor, epoch):
 
     if is_train_data == 'training_data':
         train_data = 'training_data'
@@ -63,8 +63,8 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
     mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
 
     with torch.no_grad():
-        z_mu, z_sigma = vae.encode(x)
-        latent = vae.sampling(z_mu, z_sigma) * scale_factor
+        z = vqvae.encoder(x)
+        latent = z * scale_factor
     # 2) select random int
     t = torch.randint(args.sample_distance - 1, args.sample_distance, (latent.shape[0],), device=x.device)
     # 3) noise
@@ -81,8 +81,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
         # 5-2) update latent
         latent, _ = scheduler.step(model_output, t, latent)
     with torch.no_grad() :
-        recon_image = vae.decode_stage_2_outputs(latent / scale_factor)
-
+        recon_image = vqvae.decoder(latent / scale_factor)
     for img_index in range(x.shape[0]):
         normal_info_ = normal_info[img_index]
         if normal_info_ == 1:
@@ -292,7 +291,7 @@ def main(args) :
                     loss = loss.mean([1, 2, 3])
 
                 if args.anormal_scoring :
-                    pred_original_sample = autoencoderkl.decode_stage_2_outputs(pred_original_sample/scale_factor)
+                    pred_original_sample = vqvae.decoder(pred_original_sample/scale_factor)
                     anormal_score = torch.nn.functional.mse_loss(pred_original_sample.float(),
                                                                  target_p.float(),reduction="none")
                     max_ = torch.max(anormal_score, dim=-1)
