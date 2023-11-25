@@ -275,13 +275,15 @@ def main(args) :
                     loss = pos_loss + args.reg_loss_scale * reg_loss
 
                 if args.anormal_scoring :
-                    #anormal_score = torch.nn.functional.mse_loss(noise_pred_p.float(),target_p.float(),reduction="none")
-                    #anormal_score_answer = (1 - mask_info)
-                    #loss = torch.nn.functional.mse_loss(anormal_score.to(device).float(),
-                    #                                    anormal_score_answer.to(device).float(),
-                    #                                    reduction="none")
-                    print(f'pred_original_sample [Batch, 3, 32,32] : {pred_original_sample.shape}')
-                    loss = pred_original_sample
+                    pred_original_sample = autoencoderkl.decode_stage_2_outputs(pred_original_sample/scale_factor)
+                    anormal_score = torch.nn.functional.mse_loss(pred_original_sample.float(),
+                                                                 target_p.float(),reduction="none")
+                    anormal_score_answer = (1 - mask_info)
+                    loss = torch.nn.functional.mse_loss(anormal_score.to(device).float(),
+                                                        anormal_score_answer.to(device).float(),
+                                                        reduction="none")
+                    print(f'anormal_score [batch, 1, 128,128] : {anormal_score.shape} | anormal_score_answer : {anormal_score_answer.shape} | loss : {loss.shape}')
+                loss = loss.mean([1,2,3])
                 loss = loss.mean()
 
                 wandb.log({"training loss": loss.item()})
