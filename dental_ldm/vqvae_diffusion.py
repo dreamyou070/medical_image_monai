@@ -240,7 +240,6 @@ def main(args) :
             with torch.no_grad():
                 z_0 = vqvae_encoder(x_0.to(device))
             z_0 = z_0 * scale_factor
-
             # 1) check random t
             if z_0.shape[0] != 0 :
                 t = torch.randint(0, args.sample_distance, (z_0.shape[0],), device =device)
@@ -291,7 +290,7 @@ def main(args) :
                     reg_loss = pos_loss / (pos_loss + neg_loss)
                     loss = pos_loss + args.reg_loss_scale * reg_loss
                     loss = loss.mean([1, 2, 3])
-                """
+
                 if args.anormal_scoring :
                     pred_original_sample = autoencoderkl.decode_stage_2_outputs(pred_original_sample/scale_factor)
                     anormal_score = torch.nn.functional.mse_loss(pred_original_sample.float(),
@@ -305,6 +304,7 @@ def main(args) :
                                                         anormal_score_answer.to(device).float(),
                                                         reduction="none")
                     loss = loss.mean([1, 2, 3])
+
                 if args.min_max_training :
 
                     normal_pixel_num = small_mask_info.sum([1,2,3])
@@ -329,7 +329,6 @@ def main(args) :
                     loss = pos_loss + loss_diff
                 
                 loss = loss.mean()
-                """
                 wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
@@ -345,9 +344,9 @@ def main(args) :
                         if i == 0:
                             ema.eval()
                             model.eval()
-                            training_outputs(args, test_data, scheduler, 'training_data',  device, ema, autoencoderkl, scale_factor, epoch+1)
-                            training_outputs(args, data, scheduler, 'test_data', device, ema, autoencoderkl, scale_factor, epoch+1)
-        
+                            training_outputs(args, test_data, scheduler, 'training_data',  device, ema, vqvae, scale_factor, epoch+1)
+                            training_outputs(args, data, scheduler, 'test_data', device, ema, vqvae, scale_factor, epoch+1)
+        """
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
         print(f'vlb loss calculating ... ')
@@ -405,11 +404,10 @@ def main(args) :
                         wandb.log({"abnormal portion of *ab*normal sample kl" : ab_portion_ab_whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
                     # collecting total vlb in deque collections
-        
+        """
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-
 
 if __name__ == '__main__':
 
