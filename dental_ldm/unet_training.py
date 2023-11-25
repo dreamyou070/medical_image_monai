@@ -232,43 +232,34 @@ def main(args) :
                 mask_info = mask_info[normal_info == 1]
             with torch.no_grad():
                 z_mu, z_sigma = autoencoderkl.encode(x_0)
-                x_0 = autoencoderkl.sampling(z_mu, z_sigma)
+                z_0 = autoencoderkl.sampling(z_mu, z_sigma)
             # x_0 = [batch, 3, 128/4, 128/4]
-            x_0 = x_0 * scale_factor
-
-
-
+            z_0 = z_0 * scale_factor
 
             # 1) check random t
-            if x_0.shape[0] != 0 :
-                t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device =device)
-                #if args.use_simplex_noise:
-                #    noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
-                #else:
-                noise = torch.rand_like(x_0).float().to(device)
-
-                # --------------------------------------------------------------------------------
+            if z_0.shape[0] != 0 :
+                t = torch.randint(0, args.sample_distance, (z_0.shape[0],), device =device)
+                noise = torch.rand_like(z_0).float().to(device)
                 # 2) make noisy latent
-                noisy_latent = scheduler.add_noise(original_samples=x_0,
-                                                   noise=noise,
-                                                   timesteps=t)
+                noisy_latent = scheduler.add_noise(original_samples=z_0,noise=noise,timesteps=t)
                 # 3) model prediction
                 noise_pred = model(x=noisy_latent,timesteps=t,context=None)
-                target = noise
-
+                with torch.no_grad():
+                    noise_pred_p = autoencoderkl.decode_stage_2_outputs(noise_pred/scale_factor)
+                    target_p = autoencoderkl.decode_stage_2_outputs(noise/scale_factor)
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss:
-                    noise_pred = noise_pred * mask_info.to(device)
-                    target = target * mask_info.to(device)
-                loss = torch.nn.functional.mse_loss(noise_pred.float(),
-                                                    target.float(),
+                    noise_pred_p = noise_pred_p * mask_info.to(device)
+                    target_p = target_p * mask_info.to(device)
+                loss = torch.nn.functional.mse_loss(noise_pred_p.float(),
+                                                    target_p.float(),
                                                     reduction="none")
                 if args.pos_neg_loss:
-                    pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
-                                                            (target * mask_info.to(device)).float(),
+                    pos_loss = torch.nn.functional.mse_loss((noise_pred_p * mask_info.to(device)).float(),
+                                                            (target_p * mask_info.to(device)).float(),
                                                             reduction="none")
-                    neg_loss = torch.nn.functional.mse_loss((noise_pred * (1 - mask_info).to(device)).float(),
-                                                            (target * (1 - mask_info).to(device)).float(),
+                    neg_loss = torch.nn.functional.mse_loss((noise_pred_p * (1 - mask_info).to(device)).float(),
+                                                            (target_p * (1 - mask_info).to(device)).float(),
                                                             reduction="none")
                     loss = pos_loss + args.pos_neg_loss_scale * (pos_loss - neg_loss)
                 loss = loss.mean()
@@ -281,6 +272,7 @@ def main(args) :
                 # ----------------------------------------------------------------------------------------- #
                 # EMA model updating
                 update_ema_params(ema, model)
+    """
                 # ----------------------------------------------------------------------------------------- #
                 # Inference
                 if epoch % args.inference_freq == 0 and step == 0:
@@ -294,7 +286,7 @@ def main(args) :
                                              device, model, autoencoderkl, scale_factor, epoch+1)
 
 
-    """
+    
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
         print(f'vlb loss calculating ... ')
