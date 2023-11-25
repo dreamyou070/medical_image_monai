@@ -85,8 +85,6 @@ def main(args):
 
     print(f'\n step 4. model training')
     n_epochs = 100
-
-    val_recon_epoch_loss_list = []
     intermediary_images = []
     n_example_images = 4
 
@@ -133,7 +131,7 @@ def main(args):
                                 intermediary_images.append(wandb.Image(trg_img[i].cpu().numpy()))
                                 org_img = images[i].squeeze()
                                 org_img = torch_transforms.ToPILImage()(org_img.unsqueeze(0))
-                                recon = reconstruction[0].squeeze()
+                                recon = reconstruction[i].squeeze()
                                 recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
                                 new = Image.new('RGB', (org_img.width + recon.width, org_img.height))
                                 new.paste(org_img, (0, 0))
