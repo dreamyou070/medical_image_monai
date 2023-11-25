@@ -204,6 +204,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_heads', type=int, default=2)
     parser.add_argument('--num_head_channels', type=int, default=-1)
     parser.add_argument('--model_name', type=str, default='unet_epoch_500.pt')
+    parser.add_argument('--use_simplex_noise', action='store_true')
 
     # step 4. model
     parser.add_argument('--timestep', type=int, default=1000)
