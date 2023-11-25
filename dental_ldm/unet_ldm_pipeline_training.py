@@ -72,11 +72,14 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
                                            noise=noise,
                                            timesteps=t)
         latents = noisy_latent.clone().detach()
+
         # 5) denoising
         for t in range(int(args.sample_distance) , -1, -1):
             with torch.no_grad() :
                 timestep = torch.Tensor([t]).repeat(batch_size).long()
-                model_output = model(latents, timestep.to(device), None).sample
+                print(f'latents : {latents}')
+                model_output = model(latents,
+                                     timestep.to(device), None).sample
                 latents, _ = scheduler.step(model_output,t,sample=latents)
         recon_image = vae.decode(latents / vae_scale_factor,return_dict=False,generator=None)[0]
         print(f'recon_image : {recon_image}')
