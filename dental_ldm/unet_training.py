@@ -284,7 +284,6 @@ def main(args) :
                         if i == 0:
                             ema.eval()
                             model.eval()
-                            inference_num = min(args.inference_num, args.batch_size)
                             training_outputs(args, test_data, scheduler, 'true',
                                              device, model, autoencoderkl, scale_factor, epoch+1)
                             training_outputs(args, data, scheduler, 'falce',
@@ -400,6 +399,6 @@ if __name__ == '__main__':
     parser.add_argument('--pos_neg_loss_scale', type=float, default=1.0)
 
     parser.add_argument('--inference_freq', type=int, default=50)
-
+    parser.add_argument('--inference_num', type=int, default=4)
     args = parser.parse_args()
     main(args)
