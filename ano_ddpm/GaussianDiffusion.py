@@ -363,11 +363,8 @@ class GaussianDiffusionModel:
         # -------------------------------------------------------------------------------------------------------------
         # model predicting mean and variance
         out = self.p_mean_variance(model, x_t, t)
-
-
         if type(denoise_fn) == str:
             if denoise_fn == "gauss":
-                print('when sampling, ')
                 noise = torch.randn_like(x_t).float()
             elif denoise_fn == "noise_fn":
                 noise = self.noise_fn(x_t, t).float()
@@ -451,6 +448,7 @@ class GaussianDiffusionModel:
             with torch.no_grad():
                 out = self.sample_p(model, x, t_batch, denoise_fn='gauss')
                 x = out["sample"]
+                print(f'x shape : {x.shape}')
                 # save intermediate result
                 import torchvision.transforms as torch_transforms
                 torch_transforms.ToPILImage()(x.squeeze()).save(f'intermediate_{t.item()}.png')
