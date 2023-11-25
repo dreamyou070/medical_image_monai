@@ -247,17 +247,28 @@ def main(args) :
                 if args.masked_loss:
                     noise_pred_p = noise_pred_p * mask_info.to(device)
                     target_p = target_p * mask_info.to(device)
-                loss = torch.nn.functional.mse_loss(noise_pred_p.float(),
-                                                    target_p.float(),
-                                                    reduction="none")
-                if args.pos_neg_loss:
+                    loss = torch.nn.functional.mse_loss(noise_pred_p.float(),
+                                                        target_p.float(),
+                                                        reduction="none")
+                # ------------------------------------------------------------------------------------------------------
+                if args.info_nce_loss:
                     pos_loss = torch.nn.functional.mse_loss((noise_pred_p * mask_info.to(device)).float(),
                                                             (target_p * mask_info.to(device)).float(),
                                                             reduction="none")
                     neg_loss = torch.nn.functional.mse_loss((noise_pred_p * (1 - mask_info).to(device)).float(),
                                                             (target_p * (1 - mask_info).to(device)).float(),
                                                             reduction="none")
-                    loss = pos_loss + args.pos_neg_loss_scale * (pos_loss - neg_loss)
+                    loss = pos_loss / (pos_loss + neg_loss)
+                # ------------------------------------------------------------------------------------------------------
+                if args.pos_info_nce_loss:
+                    pos_loss = torch.nn.functional.mse_loss((noise_pred_p * mask_info.to(device)).float(),
+                                                            (target_p * mask_info.to(device)).float(),
+                                                            reduction="none")
+                    neg_loss = torch.nn.functional.mse_loss((noise_pred_p * (1 - mask_info).to(device)).float(),
+                                                            (target_p * (1 - mask_info).to(device)).float(),
+                                                            reduction="none")
+                    reg_loss = pos_loss / (pos_loss + neg_loss)
+                    loss = pos_loss + args.reg_loss_scale * reg_loss
                 loss = loss.mean()
 
                 wandb.log({"training loss": loss.item()})
@@ -382,9 +393,13 @@ if __name__ == '__main__':
     parser.add_argument('--only_normal_training', action='store_true')
     parser.add_argument('--sample_distance', type=int, default=150)
     parser.add_argument('--use_simplex_noise', action='store_true')
+    # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--masked_loss', action='store_true')
-    parser.add_argument('--pos_neg_loss', action='store_true')
-    parser.add_argument('--pos_neg_loss_scale', type=float, default=1.0)
+    # --------------------------------------------------------------------------------------------------------------
+    parser.add_argument('--info_nce_loss', action='store_true')
+    # --------------------------------------------------------------------------------------------------------------
+    parser.add_argument('--pos_info_nce_loss', action='store_true')
+    parser.add_argument('--reg_loss_scale', type=float, default=1.0)
 
     parser.add_argument('--inference_freq', type=int, default=50)
     parser.add_argument('--inference_num', type=int, default=4)
