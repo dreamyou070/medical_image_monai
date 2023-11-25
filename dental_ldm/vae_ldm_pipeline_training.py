@@ -227,7 +227,10 @@ def main(args) :
             images = batch["image_info"].to(device)
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
-                reconstruction, z_mu, z_sigma = vae(images)
+
+                #latents = vae.encode(images).latent_dist.sample()
+                #latents = latents * 0.18215
+                reconstruction = vae(images).sample
                 recons_loss = F.l1_loss(reconstruction.float(), images.float())
                 p_loss = perceptual_loss(reconstruction.float(), images.float())
                 kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
