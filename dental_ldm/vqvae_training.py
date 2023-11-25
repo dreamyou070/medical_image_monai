@@ -11,6 +11,8 @@ from setproctitle import *
 from generative.networks.nets import VQVAE
 from tqdm import tqdm
 from torch.nn import L1Loss
+import torchvision.transforms as torch_transforms
+from PIL import Image
 
 def main(args):
 
@@ -124,8 +126,20 @@ def main(args):
                         images = normal_images
                         reconstruction, quantization_loss = model(images=images)
                         if val_step == 1:
+                            # [Batch, W, H]
                             trg_img = reconstruction[:n_example_images, 0]
-                            print(f' trg_img : {trg_img.shape}')
+                            num = trg_img.shape[0]
+                            for i in range(num):
+                                intermediary_images.append(wandb.Image(trg_img[i].cpu().numpy()))
+                                org_img = images[i].squeeze()
+                                org_img = torch_transforms.ToPILImage()(org_img.unsqueeze(0))
+                                recon = reconstruction[0].squeeze()
+                                recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
+                                new = Image.new('RGB', (org_img.width + recon.width, org_img.height))
+                                new.paste(org_img, (0, 0))
+                                new.paste(recon, (org_img.width, 0))
+                                loading_image = wandb.Image(new, caption=f"(real-recon) epoch {epoch + 1} ")
+                                wandb.log({"vqvae inference": loading_image})
                         recons_loss = l1_loss(reconstruction.float(), images.float())
                         val_loss += recons_loss.item()
             val_loss /= val_step
