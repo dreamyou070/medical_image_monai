@@ -7,6 +7,7 @@ from torch import optim
 from helpers import *
 from tqdm import tqdm
 from torchvision import transforms
+from nets.utils import update_ema_params
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from data_module import SYDataLoader, SYDataset
@@ -39,7 +40,9 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     "ema":                  ema.state_dict(),
                     'loss':                 loss,},save_dir)
 
-def training_outputs(args, test_data, scheduler, is_train_data, device, model, vae, scale_factor, epoch):
+# training_outputs(args, test_data, scheduler, 'training_data', device, ema, autoencoderkl, scale_factor, epoch + 1)
+def training_outputs(args, test_data, scheduler, is_train_data, device, model, vae,
+                     vae_scale_factor, epoch):
 
     if is_train_data == 'training_data':
         train_data = 'training_data'
@@ -55,35 +58,29 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
     x = test_data["image_info"].to(device)  # batch, channel, w, h
     normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
     mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
-
     with torch.no_grad():
-        z_mu, z_sigma = vae.encode(x)
-        latent = vae.sampling(z_mu, z_sigma) * scale_factor
+        latents = vae.encode(x).latent_dist.sample()
+        latents = (latents * vae_scale_factor).to(device)
     # 2) select random int
-    t = torch.randint(args.sample_distance - 1, args.sample_distance, (latent.shape[0],), device=x.device)
+    t = torch.randint(args.sample_distance - 1, args.sample_distance, (latents.shape[0],), device=x.device)
     # 3) noise
-    noise = torch.rand_like(latent).float().to(x.device)
+    noise = torch.rand_like(latents).float().to(x.device)
     # 4) noise image generating
     with torch.no_grad() :
-        noisy_latent = scheduler.add_noise(original_samples=latent, noise=noise, timesteps=t)
+        noisy_latent = scheduler.add_noise(original_samples=latents,
+                                           noise=noise,
+                                           timesteps=t)
         latent = noisy_latent.clone().detach()
-
-    # 5) denoising
-    for t in range(int(args.sample_distance) , -1, -1):
-        with torch.no_grad() :
-            # 5-1) model prediction
-            model_output = model(latent, torch.Tensor((t,)).to(device), None)
-        # 5-2) update latent
-        latent, _ = scheduler.step(model_output, t, latent)
-    #latents =
-    #image = self.vae.decode(latent / scale_factor).sample
-    #image = (image / 2 + 0.5).clamp(0, 1)
-    # we always cast to float32 as this does not cause significant overhead and is compatible with bfloa16
-    #image = image.cpu().permute(0, 2, 3, 1).float().numpy()
-
-    with torch.no_grad() :
-        recon_image = vae.decode_stage_2_outputs(latent/scale_factor)
-
+        # 5) denoising
+        for t in range(int(args.sample_distance) , -1, -1):
+            with torch.no_grad() :
+                # 5-1) model prediction
+                model_output = model(latent, torch.Tensor((t,)).to(device), None)
+            # 5-2) update latent
+            latent, _ = scheduler.step(model_output, t, latent)
+        recon_image = vae.decode(latents / vae_scale_factor,return_dict=False,generator=None)[0]
+        print(f'recon_image : {recon_image}')
+    """
     for img_index in range(x.shape[0]):
         normal_info_ = normal_info[img_index]
         if normal_info_ == 1:
@@ -113,7 +110,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
             wandb.log({"training data inference" : loading_image})
         else :
             wandb.log({"test data inference" : loading_image})
-
+    """
 
 def main(args) :
 
@@ -178,6 +175,8 @@ def main(args) :
 
     print(f'\n step 4. unet model')
     unet = UNet2DModel(sample_size = 32,in_channels = 4,out_channels =4,)
+    ema = copy.deepcopy(unet)
+    ema.to(device)
     unet = unet.to(device)
     #  unet.config.sample_size = 32
 
@@ -232,6 +231,28 @@ def main(args) :
                     noise_pred = noise_pred * mask_info
                     target = target * mask_info
                     print(f'target : {target.shape} | mask_info : {mask_info.shape}')
+                loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean([1, 2, 3])
+
+                loss = loss.mean()
+
+                wandb.log({"training loss": loss.item()})
+                optimizer.zero_grad()
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(unet.parameters(), 1)
+                optimizer.step()
+                # ----------------------------------------------------------------------------------------- #
+                # EMA model updating
+                update_ema_params(ema, unet)
+        # inference ?
+        if epoch % args.inference_freq == 0 and epoch == 0:
+            for i, test_data in enumerate(test_dataset_loader):
+                if i == 0:
+                    ema.eval()
+                    unet.eval()
+                    training_outputs(args, test_data, scheduler, 'test_data', device, ema, vae,
+                                     vae_scale_factor, epoch + 1)
+                    training_outputs(args, batch, scheduler, 'training_data', device, ema, vae,
+                                     vae_scale_factor, epoch + 1)
 
 
 
@@ -284,7 +305,7 @@ if __name__ == '__main__':
     parser.add_argument('--anormal_scoring', action='store_true')
     parser.add_argument('--min_max_training', action='store_true')
 
-    parser.add_argument('--inference_freq', type=int, default=50)
+
     parser.add_argument('--inference_num', type=int, default=4)
 
     # step 7. save
@@ -295,7 +316,8 @@ if __name__ == '__main__':
     parser.add_argument('--n_epochs', type=int, default=3000)
     parser.add_argument('--only_normal_training', action='store_true')
     parser.add_argument('--masked_loss', action='store_true')
-
+    # inference
+    parser.add_argument('--inference_freq', type=int, default=50)
 
     args = parser.parse_args()
     main(args)
