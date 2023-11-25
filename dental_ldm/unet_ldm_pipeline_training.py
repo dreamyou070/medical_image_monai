@@ -75,6 +75,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
 
         # 5) denoising
         for t in range(int(args.sample_distance) , -1, -1):
+            print(f't : {t}')
             with torch.no_grad() :
                 timestep = torch.Tensor([t]).repeat(batch_size).long()
                 model_output = model(latents,
@@ -321,6 +322,7 @@ if __name__ == '__main__':
     parser.add_argument('--masked_loss', action='store_true')
     # inference
     parser.add_argument('--inference_freq', type=int, default=50)
+    parser.add_argument('--model_save_freq', type=int, default=50)
 
     args = parser.parse_args()
     main(args)
