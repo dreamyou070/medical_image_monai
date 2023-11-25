@@ -174,7 +174,7 @@ def main(args) :
                         scaling_factor=0.18215)
     vae.load_state_dict(torch.load(args.pretrained_vae_dir))
     vae = vae.to(device)
-    scale_factor = 0.18215
+    vae_scale_factor = 0.18215
 
     print(f'\n step 4. unet model')
     unet = UNet2DModel(sample_size = 32,in_channels = 4,out_channels =4,)
@@ -214,8 +214,19 @@ def main(args) :
             if args.only_normal_training:
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
-
-
+            if x_0.shape[0] > 0:
+                latents = vae.encode(x_0).latent_dist.sample()
+                latents = (latents * vae_scale_factor).to(device)
+                # 2) t
+                timesteps = torch.randint(0, args.sample_distance, (latents.shape[0],),device=device).long()
+                # 3) noise
+                noise = torch.randn_like(latents).to(device)
+                # 4) x_t
+                noisy_samples = scheduler.add_noise(original_samples = latents,noise = noise,timesteps = timesteps,)
+                # 5) unet inference
+                noise_pred = unet(sample = noisy_samples, timestep = timesteps,)
+                target = noise
+                
 
 
 if __name__ == '__main__':
