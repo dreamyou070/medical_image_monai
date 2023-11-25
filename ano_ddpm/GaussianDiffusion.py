@@ -452,7 +452,7 @@ class GaussianDiffusionModel:
                 print(f'first_sample shape : {first_sample.shape}')
                 # save intermediate result
                 import torchvision.transforms as torch_transforms
-                torch_transforms.ToPILImage()(first_sample.squeeze()).save(f'intermediate_{t.item()}.png')
+                torch_transforms.ToPILImage()(first_sample.squeeze()).save(f'intermediate_{t}.png')
         return x.detach()
 
     # -----------------------------------------------------------------------------------------------------------------
