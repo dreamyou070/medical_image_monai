@@ -472,6 +472,7 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--anormal_scoring', action='store_true')
     parser.add_argument('--min_max_training', action='store_true')
+    parser.add_argument('--use_discretize', action='store_true')
     parser.add_argument('--use_scale', action='store_true')
 
     parser.add_argument('--inference_freq', type=int, default=50)
