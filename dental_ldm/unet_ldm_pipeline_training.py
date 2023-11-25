@@ -208,11 +208,15 @@ def main(args) :
     print(f' \n step 7. optimizer')
     optimizer = torch.optim.Adam(unet.parameters(), lr=1e-4)
 
+    print(f'\n step 6. training')
+
+
     print(f' \n step 8. training')
-    for epoch in range(args.n_epochs):
-        unet.train()
-        vae.eval()
-        progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=70)
+    tqdm_epoch = range(0, args.n_epochs + 1)
+    for epoch in tqdm_epoch:
+        progress_bar = tqdm(enumerate(training_dataset_loader),
+                            total=len(training_dataset_loader),
+                            ncols=200)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
             x_0 = batch["image_info"].to(device)  # [Batch, 1, 128, 128]
@@ -250,7 +254,6 @@ def main(args) :
                 # ----------------------------------------------------------------------------------------- #
                 # EMA model updating
                 update_ema_params(ema, unet)
-            break
         # inference ?
         if epoch % args.inference_freq == 0 :
             for i, test_data in enumerate(test_dataset_loader):
