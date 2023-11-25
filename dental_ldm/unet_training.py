@@ -66,28 +66,23 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
     with torch.no_grad():
         z_mu, z_sigma = vae.encode(x)
         latent = vae.sampling(z_mu, z_sigma) * scale_factor
-
-
     # 2) select random int
-    t = torch.randint(args.sample_distance - 1,
-                      args.sample_distance, (x.shape[0],), device=x.device)
-
+    t = torch.randint(args.sample_distance - 1, args.sample_distance, (latent.shape[0],), device=x.device)
     # 3) noise
     noise = torch.rand_like(latent).float().to(x.device)
-
     # 4) noise image generating
     with torch.no_grad() :
-        noisy_latent = scheduler.add_noise(original_samples=latent,
-                                           noise=noise,
-                                           timesteps=t)
+        noisy_latent = scheduler.add_noise(original_samples=latent, noise=noise, timesteps=t)
         latent = noisy_latent.clone().detach()
     # 5) denoising
     for t in range(int(args.sample_distance) - 1, -1, -1):
-        # 5-1) model prediction
-        model_output = model(latent,torch.Tensor((t,)).to(device),None)
+        with torch.no_grad() :
+            # 5-1) model prediction
+            model_output = model(latent, torch.Tensor((t,)).to(device), None)
         # 5-2) update latent
         latent, _ = scheduler.step(model_output, t, latent)
-    recon_image = vae.decode_stage_2_outputs(latent / scale_factor)
+    with torch.no_grad() :
+        recon_image = vae.decode_stage_2_outputs(latent / scale_factor)
 
     for img_index in range(x.shape[0]):
         normal_info_ = normal_info[img_index]
@@ -95,27 +90,27 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
             is_normal = 'normal'
         else :
             is_normal = 'abnormal'
-        real = x[img_index,...].squeeze()
-        real= real.unsqueeze(0)
-        real = torch_transforms.ToPILImage()(real)
+        real = x[img_index].squeeze()
+        real = torch_transforms.ToPILImage()(real.unsqueeze(0))
 
-        recon = recon_image[img_index,...].squeeze()
-        recon = recon.unsqueeze(0)
-        recon = torch_transforms.ToPILImage()(recon)
+        recon = recon_image[img_index].squeeze()
+        recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
 
-        mask = mask_info[img_index,...].squeeze()
-        mask = mask.unsqueeze(0)
-        mask = torch_transforms.ToPILImage()(mask)
+        mask = mask_info[img_index].squeeze()
+        mask = torch_transforms.ToPILImage()(mask.unsqueeze(0))
 
         new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
         new_image.paste(real,  (0, 0))
         new_image.paste(recon, (real.size[0], 0))
         new_image.paste(mask,  (real.size[0]+recon.size[0], 0))
         new_image.save(os.path.join(image_save_dir,
-                                    f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
+                                    f'real_recon_answer_{train_data}_epoch_{epoch}_{img_index}.png'))
         loading_image = wandb.Image(new_image,
-                                    caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
-        wandb.log({"inference": loading_image})
+                                    caption=f"(real_recon_answer) epoch {epoch + 1} | {is_normal}")
+        if train_data == 'training_data' :
+            wandb.log({"training data inference": loading_image})
+        elif train_data == 'test_data' :
+            wandb.log({"test data inference": loading_image})
 
 
 def main(args) :
@@ -272,7 +267,7 @@ def main(args) :
                 # ----------------------------------------------------------------------------------------- #
                 # EMA model updating
                 update_ema_params(ema, model)
-    """
+
                 # ----------------------------------------------------------------------------------------- #
                 # Inference
                 if epoch % args.inference_freq == 0 and step == 0:
@@ -280,13 +275,11 @@ def main(args) :
                         if i == 0:
                             ema.eval()
                             model.eval()
-                            training_outputs(args, test_data, scheduler, 'true',
-                                             device, model, autoencoderkl, scale_factor, epoch+1)
-                            training_outputs(args, data, scheduler, 'falce',
-                                             device, model, autoencoderkl, scale_factor, epoch+1)
+                            training_outputs(args, test_data, scheduler, 'true',  device, model, autoencoderkl, scale_factor, epoch+1)
+                            training_outputs(args, data, scheduler, 'falce', device, model, autoencoderkl, scale_factor, epoch+1)
 
 
-    
+    """
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
         print(f'vlb loss calculating ... ')
