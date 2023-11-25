@@ -71,10 +71,9 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
     # 2) select random int
     t = torch.randint(args.sample_distance - 1,
                       args.sample_distance, (x.shape[0],), device=x.device)
-    time_step = t[0].item()
 
     # 3) noise
-    noise = torch.rand_like(x).float().to(x.device)
+    noise = torch.rand_like(latent).float().to(x.device)
 
     # 4) noise image generating
     noisy_latent = scheduler.add_noise(original_samples=latent,
@@ -235,6 +234,10 @@ def main(args) :
                 x_0 = autoencoderkl.sampling(z_mu, z_sigma)
             # x_0 = [batch, 3, 128/4, 128/4]
             x_0 = x_0 * scale_factor
+
+
+
+
             # 1) check random t
             if x_0.shape[0] != 0 :
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device =device)
