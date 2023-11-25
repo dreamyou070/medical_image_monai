@@ -261,6 +261,9 @@ def main(args) :
                                                             reduction="none")
                     print(f'[info nce loss] : {pos_loss} / {neg_loss}')
                     loss = pos_loss / (pos_loss + neg_loss)
+                    print(f'[info nce loss] : {loss}')
+                    import time
+                    time.sleep(1)
                 # ------------------------------------------------------------------------------------------------------
                 if args.pos_info_nce_loss:
                     pos_loss = torch.nn.functional.mse_loss((noise_pred_p * mask_info.to(device)).float(),
