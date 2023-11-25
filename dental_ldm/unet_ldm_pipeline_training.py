@@ -74,8 +74,8 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
         # 5) denoising
         for t in range(int(args.sample_distance) , -1, -1):
             with torch.no_grad() :
-                # 5-1) model prediction
-                model_output = model(latent, torch.Tensor((t,)).to(device), None).sample
+                timestep = torch.Tensor([t]).repeat(latent.shape[0]).to(device).long()
+                model_output = model(latent, timestep, None)
             # 5-2) update latent
             latent, _ = scheduler.step(model_output, t, latent)
         recon_image = vae.decode(latents / vae_scale_factor,return_dict=False,generator=None)[0]
