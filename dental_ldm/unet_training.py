@@ -294,6 +294,14 @@ def main(args) :
                     loss = torch.nn.functional.mse_loss(anormal_score.to(device).float(),
                                                         anormal_score_answer.to(device).float(),
                                                         reduction="none")
+                if args.min_max_training :
+                    noise_pred = noise_pred * small_mask_info.to(device)
+                    target = noise * small_mask_info.to(device)
+                    pos_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
+                    neg_loss = torch.nn.functional.mse_loss(noise_pred * (1-small_mask_info).to(device).float(),
+                                                            noise * (1-small_mask_info).to(device), reduction="none")
+                    loss = pos_loss + max(0, pos_loss - neg_loss + args.min_max_margin)
+
 
                 loss = loss.mean([1,2,3])
                 loss = loss.mean()
@@ -430,6 +438,7 @@ if __name__ == '__main__':
     parser.add_argument('--reg_loss_scale', type=float, default=1.0)
     # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--anormal_scoring', action='store_true')
+    parser.add_argument('--min_max_training', action='store_true')
 
     parser.add_argument('--inference_freq', type=int, default=50)
     parser.add_argument('--inference_num', type=int, default=4)
