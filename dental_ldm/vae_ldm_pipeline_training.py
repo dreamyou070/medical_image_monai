@@ -282,7 +282,8 @@ def main(args) :
             for val_step, batch in enumerate(test_dataset_loader, start=1):
                 images = batch["image_info"].to(device)
                 with autocast(enabled=True):
-                    reconstruction, z_mu, z_sigma = vae(images)
+                    reconstruction = vae(images).sample
+                    z_mu, z_sigma = posterior.mean, posterior.std
                     if val_step == 1:
                         import torchvision.transforms as torch_transforms
                         from PIL import Image
