@@ -243,6 +243,7 @@ def main(args) :
                 # ----------------------------------------------------------------------------------------- #
                 # EMA model updating
                 update_ema_params(ema, unet)
+            break
         # inference ?
         if epoch % args.inference_freq == 0 and epoch == 0:
             for i, test_data in enumerate(test_dataset_loader):
