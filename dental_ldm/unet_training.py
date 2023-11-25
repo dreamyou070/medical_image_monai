@@ -1,6 +1,7 @@
 import argparse, wandb
 import copy
-import time
+import numpy as np
+from PIL import Image
 from random import seed
 from torch import optim
 from helpers import *
@@ -19,7 +20,6 @@ from setproctitle import *
 from schedulers import DDPMScheduler
 from inferers import LatentDiffusionInferer
 from torch.cuda.amp import GradScaler, autocast
-
 
 
 torch.multiprocessing.set_sharing_strategy('file_system')
@@ -96,8 +96,9 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
         recon = recon_image[img_index].squeeze()
         recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
 
-        mask = mask_info[img_index].squeeze()
-        mask = torch_transforms.ToPILImage()(mask.unsqueeze(0))
+        mask_np = mask_info[img_index].squeeze().to('cpu').detach().numpy().copy().astype(np.uint8)
+        mask_np = mask_np * 255
+        mask = Image.fromarray(mask_np).convert('L')  # [128, 128, 3]
 
         new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
         new_image.paste(real,  (0, 0))
