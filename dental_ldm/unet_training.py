@@ -240,6 +240,10 @@ def main(args) :
                 noisy_latent = scheduler.add_noise(original_samples=z_0,noise=noise,timesteps=t)
                 # 3) model prediction
                 noise_pred = model(x=noisy_latent,timesteps=t,context=None)
+                # 4) z_0 prediction
+                pred_original_sample = scheduler.pred_origin(noise_pred,
+                                                             timestep = t[0].item(),
+                                                             sample = noisy_latent)
                 #with torch.no_grad():
                 noise_pred_p = autoencoderkl.decode_stage_2_outputs(noise_pred/scale_factor)
                 target_p = autoencoderkl.decode_stage_2_outputs(noise/scale_factor)
@@ -271,11 +275,13 @@ def main(args) :
                     loss = pos_loss + args.reg_loss_scale * reg_loss
 
                 if args.anormal_scoring :
-                    anormal_score = torch.nn.functional.mse_loss(noise_pred_p.float(),target_p.float(),reduction="none")
-                    anormal_score_answer = (1 - mask_info)
-                    loss = torch.nn.functional.mse_loss(anormal_score.to(device).float(),
-                                                        anormal_score_answer.to(device).float(),
-                                                        reduction="none")
+                    #anormal_score = torch.nn.functional.mse_loss(noise_pred_p.float(),target_p.float(),reduction="none")
+                    #anormal_score_answer = (1 - mask_info)
+                    #loss = torch.nn.functional.mse_loss(anormal_score.to(device).float(),
+                    #                                    anormal_score_answer.to(device).float(),
+                    #                                    reduction="none")
+                    print(f'pred_original_sample [Batch, 3, 32,32] : {pred_original_sample.shape}')
+                    loss = pred_original_sample
                 loss = loss.mean()
 
                 wandb.log({"training loss": loss.item()})

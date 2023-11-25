@@ -240,3 +240,43 @@ class DDPMScheduler(Scheduler):
         pred_prev_sample = pred_prev_sample + variance
 
         return pred_prev_sample, pred_original_sample
+
+    def pred_origin(self, model_output: torch.Tensor, timestep: int, sample: torch.Tensor, generator: torch.Generator | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Predict the sample at the previous timestep by reversing the SDE. Core function to propagate the diffusion
+        process from the learned model outputs (most often the predicted noise).
+
+        Args:
+            model_output: direct output from learned diffusion model.
+            timestep: current discrete timestep in the diffusion chain.
+            sample: current instance of sample being created by diffusion process.
+            generator: random number generator.
+
+        Returns:
+            pred_prev_sample: Predicted previous sample
+        """
+        if model_output.shape[1] == sample.shape[1] * 2 and self.variance_type in ["learned", "learned_range"]:
+            model_output, predicted_variance = torch.split(model_output, sample.shape[1], dim=1)
+        else:
+            predicted_variance = None
+
+        # 1. compute alphas, betas
+        alpha_prod_t = self.alphas_cumprod[timestep]
+        alpha_prod_t_prev = self.alphas_cumprod[timestep - 1] if timestep > 0 else self.one
+        beta_prod_t = 1 - alpha_prod_t
+        beta_prod_t_prev = 1 - alpha_prod_t_prev
+
+        # 2. compute predicted original sample from predicted noise also called
+        # "predicted x_0" of formula (15) from https://arxiv.org/pdf/2006.11239.pdf
+        if self.prediction_type == DDPMPredictionType.EPSILON:
+            pred_original_sample = (sample - beta_prod_t ** (0.5) * model_output) / alpha_prod_t ** (0.5)
+        elif self.prediction_type == DDPMPredictionType.SAMPLE:
+            pred_original_sample = model_output
+        elif self.prediction_type == DDPMPredictionType.V_PREDICTION:
+            pred_original_sample = (alpha_prod_t**0.5) * sample - (beta_prod_t**0.5) * model_output
+
+        # 3. Clip "predicted x_0"
+        if self.clip_sample:
+            pred_original_sample = torch.clamp(pred_original_sample, -1, 1)
+        return pred_original_sample
