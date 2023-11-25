@@ -109,9 +109,9 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
         loading_image = wandb.Image(new_image,
                                     caption=f"(real_recon_answer) epoch {epoch + 1} | {is_normal}")
         if train_data == 'training_data' :
-            wandb.log({"training data inference": loading_image})
-        elif train_data == 'test_data' :
-            wandb.log({"test data inference": loading_image})
+            wandb.log({"training data inference" : loading_image})
+        else :
+            wandb.log({"test data inference" : loading_image})
 
 
 def main(args) :
