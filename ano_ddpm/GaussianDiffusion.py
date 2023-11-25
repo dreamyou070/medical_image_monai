@@ -360,12 +360,11 @@ class GaussianDiffusionModel:
 
     # -----------------------------------------------------------------------------------------------------------------
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
-        # -------------------------------------------------------------------------------------------------------------
-        # model predicting mean and variance
         out = self.p_mean_variance(model, x_t, t)
+        # noise = torch.randn_like(x_t)
         if type(denoise_fn) == str:
             if denoise_fn == "gauss":
-                noise = torch.randn_like(x_t).float()
+                noise = torch.randn_like(x_t)
             elif denoise_fn == "noise_fn":
                 noise = self.noise_fn(x_t, t).float()
             elif denoise_fn == "random":
@@ -375,23 +374,9 @@ class GaussianDiffusionModel:
                 noise = generate_simplex_noise(self.simplex, x_t, t, False, in_channels=self.img_channels).float()
         else:
             noise = denoise_fn(x_t, t)
-
-        # ---------------------------------------------------------------------------------
-        # make mask : random time step, if t = 0, that means does not noised at all
-        # therefore, except t =0 timestep, check all the other timestep
-        # expending to the batch size
-        nonzero_mask = (t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))) # [[[[]]]] (one line)
-        log_var = out["log_variance"]
-        # mean is x_t-1 mean
-        x_t_1_mean = out["mean"]                    # torch.Size([32, 1, 64, 64])
-        model_log_variances = out["log_variance"]   # torch.Size([32, 1, 64, 64])
-        std = torch.exp(0.5 * out["log_variance"])
-
-        # one step forwarding (reparamaterizatino technique)
-        sample = out["mean"] + nonzero_mask * std * noise # torch.Size([32, 1, 64, 64])
-
-        return {"sample": sample,                # (mean) + (std * noise)
-                "pred_x_0": out["pred_x_0"]}     # x_0
+        nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
+        sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
+        return {"sample": sample, "pred_x_0": out["pred_x_0"]}
 
     def p_mean_variance(self, model, x_t, t, estimate_noise=None):
         """ Finds the mean & variance from N(x_{t-1}; mu_theta(x_t,t), sigma_theta (x_t,t))
