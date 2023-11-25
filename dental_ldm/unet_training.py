@@ -254,7 +254,7 @@ def main(args) :
                     noise_pred = noise_pred * small_mask_info.to(device)
                     target = noise * small_mask_info.to(device)
                     loss = torch.nn.functional.mse_loss(noise_pred.float(),target.float(), reduction="none")
-
+                    loss = loss.mean([1, 2, 3])
                 # ------------------------------------------------------------------------------------------------------
                 if args.masked_loss:
                     noise_pred_p = noise_pred_p * mask_info.to(device)
@@ -262,6 +262,7 @@ def main(args) :
                     loss = torch.nn.functional.mse_loss(noise_pred_p.float(),
                                                         target_p.float(),
                                                         reduction="none")
+                    loss = loss.mean([1, 2, 3])
                 # ------------------------------------------------------------------------------------------------------
                 if args.info_nce_loss:
                     pos_loss = torch.nn.functional.mse_loss((noise_pred_p * mask_info.to(device)).float(),
@@ -271,6 +272,7 @@ def main(args) :
                                                             (target_p * (1 - mask_info).to(device)).float(),
                                                             reduction="none")
                     loss = pos_loss / (pos_loss + neg_loss)
+                    loss = loss.mean([1, 2, 3])
                 # ------------------------------------------------------------------------------------------------------
                 if args.pos_info_nce_loss:
                     pos_loss = torch.nn.functional.mse_loss((noise_pred_p * mask_info.to(device)).float(),
@@ -281,6 +283,7 @@ def main(args) :
                                                             reduction="none")
                     reg_loss = pos_loss / (pos_loss + neg_loss)
                     loss = pos_loss + args.reg_loss_scale * reg_loss
+                    loss = loss.mean([1, 2, 3])
 
                 if args.anormal_scoring :
                     pred_original_sample = autoencoderkl.decode_stage_2_outputs(pred_original_sample/scale_factor)
@@ -294,17 +297,16 @@ def main(args) :
                     loss = torch.nn.functional.mse_loss(anormal_score.to(device).float(),
                                                         anormal_score_answer.to(device).float(),
                                                         reduction="none")
+                    loss = loss.mean([1, 2, 3])
                 if args.min_max_training :
                     noise_pred = noise_pred * small_mask_info.to(device)
                     target = noise * small_mask_info.to(device)
                     pos_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none")
                     neg_loss = torch.nn.functional.mse_loss(noise_pred * (1-small_mask_info).to(device).float(),
                                                             noise * (1-small_mask_info).to(device), reduction="none")
-                    #compare =
-                    loss = pos_loss + max(0, pos_loss - neg_loss)
-
-
-                loss = loss.mean([1,2,3])
+                    loss_diff = (pos_loss - neg_loss).mean([1,2,3])
+                    loss_diff = torch.where(loss_diff > 0, loss_diff, 0)
+                    loss = pos_loss.mean([1,2,3]) + loss_diff
                 loss = loss.mean()
 
                 wandb.log({"training loss": loss.item()})
