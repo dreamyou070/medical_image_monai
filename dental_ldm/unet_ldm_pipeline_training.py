@@ -158,6 +158,9 @@ def main(args) :
                                            num_workers=4,
                                            persistent_workers=True)
     check_data = first(training_dataset_loader)
+
+
+
     # ## Prepare validation set data loader
     val_transforms = transforms.Compose([transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
                                          transforms.ToTensor()])
@@ -186,19 +189,10 @@ def main(args) :
     vae.load_state_dict(state_dict, strict=True)
     vae = vae.to(device)
     vae.eval()
-
-    
-    
-    #vae_scale_factor = 0.18215
-
-    #with torch.no_grad():
-    #    with autocast(enabled=True):
-    #        latent = autoencoderkl.encode_stage_2_inputs(check_data["image"].to(device))
-
-    #print(f"Scaling factor set to {1 / torch.std(z)}")
-    #scale_factor = 1 / torch.std(z)
-
-
+    with torch.no_grad():
+        images = check_data["image_info"].to(device)
+        z = vae.encode(images).latent_dist.sample()
+    scale_factor = 1 / torch.std(z)
 
     print(f'\n step 4. unet model')
     unet = UNet2DModel(sample_size = 32,
@@ -250,15 +244,9 @@ def main(args) :
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=200)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
-
             images = batch["image_info"].to(device)
-
-            reconstruction = vae(images).sample
-
             with torch.no_grad():
-
                 latent = vae.encode(images).latent_dist.sample()
-                scale_factor = 1 / torch.std(latent)
                 latent = latent * scale_factor
                 #if sample_posterior:
                 #    z = posterior.sample(generator=generator)
@@ -272,7 +260,7 @@ def main(args) :
                 org_img = images[0].squeeze()
                 org_img = torch_transforms.ToPILImage()(org_img.unsqueeze(0))
                 # ------------------------------------------------------------------------------------------------------
-                recon = reconstruction[0].squeeze()
+                recon = recon[0].squeeze()
                 recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
 
                 org_img.save(f'org_img.png')
