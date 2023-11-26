@@ -258,10 +258,9 @@ def main(args) :
                     scale_factor = 1 / torch.std(latents)
                 latents = (latents * scale_factor).to(device)
                 noisy_pixel = vae.decode(latents / scale_factor, return_dict=True, generator=None).sample
-                first_sample = noisy_pixel[0].squeeze()
-                print(first_sample.shape)
-                #recon = torch_transforms.ToPILImage()()
-                #recon.save('test.png')
+                first_sample = noisy_pixel[0].squeeze() # 256,256
+                recon = torch_transforms.ToPILImage(first_sample)
+                recon.save('test.png')
 
 
 
