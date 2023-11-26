@@ -12,9 +12,11 @@ class Inversor (object):
     @torch.no_grad()
     def img2latent(self, img: torch.Tensor):
 
-        latents = self.vae.encode(img).latent_dist.sample()
-        latents = latents * self.scale_factor
+        posterior = self.vae.encode(img).latent_dist.sample()
+        latents = posterior.mode() * self.scale_factor
         return latents
+
+
 
     @torch.no_grad()
     def latent2img(self, latent: torch.Tensor, return_type='np'):
