@@ -18,6 +18,7 @@ import PIL
 from setproctitle import *
 from diffuser_module import AutoencoderKL, UNet2DModel, DDPMScheduler,StableDiffusionPipeline
 from inverting import Inversor
+import json
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
@@ -182,14 +183,11 @@ def main(args) :
         z = vae.encode(images).latent_dist.sample()
     scale_factor = 1 / torch.std(z)
     """
-    import json
+
     vae_config_dict = r'/data7/sooyeon/medical_image/pretrained/vae/config.json'
     with open(vae_config_dict, "r") as f :
         vae_config = json.load(f)
-    print(vae_config)
-
-
-    #AutoencoderKL.from_config(config = ,
+    AutoencoderKL.from_config(config = vae_config)
 
 
 
