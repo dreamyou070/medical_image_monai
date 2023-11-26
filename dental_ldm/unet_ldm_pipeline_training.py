@@ -194,7 +194,7 @@ def main(args) :
                        flip_sin_to_cos=True,
                        down_block_types=("AttnDownBlock2D", "AttnDownBlock2D", "AttnDownBlock2D", "DownBlock2D",),
                        up_block_types=("UpBlock2D", "AttnUpBlock2D", "AttnUpBlock2D", "AttnUpBlock2D"),
-                       block_out_channels=(321, 640, 1280, 1280),
+                       block_out_channels=(320, 640, 1280, 1280),
                        layers_per_block = 2,
                        mid_block_scale_factor = 1,
                        downsample_padding = 1,
