@@ -218,8 +218,10 @@ def main(args) :
                                                     noise = noise,
                                                     timesteps = timesteps,)
                 # 5) unet inference
-                noise_pred = pipeline.unet(noisy_samples,timesteps).sample
+                noise_pred = pipeline.unet(noisy_samples,
+                                           timesteps).sample
                 target = noise
+                loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean([1, 2, 3])
                 if args.masked_loss :
                     small_mask_info = small_mask_info.expand(target.shape)
                     noise_pred = noise_pred * small_mask_info.to(device)

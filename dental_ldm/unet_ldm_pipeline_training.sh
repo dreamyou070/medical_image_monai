@@ -19,8 +19,8 @@ python unet_ldm_pipeline_training.py --wandb_project_name 'anoddpm_result_ldm_di
     --latent_channels 4 --sample_distance 250 --n_epochs 3000 --inference_freq 30 --model_save_freq 50 --infonce_loss
 
 [Screen 04]
-python mask_concating.py --wandb_project_name 'test' --wandb_run_name "4_infonce_loss_sample_distance_250" \
-    --device "cuda:4" --experiment_dir '/data7/sooyeon/medical_image/anoddpm_result_ldm_diffusers/4_infonce_loss_sample_distance_150' \
+python mask_concating.py --wandb_project_name 'anoddpm_result_ldm_diffusers' --wandb_run_name "5_input_concat" \
+    --device "cuda:4" --experiment_dir '/data7/sooyeon/medical_image/anoddpm_result_ldm_diffusers/5_input_concat' \
     --train_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_512/train/original' \
     --train_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_512/train/mask' \
     --val_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_512/valid/original' \
