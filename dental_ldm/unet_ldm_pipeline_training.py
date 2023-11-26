@@ -257,8 +257,8 @@ def main(args) :
                 noisy_pixel = vae.decode(noisy_samples / vae_scale_factor, return_dict=False, generator=None).sample
                 print(f'noisy_pixel : {noisy_pixel.shape}')
 
-                first = noisy_pixel[0]
-                real = torch_transforms.ToPILImage()(first.squeeze())
+                fir = noisy_pixel[0]
+                real = torch_transforms.ToPILImage()(fir.squeeze())
                 real.save(f'noisy_pixel_{epoch}_{step}.png')
                 import time
                 time.sleep(1)
