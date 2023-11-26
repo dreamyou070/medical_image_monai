@@ -1,10 +1,58 @@
 import torch
-
+from typing import Optional, Union, Tuple, List, Callable, Dict
+import numpy as np
 class Inversor (object):
 
-    def __init__(self, unet, scheduler):
+    def __init__(self, unet, scheduler, vae, scaling_factor):
         self.unet = unet
         self.scheduler = scheduler
+        self.vae = vae
+        self.scaling_factor = scaling_factor
+
+    def img2latent(self, img: torch.Tensor):
+
+        latents = self.vae.encode(img).latent_dist.sample()
+        latents = latents * 0.18215
+        return latents
+
+    @torch.no_grad()
+    def ddim_loop(self, img, inversion_steps):
+        latent = self.img2latent(img)
+        all_latents = [latent]
+        for t in range(inversion_steps):
+
+            noise_pred = self.unet(latent, t+1).sample
+            latent = self.one_step_noising(noise_pred, t, latent)
+            all_latents.append(latent)
+        return all_latents
+    def one_step_noising(self,
+                         model_output: Union[torch.FloatTensor, np.ndarray], timestep: int,
+                         sample: Union[torch.FloatTensor, np.ndarray]):
+        timestep, next_timestep = timestep - 1, timestep
+        alpha_prod_t = self.scheduler.alphas_cumprod[timestep] if timestep >= 0 else self.scheduler.final_alpha_cumprod
+        alpha_prod_t_next = self.scheduler.alphas_cumprod[next_timestep]
+        beta_prod_t = 1 - alpha_prod_t
+        next_original_sample = (sample - beta_prod_t ** 0.5 * model_output) / alpha_prod_t ** 0.5
+        next_sample_direction = (1 - alpha_prod_t_next) ** 0.5 * model_output
+        next_sample = alpha_prod_t_next ** 0.5 * next_original_sample + next_sample_direction
+        return next_sample
+
+    def prev_step(self,
+                  model_output: Union[torch.FloatTensor, np.ndarray],
+                  timestep: int,
+                  sample: Union[torch.FloatTensor, np.ndarray]):
+        prev_timestep = timestep - self.scheduler.config.num_train_timesteps // self.scheduler.num_inference_steps
+        alpha_prod_t = self.scheduler.alphas_cumprod[timestep]
+        alpha_prod_t_prev = self.scheduler.alphas_cumprod[
+            prev_timestep] if prev_timestep >= 0 else self.scheduler.final_alpha_cumprod
+        beta_prod_t = 1 - alpha_prod_t
+        pred_original_sample = (sample - beta_prod_t ** 0.5 * model_output) / alpha_prod_t ** 0.5
+        pred_sample_direction = (1 - alpha_prod_t_prev) ** 0.5 * model_output
+        prev_sample = alpha_prod_t_prev ** 0.5 * pred_original_sample + pred_sample_direction
+        return prev_sample
+
+
+
     """
     @torch.no_grad()
     def ddim_loop(self, latent, inversion_steps):

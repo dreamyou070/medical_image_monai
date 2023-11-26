@@ -17,6 +17,8 @@ import torchvision.transforms as torch_transforms
 import PIL
 from setproctitle import *
 from diffuser_module import AutoencoderKL, UNet2DModel, DDPMScheduler,StableDiffusionPipeline
+from inverting import Inversor
+
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
 
@@ -220,6 +222,14 @@ def main(args) :
                                        feature_extractor=None)
 
     print(f' \n step 7. invertor')
+    invertor = Inversor(unet = unet,
+                        scheduler = scheduler,
+                        vae = vae)
+
+    check_data = first(training_dataset_loader)
+    img = check_data['image_info'].to(device)
+    all_latents = invertor.ddim_loop(img = img,
+                                     inversion_steps = args.sample_distance)
 
 
 if __name__ == '__main__':
