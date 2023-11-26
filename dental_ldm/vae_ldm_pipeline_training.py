@@ -174,12 +174,24 @@ def main(args) :
                                        persistent_workers=True)
 
     print(f'\n step 3. latent_model')
+    #vae = AutoencoderKL(in_channels = 1,
+    #                    out_channels = 1,
+    #                    latent_channels = 4,
+    #                    norm_num_groups = 32,
+    #                    sample_size = 128,
+    #                    scaling_factor = 0.18215)
     vae = AutoencoderKL(in_channels = 1,
-                        out_channels = 1,
-                        latent_channels = 4,
-                        norm_num_groups = 32,
-                        sample_size = 32,
-                        scaling_factor = 0.18215)
+                  out_channels = 1,
+                  down_block_types = ["DownEncoderBlock2D","DownEncoderBlock2D",
+                                      "DownEncoderBlock2D","DownEncoderBlock2D"],
+                  up_block_types = ["UpDecoderBlock2D","UpDecoderBlock2D","UpDecoderBlock2D","UpDecoderBlock2D"],
+                  block_out_channels = [128,256,512,512],
+                  layers_per_block = 2,
+                  act_fn = "silu",
+                  latent_channels = 4,
+                  norm_num_groups = 32,
+                  sample_size = 512,
+                  scaling_factor = 0.18215,)
     vae = vae.to(device)
     perceptual_loss = PerceptualLoss(spatial_dims=2,
                                      network_type="alex",
@@ -222,16 +234,18 @@ def main(args) :
 
                 #latents = vae.encode(images).latent_dist.sample()
                 #latents = latents * 0.18215
+                # (1) reconstruction loss
                 reconstruction = vae(images).sample
                 recons_loss = F.l1_loss(reconstruction.float(), images.float())
                 p_loss = perceptual_loss(reconstruction.float(), images.float())
+
+                # (2) KL loss
+                latents = vae.encode(images).latent_dist.sample()
+                print(f'latents : {latents.shape}')
+                # ---------------------------------------------------------
                 posterior = vae.encode(images).latent_dist
                 z_mu, z_sigma = posterior.mean, posterior.std
                 kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
-
-
-
-
                 kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
                 loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
                 if epoch > autoencoder_warm_up_n_epochs:
