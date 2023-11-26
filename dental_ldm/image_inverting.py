@@ -139,69 +139,37 @@ def main(args) :
     w,h = int(args.img_size.split(',')[0].strip()),int(args.img_size.split(',')[1].strip())
     train_transforms = transforms.Compose([transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
                                            transforms.ToTensor()])
-    train_ds = SYDataset(data_folder=args.train_data_folder,
-                         transform=train_transforms,
-                         base_mask_dir=args.train_mask_dir,
-                         image_size=(w,h))
-    training_dataset_loader = SYDataLoader(train_ds,
-                                           batch_size=args.batch_size,
-                                           shuffle=True,
-                                           num_workers=4,
-                                           persistent_workers=True)
-    check_data = first(training_dataset_loader)
+    train_ds = SYDataset(data_folder=args.train_data_folder, transform=train_transforms,
+                         base_mask_dir=args.train_mask_dir, image_size=(w,h))
+    training_dataset_loader = SYDataLoader(train_ds,batch_size=args.batch_size,shuffle=True,
+                                           num_workers=4,persistent_workers=True)
     # ## Prepare validation set data loader
     val_transforms = transforms.Compose([transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
                                          transforms.ToTensor()])
-    val_ds = SYDataset(data_folder=args.val_data_folder,
-                         transform=val_transforms,
-                         base_mask_dir=args.val_mask_dir,image_size=(w,h))
-    test_dataset_loader = SYDataLoader(val_ds,
-                                       batch_size=args.batch_size,
-                                       shuffle=False,
-                                       num_workers=4,
-                                       persistent_workers=True)
+    val_ds = SYDataset(data_folder=args.val_data_folder,transform=val_transforms,
+                       base_mask_dir=args.val_mask_dir,image_size=(w,h))
+    test_dataset_loader = SYDataLoader(val_ds,batch_size=args.batch_size,shuffle=False,
+                                       num_workers=4,persistent_workers=True)
 
     print(f'\n step 3. latent_model')
-    vae_config_dict = r'/data7/sooyeon/medical_image/pretrained/vae/config.json'
-    with open(vae_config_dict, "r") as f :
+    vae_config_dir = args.vae_config_dir
+    with open(vae_config_dir, "r") as f :
         vae_config = json.load(f)
     vae = AutoencoderKL.from_config(config = vae_config)
-    vae.load_state_dict(torch.load(args.pretrained_vae_dir),
-                        strict=True)
+    vae.load_state_dict(torch.load(args.pretrained_vae_dir), strict=True)
     vae = vae.to(device)
     vae.eval()
-    scale_factor = vae.scaling_factor
-    print(scale_factor)
-
-
-
-
-
-    """
 
     print(f'\n step 4. unet model')
-    unet = UNet2DModel(sample_size = 32,
-                       in_channels = 4,
-                       out_channels =4,
-                       freq_shift=0,
-                       flip_sin_to_cos=True,
-                       down_block_types=("AttnDownBlock2D", "AttnDownBlock2D", "AttnDownBlock2D", "DownBlock2D",),
-                       up_block_types=("UpBlock2D", "AttnUpBlock2D", "AttnUpBlock2D", "AttnUpBlock2D"),
-                       block_out_channels=(320, 640, 1280, 1280),
-                       layers_per_block = 2,
-                       mid_block_scale_factor = 1,
-                       downsample_padding = 1,
-                       act_fn = "silu",
-                       attention_head_dim = 8,
-                       norm_num_groups = 32,
-                       attn_norm_num_groups=32,
-                       norm_eps=1e-5,)
+    with open(args.unet_config_dir, "r") as f :
+        unet_config_dir = json.load(f)
+    unet = UNet2DModel.from_config(config=unet_config_dir)
     state_dict = torch.load(args.pretrained_unet_dir)["ema"]
     unet.load_state_dict(state_dict, strict=True)
     unet = unet.to(device)
     unet.eval()
 
-    #  unet.config.sample_size = 32
+    """
     print(f'\n step 5. scheduler')
     scheduler = DDPMScheduler(num_train_timesteps = 1000,
                               beta_start = 0.0001,
@@ -297,11 +265,17 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int)
 
     # step 3. model
+    parser.add_argument('--vae_config_dir', type=str,
+                        default = '/data7/sooyeon/medical_image/pretrained/vae/config.json')
     parser.add_argument('--pretrained_vae_dir', type=str)
+
+    # step 4. model
+    parser.add_argument('--unet_config_dir', type=str,
+                        default='/data7/sooyeon/medical_image/pretrained/unet/config.json')
     parser.add_argument('--pretrained_unet_dir', type=str)
     parser.add_argument('--latent_channels', type=int, default=3)
 
-    # step 4. model
+
     parser.add_argument('--timestep', type=int, default=1000)
     parser.add_argument('--schedule_type', type=str, default="linear_beta")
 

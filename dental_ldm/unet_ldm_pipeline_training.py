@@ -133,72 +133,38 @@ def main(args) :
             f.write(f"{key}: {var_args[key]}\n")
 
     print(f'\n step 2. dataset and dataloatder')
-    w,h = int(args.img_size.split(',')[0].strip()),int(args.img_size.split(',')[1].strip())
-    train_transforms = transforms.Compose([transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
+    w, h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
+    train_transforms = transforms.Compose([transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
                                            transforms.ToTensor()])
-    train_ds = SYDataset(data_folder=args.train_data_folder,
-                         transform=train_transforms,
-                         base_mask_dir=args.train_mask_dir,
-                         image_size=(w,h))
-    training_dataset_loader = SYDataLoader(train_ds,
-                                           batch_size=args.batch_size,
-                                           shuffle=True,
-                                           num_workers=4,
-                                           persistent_workers=True)
-    check_data = first(training_dataset_loader)
+    train_ds = SYDataset(data_folder=args.train_data_folder, transform=train_transforms,
+                         base_mask_dir=args.train_mask_dir, image_size=(w, h))
+    training_dataset_loader = SYDataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
+                                           num_workers=4, persistent_workers=True)
     # ## Prepare validation set data loader
-    val_transforms = transforms.Compose([transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
+    val_transforms = transforms.Compose([transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
                                          transforms.ToTensor()])
-    val_ds = SYDataset(data_folder=args.val_data_folder,
-                         transform=val_transforms,
-                         base_mask_dir=args.val_mask_dir,image_size=(w,h))
-    test_dataset_loader = SYDataLoader(val_ds,
-                                       batch_size=args.batch_size,
-                                       shuffle=False,
-                                       num_workers=4,
-                                       persistent_workers=True)
+    val_ds = SYDataset(data_folder=args.val_data_folder, transform=val_transforms,
+                       base_mask_dir=args.val_mask_dir, image_size=(w, h))
+    test_dataset_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=False,
+                                       num_workers=4, persistent_workers=True)
 
     print(f'\n step 3. latent_model')
-    vae = AutoencoderKL(in_channels=1,
-                        out_channels=1,
-                        down_block_types=["DownEncoderBlock2D", "DownEncoderBlock2D", "DownEncoderBlock2D","DownEncoderBlock2D"],
-                        up_block_types=["UpDecoderBlock2D", "UpDecoderBlock2D", "UpDecoderBlock2D", "UpDecoderBlock2D"],
-                        block_out_channels=[128, 256, 512, 512],
-                        layers_per_block=2,
-                        act_fn="silu",
-                        latent_channels=4,
-                        norm_num_groups=32,
-                        sample_size=512,
-                        scaling_factor=0.18215,)
-    state_dict = torch.load(args.pretrained_vae_dir)
-    vae.load_state_dict(state_dict, strict=True)
+    vae_config_dir = args.vae_config_dir
+    with open(vae_config_dir, "r") as f:
+        vae_config = json.load(f)
+    vae = AutoencoderKL.from_config(config=vae_config)
+    vae.load_state_dict(torch.load(args.pretrained_vae_dir), strict=True)
     vae = vae.to(device)
     vae.eval()
-    with torch.no_grad():
-        images = check_data["image_info"].to(device)
-        z = vae.encode(images).latent_dist.sample()
-    scale_factor = 1 / torch.std(z)
 
     print(f'\n step 4. unet model')
-    unet = UNet2DModel(sample_size = 32,
-                       in_channels = 4,
-                       out_channels =4,
-                       freq_shift=0,
-                       flip_sin_to_cos=True,
-                       down_block_types=("AttnDownBlock2D", "AttnDownBlock2D", "AttnDownBlock2D", "DownBlock2D",),
-                       up_block_types=("UpBlock2D", "AttnUpBlock2D", "AttnUpBlock2D", "AttnUpBlock2D"),
-                       block_out_channels=(320, 640, 1280, 1280),
-                       layers_per_block = 2,
-                       mid_block_scale_factor = 1,
-                       downsample_padding = 1,
-                       act_fn = "silu",
-                       attention_head_dim = 8,
-                       norm_num_groups = 32,
-                       attn_norm_num_groups=32,
-                       norm_eps=1e-5,)
+    with open(args.unet_config_dir, "r") as f:
+        unet_config_dir = json.load(f)
+    unet = UNet2DModel.from_config(config=unet_config_dir)
     ema = copy.deepcopy(unet)
     ema.to(device)
     unet = unet.to(device)
+
     #  unet.config.sample_size = 32
     print(f'\n step 5. scheduler')
     scheduler = DDPMScheduler(num_train_timesteps = 1000,
@@ -217,11 +183,9 @@ def main(args) :
                                        scheduler = scheduler,
                                        safety_checker = None,
                                        feature_extractor=None)
-    scale_factor_ = pipeline.vae_scale_factor # 8
-
 
     print(f' \n step 7. optimizer')
-    optimizer = torch.optim.Adam(unet.parameters(), lr=1e-4)
+    optimizer = torch.optim.Adam(unet.parameters(), lr=args.lr)
 
     print(f' \n step 8. training')
     tqdm_epoch = range(0, args.n_epochs + 1)
@@ -240,9 +204,9 @@ def main(args) :
             if b_size > 0:
                 with torch.no_grad():
                     latent = vae.encode(images).latent_dist.mode() # [Batch, 4, 32, 32]
-                    latent = latent * scale_factor
+                    latent = latent * vae.scaling_factor
                 # 2) t
-                timesteps = torch.randint(0, args.sample_distance,(b_size,),device=device)#.long()
+                timesteps = torch.randint(0, args.sample_distance,(b_size,),device=device)
                 # 3) noise
                 noise = torch.randn_like(latent).to(device)
                 # 4) x_t
@@ -273,7 +237,6 @@ def main(args) :
                     n_pix_num = torch.sum(1-small_mask_info, dim=(1, 2, 3))
                     n_pix_num = torch.where(n_pix_num == 0, 1, n_pix_num)
                     n_score = n_score / n_pix_num
-
                     loss = (p_score / (p_score + n_score))
                     wandb.log({"[infonce loss] p_loss" : p_score.mean().item()})
                     wandb.log({"[infonce loss] n_loss" : n_score.mean().item()})
@@ -293,8 +256,8 @@ def main(args) :
                 if i == 0:
                     ema.eval()
                     unet.eval()
-                    training_outputs(args, test_data, scheduler, 'test_data',     device, ema, vae, scale_factor, epoch + 1)
-                    training_outputs(args, batch,     scheduler, 'training_data', device, ema, vae, scale_factor, epoch + 1)
+                    training_outputs(args, test_data, scheduler, 'test_data',     device, ema, vae, vae.scaling_factor, epoch + 1)
+                    training_outputs(args, batch,     scheduler, 'training_data', device, ema, vae, vae.scaling_factor, epoch + 1)
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=unet, args=args, optimiser=optimizer, final=False, ema=ema, epoch=epoch)
     save(unet=unet, args=args, optimiser=optimizer, final=True, ema=ema)
@@ -302,7 +265,6 @@ def main(args) :
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-
     # step 1. wandb login
     parser.add_argument("--process_title", type=str, default='parksooyeon')
     parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
@@ -311,7 +273,7 @@ if __name__ == '__main__':
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", type=str)
     parser.add_argument('--experiment_dir', type=str,
-                        default = f'/data7/sooyeon/medical_image/anoddpm_result/20231119_dental_test')
+                        default=f'/data7/sooyeon/medical_image/anoddpm_result/20231119_dental_test')
 
     # step 2. dataset and dataloatder
     parser.add_argument('--train_data_folder', type=str)
@@ -322,46 +284,36 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int)
 
     # step 3. model
+    parser.add_argument('--vae_config_dir', type=str,
+                        default='/data7/sooyeon/medical_image/pretrained/vae/config.json')
     parser.add_argument('--pretrained_vae_dir', type=str)
-    parser.add_argument('--latent_channels', type=int, default=3)
 
     # step 4. model
+    parser.add_argument('--unet_config_dir', type=str,
+                        default='/data7/sooyeon/medical_image/pretrained/unet/config.json')
     parser.add_argument('--timestep', type=int, default=1000)
     parser.add_argument('--schedule_type', type=str, default="linear_beta")
 
-    # step 5. optimizer
+    # step 7. optimizer
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--weight_decay', type=float, default=0.0)
-
-    # step 6. training
-    parser.add_argument('--sample_distance', type=int, default=150)
-    parser.add_argument('--use_simplex_noise', action='store_true')
-    # --------------------------------------------------------------------------------------------------------------
-    parser.add_argument('--masked_loss_latent', action='store_true')
-
-    # --------------------------------------------------------------------------------------------------------------
-    parser.add_argument('--info_nce_loss', action='store_true')
-    # --------------------------------------------------------------------------------------------------------------
-    parser.add_argument('--pos_info_nce_loss', action='store_true')
-    parser.add_argument('--reg_loss_scale', type=float, default=1.0)
-    # --------------------------------------------------------------------------------------------------------------
-    parser.add_argument('--anormal_scoring', action='store_true')
-    parser.add_argument('--min_max_training', action='store_true')
-    parser.add_argument('--infonce_loss', action='store_true')
-
-
-    parser.add_argument('--inference_num', type=int, default=4)
-
-    # step 7. save
-    parser.add_argument('--model_save_freq', type=int, default=1000)
-
 
     # step 8. training
     parser.add_argument('--n_epochs', type=int, default=3000)
     parser.add_argument('--only_normal_training', action='store_true')
+    parser.add_argument('--sample_distance', type=int, default=150)
+    parser.add_argument('--use_simplex_noise', action='store_true')
+    # --------------------------------------------------------------------------------------------------------------
+    parser.add_argument('--masked_loss_latent', action='store_true')
+    parser.add_argument('--infonce_loss', action='store_true')
+    parser.add_argument('--pos_info_nce_loss', action='store_true')
+    parser.add_argument('--reg_loss_scale', type=float, default=1.0)
+    parser.add_argument('--anormal_scoring', action='store_true')
+    parser.add_argument('--min_max_training', action='store_true')
     parser.add_argument('--masked_loss', action='store_true')
     # inference
+    parser.add_argument('--inference_num', type=int, default=4)
     parser.add_argument('--inference_freq', type=int, default=50)
-
+    parser.add_argument('--model_save_freq', type=int, default=1000)
     args = parser.parse_args()
     main(args)
