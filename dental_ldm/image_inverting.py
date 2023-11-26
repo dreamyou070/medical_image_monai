@@ -161,6 +161,7 @@ def main(args) :
                                        persistent_workers=True)
 
     print(f'\n step 3. latent_model')
+    """
     vae = AutoencoderKL(in_channels=1,
                         out_channels=1,
                         down_block_types=["DownEncoderBlock2D", "DownEncoderBlock2D", "DownEncoderBlock2D","DownEncoderBlock2D"],
@@ -180,6 +181,18 @@ def main(args) :
         images = check_data["image_info"].to(device)
         z = vae.encode(images).latent_dist.sample()
     scale_factor = 1 / torch.std(z)
+    """
+    import json
+    vae_config_dict = r'/data7/sooyeon/medical_image/pretrained/vae/config.json'
+    vae_config = json.load(vae_config_dict)
+    print(vae_config)
+    #AutoencoderKL.from_config(config = ,
+
+
+
+
+
+    """
 
     print(f'\n step 4. unet model')
     unet = UNet2DModel(sample_size = 32,
@@ -253,8 +266,27 @@ def main(args) :
         img_save_dir = os.path.join(noising_save_base_dir, f'generating_process_{naming_time}.png')
         img.save(img_save_dir)
 
-    print(f'all noising process num : {len(all_latents)}')
-    print(f'all denoising process num : {len(all_latents_as_generating)}')
+    latent_distance = [torch.nn.functional.mse_loss(org_img.float(), reversed_img.float(), reduction="none")
+                       for org_img, reversed_img in zip(all_latents, all_latents_as_generating[::-1])]
+
+    latent_distance = torch.stack(latent_distance, dim=0).mean(dim=0).mean(dim=0).mean(dim=0)
+    import torch.nn.functional as F
+
+    def expand_image(im: torch.Tensor, h=512, w=512,
+                     absolute: bool = False, threshold: float = None) -> torch.Tensor:
+        im = im.unsqueeze(0).unsqueeze(0)
+        im = F.interpolate(im.float().detach(), size=(h, w), mode='bicubic')
+        if not absolute:
+            im = (im - im.min()) / (im.max() - im.min() + 1e-8)
+        if threshold:
+            im = (im > threshold).float()
+        # im = im.cpu().detach()
+        return im.squeeze()
+    heatmap = expand_image(latent_distance, h=256, w=256, absolute=False)
+    """
+
+
+
 
 
 if __name__ == '__main__':

@@ -10,12 +10,21 @@ print(input2)
 output = torch.nn.functional.mse_loss(input1, input2, reduction="none")
 print(output)
 """
-loss = torch.randn((3,4,32,32))
-loss = loss.sum([1,2,3])
-print(loss)
-small_mask_info = torch.randn((3,4,32,32))
+a = torch.randn((1,4,32,32))
+b = torch.randn((1,4,32,32))
+latent_distance = [a,b]
+c = torch.stack(latent_distance, dim=0).mean(dim=0).mean(dim=0).mean(dim=0)
+print(c.shape)
+#word_map = expand_image(word_map, 512, 512)
+import torch.nn.functional as F
 
-pixel_num = torch.sum(small_mask_info, dim=(1,2,3))
-print(pixel_num)
-loss = loss / pixel_num
-print(loss)
+def expand_image(im: torch.Tensor, h = 512, w = 512,
+                 absolute: bool = False, threshold: float = None) -> torch.Tensor:
+    im = im.unsqueeze(0).unsqueeze(0)
+    im = F.interpolate(im.float().detach(), size=(h, w), mode='bicubic')
+    if not absolute:
+        im = (im - im.min()) / (im.max() - im.min() + 1e-8)
+    if threshold:
+        im = (im > threshold).float()
+    # im = im.cpu().detach()
+    return im.squeeze()
