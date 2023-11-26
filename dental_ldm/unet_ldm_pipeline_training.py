@@ -186,6 +186,15 @@ def main(args) :
     vae = vae.to(device)
     vae_scale_factor = 0.18215
 
+    #with torch.no_grad():
+    #    with autocast(enabled=True):
+    #        latent = autoencoderkl.encode_stage_2_inputs(check_data["image"].to(device))
+
+    print(f"Scaling factor set to {1 / torch.std(z)}")
+    scale_factor = 1 / torch.std(z)
+
+
+
     print(f'\n step 4. unet model')
     unet = UNet2DModel(sample_size = 32,
                        in_channels = 4,
@@ -245,17 +254,19 @@ def main(args) :
                 mask_info = mask_info[normal_info == 1]
             if x_0.shape[0] > 0:
                 latents = vae.encode(x_0).latent_dist.sample()
-                latents = (latents * vae_scale_factor).to(device)
+
+                scale_factor = 1 / torch.std(latents)
+                print(f"Scaling factor set to {scale_factor}")
+
+                latents = (latents * scale_factor).to(device)
                 # 2) t
                 timesteps = torch.randint(0, args.sample_distance, (latents.shape[0],),device=device)#.long()
-                print(f'timesteps : {timesteps}')
                 # 3) noise
                 noise = torch.randn_like(latents).to(device)
                 # 4) x_t
                 noisy_samples = scheduler.add_noise(original_samples = latents, noise = noise, timesteps = timesteps,)
                 # noisy sample check
                 noisy_pixel = vae.decode(noisy_samples / vae_scale_factor, return_dict=True, generator=None).sample
-                print(f'noisy_pixel : {noisy_pixel.shape}')
 
                 fir = noisy_pixel[0]
                 real = torch_transforms.ToPILImage()(fir.squeeze())
