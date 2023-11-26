@@ -214,7 +214,6 @@ def main(args) :
     print(f'\n step 4. model training')
     kl_weight = 1e-6
     n_epochs = 100
-    val_interval = 10
     autoencoder_warm_up_n_epochs = 10
     records = []
     for epoch in range(n_epochs):
@@ -228,10 +227,8 @@ def main(args) :
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
             images = batch["image_info"].to(device)
-            print(f'pixel  space, images : {images.shape}')
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
-
                 #latents = vae.encode(images).latent_dist.sample()
                 #latents = latents * 0.18215
                 # (1) reconstruction loss
@@ -239,10 +236,10 @@ def main(args) :
                 recons_loss = F.l1_loss(reconstruction.float(), images.float())
                 p_loss = perceptual_loss(reconstruction.float(), images.float())
 
-                # (2) KL loss
+                ########################################################################################################
                 latents = vae.encode(images).latent_dist.sample()
-                print(f'latents : {latents.shape}')
                 # ---------------------------------------------------------
+                # (2) KL loss
                 posterior = vae.encode(images).latent_dist
                 z_mu, z_sigma = posterior.mean, posterior.std
                 kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
