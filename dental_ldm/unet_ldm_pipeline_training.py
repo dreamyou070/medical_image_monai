@@ -267,7 +267,7 @@ def main(args) :
                 recon.save(f'recon_img.png')
                 reconstruction = vae(images).sample
                 reconstruction = reconstruction[0].squeeze()
-                torch_transforms.ToPILImage()(reconstruction.unsqueeze(0))
+                reconstruction = torch_transforms.ToPILImage()(reconstruction.unsqueeze(0))
                 reconstruction.save(f'reconstruction.png')
             break
         break
