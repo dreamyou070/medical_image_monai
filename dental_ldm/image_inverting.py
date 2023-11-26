@@ -198,7 +198,8 @@ def main(args) :
                        norm_num_groups = 32,
                        attn_norm_num_groups=32,
                        norm_eps=1e-5,)
-    unet.load_state_dict(torch.load(args.pretrained_unet_dir), strict=True)
+    state_dict = torch.load(args.pretrained_unet_dir)
+    unet.load_state_dict(state_dict, strict=True)
     unet = unet.to(device)
     unet.eval()
 
