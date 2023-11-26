@@ -258,9 +258,31 @@ def main(args) :
                     scale_factor = 1 / torch.std(latents)
                 latents = (latents * scale_factor).to(device)
                 noisy_pixel = vae.decode(latents / scale_factor, return_dict=True, generator=None).sample
+                recon = torch_transforms.ToPILImage()(noisy_pixel[0].unsqueeze(0))
+                recon.save('test.png')
+
+
+
+
+
+                """
                 fir = noisy_pixel[0]
                 real = torch_transforms.ToPILImage()(fir.squeeze())
                 real.save(f'test_{epoch}_{step}.png')
+                
+                reconstruction = vae(images).sample
+                x = sample
+                
+                posterior = vae.encode(x_0).latent_dist
+                latent_0 = posterior.sample()
+                
+                dec = vae.decode(latent_0).sample
+
+                if not return_dict:
+                    return (dec,)
+
+                return DecoderOutput(sample=dec)
+                """
 
     """
                 print(f"Scaling factor set to {scale_factor}")
