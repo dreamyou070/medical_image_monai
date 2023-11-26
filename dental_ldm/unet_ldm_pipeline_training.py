@@ -186,10 +186,10 @@ def main(args) :
     vae.load_state_dict(state_dict, strict=True)
     vae = vae.to(device)
     vae.eval()
-    """
+
     
     
-    vae_scale_factor = 0.18215
+    #vae_scale_factor = 0.18215
 
     #with torch.no_grad():
     #    with autocast(enabled=True):
@@ -250,31 +250,56 @@ def main(args) :
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=200)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
-            x_0 = batch["image_info"].to(device)  # [Batch, 1, 128, 128]
-            mask_info = batch["mask"].unsqueeze(dim=1)
-            small_mask_info = batch['small_mask'].unsqueeze(dim=1)
-            normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
-            if args.only_normal_training:
-                x_0 = x_0[normal_info == 1]
-                mask_info = mask_info[normal_info == 1]
-            if x_0.shape[0] > 0:
-                with torch.no_grad():
-                    latents = vae.encode(x_0).latent_dist.sample()
+
+            images = batch["image_info"].to(device)
+
+            reconstruction = vae(images).sample
+            import torchvision.transforms as torch_transforms
+            from PIL import Image
+            # ------------------------------------------------------------------------------------------------------
+            org_img = images[0].squeeze()
+            org_img = torch_transforms.ToPILImage()(org_img.unsqueeze(0))
+            # ------------------------------------------------------------------------------------------------------
+            recon = reconstruction[0].squeeze()
+            recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
+
+            org_img.save(f'org_img.png')
+            recon.save(f'recon_img.png')
+            break
+
+    """        
+            
+            
+            
+            
+            
+            
+            
+            #x_0 = batch["image_info"].to(device)  # [Batch, 1, 128, 128]
+            #mask_info = batch["mask"].unsqueeze(dim=1)
+            #small_mask_info = batch['small_mask'].unsqueeze(dim=1)
+            #normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
+            #if args.only_normal_training:
+            #    x_0 = x_0[normal_info == 1]
+            #    mask_info = mask_info[normal_info == 1]
+            #if x_0.shape[0] > 0:
+            #    with torch.no_grad():
+            #        latents = vae.encode(x_0).latent_dist.sample()
                     #scale_factor = 1 / torch.std(latents)
-                latents = (latents).to(device)
-                noisy_pixel = vae.decode(latents, return_dict=True, generator=None).sample
-                first_sample = noisy_pixel[0].squeeze() # 256,256
-                recon = torch_transforms.ToPILImage()(first_sample)
-                recon.save('test.png')
+            #    latents = (latents).to(device)
+            #    noisy_pixel = vae.decode(latents, return_dict=True, generator=None).sample
+            #    first_sample = noisy_pixel[0].squeeze() # 256,256
+            #    recon = torch_transforms.ToPILImage()(first_sample)
+            #    recon.save('test.png')
 
 
 
 
 
                 
-                fir = noisy_pixel[0]
-                real = torch_transforms.ToPILImage()(fir.squeeze())
-                real.save(f'test_{epoch}_{step}.png')
+             #   fir = noisy_pixel[0]
+             #   real = torch_transforms.ToPILImage()(fir.squeeze())
+              #  real.save(f'test_{epoch}_{step}.png')
                 
                 reconstruction = vae(images).sample
                 x = sample
