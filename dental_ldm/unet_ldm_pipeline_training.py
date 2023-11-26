@@ -255,24 +255,28 @@ def main(args) :
 
             reconstruction = vae(images).sample
 
-            latent = vae.encode(images).latent_dist.sample()
-            #if sample_posterior:
-            #    z = posterior.sample(generator=generator)
-            #else:
-            #    z = posterior.mode()
-            recon = vae.decode(latent).sample
+            with torch.no_grad():
 
-            import torchvision.transforms as torch_transforms
-            from PIL import Image
-            # ------------------------------------------------------------------------------------------------------
-            org_img = images[0].squeeze()
-            org_img = torch_transforms.ToPILImage()(org_img.unsqueeze(0))
-            # ------------------------------------------------------------------------------------------------------
-            recon = reconstruction[0].squeeze()
-            recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
+                latent = vae.encode(images).latent_dist.sample()
+                scale_factor = 1 / torch.std(latent)
+                latent = latent * scale_factor
+                #if sample_posterior:
+                #    z = posterior.sample(generator=generator)
+                #else:
+                #    z = posterior.mode()
+                recon = vae.decode(latent/scale_factor).sample
 
-            org_img.save(f'org_img.png')
-            recon.save(f'recon_img.png')
+                import torchvision.transforms as torch_transforms
+                from PIL import Image
+                # ------------------------------------------------------------------------------------------------------
+                org_img = images[0].squeeze()
+                org_img = torch_transforms.ToPILImage()(org_img.unsqueeze(0))
+                # ------------------------------------------------------------------------------------------------------
+                recon = reconstruction[0].squeeze()
+                recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
+
+                org_img.save(f'org_img.png')
+                recon.save(f'recon_img.png')
             break
 
     """        
