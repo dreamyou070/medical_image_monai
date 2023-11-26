@@ -190,8 +190,8 @@ def main(args) :
     #    with autocast(enabled=True):
     #        latent = autoencoderkl.encode_stage_2_inputs(check_data["image"].to(device))
 
-    print(f"Scaling factor set to {1 / torch.std(z)}")
-    scale_factor = 1 / torch.std(z)
+    #print(f"Scaling factor set to {1 / torch.std(z)}")
+    #scale_factor = 1 / torch.std(z)
 
 
 
