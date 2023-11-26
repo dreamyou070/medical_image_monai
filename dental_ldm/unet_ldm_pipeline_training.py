@@ -254,6 +254,14 @@ def main(args) :
             images = batch["image_info"].to(device)
 
             reconstruction = vae(images).sample
+
+            latent = vae.encode(images).latent_dist.sample()
+            #if sample_posterior:
+            #    z = posterior.sample(generator=generator)
+            #else:
+            #    z = posterior.mode()
+            recon = vae.decode(latent).sample
+
             import torchvision.transforms as torch_transforms
             from PIL import Image
             # ------------------------------------------------------------------------------------------------------
