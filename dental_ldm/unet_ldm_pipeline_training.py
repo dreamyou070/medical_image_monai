@@ -254,8 +254,11 @@ def main(args) :
                 # 4) x_t
                 noisy_samples = scheduler.add_noise(original_samples = latents, noise = noise, timesteps = timesteps,)
                 # noisy sample check
-                noisy_pixel = vae.decode(noisy_samples / vae_scale_factor, return_dict=False, generator=None)[0]
-                real = torch_transforms.ToPILImage()(noisy_pixel.squeeze())
+                noisy_pixel = vae.decode(noisy_samples / vae_scale_factor, return_dict=False, generator=None).sample
+                print(f'noisy_pixel : {noisy_pixel.shape}')
+
+                first = noisy_pixel[0]
+                real = torch_transforms.ToPILImage()(first.squeeze())
                 real.save(f'noisy_pixel_{epoch}_{step}.png')
                 import time
                 time.sleep(1)
