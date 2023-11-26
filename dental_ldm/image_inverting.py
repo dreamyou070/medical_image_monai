@@ -241,6 +241,17 @@ def main(args) :
         img_save_dir = os.path.join(noising_save_base_dir, f'noising_{i}.png')
         img.save(img_save_dir)
 
+    last_latent = all_latents[-1]
+    all_latents_as_generating = invertor.gen_loop(latent = last_latent,
+                                                   timestep = args.sample_distance)
+
+    for i in range(len(all_latents_as_generating)) :
+        latent = all_latents_as_generating[i]
+        img = invertor.latent2img(latent, return_type = 'torch')
+        img = img[0].squeeze()
+        img = torch_transforms.ToPILImage()(img.unsqueeze(0))
+        img_save_dir = os.path.join(noising_save_base_dir, f'generating_process_{i}.png')
+        img.save(img_save_dir)
 
 
 
