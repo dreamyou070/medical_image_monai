@@ -34,14 +34,14 @@ class Inversor (object):
         all_latents = [latent]
         for t in range(inversion_steps):
 
-            noise_pred = self.unet(latent, t+1).sample
+            noise_pred = self.unet(latent, t).sample
             latent = self.one_step_noising(noise_pred, t, latent)
             all_latents.append(latent)
         return all_latents
     def one_step_noising(self,
                          model_output: Union[torch.FloatTensor, np.ndarray], timestep: int,
                          sample: Union[torch.FloatTensor, np.ndarray]):
-        timestep, next_timestep = timestep - 1, timestep
+        timestep, next_timestep = timestep , timestep+1
         alpha_prod_t = self.scheduler.alphas_cumprod[timestep] #if timestep >= 0 else self.scheduler.final_alpha_cumprod
         alpha_prod_t_next = self.scheduler.alphas_cumprod[next_timestep]
         beta_prod_t = 1 - alpha_prod_t
