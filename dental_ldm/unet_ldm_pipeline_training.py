@@ -258,14 +258,14 @@ def main(args) :
             with torch.no_grad():
 
                 latent = vae.encode(images).latent_dist.sample()
-                scale_factor = 1 / torch.std(latent)
-                latent = latent * scale_factor
+                #scale_factor = 1 / torch.std(latent)
+                #latent = latent * scale_factor
                 #if sample_posterior:
                 #    z = posterior.sample(generator=generator)
                 #else:
                 #    z = posterior.mode()
-                recon = vae.decode(latent/scale_factor).sample
-
+                recon = vae.decode(latent).sample
+                #recon = vae.decode(latent / scale_factor).sample
                 import torchvision.transforms as torch_transforms
                 from PIL import Image
                 # ------------------------------------------------------------------------------------------------------
