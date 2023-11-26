@@ -40,7 +40,7 @@ class Inversor (object):
                          model_output: Union[torch.FloatTensor, np.ndarray], timestep: int,
                          sample: Union[torch.FloatTensor, np.ndarray]):
         timestep, next_timestep = timestep - 1, timestep
-        alpha_prod_t = self.scheduler.alphas_cumprod[timestep] if timestep >= 0 else self.scheduler.final_alpha_cumprod
+        alpha_prod_t = self.scheduler.alphas_cumprod[timestep] #if timestep >= 0 else self.scheduler.final_alpha_cumprod
         alpha_prod_t_next = self.scheduler.alphas_cumprod[next_timestep]
         beta_prod_t = 1 - alpha_prod_t
         next_original_sample = (sample - beta_prod_t ** 0.5 * model_output) / alpha_prod_t ** 0.5
