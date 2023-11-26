@@ -247,13 +247,13 @@ def main(args) :
             images = batch["image_info"].to(device)
             with torch.no_grad():
                 latent = vae.encode(images).latent_dist.sample()
-                latent = latent * scale_factor
+                #latent = latent * scale_factor
                 #if sample_posterior:
                 #    z = posterior.sample(generator=generator)
                 #else:
                 #    z = posterior.mode()
                 #recon = vae.decode(latent).sample
-                recon = vae.decode(latent / scale_factor).sample
+                recon = vae.decode(latent).sample
                 import torchvision.transforms as torch_transforms
                 from PIL import Image
                 # ------------------------------------------------------------------------------------------------------
@@ -266,6 +266,7 @@ def main(args) :
                 org_img.save(f'org_img.png')
                 recon.save(f'recon_img.png')
             break
+        break
 
     """        
             
