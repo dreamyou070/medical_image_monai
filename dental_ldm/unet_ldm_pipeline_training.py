@@ -246,7 +246,10 @@ def main(args) :
         for step, batch in progress_bar:
             images = batch["image_info"].to(device)
             with torch.no_grad():
-                latent = vae.encode(images).latent_dist.sample()
+                # [Batch, 4, 32, 32]
+                latent = vae.encode(images).latent_dist.mode()
+                print(f'latent.shape: {latent.shape}')
+
                 #latent = latent * scale_factor
                 #if sample_posterior:
                 #    z = posterior.sample(generator=generator)
@@ -254,6 +257,9 @@ def main(args) :
                 #    z = posterior.mode()
                 #recon = vae.decode(latent).sample
                 recon = vae.decode(latent).sample
+
+
+
                 import torchvision.transforms as torch_transforms
                 from PIL import Image
                 # ------------------------------------------------------------------------------------------------------
