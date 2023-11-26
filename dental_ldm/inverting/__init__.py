@@ -51,13 +51,12 @@ class Inversor (object):
                   model_output: Union[torch.FloatTensor, np.ndarray],
                   timestep: int,
                   sample: Union[torch.FloatTensor, np.ndarray]):
-        prev_sample = self.scheduler.step(model_output, timestep, sample=sample)
+        prev_sample = self.scheduler.step(model_output, timestep, sample=sample).prev_sample
         return prev_sample
 
     def gen_loop(self, latent, timestep):
         all_latents = [latent]
         for t in range(timestep- 1, -1, -1) :
-            print(f'latent type = {type(latent)}')
             noise_pred = self.unet(latent, t).sample
             latent = self.prev_step(noise_pred, t, latent)
             all_latents.append(latent)
