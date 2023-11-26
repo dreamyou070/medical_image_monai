@@ -40,9 +40,8 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     "ema":                  ema.state_dict(),
                     'loss':                 loss,},save_dir)
 
-# training_outputs(args, test_data, scheduler, 'training_data', device, ema, autoencoderkl, scale_factor, epoch + 1)
-def training_outputs(args, test_data, scheduler, is_train_data, device, model, vae,
-                     vae_scale_factor, epoch):
+# training_outputs(args, batch,     scheduler, 'training_data', device, ema, vae, scale_factor, epoch + 1)
+def training_outputs(args, test_data, scheduler, is_train_data, device, model, vae, scale_factor, epoch):
 
     if is_train_data == 'training_data':
         train_data = 'training_data'
@@ -59,32 +58,26 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
     normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
     mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
     with torch.no_grad():
-        latents = vae.encode(x).latent_dist.sample()
-        latents = (latents * vae_scale_factor).to(device)
+        latent = vae.encode(x).latent_dist.mode()  # [Batch, 4, 32, 32]
+        latent = latent * scale_factor
     # 2) select random int
-    t = torch.randint(args.sample_distance - 1, args.sample_distance, (latents.shape[0],), device=x.device).long()
+    b_size = latent.shape[0]
+    t = torch.randint(args.sample_distance - 1, args.sample_distance, (b_size,), device=device).long()
     # 3) noise
-    noise = torch.rand_like(latents).float().to(x.device)
-    batch_size = latents.shape[0]
+    noise = torch.rand_like(latent).float().to(x.device)
     # 4) noise image generating
     with torch.no_grad() :
-        noisy_latent = scheduler.add_noise(original_samples=latents,
-                                           noise=noise,
-                                           timesteps=t)
+        noisy_latent = scheduler.add_noise(original_samples=latent, noise=noise, timesteps=t)
         latents = noisy_latent.clone().detach()
-
         # 5) denoising
         for t in range(int(args.sample_distance)-1 , -1, -1):
             with torch.no_grad() :
-                timestep = torch.Tensor([t]).repeat(batch_size).long()
-                model_output = model(latents,
-                                     timestep.to(device), None).sample
-                latents = scheduler.step(model_output,
-                                         t,
-                                         sample=latents).prev_sample
-        recon_image = vae.decode(latents / vae_scale_factor,return_dict=False,generator=None)[0]
+                timestep = torch.Tensor([t]).repeat(b_size).long()
+                model_output = model(latents, timestep.to(device), None).sample
+                latents = scheduler.step(model_output, t, sample=latents).prev_sample
+        recon_image = vae.decode(latents / scale_factor,return_dict=True,generator=None).sample
 
-    for img_index in range(x.shape[0]):
+    for img_index in range(b_size):
         normal_info_ = normal_info[img_index]
         if normal_info_ == 1:
             is_normal = 'normal'
@@ -95,12 +88,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
         real = torch_transforms.ToPILImage()(real.unsqueeze(0))
         # wrong in here ...
         recon = recon_image[img_index].squeeze()
-        recon = (recon / 2 + 0.5).clamp(0, 1)
-        recon = recon.cpu().numpy()
-        recon = (recon * 255).astype(np.uint8)
-        recon = Image.fromarray(recon).convert('L')
-
-        #recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
+        real = torch_transforms.ToPILImage()(real.unsqueeze(0))
 
         mask_np = mask_info[img_index].squeeze().to('cpu').detach().numpy().copy().astype(np.uint8)
         mask_np = mask_np * 255
@@ -245,114 +233,30 @@ def main(args) :
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
             images = batch["image_info"].to(device)
-            with torch.no_grad():
-                # [Batch, 4, 32, 32]
-                latent = vae.encode(images).latent_dist.mode()
-                print(f'latent.shape: {latent.shape}')
-
-                #latent = latent * scale_factor
-                #if sample_posterior:
-                #    z = posterior.sample(generator=generator)
-                #else:
-                #    z = posterior.mode()
-                #recon = vae.decode(latent).sample
-                recon = vae.decode(latent).sample
-
-
-
-                import torchvision.transforms as torch_transforms
-                from PIL import Image
-                # ------------------------------------------------------------------------------------------------------
-                org_img = images[0].squeeze()
-                org_img = torch_transforms.ToPILImage()(org_img.unsqueeze(0))
-                # ------------------------------------------------------------------------------------------------------
-                recon = recon[0].squeeze()
-                recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
-
-                org_img.save(f'org_img.png')
-                recon.save(f'recon_img.png')
-                reconstruction = vae(images).sample
-                reconstruction = reconstruction[0].squeeze()
-                reconstruction = torch_transforms.ToPILImage()(reconstruction.unsqueeze(0))
-                reconstruction.save(f'reconstruction.png')
-            break
-        break
-
-    """        
-            
-            
-            
-            
-            
-            
-            
-            #x_0 = batch["image_info"].to(device)  # [Batch, 1, 128, 128]
-            #mask_info = batch["mask"].unsqueeze(dim=1)
-            #small_mask_info = batch['small_mask'].unsqueeze(dim=1)
-            #normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
-            #if args.only_normal_training:
-            #    x_0 = x_0[normal_info == 1]
-            #    mask_info = mask_info[normal_info == 1]
-            #if x_0.shape[0] > 0:
-            #    with torch.no_grad():
-            #        latents = vae.encode(x_0).latent_dist.sample()
-                    #scale_factor = 1 / torch.std(latents)
-            #    latents = (latents).to(device)
-            #    noisy_pixel = vae.decode(latents, return_dict=True, generator=None).sample
-            #    first_sample = noisy_pixel[0].squeeze() # 256,256
-            #    recon = torch_transforms.ToPILImage()(first_sample)
-            #    recon.save('test.png')
-
-
-
-
-
-                
-             #   fir = noisy_pixel[0]
-             #   real = torch_transforms.ToPILImage()(fir.squeeze())
-              #  real.save(f'test_{epoch}_{step}.png')
-                
-                reconstruction = vae(images).sample
-                x = sample
-                
-                posterior = vae.encode(x_0).latent_dist
-                latent_0 = posterior.sample()
-                
-                dec = vae.decode(latent_0).sample
-
-                if not return_dict:
-                    return (dec,)
-
-                return DecoderOutput(sample=dec)
-                
-
-    
-                print(f"Scaling factor set to {scale_factor}")
-
-                
+            mask_info = batch["mask"].unsqueeze(dim=1)
+            small_mask_info = batch['small_mask'].unsqueeze(dim=1)
+            normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
+            if args.only_normal_training:
+                images = images[normal_info == 1]
+                mask_info = mask_info[normal_info == 1]
+            b_size = images.shape[0]
+            if b_size > 0:
+                with torch.no_grad():
+                    latent = vae.encode(images).latent_dist.mode() # [Batch, 4, 32, 32]
+                    latent = latent * scale_factor
                 # 2) t
-                timesteps = torch.randint(0, args.sample_distance, (latents.shape[0],),device=device)#.long()
+                timesteps = torch.randint(0, args.sample_distance,(b_size,),device=device)#.long()
                 # 3) noise
-                noise = torch.randn_like(latents).to(device)
+                noise = torch.randn_like(latent).to(device)
                 # 4) x_t
-                noisy_samples = scheduler.add_noise(original_samples = latents, noise = noise, timesteps = timesteps,)
-                # noisy sample check
-                noisy_pixel = vae.decode(noisy_samples / scale_factor, return_dict=True, generator=None).sample
-
-                fir = noisy_pixel[0]
-                real = torch_transforms.ToPILImage()(fir.squeeze())
-                real.save(f'noisy_pixel_{epoch}_{step}.png')
-                import time
-                time.sleep(1)
-
-    
+                noisy_samples = scheduler.add_noise(original_samples = latent,
+                                                    noise = noise,
+                                                    timesteps = timesteps,)
                 # 5) unet inference
                 noise_pred = pipeline.unet(noisy_samples,timesteps).sample
                 target = noise
+
                 if args.masked_loss :
-                    #mask_info = mask_info.expand(target.shape)
-                    #noise_pred = noise_pred * mask_info.to(device)
-                    #target = target * mask_info.to(device)
                     small_mask_info = small_mask_info.expand(target.shape)
                     noise_pred = noise_pred * small_mask_info.to(device)
                     target = target * small_mask_info.to(device)
@@ -366,20 +270,19 @@ def main(args) :
                 # ----------------------------------------------------------------------------------------- #
                 # EMA model updating
                 update_ema_params(ema, unet)
-        # inference ?
+                break
+        # inference -----------------------------------------------------------------------------------------
         if epoch % args.inference_freq == 0 :
             for i, test_data in enumerate(test_dataset_loader):
                 if i == 0:
                     ema.eval()
                     unet.eval()
-                    training_outputs(args, test_data, scheduler, 'test_data', device, ema, vae,
-                                     vae_scale_factor, epoch + 1)
-                    training_outputs(args, batch, scheduler, 'training_data', device, ema, vae,
-                                     vae_scale_factor, epoch + 1)
+                    training_outputs(args, test_data, scheduler, 'test_data',     device, ema, vae, scale_factor, epoch + 1)
+                    training_outputs(args, batch,     scheduler, 'training_data', device, ema, vae, scale_factor, epoch + 1)
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=unet, args=args, optimiser=optimizer, final=False, ema=ema, epoch=epoch)
     save(unet=unet, args=args, optimiser=optimizer, final=True, ema=ema)
-    """
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
