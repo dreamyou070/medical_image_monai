@@ -246,16 +246,21 @@ def main(args) :
             if x_0.shape[0] > 0:
                 latents = vae.encode(x_0).latent_dist.sample()
                 latents = (latents * vae_scale_factor).to(device)
-                print(f'latents.shape [Batch, 4, 32,32] : {latents.shape}')
-
                 # 2) t
                 timesteps = torch.randint(0, args.sample_distance, (latents.shape[0],),device=device)#.long()
+                print(f'timesteps : {timesteps}')
                 # 3) noise
                 noise = torch.randn_like(latents).to(device)
                 # 4) x_t
-                noisy_samples = scheduler.add_noise(original_samples = latents,
-                                                    noise = noise,
-                                                    timesteps = timesteps,)
+                noisy_samples = scheduler.add_noise(original_samples = latents, noise = noise, timesteps = timesteps,)
+                # noisy sample check
+                noisy_pixel = vae.decode(noisy_samples / vae_scale_factor, return_dict=False, generator=None)[0]
+                real = torch_transforms.ToPILImage()(noisy_pixel.squeeze())
+                real.save(f'noisy_pixel_{epoch}_{step}.png')
+                import time
+                time.sleep(1)
+
+    """
                 # 5) unet inference
                 noise_pred = pipeline.unet(noisy_samples,timesteps).sample
                 target = noise
@@ -289,7 +294,7 @@ def main(args) :
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=unet, args=args, optimiser=optimizer, final=False, ema=ema, epoch=epoch)
     save(unet=unet, args=args, optimiser=optimizer, final=True, ema=ema)
-
+    """
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
