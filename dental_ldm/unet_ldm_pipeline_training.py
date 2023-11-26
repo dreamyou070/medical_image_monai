@@ -210,13 +210,10 @@ def main(args) :
                 # 3) noise
                 noise = torch.randn_like(latent).to(device)
                 # 4) x_t
-                noisy_samples = scheduler.add_noise(original_samples = latent,
-                                                    noise = noise,
-                                                    timesteps = timesteps,)
+                noisy_samples = scheduler.add_noise(original_samples = latent, noise = noise,timesteps = timesteps,)
                 # 5) unet inference
                 noise_pred = pipeline.unet(noisy_samples,timesteps).sample
                 target = noise
-
                 if args.masked_loss :
                     small_mask_info = small_mask_info.expand(target.shape)
                     noise_pred = noise_pred * small_mask_info.to(device)
@@ -228,14 +225,14 @@ def main(args) :
                     target = target * small_mask_info.to(device)
                     p_score = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").sum([1, 2, 3])
                     p_pix_num = torch.sum(small_mask_info, dim=(1, 2, 3))
-                    p_pix_num = torch.where(p_pix_num == 0, 1, p_pix_num)
+                    p_pix_num = torch.where(p_pix_num == 0, 1, p_pix_num).to(device)
                     p_score = p_score / p_pix_num
 
                     noise_pred = noise_pred * (1-small_mask_info).to(device)
                     target = target * (1-small_mask_info).to(device)
                     n_score = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").sum([1, 2, 3])
                     n_pix_num = torch.sum(1-small_mask_info, dim=(1, 2, 3))
-                    n_pix_num = torch.where(n_pix_num == 0, 1, n_pix_num)
+                    n_pix_num = torch.where(n_pix_num == 0, 1, n_pix_num).to(device)
                     n_score = n_score / n_pix_num
                     loss = (p_score / (p_score + n_score))
                     wandb.log({"[infonce loss] p_loss" : p_score.mean().item()})
