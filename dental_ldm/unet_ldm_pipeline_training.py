@@ -182,7 +182,7 @@ def main(args) :
                         norm_num_groups=32,
                         sample_size=512,
                         scaling_factor=0.18215,)
-    vae.load_state_dict(torch.load(args.pretrained_vae_dir))
+    vae = vae.load_state_dict(torch.load(args.pretrained_vae_dir))
     vae = vae.to(device)
     vae_scale_factor = 0.18215
 
