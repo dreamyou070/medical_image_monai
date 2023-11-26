@@ -207,10 +207,6 @@ def main(args) :
     ema.to(device)
     unet = unet.to(device)
     #  unet.config.sample_size = 32
-
-
-
-
     print(f'\n step 5. scheduler')
     scheduler = DDPMScheduler(num_train_timesteps = 1000,
                               beta_start = 0.0001,
@@ -227,7 +223,8 @@ def main(args) :
                                        safety_checker = None,
                                        feature_extractor=None)
     scale_factor_ = pipeline.vae_scale_factor #= 2 ** (len(self.vae.config.block_out_channels) - 1) # 1
-
+    print(f'scale factor (8) : {scale_factor_}')
+    """
     print(f' \n step 7. optimizer')
     optimizer = torch.optim.Adam(unet.parameters(), lr=1e-4)
 
@@ -290,7 +287,7 @@ def main(args) :
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=unet, args=args, optimiser=optimizer, final=False, ema=ema, epoch=epoch)
     save(unet=unet, args=args, optimiser=optimizer, final=True, ema=ema)
-
+    """
 
 
 if __name__ == '__main__':
