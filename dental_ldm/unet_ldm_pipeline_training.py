@@ -88,7 +88,7 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
         real = torch_transforms.ToPILImage()(real.unsqueeze(0))
         # wrong in here ...
         recon = recon_image[img_index].squeeze()
-        real = torch_transforms.ToPILImage()(real.unsqueeze(0))
+        recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
 
         mask_np = mask_info[img_index].squeeze().to('cpu').detach().numpy().copy().astype(np.uint8)
         mask_np = mask_np * 255
