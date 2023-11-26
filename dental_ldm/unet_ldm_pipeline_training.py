@@ -182,7 +182,11 @@ def main(args) :
                         norm_num_groups=32,
                         sample_size=512,
                         scaling_factor=0.18215,)
-    vae.load_state_dict(torch.load(args.pretrained_vae_dir))
+    state_dict = torch.load(args.pretrained_vae_dir)
+    keys = state_dict.keys()
+    print(keys)
+    """
+    vae.load_state_dict()
     vae = vae.to(device)
     vae_scale_factor = 0.18215
 
@@ -266,7 +270,7 @@ def main(args) :
 
 
 
-                """
+                
                 fir = noisy_pixel[0]
                 real = torch_transforms.ToPILImage()(fir.squeeze())
                 real.save(f'test_{epoch}_{step}.png')
@@ -283,9 +287,9 @@ def main(args) :
                     return (dec,)
 
                 return DecoderOutput(sample=dec)
-                """
+                
 
-    """
+    
                 print(f"Scaling factor set to {scale_factor}")
 
                 
