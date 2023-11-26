@@ -173,20 +173,43 @@ def main(args) :
     print(f'\n step 3. latent_model')
     vae = AutoencoderKL(in_channels=1,
                         out_channels=1,
+                        down_block_types=["DownEncoderBlock2D", "DownEncoderBlock2D", "DownEncoderBlock2D","DownEncoderBlock2D"],
+                        up_block_types=["UpDecoderBlock2D", "UpDecoderBlock2D", "UpDecoderBlock2D", "UpDecoderBlock2D"],
+                        block_out_channels=[128, 256, 512, 512],
+                        layers_per_block=2,
+                        act_fn="silu",
                         latent_channels=4,
                         norm_num_groups=32,
-                        sample_size=32,
-                        scaling_factor=0.18215)
+                        sample_size=512,
+                        scaling_factor=0.18215,)
     vae.load_state_dict(torch.load(args.pretrained_vae_dir))
     vae = vae.to(device)
     vae_scale_factor = 0.18215
 
     print(f'\n step 4. unet model')
-    unet = UNet2DModel(sample_size = 32,in_channels = 4,out_channels =4,)
+    unet = UNet2DModel(sample_size = 32,
+                       in_channels = 4,
+                       out_channels =4,
+                       freq_shift=0,
+                       flip_sin_to_cos=True,
+                       down_block_types=("AttnDownBlock2D", "AttnDownBlock2D", "AttnDownBlock2D", "DownBlock2D",),
+                       up_block_types=("UpBlock2D", "AttnUpBlock2D", "AttnUpBlock2D", "AttnUpBlock2D"),
+                       block_out_channels=(321, 640, 1280, 1280),
+                       layers_per_block = 2,
+                       mid_block_scale_factor = 1,
+                       downsample_padding = 1,
+                       act_fn = "silu",
+                       attention_head_dim = 8,
+                       norm_num_groups = 32,
+                       attn_norm_num_groups=32,
+                       norm_eps=1e-5,)
     ema = copy.deepcopy(unet)
     ema.to(device)
     unet = unet.to(device)
     #  unet.config.sample_size = 32
+
+
+
 
     print(f'\n step 5. scheduler')
     scheduler = DDPMScheduler(num_train_timesteps = 1000,
