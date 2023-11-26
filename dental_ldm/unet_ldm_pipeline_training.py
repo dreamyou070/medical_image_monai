@@ -204,7 +204,7 @@ def main(args) :
             if b_size > 0:
                 with torch.no_grad():
                     latent = vae.encode(images).latent_dist.mode() # [Batch, 4, 32, 32]
-                    latent = latent * vae.scaling_factor
+                    latent = latent * vae.config.scaling_factor
                 # 2) t
                 timesteps = torch.randint(0, args.sample_distance,(b_size,),device=device)
                 # 3) noise
@@ -253,8 +253,8 @@ def main(args) :
                 if i == 0:
                     ema.eval()
                     unet.eval()
-                    training_outputs(args, test_data, scheduler, 'test_data',     device, ema, vae, vae.scaling_factor, epoch + 1)
-                    training_outputs(args, batch,     scheduler, 'training_data', device, ema, vae, vae.scaling_factor, epoch + 1)
+                    training_outputs(args, test_data, scheduler, 'test_data',     device, ema, vae, vae.config.scaling_factor, epoch + 1)
+                    training_outputs(args, batch,     scheduler, 'training_data', device, ema, vae, vae.config.scaling_factor, epoch + 1)
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=unet, args=args, optimiser=optimizer, final=False, ema=ema, epoch=epoch)
     save(unet=unet, args=args, optimiser=optimizer, final=True, ema=ema)
