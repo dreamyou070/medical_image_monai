@@ -205,7 +205,8 @@ def main(args) :
                 with torch.no_grad():
                     latent = vae.encode(images).latent_dist.mode() # [Batch, 4, 32, 32]
                     latent = latent * vae.config.scaling_factor
-                    mask_latent = vae.encode(mask_info.to(device).long()).latent_dist.mode() # [Batch, 4, 32, 32]
+                    mask_info = mask_info.to(device).to(latent.dtype)
+                    mask_latent = vae.encode(mask_info).latent_dist.mode() # [Batch, 4, 32, 32]
                     print(f'mask_latent : {mask_latent.shape}')
                     print(f'mask_latent : {mask_latent}')
                 # 2) t
