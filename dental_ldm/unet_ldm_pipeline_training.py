@@ -16,7 +16,7 @@ import torch.multiprocessing
 import torchvision.transforms as torch_transforms
 import PIL
 from setproctitle import *
-from diffusers import AutoencoderKL, UNet2DModel, DDPMScheduler,StableDiffusionPipeline
+from diffuser_module import AutoencoderKL, UNet2DModel, DDPMScheduler,StableDiffusionPipeline
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
 

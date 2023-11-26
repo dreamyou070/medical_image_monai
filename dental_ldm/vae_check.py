@@ -3,7 +3,7 @@ import copy
 import numpy as np
 from PIL import Image
 from random import seed
-from diffusers.models.vae import DiagonalGaussianDistribution
+from diffuser_module.models.vae import DiagonalGaussianDistribution
 from torch import optim
 from helpers import *
 from tqdm import tqdm
@@ -21,7 +21,7 @@ from generative.networks.nets import AutoencoderKL, PatchDiscriminator
 from loss_module import PerceptualLoss, PatchAdversarialLoss
 from torch.cuda.amp import GradScaler, autocast
 from tqdm import tqdm
-from diffusers import AutoencoderKL
+from diffuser_module import AutoencoderKL
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()

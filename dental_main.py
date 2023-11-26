@@ -19,7 +19,7 @@ from model_module.inferers import LatentDiffusionInferer
 import matplotlib.pyplot as plt
 import wandb
 import transformers
-from diffusers.optimization import SchedulerType, TYPE_TO_SCHEDULER_FUNCTION
+from diffuser_module.optimization import SchedulerType, TYPE_TO_SCHEDULER_FUNCTION
 import math
 
 
