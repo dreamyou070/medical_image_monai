@@ -1,5 +1,5 @@
-python vae_ldm_pipeline_training.py --wandb_project_name 'dental_vae_training' --wandb_run_name '2_ldm_pipeline_vae' --device 'cuda:0' \
-                        --experiment_dir '/data7/sooyeon/medical_image/anoddpm_result_vae/2_ldm_pipeline_vae' \
+python vae_ldm_pipeline_training.py --wandb_project_name 'dental_vae_training' --wandb_run_name '3_ldm_pipeline_vae_laten_size_check' --device 'cuda:0' \
+                        --experiment_dir '/data7/sooyeon/medical_image/anoddpm_result_vae/3_ldm_pipeline_vae_laten_size_check' \
                         --train_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/original' \
                         --train_mask_dir '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/train/mask' \
                         --val_data_folder '/data7/sooyeon/medical_image/experiment_data/dental/panoramic_data_res_128/valid/original' \

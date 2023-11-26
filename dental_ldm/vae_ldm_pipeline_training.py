@@ -229,6 +229,7 @@ def main(args) :
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
             images = batch["image_info"].to(device)
+            print(f'pixel  space, images : {images.shape}')
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
 
