@@ -184,8 +184,11 @@ def main(args) :
     """
     import json
     vae_config_dict = r'/data7/sooyeon/medical_image/pretrained/vae/config.json'
-    vae_config = json.dumps(vae_config_dict)
+    with open(vae_config_dict, "r") as f :
+        vae_config = json.load(f)
     print(vae_config)
+
+
     #AutoencoderKL.from_config(config = ,
 
 
