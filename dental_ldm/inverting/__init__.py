@@ -3,22 +3,22 @@ from typing import Optional, Union, Tuple, List, Callable, Dict
 import numpy as np
 class Inversor (object):
 
-    def __init__(self, unet, scheduler, vae, scaling_factor):
+    def __init__(self, unet, scheduler, vae, scale_factor):
         self.unet = unet
         self.scheduler = scheduler
         self.vae = vae
-        self.scaling_factor = scaling_factor
+        self.scale_factor = scale_factor
 
     @torch.no_grad()
     def img2latent(self, img: torch.Tensor):
 
         latents = self.vae.encode(img).latent_dist.sample()
-        latents = latents * self.scaling_factor
+        latents = latents * self.scale_factor
         return latents
 
     @torch.no_grad()
     def latent2img(self, latent: torch.Tensor, return_type='np'):
-        img = self.vae.decode(latent/self.scaling_factor, return_dict=True, generator=None).sample
+        img = self.vae.decode(latent/self.scale_factor, return_dict=True, generator=None).sample
         if return_type == 'np':
             image = (img / 2 + 0.5).clamp(0, 1)
             image = image.cpu().permute(0, 2, 3, 1).numpy()[0]
