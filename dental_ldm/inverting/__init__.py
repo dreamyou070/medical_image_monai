@@ -9,11 +9,22 @@ class Inversor (object):
         self.vae = vae
         self.scaling_factor = scaling_factor
 
+    @torch.no_grad()
     def img2latent(self, img: torch.Tensor):
 
         latents = self.vae.encode(img).latent_dist.sample()
-        latents = latents * 0.18215
+        latents = latents * self.scaling_factor
         return latents
+
+    @torch.no_grad()
+    def latent2img(self, latent: torch.Tensor, return_type='np'):
+        img = self.vae.decode(latent/self.scaling_factor, return_dict=True, generator=None).sample
+        if return_type == 'np':
+            image = (img / 2 + 0.5).clamp(0, 1)
+            image = image.cpu().permute(0, 2, 3, 1).numpy()[0]
+            img = (image * 255).astype(np.uint8)
+        return img
+
 
     @torch.no_grad()
     def ddim_loop(self, img, inversion_steps):

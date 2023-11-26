@@ -222,14 +222,25 @@ def main(args) :
                                        feature_extractor=None)
 
     print(f' \n step 7. invertor')
-    invertor = Inversor(unet = unet,
-                        scheduler = scheduler,
-                        vae = vae)
+    invertor = Inversor(unet = unet,scheduler = scheduler, vae = vae,scale_factor = scale_factor)
 
+    print(f' \n step 8. noising image')
+    noising_save_base_dir = os.path.join(args.experiment_dir, 'noising_image')
+    os.makedirs(noising_save_base_dir, exist_ok=True)
     check_data = first(training_dataset_loader)
     img = check_data['image_info'].to(device)
     all_latents = invertor.ddim_loop(img = img,
                                      inversion_steps = args.sample_distance)
+
+    for i in range(len(all_latents)) :
+        latent = all_latents[i]
+        img = invertor.latent2image(latent, return_type = 'torch')
+        img = img[0].squeeze()
+        img = torch_transforms.ToPILImage()(img.unsqueeze(0))
+        img_save_dir = os.path.join(noising_save_base_dir, f'noising_{i}.png')
+        img.save(img_save_dir)
+
+
 
 
 if __name__ == '__main__':
