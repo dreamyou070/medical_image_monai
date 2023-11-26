@@ -253,10 +253,11 @@ def main(args) :
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
             if x_0.shape[0] > 0:
-                latents = vae.encode(x_0).latent_dist.sample()
+                with torch.no_grad():
+                    latents = vae.encode(x_0).latent_dist.sample()
 
-                scale_factor = 1 / torch.std(latents)
-                print(f"Scaling factor set to {scale_factor}")
+                    scale_factor = 1 / torch.std(latents)
+                    print(f"Scaling factor set to {scale_factor}")
 
                 latents = (latents * scale_factor).to(device)
                 # 2) t
@@ -266,7 +267,7 @@ def main(args) :
                 # 4) x_t
                 noisy_samples = scheduler.add_noise(original_samples = latents, noise = noise, timesteps = timesteps,)
                 # noisy sample check
-                noisy_pixel = vae.decode(noisy_samples / vae_scale_factor, return_dict=True, generator=None).sample
+                noisy_pixel = vae.decode(noisy_samples / scale_factor, return_dict=True, generator=None).sample
 
                 fir = noisy_pixel[0]
                 real = torch_transforms.ToPILImage()(fir.squeeze())
