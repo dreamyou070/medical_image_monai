@@ -254,7 +254,7 @@ def main(args) :
                 # 4) x_t
                 noisy_samples = scheduler.add_noise(original_samples = latents, noise = noise, timesteps = timesteps,)
                 # noisy sample check
-                noisy_pixel = vae.decode(noisy_samples / vae_scale_factor, return_dict=False, generator=None).sample
+                noisy_pixel = vae.decode(noisy_samples / vae_scale_factor, return_dict=True, generator=None).sample
                 print(f'noisy_pixel : {noisy_pixel.shape}')
 
                 fir = noisy_pixel[0]
