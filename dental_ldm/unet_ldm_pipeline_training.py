@@ -146,9 +146,6 @@ def main(args) :
                                            num_workers=4,
                                            persistent_workers=True)
     check_data = first(training_dataset_loader)
-
-
-
     # ## Prepare validation set data loader
     val_transforms = transforms.Compose([transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
                                          transforms.ToTensor()])
@@ -260,7 +257,27 @@ def main(args) :
                     small_mask_info = small_mask_info.expand(target.shape)
                     noise_pred = noise_pred * small_mask_info.to(device)
                     target = target * small_mask_info.to(device)
-                loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean([1, 2, 3])
+                    loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean([1, 2, 3])
+
+                if args.infonce_loss :
+                    noise_pred = noise_pred * small_mask_info.to(device)
+                    target = target * small_mask_info.to(device)
+                    p_score = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").sum([1, 2, 3])
+                    p_pix_num = torch.sum(small_mask_info, dim=(1, 2, 3))
+                    p_pix_num = torch.where(p_pix_num == 0, 1, p_pix_num)
+                    p_score = p_score / p_pix_num
+
+                    noise_pred = noise_pred * (1-small_mask_info).to(device)
+                    target = target * (1-small_mask_info).to(device)
+                    n_score = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").sum([1, 2, 3])
+                    n_pix_num = torch.sum(1-small_mask_info, dim=(1, 2, 3))
+                    n_pix_num = torch.where(n_pix_num == 0, 1, n_pix_num)
+                    n_score = n_score / n_pix_num
+
+                    loss = (p_score / (p_score + n_score))
+                    wandb.log({"[infonce loss] p_loss" : p_score.mean().item()})
+                    wandb.log({"[infonce loss] n_loss" : n_score.mean().item()})
+
                 loss = loss.mean()
                 wandb.log({"training loss": loss.item()})
                 optimizer.zero_grad()
@@ -330,6 +347,7 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--anormal_scoring', action='store_true')
     parser.add_argument('--min_max_training', action='store_true')
+    parser.add_argument('--infonce_loss', action='store_true')
 
 
     parser.add_argument('--inference_num', type=int, default=4)
