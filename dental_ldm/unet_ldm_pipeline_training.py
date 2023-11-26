@@ -270,6 +270,7 @@ def main(args) :
                 # ----------------------------------------------------------------------------------------- #
                 # EMA model updating
                 update_ema_params(ema, unet)
+                print('lets inference')
                 break
         # inference -----------------------------------------------------------------------------------------
         if epoch % args.inference_freq == 0 :
