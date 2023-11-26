@@ -162,18 +162,10 @@ def main(args) :
                                        persistent_workers=True)
 
     print(f'\n step 3. latent_model')
-    """
-    vae = AutoencoderKL(in_channels=1,
-                        out_channels=1,
-                        down_block_types=["DownEncoderBlock2D", "DownEncoderBlock2D", "DownEncoderBlock2D","DownEncoderBlock2D"],
-                        up_block_types=["UpDecoderBlock2D", "UpDecoderBlock2D", "UpDecoderBlock2D", "UpDecoderBlock2D"],
-                        block_out_channels=[128, 256, 512, 512],
-                        layers_per_block=2,
-                        act_fn="silu",
-                        latent_channels=4,
-                        norm_num_groups=32,
-                        sample_size=512,
-                        scaling_factor=0.18215,)
+    vae_config_dict = r'/data7/sooyeon/medical_image/pretrained/vae/config.json'
+    with open(vae_config_dict, "r") as f :
+        vae_config = json.load(f)
+    vae = AutoencoderKL.from_config(config = vae_config)
     state_dict = torch.load(args.pretrained_vae_dir)
     vae.load_state_dict(state_dict, strict=True)
     vae = vae.to(device)
@@ -182,13 +174,8 @@ def main(args) :
         images = check_data["image_info"].to(device)
         z = vae.encode(images).latent_dist.sample()
     scale_factor = 1 / torch.std(z)
-    """
-
-    vae_config_dict = r'/data7/sooyeon/medical_image/pretrained/vae/config.json'
-    with open(vae_config_dict, "r") as f :
-        vae_config = json.load(f)
-    AutoencoderKL.from_config(config = vae_config)
-
+    print(f' (3.1) scale_factor : {scale_factor}')
+    
 
 
 
