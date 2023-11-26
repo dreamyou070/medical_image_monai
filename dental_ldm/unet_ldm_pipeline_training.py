@@ -255,11 +255,17 @@ def main(args) :
             if x_0.shape[0] > 0:
                 with torch.no_grad():
                     latents = vae.encode(x_0).latent_dist.sample()
-
                     scale_factor = 1 / torch.std(latents)
-                    print(f"Scaling factor set to {scale_factor}")
-
                 latents = (latents * scale_factor).to(device)
+                noisy_pixel = vae.decode(latents / scale_factor, return_dict=True, generator=None).sample
+                fir = noisy_pixel[0]
+                real = torch_transforms.ToPILImage()(fir.squeeze())
+                real.save(f'test_{epoch}_{step}.png')
+
+    """
+                print(f"Scaling factor set to {scale_factor}")
+
+                
                 # 2) t
                 timesteps = torch.randint(0, args.sample_distance, (latents.shape[0],),device=device)#.long()
                 # 3) noise
@@ -275,7 +281,7 @@ def main(args) :
                 import time
                 time.sleep(1)
 
-    """
+    
                 # 5) unet inference
                 noise_pred = pipeline.unet(noisy_samples,timesteps).sample
                 target = noise
