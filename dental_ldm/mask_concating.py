@@ -161,6 +161,7 @@ def main(args) :
     with open(args.unet_config_dir, "r") as f:
         unet_config_dir = json.load(f)
     unet = UNet2DModel.from_config(config=unet_config_dir)
+    unet.in_channels = 8
     ema = copy.deepcopy(unet)
     ema.to(device)
     unet = unet.to(device)
@@ -205,17 +206,17 @@ def main(args) :
                 with torch.no_grad():
                     latent = vae.encode(images).latent_dist.mode() # [Batch, 4, 32, 32]
                     latent = latent * vae.config.scaling_factor
-                    print(f'before, mask_info : {mask_info}')
                     mask_info = mask_info.to(device).to(latent.dtype)
                     mask_latent = vae.encode(mask_info).latent_dist.mode() # [Batch, 4, 32, 32]
-                    print(f'mask_latent : {mask_latent.shape}')
-                    print(f'mask_latent : {mask_latent}')
+                latent_input = torch.cat((latent, mask_latent), dim=1)
                 # 2) t
                 timesteps = torch.randint(0, args.sample_distance,(b_size,),device=device)
                 # 3) noise
-                noise = torch.randn_like(latent).to(device)
+                noise = torch.randn_like(latent_input).to(device)
                 # 4) x_t
-                noisy_samples = scheduler.add_noise(original_samples = latent, noise = noise,timesteps = timesteps,)
+                noisy_samples = scheduler.add_noise(original_samples = latent_input,
+                                                    noise = noise,
+                                                    timesteps = timesteps,)
                 # 5) unet inference
                 noise_pred = pipeline.unet(noisy_samples,timesteps).sample
                 target = noise
@@ -224,7 +225,6 @@ def main(args) :
                     noise_pred = noise_pred * small_mask_info.to(device)
                     target = target * small_mask_info.to(device)
                     loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean([1, 2, 3])
-
                 if args.infonce_loss :
                     noise_pred = noise_pred * small_mask_info.to(device)
                     target = target * small_mask_info.to(device)
