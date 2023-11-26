@@ -166,16 +166,13 @@ def main(args) :
     with open(vae_config_dict, "r") as f :
         vae_config = json.load(f)
     vae = AutoencoderKL.from_config(config = vae_config)
-    state_dict = torch.load(args.pretrained_vae_dir)
-    vae.load_state_dict(state_dict, strict=True)
+    vae.load_state_dict(torch.load(args.pretrained_vae_dir),
+                        strict=True)
     vae = vae.to(device)
     vae.eval()
-    with torch.no_grad():
-        images = check_data["image_info"].to(device)
-        z = vae.encode(images).latent_dist.sample()
-    scale_factor = 1 / torch.std(z)
-    print(f' (3.1) scale_factor : {scale_factor}')
-    
+    scale_factor = vae.scaling_factor
+    print(scale_factor)
+
 
 
 
