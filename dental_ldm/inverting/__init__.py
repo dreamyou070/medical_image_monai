@@ -47,6 +47,7 @@ class Inversor (object):
         next_sample = alpha_prod_t_next ** 0.5 * next_original_sample + next_sample_direction
         return next_sample
 
+    @torch.no_grad()
     def prev_step(self,
                   model_output: Union[torch.FloatTensor, np.ndarray],
                   timestep: int,
@@ -54,6 +55,7 @@ class Inversor (object):
         prev_sample = self.scheduler.step(model_output, timestep, sample=sample).prev_sample
         return prev_sample
 
+    @torch.no_grad()
     def gen_loop(self, latent, timestep):
         all_latents = [latent]
         for t in range(timestep- 1, -1, -1) :
