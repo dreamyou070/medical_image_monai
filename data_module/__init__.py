@@ -158,7 +158,7 @@ class SYDataset(Dataset):
         parent, net_name = os.path.split(data_dir)
         mask_dir = os.path.join(self.base_mask_dir, net_name)
         mask_pil = Image.open(mask_dir)
-        small_mask_pil = mask_pil.resize((int(self.w / 4), int(self.h / 4 )))
+        small_mask_pil = mask_pil.resize((int(self.w / 8), int(self.h / 8 )))
         mask_np = np.array(mask_pil)
         criterion = np.sum(mask_np)
         normal = True

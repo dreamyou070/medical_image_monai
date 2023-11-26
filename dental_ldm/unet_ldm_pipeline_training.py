@@ -212,7 +212,9 @@ def main(args) :
                               beta_start = 0.0001,
                               beta_end = 0.02,
                               beta_schedule = "linear",
-                              variance_type = "fixed_small",steps_offset = 1)
+                              variance_type = "fixed_small",
+                              steps_offset = 1,
+                              clip_sample = False)
 
     print(f' \n step 6. infererence scheduler pipeline')
     pipeline = StableDiffusionPipeline(vae = vae,
@@ -222,26 +224,21 @@ def main(args) :
                                        scheduler = scheduler,
                                        safety_checker = None,
                                        feature_extractor=None)
-    scale_factor_ = pipeline.vae_scale_factor #= 2 ** (len(self.vae.config.block_out_channels) - 1) # 1
-    print(f'scale factor (8) : {scale_factor_}')
-    """
+    scale_factor_ = pipeline.vae_scale_factor # 8
+
+
     print(f' \n step 7. optimizer')
     optimizer = torch.optim.Adam(unet.parameters(), lr=1e-4)
-
-    print(f'\n step 6. training')
-
 
     print(f' \n step 8. training')
     tqdm_epoch = range(0, args.n_epochs + 1)
     for epoch in tqdm_epoch:
-        progress_bar = tqdm(enumerate(training_dataset_loader),
-                            total=len(training_dataset_loader),
-                            ncols=200)
+        progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=200)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
             x_0 = batch["image_info"].to(device)  # [Batch, 1, 128, 128]
             mask_info = batch["mask"].unsqueeze(dim=1)
-            #small_mask_info = batch['small_mask'].unsqueeze(dim=1)
+            small_mask_info = batch['small_mask'].unsqueeze(dim=1)
             normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
             if args.only_normal_training:
                 x_0 = x_0[normal_info == 1]
@@ -249,6 +246,8 @@ def main(args) :
             if x_0.shape[0] > 0:
                 latents = vae.encode(x_0).latent_dist.sample()
                 latents = (latents * vae_scale_factor).to(device)
+                print(f'latents.shape [Batch, 4, 32,32] : {latents.shape}')
+
                 # 2) t
                 timesteps = torch.randint(0, args.sample_distance, (latents.shape[0],),device=device)#.long()
                 # 3) noise
@@ -261,9 +260,12 @@ def main(args) :
                 noise_pred = pipeline.unet(noisy_samples,timesteps).sample
                 target = noise
                 if args.masked_loss :
-                    mask_info = mask_info.expand(target.shape)
-                    noise_pred = noise_pred * mask_info.to(device)
-                    target = target * mask_info.to(device)
+                    #mask_info = mask_info.expand(target.shape)
+                    #noise_pred = noise_pred * mask_info.to(device)
+                    #target = target * mask_info.to(device)
+                    small_mask_info = small_mask_info.expand(target.shape)
+                    noise_pred = noise_pred * small_mask_info.to(device)
+                    target = target * small_mask_info.to(device)
                 loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean([1, 2, 3])
                 loss = loss.mean()
                 wandb.log({"training loss": loss.item()})
@@ -287,8 +289,6 @@ def main(args) :
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=unet, args=args, optimiser=optimizer, final=False, ema=ema, epoch=epoch)
     save(unet=unet, args=args, optimiser=optimizer, final=True, ema=ema)
-    """
-
 
 if __name__ == '__main__':
 
