@@ -314,6 +314,13 @@ def main(args) :
             torch.save(vae.state_dict(),
                        os.path.join(model_save_dir, f'vae_{epoch}.pth'))
 
+            #torch.save({'epoch': epoch,
+            #            'model_state_dict': vae.state_dict(),
+            #            'optimizer_state_dict': optimizer.state_dict(),},
+            #           PATH)
+
+
+
     progress_bar.close()
 
     del discriminator

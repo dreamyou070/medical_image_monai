@@ -183,11 +183,12 @@ def main(args) :
                         sample_size=512,
                         scaling_factor=0.18215,)
     state_dict = torch.load(args.pretrained_vae_dir)
-    keys = state_dict.keys()
-    print(keys)
-    """
-    vae.load_state_dict()
+    vae.load_state_dict(state_dict, strict=True)
     vae = vae.to(device)
+    vae.eval()
+    """
+    
+    
     vae_scale_factor = 0.18215
 
     #with torch.no_grad():

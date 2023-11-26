@@ -31,7 +31,8 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     'model_state_dict':     unet.state_dict(),
                     'optimizer_state_dict': optimiser.state_dict(),
                     "ema":                  ema.state_dict(),
-                    "args":                 args},save_dir)
+                    "args":                 args},
+                   save_dir)
     else:
         save_dir = os.path.join(model_save_base_dir, f'unet_epoch_{epoch}.pt')
         torch.save({'n_epoch':              epoch,
