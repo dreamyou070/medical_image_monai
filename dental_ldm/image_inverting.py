@@ -235,7 +235,7 @@ def main(args) :
 
     for i in range(len(all_latents)) :
         latent = all_latents[i]
-        img = invertor.latent2image(latent, return_type = 'torch')
+        img = invertor.latent2img(latent, return_type = 'torch')
         img = img[0].squeeze()
         img = torch_transforms.ToPILImage()(img.unsqueeze(0))
         img_save_dir = os.path.join(noising_save_base_dir, f'noising_{i}.png')
