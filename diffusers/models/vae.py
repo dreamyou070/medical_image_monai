@@ -739,6 +739,7 @@ class VectorQuantizer(nn.Module):
 
 
 class DiagonalGaussianDistribution(object):
+
     def __init__(self, parameters: torch.Tensor, deterministic: bool = False):
         self.parameters = parameters
         self.mean, self.logvar = torch.chunk(parameters, 2, dim=1)

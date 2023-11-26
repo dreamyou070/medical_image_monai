@@ -3,6 +3,7 @@ import copy
 import numpy as np
 from PIL import Image
 from random import seed
+from diffusers.models.vae import DiagonalGaussianDistribution
 from torch import optim
 from helpers import *
 from tqdm import tqdm
@@ -230,11 +231,20 @@ def main(args) :
             optimizer_g.zero_grad(set_to_none=True)
             with autocast(enabled=True):
 
-                latent = vae.encoder(images)
+                h = vae.encoder(images)
+                moments = vae.quant_conv(h)
+                latent = DiagonalGaussianDistribution(moments).sample()
+                print(f'images  [Batch, 1, 256, 256] : {images.shape}')
+                print(f'moments [Batch, 8, 32,  32]  : {moments.shape}')
+                print(f'latent  [Batch, 4, 32,  32]  : {latent.shape}')
 
-                print(f'images [Batch, 1, 256, 256] : {images.shape}')
-                print(f'latent [Batch, 4, 32,  32]  : {latent.shape}')
-                h = vae.quant_conv(latent)
+                z = vae.post_quant_conv(latent)
+                print(f'z  [Batch, 4, 32,  32]  : {z.shape}')
+                recon_images = vae.decoder(z)
+                print(f'recon_images  [Batch, 1, 256, 256]  : {recon_images.shape}')
+
+
+
                 #latents = vae.encode(images).latent_dist.sample()
                 #latents = latents * 0.18215
                 # (1) reconstruction loss
