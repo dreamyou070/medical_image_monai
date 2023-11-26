@@ -459,6 +459,7 @@ class AutoencoderKL(ModelMixin, ConfigMixin, FromOriginalVAEMixin):
         if sample_posterior:
             z = posterior.sample(generator=generator)
         else:
+            print(' just here ...')
             z = posterior.mode()
         dec = self.decode(z).sample
 
