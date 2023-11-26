@@ -255,9 +255,9 @@ def main(args) :
             if x_0.shape[0] > 0:
                 with torch.no_grad():
                     latents = vae.encode(x_0).latent_dist.sample()
-                    scale_factor = 1 / torch.std(latents)
-                latents = (latents * scale_factor).to(device)
-                noisy_pixel = vae.decode(latents / scale_factor, return_dict=True, generator=None).sample
+                    #scale_factor = 1 / torch.std(latents)
+                latents = (latents).to(device)
+                noisy_pixel = vae.decode(latents, return_dict=True, generator=None).sample
                 first_sample = noisy_pixel[0].squeeze() # 256,256
                 recon = torch_transforms.ToPILImage()(first_sample)
                 recon.save('test.png')
