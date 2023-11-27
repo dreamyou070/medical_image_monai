@@ -196,8 +196,6 @@ def main(args) :
     discriminator = discriminator.to(device)
 
     adv_loss = PatchAdversarialLoss(criterion="least_squares")
-    adv_weight = 0.01
-
     optimizer_g = torch.optim.Adam(vae.parameters(), lr=1e-4)
     optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=5e-4)
 
@@ -205,7 +203,6 @@ def main(args) :
     scaler_d = torch.cuda.amp.GradScaler()
 
     print(f'\n step 4. model training')
-    kl_weight = 1e-6
     n_epochs = 100
     autoencoder_warm_up_n_epochs = 10
     records = []
@@ -228,19 +225,13 @@ def main(args) :
             if b_size > 0 :
                 optimizer_g.zero_grad(set_to_none=True)
                 with autocast(enabled=True):
-                    #latents = vae.encode(images).latent_dist.sample()
-                    #latents = latents * 0.18215
                     # (1) reconstruction loss
                     reconstruction = vae(images).sample
                     if args.loss_type == 'l1':
                         recons_loss = F.l1_loss(reconstruction.float(), images.float())
                     elif args.loss_type == 'l2':
                         recons_loss = F.mse_loss(reconstruction.float(), images.float())
-
-                    p_loss = perceptual_loss(reconstruction.float(),
-                                             images.float())
-
-
+                    p_loss = perceptual_loss(reconstruction.float(), images.float())
                     ########################################################################################################
                     latents = vae.encode(images).latent_dist.sample()
                     # ---------------------------------------------------------
@@ -253,11 +244,11 @@ def main(args) :
                     wandb.log({"perceptual_loss": p_loss.item(),
                                "kldivergence_loss": kl_loss.item(),
                                "reconstruction_loss": recons_loss.item(), })
-                    loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
+                    loss_g = recons_loss + (args.kl_weight * kl_loss) + (args.perceptual_weight * p_loss)
                     if epoch > autoencoder_warm_up_n_epochs:
                         logits_fake = discriminator(reconstruction.contiguous().float())[-1]
                         generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
-                        loss_g += adv_weight * generator_loss
+                        loss_g += args.adv_weight * generator_loss
                         wandb.log({"generator_loss": generator_loss.item()})
                 scaler_g.scale(loss_g).backward()
                 scaler_g.step(optimizer_g)
@@ -272,7 +263,7 @@ def main(args) :
                         loss_d_real = adv_loss(logits_real, target_is_real=True, for_discriminator=True)
                         discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
                         wandb.log({"discriminator_loss": discriminator_loss.item(),})
-                        loss_d = adv_weight * discriminator_loss
+                        loss_d = args.adv_weight * discriminator_loss
                     scaler_d.scale(loss_d).backward()
                     scaler_d.step(optimizer_d)
                     scaler_d.update()
@@ -282,8 +273,7 @@ def main(args) :
                     disc_epoch_loss += discriminator_loss.item()
 
                 progress_bar.set_postfix(
-                    {
-                        "recons_loss": epoch_loss / (step + 1),
+                    {"recons_loss": epoch_loss / (step + 1),
                         "gen_loss": gen_epoch_loss / (step + 1),
                         "disc_loss": disc_epoch_loss / (step + 1),
                     })
@@ -343,6 +333,7 @@ def main(args) :
     with open(os.path.join(experiment_dir, f'records.txt'), 'w') as f:
         for line in records:
             f.write(line + '\n')
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -388,6 +379,9 @@ if __name__ == '__main__':
     parser.add_argument('--masked_loss_latent', action='store_true')
     parser.add_argument('--masked_loss', action='store_true')
     parser.add_argument('--perceptual_weight', type = float, default = 0.001)
+    parser.add_argument('--kl_weight', type=float, default=0.001)
+    parser.add_argument('--adv_weight', type=float, default=0.01)
+
     # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--info_nce_loss', action='store_true')
     # --------------------------------------------------------------------------------------------------------------
@@ -399,7 +393,6 @@ if __name__ == '__main__':
     parser.add_argument('--loss_type', type = str, default = 'l2')
     parser.add_argument('--inference_freq', type=int, default=50)
     parser.add_argument('--inference_num', type=int, default=4)
-
     # step 7. save
     parser.add_argument('--model_save_freq', type=int, default=1000)
     parser.add_argument('--model_save_base_epoch', type=int, default=50)
