@@ -188,7 +188,8 @@ def main(args) :
                                      network_type="alex",
                                      cache_dir='/data7/sooyeon/medical_image/pretrained')
     perceptual_loss.to(device)
-    perceptual_weight = 0.001
+    perceptual_weight = args.perceptual_weight
+    0.001
 
     discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,
                                        in_channels=1, out_channels=1)
@@ -245,6 +246,7 @@ def main(args) :
                     # ---------------------------------------------------------
                     # (2) KL loss
                     posterior = vae.encode(images).latent_dist
+                    # gaussian priot
                     z_mu, z_sigma = posterior.mean, posterior.std
                     kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
                     kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
@@ -385,6 +387,7 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--masked_loss_latent', action='store_true')
     parser.add_argument('--masked_loss', action='store_true')
+    parser.add_argument('--perceptual_weight', type = float, default = 0.001)
     # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--info_nce_loss', action='store_true')
     # --------------------------------------------------------------------------------------------------------------
