@@ -226,7 +226,8 @@ def main(args) :
                 optimizer_g.zero_grad(set_to_none=True)
                 with autocast(enabled=True):
                     # (1) reconstruction loss
-                    reconstruction = vae(images).sample
+                    reconstruction = vae(images,
+                                         sample_posterior=True).sample
                     if args.loss_type == 'l1':
                         recons_loss = F.l1_loss(reconstruction.float(), images.float())
                     elif args.loss_type == 'l2':
@@ -290,8 +291,9 @@ def main(args) :
                 b_size = images.shape[0]
                 if b_size > 0:
                     with autocast(enabled=True):
-                        reconstruction = vae(images).sample
-                        z_mu, z_sigma = posterior.mean, posterior.std
+                        reconstruction = vae(images,
+                                             sample_posterior=True).sample
+                        #z_mu, z_sigma = posterior.mean, posterior.std
                         if val_step == 1:
                             import torchvision.transforms as torch_transforms
                             from PIL import Image
