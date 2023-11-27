@@ -1,20 +1,14 @@
 import argparse, wandb
-import copy
-import numpy as np
 from PIL import Image
 from random import seed
-from torch import optim
 from helpers import *
-from tqdm import tqdm
 import torch.nn.functional as F
 from torchvision import transforms
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 import torch.multiprocessing
 import torchvision.transforms as torch_transforms
-import PIL
 from data_module import SYDataLoader, SYDataset
-from monai.utils import first
 from setproctitle import *
 from generative.networks.nets import AutoencoderKL, PatchDiscriminator
 from loss_module import PerceptualLoss, PatchAdversarialLoss
@@ -24,8 +18,6 @@ from diffuser_module import AutoencoderKL
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
-
-
 
 def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
     model_save_base_dir = os.path.join(args.experiment_dir,'diffusion-models')
@@ -45,82 +37,6 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     "args":                 args,
                     "ema":                  ema.state_dict(),
                     'loss':                 loss,},save_dir)
-
-def training_outputs(args, test_data, scheduler, is_train_data, device, model, vae, scale_factor, epoch):
-
-    if is_train_data == 'training_data':
-        train_data = 'training_data'
-    else :
-        train_data = 'test_data'
-
-    video_save_dir = os.path.join(args.experiment_dir, 'diffusion-videos')
-    image_save_dir = os.path.join(args.experiment_dir, 'diffusion-training-images')
-    os.makedirs(video_save_dir, exist_ok=True)
-    os.makedirs(image_save_dir, exist_ok=True)
-
-    # 1) make random noise
-    x = test_data["image_info"].to(device)  # batch, channel, w, h
-    normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
-    mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
-
-    with torch.no_grad():
-        z_mu, z_sigma = vae.encode(x)
-        latent = vae.sampling(z_mu, z_sigma) * scale_factor
-    # 2) select random int
-    t = torch.randint(args.sample_distance - 1, args.sample_distance, (latent.shape[0],), device=x.device)
-    # 3) noise
-    noise = torch.rand_like(latent).float().to(x.device)
-    # 4) noise image generating
-    with torch.no_grad() :
-        noisy_latent = scheduler.add_noise(original_samples=latent, noise=noise, timesteps=t)
-        latent = noisy_latent.clone().detach()
-
-    # 5) denoising
-    for t in range(int(args.sample_distance) , -1, -1):
-        with torch.no_grad() :
-            # 5-1) model prediction
-            model_output = model(latent, torch.Tensor((t,)).to(device), None)
-        # 5-2) update latent
-        latent, _ = scheduler.step(model_output, t, latent)
-    #latents =
-    #image = self.vae.decode(latent / scale_factor).sample
-    #image = (image / 2 + 0.5).clamp(0, 1)
-    # we always cast to float32 as this does not cause significant overhead and is compatible with bfloa16
-    #image = image.cpu().permute(0, 2, 3, 1).float().numpy()
-
-    with torch.no_grad() :
-        recon_image = vae.decode_stage_2_outputs(latent/scale_factor)
-
-    for img_index in range(x.shape[0]):
-        normal_info_ = normal_info[img_index]
-        if normal_info_ == 1:
-            is_normal = 'normal'
-        else :
-            is_normal = 'abnormal'
-
-        real = x[img_index].squeeze()
-        real = torch_transforms.ToPILImage()(real.unsqueeze(0))
-
-        recon = recon_image[img_index].squeeze()
-        recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
-
-        mask_np = mask_info[img_index].squeeze().to('cpu').detach().numpy().copy().astype(np.uint8)
-        mask_np = mask_np * 255
-        mask = Image.fromarray(mask_np).convert('L')  # [128, 128, 3]
-
-        new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
-        new_image.paste(real,  (0, 0))
-        new_image.paste(recon, (real.size[0], 0))
-        new_image.paste(mask,  (real.size[0]+recon.size[0], 0))
-        new_image.save(os.path.join(image_save_dir,
-                                    f'real_recon_answer_{train_data}_epoch_{epoch}_{img_index}.png'))
-        loading_image = wandb.Image(new_image,
-                                    caption=f"(real_recon_answer) epoch {epoch + 1} | {is_normal}")
-        if train_data == 'training_data' :
-            wandb.log({"training data inference" : loading_image})
-        else :
-            wandb.log({"test data inference" : loading_image})
-
 
 def main(args) :
 
@@ -149,71 +65,50 @@ def main(args) :
     w,h = int(args.img_size.split(',')[0].strip()),int(args.img_size.split(',')[1].strip())
     train_transforms = transforms.Compose([transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
                                            transforms.ToTensor()])
-    train_ds = SYDataset(data_folder=args.train_data_folder,
-                         transform=train_transforms,
-                         base_mask_dir=args.train_mask_dir,
-                         image_size=(w,h))
-    training_dataset_loader = SYDataLoader(train_ds,
-                                           batch_size=args.batch_size,
-                                           shuffle=True,
-                                           num_workers=4,
+    train_ds = SYDataset(data_folder=args.train_data_folder, transform=train_transforms,
+                         base_mask_dir=args.train_mask_dir, image_size=(w,h))
+    training_dataset_loader = SYDataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4,
                                            persistent_workers=True)
 
     # ## Prepare validation set data loader
     val_transforms = transforms.Compose([transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
                                          transforms.ToTensor()])
-    val_ds = SYDataset(data_folder=args.val_data_folder,
-                         transform=val_transforms,
-                         base_mask_dir=args.val_mask_dir,image_size=(w,h))
-    test_dataset_loader = SYDataLoader(val_ds,
-                                       batch_size=args.batch_size,
-                                       shuffle=False,
-                                       num_workers=4,
-                                       persistent_workers=True)
+    val_ds = SYDataset(data_folder=args.val_data_folder, transform=val_transforms,
+                       base_mask_dir=args.val_mask_dir,image_size=(w,h))
+    test_dataset_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=False,
+                                       num_workers=4, persistent_workers=True)
 
     print(f'\n step 3. latent_model')
-    vae = AutoencoderKL(in_channels = 1,
-                        out_channels = 1,
-                        down_block_types = ["DownEncoderBlock2D","DownEncoderBlock2D","DownEncoderBlock2D","DownEncoderBlock2D"],
-                        up_block_types = ["UpDecoderBlock2D","UpDecoderBlock2D","UpDecoderBlock2D","UpDecoderBlock2D"],
-                        block_out_channels = [128,256,512,512],
-                        layers_per_block = 2,
-                        act_fn = "silu",
-                        latent_channels = 4,
-                        norm_num_groups = 32,
-                        sample_size = 512,
-                        scaling_factor = 0.18215,)
+    vae_config_dir = args.vae_config_dir
+    with open(vae_config_dir, "r") as f:
+        vae_config = json.load(f)
+    vae = AutoencoderKL.from_config(config=vae_config)
     vae = vae.to(device)
-    perceptual_loss = PerceptualLoss(spatial_dims=2,
-                                     network_type="alex",
-                                     cache_dir='/data7/sooyeon/medical_image/pretrained')
-    perceptual_loss.to(device)
-    perceptual_weight = args.perceptual_weight
-    0.001
 
-    discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,
-                                       in_channels=1, out_channels=1)
+    perceptual_loss = PerceptualLoss(spatial_dims=2, network_type="alex", cache_dir='/data7/sooyeon/medical_image/pretrained')
+    perceptual_loss.to(device)
+
+    discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64, in_channels=1, out_channels=1)
     discriminator = discriminator.to(device)
 
     adv_loss = PatchAdversarialLoss(criterion="least_squares")
-    optimizer_g = torch.optim.Adam(vae.parameters(), lr=1e-4)
-    optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=5e-4)
+
+    optimizer_g = torch.optim.Adam(vae.parameters(), lr=args.lr)
+    optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=5 * args.lr)
 
     scaler_g = torch.cuda.amp.GradScaler()
     scaler_d = torch.cuda.amp.GradScaler()
 
     print(f'\n step 4. model training')
-    n_epochs = 100
     autoencoder_warm_up_n_epochs = 10
     records = []
-    for epoch in range(n_epochs):
+    for epoch in range(args.n_epochs):
         vae.train()
         discriminator.train()
         epoch_loss = 0
         gen_epoch_loss = 0
         disc_epoch_loss = 0
-        progress_bar = tqdm(enumerate(training_dataset_loader),
-                            total=len(training_dataset_loader), ncols=110)
+        progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=110)
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
             images = batch["image_info"].to(device)
@@ -226,8 +121,10 @@ def main(args) :
                 optimizer_g.zero_grad(set_to_none=True)
                 with autocast(enabled=True):
                     # (1) reconstruction loss
-                    reconstruction = vae(images,
-                                         sample_posterior=True).sample
+                    if args.sample_posterior :
+                        reconstruction = vae(images, sample_posterior=True).sample
+                    else :
+                        reconstruction = vae(images,).sample
                     if args.loss_type == 'l1':
                         recons_loss = F.l1_loss(reconstruction.float(), images.float())
                     elif args.loss_type == 'l2':
@@ -291,13 +188,11 @@ def main(args) :
                 b_size = images.shape[0]
                 if b_size > 0:
                     with autocast(enabled=True):
-                        reconstruction = vae(images,
-                                             sample_posterior=True).sample
-                        #z_mu, z_sigma = posterior.mean, posterior.std
+                        if args.sample_posterior:
+                            reconstruction = vae(images, sample_posterior=True).sample
+                        else:
+                            reconstruction = vae(images,).sample
                         if val_step == 1:
-                            import torchvision.transforms as torch_transforms
-                            from PIL import Image
-                            # real = torch_transforms.ToPILImage()(real)
                             org_img = images[0].squeeze()
                             org_img = torch_transforms.ToPILImage()(org_img.unsqueeze(0))
                             recon = reconstruction[0].squeeze()
@@ -309,12 +204,9 @@ def main(args) :
                                                         caption=f"(real-recon) epoch {epoch + 1} ")
                             wandb.log({"vae inference": loading_image})
                         if args.loss_type == 'l1':
-                            recons_loss = F.l1_loss(images.float(),
-                                                    reconstruction.float())
+                            recons_loss = F.l1_loss(images.float(), reconstruction.float())
                         elif args.loss_type == 'l2':
-                            recons_loss = F.mse_loss(images.float(),
-                                                    reconstruction.float())
-
+                            recons_loss = F.mse_loss(images.float(), reconstruction.float())
                     val_loss += recons_loss.item()
         val_loss /= val_step
         wandb.log({"val_loss": val_loss, })
@@ -360,44 +252,22 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int)
 
     # step 3. model
-    parser.add_argument('--pretrained_vae_dir', type=str,
-                        default=f'/data7/sooyeon/medical_image/anoddpm_result_vae/1_first_training/autoencoderkl/autoencoderkl_99.pth')
-    parser.add_argument('--latent_channels', type=int, default=3)
-
-    # step 4. model
-    parser.add_argument('--timestep', type=int, default=1000)
-    parser.add_argument('--schedule_type', type=str, default="linear_beta")
-
-    # step 5. optimizer
+    parser.add_argument('--vae_config_dir', type=str, )
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--weight_decay', type=float, default=0.0)
 
-    # step 6. training
-    parser.add_argument('--start_epoch', type=int, default=0)
-    parser.add_argument('--train_epochs', type=int, default=3000)
+    # step 4. training
+    parser.add_argument('--n_epochs', type=int, default=100)
     parser.add_argument('--only_normal_training', action='store_true')
-    parser.add_argument('--sample_distance', type=int, default=150)
-    parser.add_argument('--use_simplex_noise', action='store_true')
-    # --------------------------------------------------------------------------------------------------------------
-    parser.add_argument('--masked_loss_latent', action='store_true')
-    parser.add_argument('--masked_loss', action='store_true')
-    parser.add_argument('--perceptual_weight', type = float, default = 0.001)
+    parser.add_argument('--sample_posterior', action='store_true')
+    parser.add_argument('--loss_type', type=str, default='l2')
+    parser.add_argument('--perceptual_weight', type=float, default=0.001)
     parser.add_argument('--kl_weight', type=float, default=0.001)
     parser.add_argument('--adv_weight', type=float, default=0.01)
-
-    # --------------------------------------------------------------------------------------------------------------
-    parser.add_argument('--info_nce_loss', action='store_true')
-    # --------------------------------------------------------------------------------------------------------------
-    parser.add_argument('--pos_info_nce_loss', action='store_true')
-    parser.add_argument('--reg_loss_scale', type=float, default=1.0)
-    # --------------------------------------------------------------------------------------------------------------
-    parser.add_argument('--anormal_scoring', action='store_true')
-    parser.add_argument('--min_max_training', action='store_true')
-    parser.add_argument('--loss_type', type = str, default = 'l2')
     parser.add_argument('--inference_freq', type=int, default=50)
     parser.add_argument('--inference_num', type=int, default=4)
-    # step 7. save
     parser.add_argument('--model_save_freq', type=int, default=1000)
     parser.add_argument('--model_save_base_epoch', type=int, default=50)
+
     args = parser.parse_args()
     main(args)
