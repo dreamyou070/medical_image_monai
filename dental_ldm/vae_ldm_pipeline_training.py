@@ -236,15 +236,16 @@ def main(args) :
                     latents = vae.encode(images).latent_dist.sample()
                     # ---------------------------------------------------------
                     # (2) KL loss
-                    posterior = vae.encode(images).latent_dist
+                    #posterior = vae.encode(images).latent_dist
                     # gaussian priot
-                    z_mu, z_sigma = posterior.mean, posterior.std
-                    kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
-                    kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
+                    #z_mu, z_sigma = posterior.mean, posterior.std
+                    #kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
+                    #kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
                     wandb.log({"perceptual_loss": p_loss.item(),
-                               "kldivergence_loss": kl_loss.item(),
+                               #"kldivergence_loss": kl_loss.item(),
                                "reconstruction_loss": recons_loss.item(), })
-                    loss_g = recons_loss + (args.kl_weight * kl_loss) + (args.perceptual_weight * p_loss)
+                    #loss_g = recons_loss + (args.kl_weight * kl_loss) + (args.perceptual_weight * p_loss)
+                    loss_g = recons_loss +  (args.perceptual_weight * p_loss)
                     if epoch > autoencoder_warm_up_n_epochs:
                         logits_fake = discriminator(reconstruction.contiguous().float())[-1]
                         generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
