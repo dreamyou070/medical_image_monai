@@ -236,7 +236,9 @@ def main(args) :
                     elif args.loss_type == 'l2':
                         recons_loss = F.mse_loss(reconstruction.float(), images.float())
 
-                    p_loss = perceptual_loss(reconstruction.float(), images.float())
+                    p_loss = perceptual_loss(reconstruction.float(),
+                                             images.float())
+
 
                     ########################################################################################################
                     latents = vae.encode(images).latent_dist.sample()
@@ -246,12 +248,15 @@ def main(args) :
                     z_mu, z_sigma = posterior.mean, posterior.std
                     kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
                     kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
+                    wandb.log({"perceptual_loss": p_loss.item(),
+                               "kldivergence_loss": kl_loss.item(),
+                               "reconstruction_loss": recons_loss.item(), })
                     loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
                     if epoch > autoencoder_warm_up_n_epochs:
                         logits_fake = discriminator(reconstruction.contiguous().float())[-1]
                         generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
                         loss_g += adv_weight * generator_loss
-                wandb.log({"reconstruction_loss": recons_loss.item(), })
+                        wandb.log({"generator_loss": generator_loss.item()})
                 scaler_g.scale(loss_g).backward()
                 scaler_g.step(optimizer_g)
                 scaler_g.update()
@@ -264,10 +269,9 @@ def main(args) :
                         logits_real = discriminator(images.contiguous().detach())[-1]
                         loss_d_real = adv_loss(logits_real, target_is_real=True, for_discriminator=True)
                         discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
+                        wandb.log({"discriminator_loss": loss_d.item(),})
                         loss_d = adv_weight * discriminator_loss
-
                     scaler_d.scale(loss_d).backward()
-                    wandb.log({"discriminator_loss": loss_d.item(), })
                     scaler_d.step(optimizer_d)
                     scaler_d.update()
                 epoch_loss += recons_loss.item()
