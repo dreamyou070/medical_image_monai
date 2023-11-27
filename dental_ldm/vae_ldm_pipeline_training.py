@@ -147,8 +147,7 @@ def main(args) :
 
     print(f'\n step 2. dataset and dataloatder')
     w,h = int(args.img_size.split(',')[0].strip()),int(args.img_size.split(',')[1].strip())
-    train_transforms = transforms.Compose([#transforms.ToPILImage(),
-                                           transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
+    train_transforms = transforms.Compose([transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
                                            transforms.ToTensor()])
     train_ds = SYDataset(data_folder=args.train_data_folder,
                          transform=train_transforms,
@@ -159,11 +158,10 @@ def main(args) :
                                            shuffle=True,
                                            num_workers=4,
                                            persistent_workers=True)
-    check_data = first(training_dataset_loader)
+
     # ## Prepare validation set data loader
-    val_transforms = transforms.Compose([#transforms.ToPILImage(),
-                                           transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
-                                           transforms.ToTensor()])
+    val_transforms = transforms.Compose([transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
+                                         transforms.ToTensor()])
     val_ds = SYDataset(data_folder=args.val_data_folder,
                          transform=val_transforms,
                          base_mask_dir=args.val_mask_dir,image_size=(w,h))
@@ -174,12 +172,6 @@ def main(args) :
                                        persistent_workers=True)
 
     print(f'\n step 3. latent_model')
-    #vae = AutoencoderKL(in_channels = 1,
-    #                    out_channels = 1,
-    #                    latent_channels = 4,
-    #                    norm_num_groups = 32,
-    #                    sample_size = 128,
-    #                    scaling_factor = 0.18215)
     vae = AutoencoderKL(in_channels = 1,
                         out_channels = 1,
                         down_block_types = ["DownEncoderBlock2D","DownEncoderBlock2D","DownEncoderBlock2D","DownEncoderBlock2D"],
@@ -239,7 +231,11 @@ def main(args) :
                     #latents = latents * 0.18215
                     # (1) reconstruction loss
                     reconstruction = vae(images).sample
-                    recons_loss = F.l1_loss(reconstruction.float(), images.float())
+                    if args.loss_type == 'l1':
+                        recons_loss = F.l1_loss(reconstruction.float(), images.float())
+                    elif args.loss_type == 'l2':
+                        recons_loss = F.mse_loss(reconstruction.float(), images.float())
+
                     p_loss = perceptual_loss(reconstruction.float(), images.float())
 
                     ########################################################################################################
@@ -313,7 +309,13 @@ def main(args) :
                             loading_image = wandb.Image(new,
                                                         caption=f"(real-recon) epoch {epoch + 1} ")
                             wandb.log({"vae inference": loading_image})
-                        recons_loss = F.l1_loss(images.float(), reconstruction.float())
+                        if args.loss_type == 'l1':
+                            recons_loss = F.l1_loss(images.float(),
+                                                    reconstruction.float())
+                        elif args.loss_type == 'l2':
+                            recons_loss = F.mse_loss(images.float(),
+                                                    reconstruction.float())
+
                     val_loss += recons_loss.item()
         val_loss /= val_step
         wandb.log({"val_loss": val_loss, })
@@ -335,7 +337,6 @@ def main(args) :
     with open(os.path.join(experiment_dir, f'records.txt'), 'w') as f:
         for line in records:
             f.write(line + '\n')
-
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -388,7 +389,7 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--anormal_scoring', action='store_true')
     parser.add_argument('--min_max_training', action='store_true')
-
+    parser.add_argument('--loss_type', type = str, default = 'l2')
     parser.add_argument('--inference_freq', type=int, default=50)
     parser.add_argument('--inference_num', type=int, default=4)
 
