@@ -227,82 +227,94 @@ def main(args) :
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
             images = batch["image_info"].to(device)
-            optimizer_g.zero_grad(set_to_none=True)
-            with autocast(enabled=True):
-                #latents = vae.encode(images).latent_dist.sample()
-                #latents = latents * 0.18215
-                # (1) reconstruction loss
-                reconstruction = vae(images).sample
-                recons_loss = F.l1_loss(reconstruction.float(), images.float())
-                p_loss = perceptual_loss(reconstruction.float(), images.float())
-
-                ########################################################################################################
-                latents = vae.encode(images).latent_dist.sample()
-                # ---------------------------------------------------------
-                # (2) KL loss
-                posterior = vae.encode(images).latent_dist
-                z_mu, z_sigma = posterior.mean, posterior.std
-                kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
-                kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
-                loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
-                if epoch > autoencoder_warm_up_n_epochs:
-                    logits_fake = discriminator(reconstruction.contiguous().float())[-1]
-                    generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
-                    loss_g += adv_weight * generator_loss
-            wandb.log({"reconstruction_loss": recons_loss.item(), })
-            scaler_g.scale(loss_g).backward()
-            scaler_g.step(optimizer_g)
-            scaler_g.update()
-
-            if epoch > autoencoder_warm_up_n_epochs:
+            normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
+            if args.only_normal_training:
+                images = images[normal_info == 1]
+                mask_info = mask_info[normal_info == 1]
+            b_size = images.shape[0]
+            if b_size > 0 :
+                optimizer_g.zero_grad(set_to_none=True)
                 with autocast(enabled=True):
-                    optimizer_d.zero_grad(set_to_none=True)
-                    logits_fake = discriminator(reconstruction.contiguous().detach())[-1]
-                    loss_d_fake = adv_loss(logits_fake, target_is_real=False, for_discriminator=True)
-                    logits_real = discriminator(images.contiguous().detach())[-1]
-                    loss_d_real = adv_loss(logits_real, target_is_real=True, for_discriminator=True)
-                    discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
-                    loss_d = adv_weight * discriminator_loss
+                    #latents = vae.encode(images).latent_dist.sample()
+                    #latents = latents * 0.18215
+                    # (1) reconstruction loss
+                    reconstruction = vae(images).sample
+                    recons_loss = F.l1_loss(reconstruction.float(), images.float())
+                    p_loss = perceptual_loss(reconstruction.float(), images.float())
 
-                scaler_d.scale(loss_d).backward()
-                wandb.log({"discriminator_loss": loss_d.item(), })
-                scaler_d.step(optimizer_d)
-                scaler_d.update()
-            epoch_loss += recons_loss.item()
-            if epoch > autoencoder_warm_up_n_epochs:
-                gen_epoch_loss += generator_loss.item()
-                disc_epoch_loss += discriminator_loss.item()
+                    ########################################################################################################
+                    latents = vae.encode(images).latent_dist.sample()
+                    # ---------------------------------------------------------
+                    # (2) KL loss
+                    posterior = vae.encode(images).latent_dist
+                    z_mu, z_sigma = posterior.mean, posterior.std
+                    kl_loss = 0.5 * torch.sum(z_mu.pow(2) + z_sigma.pow(2) - torch.log(z_sigma.pow(2)) - 1, dim=[1, 2, 3])
+                    kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
+                    loss_g = recons_loss + (kl_weight * kl_loss) + (perceptual_weight * p_loss)
+                    if epoch > autoencoder_warm_up_n_epochs:
+                        logits_fake = discriminator(reconstruction.contiguous().float())[-1]
+                        generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
+                        loss_g += adv_weight * generator_loss
+                wandb.log({"reconstruction_loss": recons_loss.item(), })
+                scaler_g.scale(loss_g).backward()
+                scaler_g.step(optimizer_g)
+                scaler_g.update()
 
-            progress_bar.set_postfix(
-                {
-                    "recons_loss": epoch_loss / (step + 1),
-                    "gen_loss": gen_epoch_loss / (step + 1),
-                    "disc_loss": disc_epoch_loss / (step + 1),
-                })
+                if epoch > autoencoder_warm_up_n_epochs:
+                    with autocast(enabled=True):
+                        optimizer_d.zero_grad(set_to_none=True)
+                        logits_fake = discriminator(reconstruction.contiguous().detach())[-1]
+                        loss_d_fake = adv_loss(logits_fake, target_is_real=False, for_discriminator=True)
+                        logits_real = discriminator(images.contiguous().detach())[-1]
+                        loss_d_real = adv_loss(logits_real, target_is_real=True, for_discriminator=True)
+                        discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
+                        loss_d = adv_weight * discriminator_loss
+
+                    scaler_d.scale(loss_d).backward()
+                    wandb.log({"discriminator_loss": loss_d.item(), })
+                    scaler_d.step(optimizer_d)
+                    scaler_d.update()
+                epoch_loss += recons_loss.item()
+                if epoch > autoencoder_warm_up_n_epochs:
+                    gen_epoch_loss += generator_loss.item()
+                    disc_epoch_loss += discriminator_loss.item()
+
+                progress_bar.set_postfix(
+                    {
+                        "recons_loss": epoch_loss / (step + 1),
+                        "gen_loss": gen_epoch_loss / (step + 1),
+                        "disc_loss": disc_epoch_loss / (step + 1),
+                    })
         vae.eval()
         val_loss = 0
         with torch.no_grad():
             for val_step, batch in enumerate(test_dataset_loader, start=1):
                 images = batch["image_info"].to(device)
-                with autocast(enabled=True):
-                    reconstruction = vae(images).sample
-                    z_mu, z_sigma = posterior.mean, posterior.std
-                    if val_step == 1:
-                        import torchvision.transforms as torch_transforms
-                        from PIL import Image
-                        # real = torch_transforms.ToPILImage()(real)
-                        org_img = images[0].squeeze()
-                        org_img = torch_transforms.ToPILImage()(org_img.unsqueeze(0))
-                        recon = reconstruction[0].squeeze()
-                        recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
-                        new = Image.new('RGB', (org_img.width + recon.width, org_img.height))
-                        new.paste(org_img, (0, 0))
-                        new.paste(recon, (org_img.width, 0))
-                        loading_image = wandb.Image(new,
-                                                    caption=f"(real-recon) epoch {epoch + 1} ")
-                        wandb.log({"vae inference": loading_image})
-                    recons_loss = F.l1_loss(images.float(), reconstruction.float())
-                val_loss += recons_loss.item()
+                normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
+                if args.only_normal_training:
+                    images = images[normal_info == 1]
+                    mask_info = mask_info[normal_info == 1]
+                b_size = images.shape[0]
+                if b_size > 0:
+                    with autocast(enabled=True):
+                        reconstruction = vae(images).sample
+                        z_mu, z_sigma = posterior.mean, posterior.std
+                        if val_step == 1:
+                            import torchvision.transforms as torch_transforms
+                            from PIL import Image
+                            # real = torch_transforms.ToPILImage()(real)
+                            org_img = images[0].squeeze()
+                            org_img = torch_transforms.ToPILImage()(org_img.unsqueeze(0))
+                            recon = reconstruction[0].squeeze()
+                            recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
+                            new = Image.new('RGB', (org_img.width + recon.width, org_img.height))
+                            new.paste(org_img, (0, 0))
+                            new.paste(recon, (org_img.width, 0))
+                            loading_image = wandb.Image(new,
+                                                        caption=f"(real-recon) epoch {epoch + 1} ")
+                            wandb.log({"vae inference": loading_image})
+                        recons_loss = F.l1_loss(images.float(), reconstruction.float())
+                    val_loss += recons_loss.item()
         val_loss /= val_step
         wandb.log({"val_loss": val_loss, })
         line = f"epoch {epoch + 1} val loss: {val_loss:.4f}"
@@ -314,15 +326,7 @@ def main(args) :
             torch.save(vae.state_dict(),
                        os.path.join(model_save_dir, f'vae_{epoch}.pth'))
 
-            #torch.save({'epoch': epoch,
-            #            'model_state_dict': vae.state_dict(),
-            #            'optimizer_state_dict': optimizer.state_dict(),},
-            #           PATH)
-
-
-
     progress_bar.close()
-
     del discriminator
     del perceptual_loss
     torch.cuda.empty_cache()
