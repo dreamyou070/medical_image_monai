@@ -3,7 +3,7 @@ import copy
 import numpy as np
 from PIL import Image
 from random import seed
-from diffuser_module.models.vae import DiagonalGaussianDistribution
+
 from torch import optim
 from helpers import *
 from tqdm import tqdm
@@ -11,6 +11,7 @@ import torch.nn.functional as F
 from torchvision import transforms
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+from diffuser_module.models.vae import DiagonalGaussianDistribution
 import torch.multiprocessing
 import torchvision.transforms as torch_transforms
 import PIL
@@ -43,7 +44,7 @@ def main(args) :
 
     print(f' (1.3) saving configuration')
     experiment_dir = args.experiment_dir
-    os.makedirs(experiment_dir, exist_ok=True)    
+    os.makedirs(experiment_dir, exist_ok=True)
 
     print(f'\n step 2. dataset and dataloatder')
     w, h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
