@@ -26,110 +26,13 @@ from diffuser_module import AutoencoderKL
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
 
-
-
-def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
-    model_save_base_dir = os.path.join(args.experiment_dir,'diffusion-models')
-    os.makedirs(model_save_base_dir, exist_ok=True)
-    if final:
-        save_dir = os.path.join(model_save_base_dir,f'unet_final.pt')
-        torch.save({'n_epoch':              args.train_epochs,
-                    'model_state_dict':     unet.state_dict(),
-                    'optimizer_state_dict': optimiser.state_dict(),
-                    "ema":                  ema.state_dict(),
-                    "args":                 args},save_dir)
-    else:
-        save_dir = os.path.join(model_save_base_dir, f'unet_epoch_{epoch}.pt')
-        torch.save({'n_epoch':              epoch,
-                    'model_state_dict':     unet.state_dict(),
-                    'optimizer_state_dict': optimiser.state_dict(),
-                    "args":                 args,
-                    "ema":                  ema.state_dict(),
-                    'loss':                 loss,},save_dir)
-
-def training_outputs(args, test_data, scheduler, is_train_data, device, model, vae, scale_factor, epoch):
-
-    if is_train_data == 'training_data':
-        train_data = 'training_data'
-    else :
-        train_data = 'test_data'
-
-    video_save_dir = os.path.join(args.experiment_dir, 'diffusion-videos')
-    image_save_dir = os.path.join(args.experiment_dir, 'diffusion-training-images')
-    os.makedirs(video_save_dir, exist_ok=True)
-    os.makedirs(image_save_dir, exist_ok=True)
-
-    # 1) make random noise
-    x = test_data["image_info"].to(device)  # batch, channel, w, h
-    normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
-    mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
-
-    with torch.no_grad():
-        z_mu, z_sigma = vae.encode(x)
-        latent = vae.sampling(z_mu, z_sigma) * scale_factor
-    # 2) select random int
-    t = torch.randint(args.sample_distance - 1, args.sample_distance, (latent.shape[0],), device=x.device)
-    # 3) noise
-    noise = torch.rand_like(latent).float().to(x.device)
-    # 4) noise image generating
-    with torch.no_grad() :
-        noisy_latent = scheduler.add_noise(original_samples=latent, noise=noise, timesteps=t)
-        latent = noisy_latent.clone().detach()
-
-    # 5) denoising
-    for t in range(int(args.sample_distance) , -1, -1):
-        with torch.no_grad() :
-            # 5-1) model prediction
-            model_output = model(latent, torch.Tensor((t,)).to(device), None)
-        # 5-2) update latent
-        latent, _ = scheduler.step(model_output, t, latent)
-    #latents =
-    #image = self.vae.decode(latent / scale_factor).sample
-    #image = (image / 2 + 0.5).clamp(0, 1)
-    # we always cast to float32 as this does not cause significant overhead and is compatible with bfloa16
-    #image = image.cpu().permute(0, 2, 3, 1).float().numpy()
-
-    with torch.no_grad() :
-        recon_image = vae.decode_stage_2_outputs(latent/scale_factor)
-
-    for img_index in range(x.shape[0]):
-        normal_info_ = normal_info[img_index]
-        if normal_info_ == 1:
-            is_normal = 'normal'
-        else :
-            is_normal = 'abnormal'
-
-        real = x[img_index].squeeze()
-        real = torch_transforms.ToPILImage()(real.unsqueeze(0))
-
-        recon = recon_image[img_index].squeeze()
-        recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
-
-        mask_np = mask_info[img_index].squeeze().to('cpu').detach().numpy().copy().astype(np.uint8)
-        mask_np = mask_np * 255
-        mask = Image.fromarray(mask_np).convert('L')  # [128, 128, 3]
-
-        new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
-        new_image.paste(real,  (0, 0))
-        new_image.paste(recon, (real.size[0], 0))
-        new_image.paste(mask,  (real.size[0]+recon.size[0], 0))
-        new_image.save(os.path.join(image_save_dir,
-                                    f'real_recon_answer_{train_data}_epoch_{epoch}_{img_index}.png'))
-        loading_image = wandb.Image(new_image,
-                                    caption=f"(real_recon_answer) epoch {epoch + 1} | {is_normal}")
-        if train_data == 'training_data' :
-            wandb.log({"training data inference" : loading_image})
-        else :
-            wandb.log({"test data inference" : loading_image})
-
-
 def main(args) :
-
     print(f'\n step 1. setting')
     if args.process_title:
         setproctitle(args.process_title)
     else:
         setproctitle('parksooyeon')
+
     print(f' (1.1) wandb')
     wandb.login(key=args.wandb_api_key)
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
@@ -140,119 +43,79 @@ def main(args) :
 
     print(f' (1.3) saving configuration')
     experiment_dir = args.experiment_dir
-    os.makedirs(experiment_dir, exist_ok=True)
-    var_args = vars(args)
-    with open(os.path.join(experiment_dir, "config.txt"), "w") as f:
-        for key in sorted(var_args.keys()):
-            f.write(f"{key}: {var_args[key]}\n")
+    os.makedirs(experiment_dir, exist_ok=True)    
 
     print(f'\n step 2. dataset and dataloatder')
-    w,h = int(args.img_size.split(',')[0].strip()),int(args.img_size.split(',')[1].strip())
-    train_transforms = transforms.Compose([#transforms.ToPILImage(),
-                                           transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
+    w, h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
+    train_transforms = transforms.Compose([transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
                                            transforms.ToTensor()])
-    train_ds = SYDataset(data_folder=args.train_data_folder,
-                         transform=train_transforms,
-                         base_mask_dir=args.train_mask_dir,
-                         image_size=(w,h))
-    training_dataset_loader = SYDataLoader(train_ds,
-                                           batch_size=args.batch_size,
-                                           shuffle=True,
-                                           num_workers=4,
-                                           persistent_workers=True)
-    check_data = first(training_dataset_loader)
+    train_ds = SYDataset(data_folder=args.train_data_folder, transform=train_transforms,
+                         base_mask_dir=args.train_mask_dir, image_size=(w, h))
+    training_dataset_loader = SYDataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
+                                           num_workers=4, persistent_workers=True)
     # ## Prepare validation set data loader
-    val_transforms = transforms.Compose([#transforms.ToPILImage(),
-                                           transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
-                                           transforms.ToTensor()])
-    val_ds = SYDataset(data_folder=args.val_data_folder,
-                         transform=val_transforms,
-                         base_mask_dir=args.val_mask_dir,image_size=(w,h))
-    test_dataset_loader = SYDataLoader(val_ds,
-                                       batch_size=args.batch_size,
-                                       shuffle=False,
-                                       num_workers=4,
-                                       persistent_workers=True)
+    val_transforms = transforms.Compose([transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
+                                         transforms.ToTensor()])
+    val_ds = SYDataset(data_folder=args.val_data_folder, transform=val_transforms,
+                       base_mask_dir=args.val_mask_dir, image_size=(w, h))
+    test_dataset_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=False,
+                                       num_workers=4, persistent_workers=True)
 
     print(f'\n step 3. latent_model')
-    #vae = AutoencoderKL(in_channels = 1,
-    #                    out_channels = 1,
-    #                    latent_channels = 4,
-    #                    norm_num_groups = 32,
-    #                    sample_size = 128,
-    #                    scaling_factor = 0.18215)
-    vae = AutoencoderKL(in_channels = 1,
-                        out_channels = 1,
-                        down_block_types = ["DownEncoderBlock2D","DownEncoderBlock2D","DownEncoderBlock2D","DownEncoderBlock2D"],
-                        up_block_types = ["UpDecoderBlock2D","UpDecoderBlock2D","UpDecoderBlock2D","UpDecoderBlock2D"],
-                        block_out_channels = [128,256,512,512],
-                        layers_per_block = 2,
-                        act_fn = "silu",
-                        latent_channels = 4,
-                        norm_num_groups = 32,
-                        sample_size = 512,
-                        scaling_factor = 0.18215,)
+    vae_config_dir = args.vae_config_dir
+    with open(vae_config_dir, "r") as f:
+        vae_config = json.load(f)
+    vae = AutoencoderKL.from_config(config=vae_config)
+    vae.load_state_dict(torch.load(args.pretrained_vae_dir), strict=True)
     vae = vae.to(device)
-    perceptual_loss = PerceptualLoss(spatial_dims=2,
-                                     network_type="alex",
-                                     cache_dir='/data7/sooyeon/medical_image/pretrained')
-    perceptual_loss.to(device)
-    perceptual_weight = 0.001
+    vae.eval()
 
-    discriminator = PatchDiscriminator(spatial_dims=2, num_layers_d=3, num_channels=64,
-                                       in_channels=1, out_channels=1)
-    discriminator = discriminator.to(device)
+    print(f'\n step 4. model inference')
+    training_inference_dir = os.path.join(experiment_dir, 'training_inference')
+    os.makedirs(training_inference_dir, exist_ok=True)
+    for step, batch in enumerate(training_dataset_loader) :
+        images = batch["image_info"].to(device)
+        normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
+        with torch.no_grad():
+            reconstruction = vae(images).sample
+        batch_size = images.shape[0]
+        for i in range(batch_size) :
+            normal = normal_info[i]
+            if normal == 1 :
+                normal = 'normal'
+            else :
+                normal = 'abnormal'
+            org_img = images[i].squeeze()
+            org_img = torch_transforms.ToPILImage()(org_img.unsqueeze(0))
+            recon = reconstruction[i].squeeze()
+            recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
+            new = Image.new('RGB', (org_img.width + recon.width, org_img.height))
+            new.paste(org_img, (0, 0))
+            new.paste(recon, (org_img.width, 0))
+            new.save(os.path.join(training_inference_dir, f'infer_check_training_{i}_{normal}.png'))
 
-    adv_loss = PatchAdversarialLoss(criterion="least_squares")
-    adv_weight = 0.01
-
-    optimizer_g = torch.optim.Adam(vae.parameters(), lr=1e-4)
-    optimizer_d = torch.optim.Adam(discriminator.parameters(), lr=5e-4)
-
-    scaler_g = torch.cuda.amp.GradScaler()
-    scaler_d = torch.cuda.amp.GradScaler()
-
-    print(f'\n step 4. model training')
-    kl_weight = 1e-6
-    n_epochs = 100
-    autoencoder_warm_up_n_epochs = 10
-    records = []
-    for epoch in range(n_epochs):
-        vae.train()
-        discriminator.train()
-        epoch_loss = 0
-        gen_epoch_loss = 0
-        disc_epoch_loss = 0
-        progress_bar = tqdm(enumerate(training_dataset_loader),
-                            total=len(training_dataset_loader), ncols=110)
-        progress_bar.set_description(f"Epoch {epoch}")
-        for step, batch in progress_bar:
-            images = batch["image_info"].to(device)
-            optimizer_g.zero_grad(set_to_none=True)
-            with autocast(enabled=True):
-
-                h = vae.encoder(images)
-                moments = vae.quant_conv(h)
-                latent = DiagonalGaussianDistribution(moments).sample()
-                print(f'images  [Batch, 1, 256, 256] : {images.shape}')
-                print(f'moments [Batch, 8, 32,  32]  : {moments.shape}')
-                print(f'latent  [Batch, 4, 32,  32]  : {latent.shape}')
-
-                z = vae.post_quant_conv(latent)
-                print(f'z  [Batch, 4, 32,  32]  : {z.shape}')
-                recon_images = vae.decoder(z)
-                print(f'recon_images  [Batch, 1, 256, 256]  : {recon_images.shape}')
-
-
-
-                #latents = vae.encode(images).latent_dist.sample()
-                #latents = latents * 0.18215
-                # (1) reconstruction loss
-                #reconstruction = vae(images).sample
-                #recons_loss = F.l1_loss(reconstruction.float(), images.float())
-                #p_loss = perceptual_loss(reconstruction.float(), images.float())
-                break
-            break
+    test_inference_dir = os.path.join(experiment_dir, 'test_inference')
+    os.makedirs(test_inference_dir, exist_ok=True)
+    for step, batch in enumerate(test_dataset_loader):
+        images = batch["image_info"].to(device)
+        normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
+        with torch.no_grad():
+            reconstruction = vae(images).sample
+        batch_size = images.shape[0]
+        for i in range(batch_size):
+            normal = normal_info[i]
+            if normal == 1:
+                normal = 'normal'
+            else:
+                normal = 'abnormal'
+            org_img = images[i].squeeze()
+            org_img = torch_transforms.ToPILImage()(org_img.unsqueeze(0))
+            recon = reconstruction[i].squeeze()
+            recon = torch_transforms.ToPILImage()(recon.unsqueeze(0))
+            new = Image.new('RGB', (org_img.width + recon.width, org_img.height))
+            new.paste(org_img, (0, 0))
+            new.paste(recon, (org_img.width, 0))
+            new.save(os.path.join(training_inference_dir, f'infer_check_test_{i}_{normal}.png'))
 
 
 if __name__ == '__main__':
