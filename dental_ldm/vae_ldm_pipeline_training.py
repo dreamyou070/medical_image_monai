@@ -271,7 +271,7 @@ def main(args) :
                         logits_real = discriminator(images.contiguous().detach())[-1]
                         loss_d_real = adv_loss(logits_real, target_is_real=True, for_discriminator=True)
                         discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
-                        wandb.log({"discriminator_loss": loss_d.item(),})
+                        wandb.log({"discriminator_loss": discriminator_loss.item(),})
                         loss_d = adv_weight * discriminator_loss
                     scaler_d.scale(loss_d).backward()
                     scaler_d.step(optimizer_d)
