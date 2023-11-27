@@ -74,6 +74,7 @@ def main(args) :
     print(f'\n step 4. model inference')
     training_inference_dir = os.path.join(experiment_dir, 'training_inference')
     os.makedirs(training_inference_dir, exist_ok=True)
+    global_num = 0
     for step, batch in enumerate(training_dataset_loader) :
         images = batch["image_info"].to(device)
         normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
@@ -93,10 +94,12 @@ def main(args) :
             new = Image.new('RGB', (org_img.width + recon.width, org_img.height))
             new.paste(org_img, (0, 0))
             new.paste(recon, (org_img.width, 0))
-            new.save(os.path.join(training_inference_dir, f'infer_check_training_{i}_{normal}.png'))
+            new.save(os.path.join(training_inference_dir, f'infer_check_training_{global_num}_{normal}.png'))
+            global_num += 1
 
     test_inference_dir = os.path.join(experiment_dir, 'test_inference')
     os.makedirs(test_inference_dir, exist_ok=True)
+    global_num = 0
     for step, batch in enumerate(test_dataset_loader):
         images = batch["image_info"].to(device)
         normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
@@ -116,7 +119,8 @@ def main(args) :
             new = Image.new('RGB', (org_img.width + recon.width, org_img.height))
             new.paste(org_img, (0, 0))
             new.paste(recon, (org_img.width, 0))
-            new.save(os.path.join(training_inference_dir, f'infer_check_test_{i}_{normal}.png'))
+            new.save(os.path.join(training_inference_dir, f'infer_check_test_{global_num}_{normal}.png'))
+            global_num += 1
 
 
 if __name__ == '__main__':
