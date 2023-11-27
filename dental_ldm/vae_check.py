@@ -142,6 +142,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int)
 
     # step 3. model
+    parser.add_argument('--vae_config_dir', type=str,)
     parser.add_argument('--pretrained_vae_dir', type=str,
                         default=f'/data7/sooyeon/medical_image/anoddpm_result_vae/1_first_training/autoencoderkl/autoencoderkl_99.pth')
     parser.add_argument('--latent_channels', type=int, default=3)
