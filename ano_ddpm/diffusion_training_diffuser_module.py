@@ -69,7 +69,8 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
             # 3) q sampling = noising & p sampling = denoising
             for t in range(args.sample_distance, -1, -1):
                 if t > 0 :
-                    noise_pred = ema(x_t, t)
+                    noise_pred = ema(x_t,
+                                     torch.Tensor([t]).repeat(x.shape[0], ).long().to(x.device))
                     temp = scheduler.step(model_output=noise_pred,
                                           timestep=int(t),
                                           sample=x_t,
