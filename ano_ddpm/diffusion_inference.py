@@ -72,7 +72,8 @@ def main(args) :
     # (2) scaheduler
     betas = get_beta_schedule(args.timestep, args.beta_schedule)
     # (3) scaheduler
-    diffusion = GaussianDiffusionModel([w, h],betas, img_channels=in_channels,loss_type=args.loss_type,loss_weight=args.loss_weight, noise='simplex' )  # 1
+    diffusion = GaussianDiffusionModel([w, h],betas, img_channels=in_channels,
+                                       loss_type=args.loss_type,loss_weight=args.loss_weight, noise='simplex' )  # 1
 
     print(f'\n step 4. inference')
     train_data = 'train_data'
