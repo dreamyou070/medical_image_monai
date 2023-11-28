@@ -363,6 +363,8 @@ class GaussianDiffusionModel:
                 noise = torch.randn_like(x_t)
             else:
                 noise = generate_simplex_noise(self.simplex, x_t, t, False, in_channels=self.img_channels).float()
+        elif type(denoise_fn) == torch.Tensor:
+            noise = denoise_fn
         else:
             noise = denoise_fn(x_t, t)
         nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
