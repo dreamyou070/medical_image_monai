@@ -201,8 +201,8 @@ def main(args) :
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
             images = batch["image_info"].to(device)
-            mask_info = batch["mask"].unsqueeze(dim=1)
-            small_mask_info = batch['small_mask'].unsqueeze(dim=1)
+            mask_info = batch["mask"].unsqueeze(dim=1).to(device)
+            small_mask_info = batch['small_mask'].unsqueeze(dim=1).to(device)
             normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
             if args.only_normal_training:
                 images = images[normal_info == 1]
@@ -213,10 +213,10 @@ def main(args) :
                     latent_dist = vae.encode(images).latent_dist
                     if args.sample_posterior :
                         latent = latent_dist.sample()
-                        mask_latent = vae.encode(mask_info.to(device)).latent_dist.mode()  # [Batch, 4, 32, 32]
+                        mask_latent = vae.encode(mask_info).latent_dist.mode()  # [Batch, 4, 32, 32]
                     else :
                         latent = latent_dist.mode()
-                        mask_latent = vae.encode(mask_info.to(device)).latent_dist.mode()  # [Batch, 4, 32, 32]
+                        mask_latent = vae.encode(mask_info).latent_dist.mode()  # [Batch, 4, 32, 32]
                     # [Batch, 4, 32, 32]
                     latent = latent * vae.config.scaling_factor
                 # 2) t
