@@ -61,10 +61,10 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
         latent_dist = vae.encode(x).latent_dist
         if args.sample_posterior:
             latent = latent_dist.sample()
-            mask_latent = vae.encode(mask_info).latent_dist.mode()  # [Batch, 4, 32, 32]
+            #mask_latent = vae.encode(mask_info).latent_dist.mode()  # [Batch, 4, 32, 32]
         else:
             latent = latent_dist.mode()
-            mask_latent = vae.encode(mask_info).latent_dist.mode()  # [Batch, 4, 32, 32]
+            #mask_latent = vae.encode(mask_info).latent_dist.mode()  # [Batch, 4, 32, 32]
         # [Batch, 4, 32, 32]
         latent = latent * vae.config.scaling_factor
     # 2) select random int
