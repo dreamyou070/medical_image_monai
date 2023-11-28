@@ -102,17 +102,15 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 
 
 def main(args):
-
     print(f'\n step 1. setting')
     if args.process_title:
         setproctitle(args.process_title)
     else:
         setproctitle('parksooyeon')
+
     print(f' (1.1) wandb')
     wandb.login(key=args.wandb_api_key)
-    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name,)
-    os.environ["WANDB_DATA_DIR"] = args.experiment_dir
-
+    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
 
     print(f' (1.2) seed and device')
     seed(args.seed)
@@ -128,35 +126,21 @@ def main(args):
 
     print(f'\n step 2. dataset and dataloatder')
     w, h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
-    train_transforms = transforms.Compose([  # transforms.ToPILImage(),
-        transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
-        transforms.ToTensor(),])
-    train_ds = SYDataset(data_folder=args.train_data_folder,
-                         transform=train_transforms,
-                         base_mask_dir=args.train_mask_dir,
-                         image_size=(w, h))
-    training_dataset_loader = SYDataLoader(train_ds,
-                                           batch_size=args.batch_size,
-                                           shuffle=True,
-                                           num_workers=4,
-                                           persistent_workers=True)
-    check_data = first(training_dataset_loader)
+    train_transforms = transforms.Compose([transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
+                                           transforms.ToTensor()])
+    train_ds = SYDataset(data_folder=args.train_data_folder, transform=train_transforms,
+                         base_mask_dir=args.train_mask_dir, image_size=(w, h))
+    training_dataset_loader = SYDataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
+                                           num_workers=4, persistent_workers=True)
     # ## Prepare validation set data loader
-    val_transforms = transforms.Compose([  # transforms.ToPILImage(),
-        transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
-        transforms.ToTensor()])
-    val_ds = SYDataset(data_folder=args.val_data_folder,
-                       transform=val_transforms,
+    val_transforms = transforms.Compose([transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
+                                         transforms.ToTensor()])
+    val_ds = SYDataset(data_folder=args.val_data_folder, transform=val_transforms,
                        base_mask_dir=args.val_mask_dir, image_size=(w, h))
-    test_dataset_loader = SYDataLoader(val_ds,
-                                       batch_size=args.batch_size,
-                                       shuffle=False,
-                                       num_workers=4,
-                                       persistent_workers=True)
+    test_dataset_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=False,
+                                       num_workers=4, persistent_workers=True)
 
-    print(f'\n step 3. data check')
-
-    print(f'\n step 4. model')
+    print(f'\n step 3. model')
     in_channels = args.in_channels
     model = UNetModel(img_size=int(w),
                       base_channels=args.base_channels,
@@ -205,11 +189,16 @@ def main(args):
                 x_t = diffusion.sample_q(x_0, t, noise)
                 noise_pred = model(x_t, t)
                 target = noise
+
+
                 # -----------------------------------------------------------------------------------------
                 # [1] pos_loss
                 pos_loss_ = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
                                                          (target * mask_info.to(device)).float(),
                                                          reduction="none").mean([1, 2, 3])
+                if args.masked_loss :
+                    loss = pos_loss_
+
                 pixel_num = mask_info.sum([1, 2, 3]).float().to(device)
                 pixel_num = torch.where(pixel_num == 0, 1, pixel_num)
                 pos_loss = pos_loss_ / pixel_num
