@@ -66,43 +66,43 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
         x_t = scheduler.add_noise(x, noise,
                                   torch.Tensor([args.sample_distance]).repeat(x.shape[0], ).long().to(x.device))
         with torch.no_grad():
-            # 3) q sampling = noising & p sampling = denoising
             for t in range(args.sample_distance, -1, -1):
+                print(f'time = {t} : get noisy sample and stepping ... ')
                 if t > 0 :
                     noise_pred = ema(x_t,
-                                     torch.Tensor([t]).repeat(x.shape[0], ).long().to(x.device))
-                    temp = scheduler.step(model_output=noise_pred,
-                                          timestep=int(t),
-                                          sample=x_t,
-                                          return_dict=True)
-                    x_t = temp["prev_sample"]
-        # 4) what is sample_p do ?
-        real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
-        #sample_images = temp["prev_sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
-        pred_images = x_t[:num_images, ...].cpu()#.permute(0,1,3,2)
-        for img_index in range(num_images):
-            normal_info_ = normal_info[img_index]
-            if normal_info_ == 1:
-                is_normal = 'normal'
-            else :
-                is_normal = 'abnormal'
-            real = real_images[img_index,...].squeeze()
-            real= real.unsqueeze(0)
-            real = torch_transforms.ToPILImage()(real)
-            #sample = sample_images[img_index,...].squeeze()
-            #sample = sample.unsqueeze(0)
-            #sample = torch_transforms.ToPILImage()(sample)
-            pred = pred_images[img_index,...].squeeze()
-            pred = pred.unsqueeze(0)
-            pred = torch_transforms.ToPILImage()(pred)
-            new_image = PIL.Image.new('L', (2 * real.size[0], real.size[1]),250)
-            new_image.paste(real, (0, 0))
-            #new_image.paste(sample, (real.size[0], 0))
-            new_image.paste(pred, (real.size[0], 0))
-            new_image.save(os.path.join(image_save_dir, f'real_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
-            loading_image = wandb.Image(new_image,
-                                        caption=f"(real-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
-            wandb.log({"inference": loading_image})
+                                     torch.Tensor([t]).repeat(x.shape[0],).long().to(x.device))
+                    x_t = scheduler.step(model_output=noise_pred,
+                                         timestep=int(t),
+                                         sample=x_t,
+                                         return_dict=True)["prev_sample"]
+
+            # 4) what is sample_p do ?
+            real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
+            #sample_images = temp["prev_sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
+            pred_images = x_t[:num_images, ...].cpu()#.permute(0,1,3,2)
+            for img_index in range(num_images):
+                normal_info_ = normal_info[img_index]
+                if normal_info_ == 1:
+                    is_normal = 'normal'
+                else :
+                    is_normal = 'abnormal'
+                real = real_images[img_index,...].squeeze()
+                real= real.unsqueeze(0)
+                real = torch_transforms.ToPILImage()(real)
+                #sample = sample_images[img_index,...].squeeze()
+                #sample = sample.unsqueeze(0)
+                #sample = torch_transforms.ToPILImage()(sample)
+                pred = pred_images[img_index,...].squeeze()
+                pred = pred.unsqueeze(0)
+                pred = torch_transforms.ToPILImage()(pred)
+                new_image = PIL.Image.new('L', (2 * real.size[0], real.size[1]),250)
+                new_image.paste(real, (0, 0))
+                #new_image.paste(sample, (real.size[0], 0))
+                new_image.paste(pred, (real.size[0], 0))
+                new_image.save(os.path.join(image_save_dir, f'real_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
+                loading_image = wandb.Image(new_image,
+                                            caption=f"(real-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
+                wandb.log({"inference": loading_image})
 def main(args) :
 
     print(f'\n step 1. setting')
@@ -160,17 +160,9 @@ def main(args) :
                               beta_start = 0.0001,
                               beta_end = 0.02,
                               beta_schedule = "linear",
+                              variance_type = 'fixed_small_log',
                               steps_offset = 1,)
 
-    # (3) scaheduler
-    """
-    diffusion = GaussianDiffusionModel([w, h],  # [128, 128]
-                                       betas,  # 1
-                                       img_channels=in_channels,
-                                       loss_type=args.loss_type,  # l2
-                                       loss_weight=args.loss_weight,  # none
-                                       noise='simplex' )  # 1
-    """
     print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
 

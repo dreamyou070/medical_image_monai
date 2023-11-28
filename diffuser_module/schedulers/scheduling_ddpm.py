@@ -29,27 +29,13 @@ from .scheduling_utils import KarrasDiffusionSchedulers, SchedulerMixin
 
 @dataclass
 class DDPMSchedulerOutput(BaseOutput):
-    """
-    Output class for the scheduler's `step` function output.
-
-    Args:
-        prev_sample (`torch.FloatTensor` of shape `(batch_size, num_channels, height, width)` for images):
-            Computed sample `(x_{t-1})` of previous timestep. `prev_sample` should be used as next model input in the
-            denoising loop.
-        pred_original_sample (`torch.FloatTensor` of shape `(batch_size, num_channels, height, width)` for images):
-            The predicted denoised sample `(x_{0})` based on the model output from the current timestep.
-            `pred_original_sample` can be used to preview progress or for guidance.
-    """
-
     prev_sample: torch.FloatTensor
     pred_original_sample: Optional[torch.FloatTensor] = None
 
 
-def betas_for_alpha_bar(
-    num_diffusion_timesteps,
-    max_beta=0.999,
-    alpha_transform_type="cosine",
-):
+def betas_for_alpha_bar(num_diffusion_timesteps,
+                        max_beta=0.999,
+                        alpha_transform_type="cosine",):
     """
     Create a beta schedule that discretizes the given alpha_t_bar function, which defines the cumulative product of
     (1-beta) over time from t = [0,1].
@@ -107,7 +93,8 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
             The beta schedule, a mapping from a beta range to a sequence of betas for stepping the model. Choose from
             `linear`, `scaled_linear`, or `squaredcos_cap_v2`.
         variance_type (`str`, defaults to `"fixed_small"`):
-            Clip the variance when adding noise to the denoised sample. Choose from `fixed_small`, `fixed_small_log`,
+            Clip the variance when adding noise to the denoised sample.
+            Choose from `fixed_small`, `fixed_small_log`,
             `fixed_large`, `fixed_large_log`, `learned` or `learned_range`.
         clip_sample (`bool`, defaults to `True`):
             Clip the predicted sample for numerical stability.
@@ -383,14 +370,12 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
 
         """
         t = timestep
-
         prev_t = self.previous_timestep(t)
 
         if model_output.shape[1] == sample.shape[1] * 2 and self.variance_type in ["learned", "learned_range"]:
             model_output, predicted_variance = torch.split(model_output, sample.shape[1], dim=1)
         else:
             predicted_variance = None
-
         # 1. compute alphas, betas
         alpha_prod_t = self.alphas_cumprod[t]
         alpha_prod_t_prev = self.alphas_cumprod[prev_t] if prev_t >= 0 else self.one
@@ -410,8 +395,7 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         else:
             raise ValueError(
                 f"prediction_type given as {self.config.prediction_type} must be one of `epsilon`, `sample` or"
-                " `v_prediction`  for the DDPMScheduler."
-            )
+                " `v_prediction`  for the DDPMScheduler.")
 
         # 3. Clip or threshold "predicted x_0"
         if self.config.thresholding:
@@ -434,9 +418,9 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         variance = 0
         if t > 0:
             device = model_output.device
-            variance_noise = randn_tensor(
-                model_output.shape, generator=generator, device=device, dtype=model_output.dtype
-            )
+            variance_noise = randn_tensor(model_output.shape,
+                                          generator=generator,
+                                          device=device, dtype=model_output.dtype)
             if self.variance_type == "fixed_small_log":
                 variance = self._get_variance(t, predicted_variance=predicted_variance) * variance_noise
             elif self.variance_type == "learned_range":
@@ -450,7 +434,8 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         if not return_dict:
             return (pred_prev_sample,)
 
-        return DDPMSchedulerOutput(prev_sample=pred_prev_sample, pred_original_sample=pred_original_sample)
+        return DDPMSchedulerOutput(prev_sample=pred_prev_sample,
+                                   pred_original_sample=pred_original_sample)
 
     def add_noise(
         self,
