@@ -321,6 +321,7 @@ class GaussianDiffusionModel:
         posterior_var = extract(self.posterior_variance, t, x_t.shape, x_t.device)
         posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
         return posterior_mean, posterior_var, posterior_log_var_clipped
+
     def sample_t_with_weights(self, b_size, device):
         p = self.weights / np.sum(self.weights)
         indices_np = np.random.choice(len(p), size=b_size, p=p)
@@ -368,10 +369,16 @@ class GaussianDiffusionModel:
         return {"sample": sample, "pred_x_0": out["pred_x_0"]}
 
     def step(self, model, noise_pred, x_t, t, denoise_fn="gauss"):
-        out = self.p_mean_variance(model, x_t, t)
-        sample = out["mean"] + torch.exp(0.5 * out["log_variance"]) * noise_pred
-        return sample
-
+        pred_original_sample = self.p_mean_variance(model, x_t, t, noise_pred)
+        pred_original_sample_coeff = extract(self.posterior_mean_coef1, t, x_t.shape, x_t.device)
+        current_sample_coeff = extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device)
+        pred_prev_sample = pred_original_sample_coeff * pred_original_sample + current_sample_coeff * x_t
+        posterior_var = 0
+        if t > 0:
+            posterior_var = np.log(extract(self.posterior_variance, t, x_t.shape, x_t.device))
+        pred_prev_sample = pred_prev_sample + posterior_var * noise_pred
+        return pred_prev_sample
+    
     def dental_forward_backward(self,
                                 model,
                                 x,
