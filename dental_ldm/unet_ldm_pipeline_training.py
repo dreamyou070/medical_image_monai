@@ -58,8 +58,15 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
     normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
     mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
     with torch.no_grad():
-        latent = vae.encode(x).latent_dist.mode()  # [Batch, 4, 32, 32]
-        latent = latent * scale_factor
+        latent_dist = vae.encode(x).latent_dist
+        if args.sample_posterior:
+            latent = latent_dist.sample()
+            mask_latent = vae.encode(mask_info).latent_dist.mode()  # [Batch, 4, 32, 32]
+        else:
+            latent = latent_dist.mode()
+            mask_latent = vae.encode(mask_info).latent_dist.mode()  # [Batch, 4, 32, 32]
+        # [Batch, 4, 32, 32]
+        latent = latent * vae.config.scaling_factor
     # 2) select random int
     b_size = latent.shape[0]
     t = torch.randint(args.sample_distance - 1, args.sample_distance, (b_size,), device=device).long()
@@ -203,15 +210,22 @@ def main(args) :
             b_size = images.shape[0]
             if b_size > 0:
                 with torch.no_grad():
-                    latent = vae.encode(images).latent_dist.mode() # [Batch, 4, 32, 32]
+                    latent_dist = vae.encode(images).latent_dist
+                    if args.sample_posterior :
+                        latent = latent_dist.sample()
+                        mask_latent = vae.encode(mask_info).latent_dist.mode()  # [Batch, 4, 32, 32]
+                    else :
+                        latent = latent_dist.mode()
+                        mask_latent = vae.encode(mask_info).latent_dist.mode()  # [Batch, 4, 32, 32]
+                    # [Batch, 4, 32, 32]
                     latent = latent * vae.config.scaling_factor
-                    mask_latent = vae.encode(mask_infoages).latent_dist.mode() # [Batch, 4, 32, 32]
                 # 2) t
                 timesteps = torch.randint(0, args.sample_distance,(b_size,),device=device)
                 # 3) noise
                 noise = torch.randn_like(latent).to(device)
                 # 4) x_t
-                noisy_samples = scheduler.add_noise(original_samples = latent, noise = noise,timesteps = timesteps,)
+                noisy_samples = scheduler.add_noise(original_samples = latent,
+                                                    noise = noise,timesteps = timesteps,)
                 # 5) unet inference
                 noise_pred = pipeline.unet(noisy_samples,timesteps).sample
                 target = noise
@@ -301,7 +315,8 @@ if __name__ == '__main__':
     parser.add_argument('--n_epochs', type=int, default=3000)
     parser.add_argument('--only_normal_training', action='store_true')
     parser.add_argument('--sample_distance', type=int, default=150)
-    parser.add_argument('--use_simplex_noise', action='store_true')
+    parser.add_argument('--sample_posterior', action='store_true')
+    #parser.add_argument('--use_simplex_noise', action='store_true')
     # --------------------------------------------------------------------------------------------------------------
     parser.add_argument('--masked_loss_latent', action='store_true')
     parser.add_argument('--infonce_loss', action='store_true')
