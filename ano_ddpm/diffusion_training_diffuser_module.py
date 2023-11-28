@@ -155,7 +155,7 @@ def main(args) :
     # (2) scaheduler
     from diffuser_module.schedulers import DDPMScheduler
     scheduler = DDPMScheduler(num_train_timesteps = 1000,
-                              beta_star = 0.0001,
+                              beta_start = 0.0001,
                               beta_end = 0.02,
                               beta_schedule = "linear",
                               steps_offset = 1,)
@@ -244,6 +244,7 @@ def main(args) :
                                              ema=ema, args=args, is_train_data=True, device = device)
         # ----------------------------------------------------------------------------------------- #
         # vlb loss calculating
+        """
         print(f'vlb loss calculating ... ')
         if epoch % args.vlb_freq == 0:
             for i, test_data in enumerate(test_dataset_loader) :
@@ -299,6 +300,7 @@ def main(args) :
                         wandb.log({"abnormal portion of *ab*normal sample kl" : ab_portion_ab_whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
                     # collecting total vlb in deque collections
+        """
         if epoch % args.model_save_freq == 0 and epoch >= 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
