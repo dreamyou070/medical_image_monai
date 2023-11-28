@@ -221,7 +221,8 @@ class GaussianDiffusionModel:
         self.posterior_variance = (betas * (1.0 - self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod))
         # log calculation clipped because the posterior variance is 0 at the
         # beginning of the diffusion chain.
-        self.posterior_log_variance_clipped = np.log(np.append(self.posterior_variance[1], self.posterior_variance[1:]))
+        self.posterior_log_variance_clipped = np.log(np.append(self.posterior_variance[1],
+                                                               self.posterior_variance[1:]))
         self.posterior_mean_coef1 = ( betas * np.sqrt(self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod))
         self.posterior_mean_coef2 = ((1.0 - self.alphas_cumprod_prev) * np.sqrt(alphas) / (1.0 - self.alphas_cumprod))
 
@@ -373,10 +374,10 @@ class GaussianDiffusionModel:
         pred_original_sample_coeff = extract(self.posterior_mean_coef1, t, x_t.shape, x_t.device)
         current_sample_coeff = extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device)
         pred_prev_sample = pred_original_sample_coeff * pred_original_sample + current_sample_coeff * x_t
-        posterior_var = 0
+        posterior_log_var_clipped = 0
         if t > 0:
-            posterior_var = np.log(extract(self.posterior_variance, t, x_t.shape, x_t.device))
-        pred_prev_sample = pred_prev_sample + posterior_var * noise_pred
+            posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
+        pred_prev_sample = pred_prev_sample + posterior_log_var_clipped * noise_pred
         return pred_prev_sample
 
     def dental_forward_backward(self,
