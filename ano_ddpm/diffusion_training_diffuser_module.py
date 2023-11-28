@@ -71,7 +71,7 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
             # 3) q sampling = noising & p sampling = denoising
             x_t = scheduler.add_noise(x,noise,t)
             estimate_noise = ema(x_t, t)
-            temp = scheduler.step(estimate_noise, t, x_t, return_dict = True)
+            temp = scheduler.step(estimate_noise, t.to(device), x_t, return_dict = True)
         # 4) what is sample_p do ?
         real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
         sample_images = temp["prev_sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
