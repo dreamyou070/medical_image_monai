@@ -35,6 +35,7 @@ def main(args) :
     experiment_dir = args.experiment_dir
     os.makedirs(experiment_dir, exist_ok=True)
     image_save_dir = os.path.join(experiment_dir, 'inference_images')
+    print(f'  - image_save_dir : {image_save_dir}')
     os.makedirs(image_save_dir, exist_ok=True)
 
     print(f'\n step 2. dataset and dataloatder')
@@ -93,32 +94,32 @@ def main(args) :
                     noise_pred = model(x_t, t)
                     x_t = diffusion.step(model, noise_pred, x_t, t)
                 final_pred = x_t
-                num_images = pred_images.shape[0]
-                for img_index in range(num_images):
-                    normal_info_ = normal_info[img_index]
-                    if normal_info_ == 1:
-                        is_normal = 'normal'
-                    else:
-                        is_normal = 'abnormal'
-                    # 1) one step inference
-                    real = pred_images[img_index, ...].squeeze()
-                    real = real.unsqueeze(0)
-                    real = torch_transforms.ToPILImage()(real)
+            num_images = pred_images.shape[0]
+            for img_index in range(num_images):
+                normal_info_ = normal_info[img_index]
+                if normal_info_ == 1:
+                    is_normal = 'normal'
+                else:
+                    is_normal = 'abnormal'
+                # 1) one step inference
+                real = pred_images[img_index, ...].squeeze()
+                real = real.unsqueeze(0)
+                real = torch_transforms.ToPILImage()(real)
 
-                    # 2) one step inference
-                    sample = final_pred[img_index, ...].squeeze()
-                    sample = sample.unsqueeze(0)
-                    sample = torch_transforms.ToPILImage()(sample)
+                # 2) one step inference
+                sample = final_pred[img_index, ...].squeeze()
+                sample = sample.unsqueeze(0)
+                sample = torch_transforms.ToPILImage()(sample)
 
-                    new_image = PIL.Image.new('L', (2 * real.size[0], real.size[1]), 250)
-                    new_image.paste(real, (0, 0))
-                    new_image.paste(sample, (real.size[0], 0))
+                new_image = PIL.Image.new('L', (2 * real.size[0], real.size[1]), 250)
+                new_image.paste(real, (0, 0))
+                new_image.paste(sample, (real.size[0], 0))
 
-                    new_image.save(os.path.join(image_save_dir,
-                                                f'once_stepping_{train_data}_{is_normal}_{img_index}.png'))
-                    loading_image = wandb.Image(new_image,
-                                                caption=f"once_stepping_{train_data}_{is_normal}_{img_index}")
-                    wandb.log({"inference": loading_image})
+                new_image.save(os.path.join(image_save_dir,
+                                            f'once_stepping_{train_data}_{is_normal}_{img_index}.png'))
+                loading_image = wandb.Image(new_image,
+                                            caption=f"once_stepping_{train_data}_{is_normal}_{img_index}")
+                wandb.log({"inference": loading_image})
 
 
 
