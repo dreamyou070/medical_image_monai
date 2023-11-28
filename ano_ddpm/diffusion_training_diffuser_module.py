@@ -75,7 +75,7 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
                                           timestep=int(t),
                                           sample=x_t,
                                           return_dict=True)
-                    x_t = temp["pred_xstart"]
+                    x_t = temp["prev_sample"]
         # 4) what is sample_p do ?
         real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
         #sample_images = temp["prev_sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
