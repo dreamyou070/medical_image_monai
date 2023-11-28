@@ -61,24 +61,24 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
         x = test_data["image_info"].to(device)  # batch, channel, w, h
         normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
-
-        #t = torch.randint(args.sample_distance, args.sample_distance, (x.shape[0],), device=x.device)
-        t = torch.Tensor([args.sample_distance]).repeat(x.shape[0], ).long().to(x.device)
         noise = torch.rand_like(x).float().to(x.device)
         # 2) select random int
+        x_t = scheduler.add_noise(x, noise,
+                                  torch.Tensor([args.sample_distance]).repeat(x.shape[0], ).long().to(x.device))
         with torch.no_grad():
             # 3) q sampling = noising & p sampling = denoising
-            x_t = scheduler.add_noise(x,noise,t)
-            estimate_noise = ema(x_t, t)
-            temp = scheduler.step(model_output = estimate_noise,
-                                  timestep = int(t[0].item()),
-                                  sample=x_t,
-                                  return_dict = True)
-
+            for t in range(args.sample_distance, -1, -1):
+                if t > 0 :
+                    noise_pred = ema(x_t, t)
+                    temp = scheduler.step(model_output=noise_pred,
+                                          timestep=int(t),
+                                          sample=x_t,
+                                          return_dict=True)
+                    x_t = temp["pred_xstart"]
         # 4) what is sample_p do ?
         real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
-        sample_images = temp["prev_sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
-        pred_images = temp["pred_original_sample"][:num_images, ...].cpu()#.permute(0,1,3,2)
+        #sample_images = temp["prev_sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
+        pred_images = x_t[:num_images, ...].cpu()#.permute(0,1,3,2)
         for img_index in range(num_images):
             normal_info_ = normal_info[img_index]
             if normal_info_ == 1:
@@ -88,19 +88,19 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
             real = real_images[img_index,...].squeeze()
             real= real.unsqueeze(0)
             real = torch_transforms.ToPILImage()(real)
-            sample = sample_images[img_index,...].squeeze()
-            sample = sample.unsqueeze(0)
-            sample = torch_transforms.ToPILImage()(sample)
+            #sample = sample_images[img_index,...].squeeze()
+            #sample = sample.unsqueeze(0)
+            #sample = torch_transforms.ToPILImage()(sample)
             pred = pred_images[img_index,...].squeeze()
             pred = pred.unsqueeze(0)
             pred = torch_transforms.ToPILImage()(pred)
-            new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
+            new_image = PIL.Image.new('L', (2 * real.size[0], real.size[1]),250)
             new_image.paste(real, (0, 0))
-            new_image.paste(sample, (real.size[0], 0))
-            new_image.paste(pred, (real.size[0]+sample.size[0], 0))
-            new_image.save(os.path.join(image_save_dir, f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
+            #new_image.paste(sample, (real.size[0], 0))
+            new_image.paste(pred, (real.size[0], 0))
+            new_image.save(os.path.join(image_save_dir, f'real_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
             loading_image = wandb.Image(new_image,
-                                        caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
+                                        caption=f"(real-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
             wandb.log({"inference": loading_image})
 def main(args) :
 
