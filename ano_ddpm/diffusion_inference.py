@@ -9,6 +9,8 @@ from data_module import SYDataLoader, SYDataset
 from UNet import UNetModel, update_ema_params
 import torch.multiprocessing
 from setproctitle import *
+import torchvision.transforms as torch_transforms
+import PIL
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
@@ -32,10 +34,8 @@ def main(args) :
     print(f' (1.3) saving configuration')
     experiment_dir = args.experiment_dir
     os.makedirs(experiment_dir, exist_ok=True)
-    var_args = vars(args)
-    with open(os.path.join(experiment_dir, "config.txt"), "w") as f:
-        for key in sorted(var_args.keys()):
-            f.write(f"{key}: {var_args[key]}\n")
+    image_save_dir = os.path.join(experiment_dir, 'inference_images')
+    os.makedirs(image_save_dir, exist_ok=True)
 
     print(f'\n step 2. dataset and dataloatder')
     w, h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
@@ -73,6 +73,7 @@ def main(args) :
     diffusion = GaussianDiffusionModel([w, h],betas, img_channels=in_channels,loss_type=args.loss_type,loss_weight=args.loss_weight, noise='simplex' )  # 1
 
     print(f'\n step 4. inference')
+    train_data = 'train_data'
     for i, data in enumerate(training_dataset_loader):
         if i == 0:
             x_0 = data["image_info"].to(device)  # batch, channel, w, h
@@ -92,8 +93,32 @@ def main(args) :
                     noise_pred = model(x_t, t)
                     x_t = diffusion.step(model, noise_pred, x_t, t)
                 final_pred = x_t
-                print(f'pred_images : {pred_images.shape} | final_pred.shape : {final_pred.shape}')
-                print('every step inferencing ...')
+                num_images = pred_images.shape[0]
+                for img_index in range(num_images):
+                    normal_info_ = normal_info[img_index]
+                    if normal_info_ == 1:
+                        is_normal = 'normal'
+                    else:
+                        is_normal = 'abnormal'
+                    # 1) one step inference
+                    real = pred_images[img_index, ...].squeeze()
+                    real = real.unsqueeze(0)
+                    real = torch_transforms.ToPILImage()(real)
+
+                    # 2) one step inference
+                    sample = final_pred[img_index, ...].squeeze()
+                    sample = sample.unsqueeze(0)
+                    sample = torch_transforms.ToPILImage()(sample)
+
+                    new_image = PIL.Image.new('L', (2 * real.size[0], real.size[1]), 250)
+                    new_image.paste(real, (0, 0))
+                    new_image.paste(sample, (real.size[0], 0))
+
+                    new_image.save(os.path.join(image_save_dir,
+                                                f'once_stepping_{train_data}_{is_normal}_{img_index}.png'))
+                    loading_image = wandb.Image(new_image,
+                                                caption=f"once_stepping_{train_data}_{is_normal}_{img_index}")
+                    wandb.log({"inference": loading_image})
 
 
 
