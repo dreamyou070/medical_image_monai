@@ -64,6 +64,7 @@ def main(args) :
                       in_channels=in_channels)
     unet_pretrained_dir = args.unet_pretrained_dir
     unet_state = torch.load(unet_pretrained_dir)['model_state_dict']
+    print('loading on cpu')
     model.load_state_dict(unet_state, map_location='cpu' )
     model.to(device)
     model.eval()
