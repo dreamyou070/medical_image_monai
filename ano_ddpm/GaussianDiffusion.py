@@ -369,7 +369,7 @@ class GaussianDiffusionModel:
         return {"sample": sample, "pred_x_0": out["pred_x_0"]}
 
     def step(self, model, noise_pred, x_t, t, denoise_fn="gauss"):
-        pred_original_sample = self.p_mean_variance(model, x_t, t, noise_pred)
+        pred_original_sample = self.p_mean_variance(model, x_t, t, noise_pred)['pred_x_0']
         pred_original_sample_coeff = extract(self.posterior_mean_coef1, t, x_t.shape, x_t.device)
         current_sample_coeff = extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device)
         pred_prev_sample = pred_original_sample_coeff * pred_original_sample + current_sample_coeff * x_t
