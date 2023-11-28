@@ -201,8 +201,8 @@ def main(args) :
         progress_bar.set_description(f"Epoch {epoch}")
         for step, batch in progress_bar:
             images = batch["image_info"].to(device)
-            mask_info = batch["mask"].unsqueeze(dim=1).to(device)
-            small_mask_info = batch['small_mask'].unsqueeze(dim=1).to(device)
+            mask_info = batch["mask"].unsqueeze(dim=1).to(device).to(images.dtype)
+            small_mask_info = batch['small_mask'].unsqueeze(dim=1).to(device).to(images.dtype)
             normal_info = batch['normal']  # if 1 = normal, 0 = abnormal
             if args.only_normal_training:
                 images = images[normal_info == 1]
