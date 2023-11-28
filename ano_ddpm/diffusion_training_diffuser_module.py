@@ -63,10 +63,9 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
 
         #t = torch.randint(args.sample_distance, args.sample_distance, (x.shape[0],), device=x.device)
-        t = torch.Tensor([args.sample_distance]).repeat(64, ).to(x.dtype)
+        t = torch.Tensor([args.sample_distance]).repeat(64, ).long().to(x.device)
         noise = torch.rand_like(x).float().to(x.device)
         # 2) select random int
-
         with torch.no_grad():
             # 3) q sampling = noising & p sampling = denoising
             x_t = scheduler.add_noise(x,noise,t)
