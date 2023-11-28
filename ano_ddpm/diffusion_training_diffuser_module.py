@@ -70,9 +70,9 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
             # 3) q sampling = noising & p sampling = denoising
             x_t = scheduler.add_noise(x,noise,t)
             estimate_noise = ema(x_t, t)
-            temp = scheduler.step(estimate_noise,
-                                  t,
-                                  x_t,
+            temp = scheduler.step(model_output = estimate_noise,
+                                  timestep = t,
+                                  sample=x_t,
                                   return_dict = True)
 
         # 4) what is sample_p do ?
