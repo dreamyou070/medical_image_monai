@@ -109,12 +109,12 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 
 
 def main(args) :
-
     print(f'\n step 1. setting')
     if args.process_title:
         setproctitle(args.process_title)
     else:
         setproctitle('parksooyeon')
+
     print(f' (1.1) wandb')
     wandb.login(key=args.wandb_api_key)
     wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
@@ -132,40 +132,22 @@ def main(args) :
             f.write(f"{key}: {var_args[key]}\n")
 
     print(f'\n step 2. dataset and dataloatder')
-    w,h = int(args.img_size.split(',')[0].strip()),int(args.img_size.split(',')[1].strip())
-    train_transforms = transforms.Compose([#transforms.ToPILImage(),
-                                           transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
-                                           transforms.ToTensor(), # pil image to tensor (
-                                           #transforms.Normalize((0.5), (0.5))
-        ])
-    train_ds = SYDataset(data_folder=args.train_data_folder,
-                         transform=train_transforms,
-                         base_mask_dir=args.train_mask_dir,
-                         image_size=(w,h))
-    training_dataset_loader = SYDataLoader(train_ds,
-                                           batch_size=args.batch_size,
-                                           shuffle=True,
-                                           num_workers=4,
-                                           persistent_workers=True)
-    check_data = first(training_dataset_loader)
+    w, h = int(args.img_size.split(',')[0].strip()), int(args.img_size.split(',')[1].strip())
+    train_transforms = transforms.Compose([transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
+                                           transforms.ToTensor()])
+    train_ds = SYDataset(data_folder=args.train_data_folder, transform=train_transforms,
+                         base_mask_dir=args.train_mask_dir, image_size=(w, h))
+    training_dataset_loader = SYDataLoader(train_ds, batch_size=args.batch_size, shuffle=True,
+                                           num_workers=4, persistent_workers=True)
     # ## Prepare validation set data loader
-    val_transforms = transforms.Compose([#transforms.ToPILImage(),
-                                           transforms.Resize((w,h), transforms.InterpolationMode.BILINEAR),
-                                           transforms.ToTensor(), # pil image to tensor (
-                                           #transforms.Normalize((0.5), (0.5))
-        ])
-    val_ds = SYDataset(data_folder=args.val_data_folder,
-                         transform=val_transforms,
-                         base_mask_dir=args.val_mask_dir,image_size=(w,h))
-    test_dataset_loader = SYDataLoader(val_ds,
-                                       batch_size=args.batch_size,
-                                       shuffle=False,
-                                       num_workers=4,
-                                       persistent_workers=True)
+    val_transforms = transforms.Compose([transforms.Resize((w, h), transforms.InterpolationMode.BILINEAR),
+                                         transforms.ToTensor()])
+    val_ds = SYDataset(data_folder=args.val_data_folder, transform=val_transforms,
+                       base_mask_dir=args.val_mask_dir, image_size=(w, h))
+    test_dataset_loader = SYDataLoader(val_ds, batch_size=args.batch_size, shuffle=False,
+                                       num_workers=4, persistent_workers=True)
 
-    print(f'\n step 3. data check')
-
-    print(f'\n step 4. model')
+    print(f'\n step 3. model')
     in_channels = args.in_channels
     model = UNetModel(img_size=int(w),
                       base_channels=args.base_channels,
@@ -324,7 +306,6 @@ def main(args) :
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-
     # step 1. wandb login
     parser.add_argument("--process_title", type=str, default='parksooyeon')
     parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
@@ -333,7 +314,7 @@ if __name__ == '__main__':
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", type=str)
     parser.add_argument('--experiment_dir', type=str,
-                        default = f'/data7/sooyeon/medical_image/anoddpm_result/20231119_dental_test')
+                        default=f'/data7/sooyeon/medical_image/anoddpm_result/20231119_dental_test')
 
     # step 2. dataset and dataloatder
     parser.add_argument('--train_data_folder', type=str)
@@ -350,6 +331,7 @@ if __name__ == '__main__':
     parser.add_argument('--dropout', type=float, default = 0.0)
     parser.add_argument('--num_heads', type=int, default = 2)
     parser.add_argument('--num_head_channels', type=int, default = -1)
+
     # (2) scaheduler
     parser.add_argument('--timestep', type=int, default=1000)
     parser.add_argument('--beta_schedule', type=str, default='linear')
