@@ -378,12 +378,12 @@ class GaussianDiffusionModel:
         #current_sample_coeff = extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device)
         #pred_prev_sample = pred_original_sample_coeff * pred_original_sample + current_sample_coeff * x_t
         #posterior_log_var_clipped = 0
-        pred_prev_sample = out['mean']
-        if t > 0:
-            nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
-            pred_prev_sample += nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise_pred
+        #pred_prev_sample = out['mean']
+        #if t > 0:
+        #    nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
+        #    pred_prev_sample += nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise_pred
             #posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
-        return pred_prev_sample
+        return out['sample']#pred_prev_sample
 
     def dental_forward_backward(self,
                                 model,
