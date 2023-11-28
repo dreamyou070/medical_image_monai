@@ -55,8 +55,8 @@ def training_outputs(args, test_data, scheduler, is_train_data, device, model, v
 
     # 1) make random noise
     x = test_data["image_info"].to(device)  # batch, channel, w, h
-    normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
-    mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
+    normal_info = test_data['normal'].to(x.dtype).to(device)  # if 1 = normal, 0 = abnormal
+    mask_info = test_data['mask'].to(x.dtype).to(device)  # if 1 = normal, 0 = abnormal
     with torch.no_grad():
         latent_dist = vae.encode(x).latent_dist
         if args.sample_posterior:
