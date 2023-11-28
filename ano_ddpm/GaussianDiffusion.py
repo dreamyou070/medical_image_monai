@@ -378,7 +378,7 @@ class GaussianDiffusionModel:
             posterior_var = np.log(extract(self.posterior_variance, t, x_t.shape, x_t.device))
         pred_prev_sample = pred_prev_sample + posterior_var * noise_pred
         return pred_prev_sample
-    
+
     def dental_forward_backward(self,
                                 model,
                                 x,
