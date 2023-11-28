@@ -213,10 +213,10 @@ def main(args) :
                     latent_dist = vae.encode(images).latent_dist
                     if args.sample_posterior :
                         latent = latent_dist.sample()
-                        mask_latent = vae.encode(mask_info).latent_dist.mode()  # [Batch, 4, 32, 32]
+                        mask_latent = vae.encode(mask_info.to(device)).latent_dist.mode()  # [Batch, 4, 32, 32]
                     else :
                         latent = latent_dist.mode()
-                        mask_latent = vae.encode(mask_info).latent_dist.mode()  # [Batch, 4, 32, 32]
+                        mask_latent = vae.encode(mask_info.to(device)).latent_dist.mode()  # [Batch, 4, 32, 32]
                     # [Batch, 4, 32, 32]
                     latent = latent * vae.config.scaling_factor
                 # 2) t
