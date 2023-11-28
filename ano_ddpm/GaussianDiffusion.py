@@ -1,13 +1,10 @@
-# https://github.com/openai/guided-diffusion/tree/27c20a8fab9cb472df5d6bdd6c8d11c8f430b924
 from __future__ import annotations
 import random
 import matplotlib.pyplot as plt
 import numpy as np
-
 import evaluation
 from helpers import *
 from simplex import Simplex_CLASS
-
 
 def get_beta_schedule(num_diffusion_steps, name="cosine"):
     betas = []
@@ -38,23 +35,19 @@ def get_beta_schedule(num_diffusion_steps, name="cosine"):
         raise NotImplementedError(f"unknown beta schedule: {name}")
     return betas
 
-
 def extract(arr, timesteps, broadcast_shape, device):
     res = torch.from_numpy(arr).to(device=timesteps.device)[timesteps].float()
     while len(res.shape) < len(broadcast_shape):
         res = res[..., None]
     return res.expand(broadcast_shape).to(device)
 
-
 def mean_flat(tensor):
     return torch.mean(tensor,
                       dim=list(range(1, len(tensor.shape))))
 
-
 def normal_kl(mean1, logvar1, mean2, logvar2):
     """
     Compute the KL Divergence between two gaussians
-
     :param mean1:
     :param logvar1:
     :param mean2:
@@ -161,12 +154,10 @@ class DDPMVarianceType():
     Valid names for DDPM Scheduler's `variance_type` argument. Options to clip the variance used when adding noise
     to the denoised sample.
     """
-
     FIXED_SMALL = "fixed_small"
     FIXED_LARGE = "fixed_large"
     LEARNED = "learned"
     LEARNED_RANGE = "learned_range"
-
 
 def random_noise(Simplex_instance, x, t):
     param = random.choice(["gauss", "simplex"])
@@ -176,7 +167,6 @@ def random_noise(Simplex_instance, x, t):
         return generate_simplex_noise(Simplex_instance, x, t)
 
 class DDPMPredictionType():
-
     EPSILON = "epsilon"
     SAMPLE = "sample"
     V_PREDICTION = "v_prediction"
@@ -198,20 +188,12 @@ class GaussianDiffusionModel:
         else:
             self.simplex = Simplex_CLASS()
             if noise == "simplex_randParam":
-                self.noise_fn = lambda x, t: generate_simplex_noise(self.simplex, x, t, True,
-                                                                    octave=6,
-                                                                    frequency=64,
-                                                                    in_channels=img_channels)
+                self.noise_fn = lambda x, t: generate_simplex_noise(self.simplex, x, t, True, octave=6, frequency=64, in_channels=img_channels)
             elif noise == "random":
                 self.noise_fn = lambda x, t: random_noise(self.simplex, x, t)
-
             else: # simplex
-                self.noise_fn = lambda x, t, octave, frequency, : generate_simplex_noise(self.simplex,             # Simplex_CLASS()
-                                                                    x, t, False,
-                                                                    octave=octave,
-                                                                    frequency = frequency,
-                                                                    in_channels=img_channels) # 1
-
+                self.noise_fn = lambda x, t, octave, frequency, : generate_simplex_noise(self.simplex, x, t, False, octave=octave,
+                                                                                         frequency = frequency, in_channels=img_channels) # 1
         self.img_size = img_size
         self.img_channels = img_channels
         self.loss_type = loss_type
@@ -229,8 +211,6 @@ class GaussianDiffusionModel:
 
         self.alphas_cumprod = np.cumprod(alphas, axis=0)
         self.alphas_cumprod_prev = np.append(1.0, self.alphas_cumprod[:-1])
-        # self.alphas_cumprod_next = np.append(self.alphas_cumprod[1:],0.0)
-        # calculations for diffusion q(x_t | x_{t-1}) and others
         self.sqrt_alphas_cumprod = np.sqrt(self.alphas_cumprod)
         self.sqrt_one_minus_alphas_cumprod = np.sqrt(1.0 - self.alphas_cumprod)
         self.log_one_minus_alphas_cumprod = np.log(1.0 - self.alphas_cumprod)
@@ -249,22 +229,21 @@ class GaussianDiffusionModel:
         self.variance_type = DDPMVarianceType.FIXED_LARGE
         self.clip_sample = clip_sample
 
-
+    def check_noise(self, args, x_0):
+        t = torch.randint(0, min(args.sample_distance, self.num_timesteps), (x_0.shape[0],), device=x_0.device)
+        noise = self.noise_fn(x_0, t).float()
+        first_noise = noise[0, ...]
+        return first_noise
 
     def _get_variance(self, timestep: int, predicted_variance: torch.Tensor | None = None) -> torch.Tensor:
-        """
-        Compute the variance of the posterior at timestep t.
-
+        """ original paper, (7) equation,  the variance of the posterior at timestep t.
         Args:
             timestep: current timestep.
             predicted_variance: variance predicted by the model.
-
         Returns:
-            Returns the variance
-        """
+            Returns the variance """
         alpha_prod_t = self.alphas_cumprod[timestep]
         alpha_prod_t_prev = self.alphas_cumprod[timestep - 1] if timestep > 0 else self.one
-
         # For t > 0, compute predicted variance βt (see formula (6) and (7) from https://arxiv.org/pdf/2006.11239.pdf)
         # and sample from it to get previous sample
         # x_{t-1} ~ N(pred_prev_sample, variance) == add variance to pred_sample
@@ -295,14 +274,10 @@ class GaussianDiffusionModel:
         else:
             t, weights = self.sample_t_with_weights(x_0.shape[0], x_0.device)
         loss, x_t, eps_t = self.calc_loss(model, x_0, t)
-        loss = ((loss["loss"] * weights).mean(), (loss, x_t, eps_t))
+        loss = ((loss["loss"] * weights).mean(),
+                (loss, x_t, eps_t))
         return loss
 
-    def check_noise(self, args, x_0):
-        t = torch.randint(0, min(args.sample_distance, self.num_timesteps), (x_0.shape[0],), device=x_0.device)
-        noise = self.noise_fn(x_0, t).float()
-        first_noise = noise[0, ...]
-        return first_noise
     def calc_loss(self, model, x_0, t):
         noise = self.noise_fn(x_0, t).float()
         x_t = self.sample_q(x_0, t, noise)
@@ -322,46 +297,30 @@ class GaussianDiffusionModel:
 
     # -----------------------------------------------------------------------------------------------------------------
     def sample_q(self, x_0, t, noise):
-        """
-            q (x_t | x_0 )
-            :param x_0:
-            :param t:
-            :param noise:
-            :return:
+        """ add noise , equation (4)  : q (x_t | x_0 )
+            :param x_0, :param t, :param noise,  :return:
+            self.sqrt_one_minus_alphas_cumprod = np.sqrt(1.0 - self.alphas_cumprod)
         """
         return (extract(self.sqrt_alphas_cumprod, t, x_0.shape, x_0.device) * x_0 +
                 extract(self.sqrt_one_minus_alphas_cumprod, t, x_0.shape, x_0.device) * noise)
 
     def q_mean_variance(self, x_0, t):
-        """
-        Get the distribution q(x_t | x_0).
-        :param x_start: the [N x C x ...] tensor of noiseless inputs.
-        :param t: the number of diffusion steps (minus 1). Here, 0 means one step.
-        :return: A tuple (mean, variance, log_variance), all of x_start's shape.
-        """
         mean = (extract(self.sqrt_alphas_cumprod, t, x_0.shape, x_0.device) * x_0 )
         variance = extract(1.0 - self.alphas_cumprod, t, x_0.shape, x_0.device)
         log_variance = extract(self.log_one_minus_alphas_cumprod, t, x_0.shape, x_0.device)
         return mean, variance, log_variance
 
     def q_posterior_mean_variance(self, x_0, x_t, t):
-
-        """
-        Compute the mean and variance of the diffusion posterior: q(x_{t-1} | x_t, x_0)
-        Original Paper, equation (12)
-        """
-
+        """  Original Paper, equation (7)
+        Compute the mean and variance of the diffusion posterior: q(x_{t-1} | x_t, x_0) """
         # mu (x_t,x_0) = \frac{\sqrt{alphacumprod prev} betas}{1-alphacumprod} *x_0
         # + \frac{\sqrt{alphas}(1-alphacumprod prev)}{ 1- alphacumprod} * x_t
         posterior_mean = (extract(self.posterior_mean_coef1, t, x_t.shape, x_t.device) * x_0
-                          + extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device) * x_t)
-
+                        + extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device) * x_t)
         # var = \frac{1-alphacumprod prev}{1-alphacumprod} * betas
         posterior_var = extract(self.posterior_variance, t, x_t.shape, x_t.device)
         posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
         return posterior_mean, posterior_var, posterior_log_var_clipped
-
-    # -----------------------------------------------------------------------------------------------------------------
     def sample_t_with_weights(self, b_size, device):
         p = self.weights / np.sum(self.weights)
         indices_np = np.random.choice(len(p), size=b_size, p=p)
@@ -369,25 +328,36 @@ class GaussianDiffusionModel:
         weights_np = 1 / len(p) * p[indices_np]
         weights = torch.from_numpy(weights_np).float().to(device)
         return indices, weights
-
-    # -----------------------------------------------------------------------------------------------------------------
     def predict_x_0_from_eps(self, x_t, t, eps):
-        return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t - extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape, x_t.device) * eps)
-
+        """ from equation (4), just equation trimming, eps is predicted noise from x_t by model """
+        return (extract(self.sqrt_recip_alphas_cumprod,  t, x_t.shape, x_t.device) * x_t -
+                extract(self.sqrt_recipm1_alphas_cumprod,t, x_t.shape, x_t.device) * eps)
     def predict_eps_from_x_0(self, x_t, t, pred_x_0):
+        """ from equation (4), just equation trimming -> this is not using model but just scheduler """
         return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t - pred_x_0) / extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape, x_t.device)
+    def p_mean_variance(self, model, x_t, t, estimate_noise=None):
+        # one step stepping #
+        """ Finds the mean & variance from N(x_{t-1}; mu_theta(x_t,t), sigma_theta (x_t,t)) : equation (1) """
+        if estimate_noise == None:
+            estimate_noise = model(x_t, t)
+        model_var = np.append(self.posterior_variance[1], self.betas[1:])
+        model_logvar = np.log(model_var)
+        model_var = extract(model_var, t, x_t.shape, x_t.device)
+        model_logvar = extract(model_logvar, t, x_t.shape, x_t.device)
+        pred_x_0 = self.predict_x_0_from_eps(x_t,t,estimate_noise).clamp(-1, 1)
+        model_mean, _, _ = self.q_posterior_mean_variance(pred_x_0, x_t, t)
+        return {"mean":model_mean, "variance":model_var, "log_variance": model_logvar,"pred_x_0":pred_x_0,}
 
-    # -----------------------------------------------------------------------------------------------------------------
+
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
+        """ equation (1) """
         out = self.p_mean_variance(model, x_t, t)
-        # noise = torch.randn_like(x_t)
         if type(denoise_fn) == str:
             if denoise_fn == "gauss":
                 noise = torch.randn_like(x_t)
             elif denoise_fn == "noise_fn":
                 noise = self.noise_fn(x_t, t).float()
             elif denoise_fn == "random":
-                # noise = random_noise(self.simplex, x_t, t).float()
                 noise = torch.randn_like(x_t)
             else:
                 noise = generate_simplex_noise(self.simplex, x_t, t, False, in_channels=self.img_channels).float()
@@ -397,87 +367,10 @@ class GaussianDiffusionModel:
         sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
         return {"sample": sample, "pred_x_0": out["pred_x_0"]}
 
-    def p_mean_variance(self, model, x_t, t, estimate_noise=None):
-        """ Finds the mean & variance from N(x_{t-1}; mu_theta(x_t,t), sigma_theta (x_t,t))
-        :param model:
-        :param x_t:
-        :param t:
-        :return: """
-        if estimate_noise == None:
-            estimate_noise = model(x_t, t)
-        model_var = np.append(self.posterior_variance[1], self.betas[1:])
-        model_logvar = np.log(model_var)
-        model_var = extract(model_var, t, x_t.shape, x_t.device)
-        model_logvar = extract(model_logvar, t, x_t.shape, x_t.device)
-
-        pred_x_0 = self.predict_x_0_from_eps(x_t, t, estimate_noise).clamp(-1, 1)
-
-        model_mean, _, _ = self.q_posterior_mean_variance(pred_x_0, x_t, t)
-        return {"mean":         model_mean,
-                "variance":     model_var,
-                "log_variance": model_logvar,
-                "pred_x_0":     pred_x_0,}
-
-    # -----------------------------------------------------------------------------------------------------------------
-    def step( self, model_output: torch.Tensor, timestep: int, sample: torch.Tensor, generator: torch.Generator | None = None
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        Predict the sample at the previous timestep by reversing the SDE. Core function to propagate the diffusion
-        process from the learned model outputs (most often the predicted noise).
-
-        Args:
-            model_output: direct output from learned diffusion model.
-            timestep: current discrete timestep in the diffusion chain.
-            sample: current instance of sample being created by diffusion process.
-            generator: random number generator.
-
-        Returns:
-            pred_prev_sample: Predicted previous sample
-        """
-        if model_output.shape[1] == sample.shape[1] * 2 and self.variance_type in ["learned", "learned_range"]:
-            model_output, predicted_variance = torch.split(model_output, sample.shape[1], dim=1)
-        else:
-            predicted_variance = None
-
-        # 1. compute alphas, betas
-        alpha_prod_t = self.alphas_cumprod[timestep]
-        alpha_prod_t_prev = self.alphas_cumprod[timestep - 1] if timestep > 0 else self.one
-        beta_prod_t = 1 - alpha_prod_t
-        beta_prod_t_prev = 1 - alpha_prod_t_prev
-
-        # 2. compute predicted original sample from predicted noise also called
-        # "predicted x_0" of formula (15) from https://arxiv.org/pdf/2006.11239.pdf
-        if self.prediction_type == DDPMPredictionType.EPSILON:
-            pred_original_sample = (sample - beta_prod_t ** (0.5) * model_output) / alpha_prod_t ** (0.5)
-        elif self.prediction_type == DDPMPredictionType.SAMPLE:
-            pred_original_sample = model_output
-        elif self.prediction_type == DDPMPredictionType.V_PREDICTION:
-            pred_original_sample = (alpha_prod_t**0.5) * sample - (beta_prod_t**0.5) * model_output
-
-        # 3. Clip "predicted x_0"
-        if self.clip_sample:
-            pred_original_sample = torch.clamp(pred_original_sample, -1, 1)
-
-        # 4. Compute coefficients for pred_original_sample x_0 and current sample x_t
-        # See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
-        pred_original_sample_coeff = (alpha_prod_t_prev ** (0.5) * self.betas[timestep]) / beta_prod_t
-        current_sample_coeff = self.alphas[timestep] ** (0.5) * beta_prod_t_prev / beta_prod_t
-
-        # 5. Compute predicted previous sample µ_t
-        # See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
-        pred_prev_sample = pred_original_sample_coeff * pred_original_sample + current_sample_coeff * sample
-
-        # 6. Add noise
-        variance = 0
-        if timestep > 0:
-            noise = torch.randn(
-                model_output.size(), dtype=model_output.dtype, layout=model_output.layout, generator=generator
-            ).to(model_output.device)
-            variance = (self._get_variance(timestep, predicted_variance=predicted_variance) ** 0.5) * noise
-
-        pred_prev_sample = pred_prev_sample + variance
-
-        return pred_prev_sample, pred_original_sample
+    def step(self, model, noise_pred, x_t, t, denoise_fn="gauss"):
+        out = self.p_mean_variance(model, x_t, t)
+        sample = out["mean"] + torch.exp(0.5 * out["log_variance"]) * noise_pred
+        return sample
 
     def dental_forward_backward(self,
                                 model,

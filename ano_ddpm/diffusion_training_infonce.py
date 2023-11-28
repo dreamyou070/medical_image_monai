@@ -264,11 +264,6 @@ def main(args):
                     # ----------------------------------------------------------------------------------------- #
                     normal_mask = mask_info_[normal_info_ == 1].to(device)
                     abnormal_mask = mask_info_[normal_info_ != 1].to(device)
-
-
-
-
-
                     # --------------------------------------------------------------------------------------------------
                     # calculate vlb loss
                     # x = [Batch, Channel, 128, 128]
