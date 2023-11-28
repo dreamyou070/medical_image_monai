@@ -63,7 +63,6 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
 
         t = torch.randint(args.sample_distance - 1, args.sample_distance, (x.shape[0],), device=x.device)
-        time_step = t[0].item()
         noise = torch.rand_like(x).float().to(x.device)
         # 2) select random int
 
@@ -72,7 +71,7 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
             x_t = scheduler.add_noise(x,noise,t)
             estimate_noise = ema(x_t, t)
             temp = scheduler.step(estimate_noise,
-                                  t.to(device),
+                                  t,
                                   x_t,
                                   return_dict = True)
 
@@ -80,8 +79,6 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
         real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
         sample_images = temp["prev_sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
         pred_images = temp["pred_original_sample"][:num_images, ...].cpu()#.permute(0,1,3,2)
-        merge_images = []
-        #num_images = min(len(normal_info), num_images)
         for img_index in range(num_images):
             normal_info_ = normal_info[img_index]
             if normal_info_ == 1:
@@ -162,7 +159,7 @@ def main(args) :
                               beta_start = 0.0001,
                               beta_end = 0.02,
                               beta_schedule = "linear",
-                              steps_offset = 1,).to(device)
+                              steps_offset = 1,)
 
     # (3) scaheduler
     """
