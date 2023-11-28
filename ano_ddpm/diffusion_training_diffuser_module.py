@@ -69,7 +69,7 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
 
         with torch.no_grad():
             # 3) q sampling = noising & p sampling = denoising
-            x_t = scheduler.add_noise(x, t, noise)
+            x_t = scheduler.add_noise(x,noise,t)
             estimate_noise = ema(x_t, t)
             temp = scheduler.step(estimate_noise, t, x_t, return_dict = True)
         # 4) what is sample_p do ?
@@ -192,14 +192,10 @@ def main(args) :
             # ----------------------------------------------------------------------------------------------------------
             # 1) check random t
             if x_0.shape[0] != 0 :
-                t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device =device)
-                #if args.use_simplex_noise:
-                #    noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
-                #else:
+                t = torch.randint(0, args.sample_distance,
+                                  (x_0.shape[0],), device =device)
                 noise = torch.rand_like(x_0).float().to(device)
-                # --------------------------------------------------------------------------------
                 # 2) make noisy latent
-                #x_t = diffusion.sample_q(x_0, t, noise)
                 x_t = scheduler.add_noise(x_0, noise, t)
 
                 # 3) model prediction
