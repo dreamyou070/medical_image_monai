@@ -85,10 +85,13 @@ def main(args) :
                 noise = torch.rand_like(x_0).float().to(device)
             # 2) select random int
             with torch.no_grad():
+                temp = diffusion.sample_p(model, x_t, t)
+                pred_images = temp["pred_x_0"]
                 for i in range(args.sample_distance-1, -1, -1):
                     x_t = diffusion.sample_q(x_0, t, noise)
                     noise_pred = model(x_t, t)
                     x_t = diffusion.step(model, noise_pred, x_t, t)
+                final_pred = x_t
             print('every step inferencing ...')
 
 
