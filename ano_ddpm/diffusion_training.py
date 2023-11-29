@@ -46,9 +46,9 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                      save_imgs=False, is_train_data=True, device='cuda'):
 
     if is_train_data :
-        train_data = 'training_data'
+        train_data = 'training inference'
     else :
-        train_data = 'test_data'
+        train_data = 'test inference'
 
     video_save_dir = os.path.join(args.experiment_dir, 'diffusion-videos')
     image_save_dir = os.path.join(args.experiment_dir, 'diffusion-training-images')
@@ -61,27 +61,23 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         x = test_data["image_info"].to(device)  # batch, channel, w, h
         normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
         mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
-
-        t = torch.randint(args.sample_distance - 1, args.sample_distance, (x.shape[0],), device=x.device)
+        #t = torch.randint(args.sample_distance - 1, args.sample_distance, (x.shape[0],), device=x.device)
+        t = torch.Tensor([args.sample_distance]).repeat(x.shape[0], ).long().to(x.device)
         time_step = t[0].item()
-
         if args.use_simplex_noise:
             noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
         else:
             noise = torch.rand_like(x).float().to(x.device)
         # 2) select random int
-
+        x_t = diffusion.sample_q(x, t, noise)
         with torch.no_grad():
-            # 3) q sampling = noising & p sampling = denoising
-            x_t = diffusion.sample_q(x, t, noise)
-            temp = diffusion.sample_p(ema, x_t, t)
-
-        # 4) what is sample_p do ?
+            for t in range(args.sample_distance, -1, -1):
+                #print(f'time = {t} : get noisy sample and stepping ... ')
+                if t > 0 :
+                    x_t = diffusion.sample_p(ema, x_t, t)["sample"]
         real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
-        sample_images = temp["sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
-        pred_images = temp["pred_x_0"][:num_images, ...].cpu()#.permute(0,1,3,2)
-        merge_images = []
-        #num_images = min(len(normal_info), num_images)
+        sample_images = x_t["sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
+        mask_images = mask_info[:num_images, ...].cpu()
         for img_index in range(num_images):
             normal_info_ = normal_info[img_index]
             if normal_info_ == 1:
@@ -94,19 +90,17 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             sample = sample_images[img_index,...].squeeze()
             sample = sample.unsqueeze(0)
             sample = torch_transforms.ToPILImage()(sample)
-            pred = pred_images[img_index,...].squeeze()
-            pred = pred.unsqueeze(0)
-            pred = torch_transforms.ToPILImage()(pred)
+            mask = mask_images[img_index,...].squeeze()
+            mask = mask.unsqueeze(0)
+            mask = torch_transforms.ToPILImage()(mask)
             new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
             new_image.paste(real, (0, 0))
             new_image.paste(sample, (real.size[0], 0))
-            new_image.paste(pred, (real.size[0]+sample.size[0], 0))
-            new_image.save(os.path.join(image_save_dir, f'real_noisy_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
+            new_image.paste(mask, (real.size[0]+sample.size[0], 0))
+            new_image.save(os.path.join(image_save_dir, f'real_recon_mask_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
             loading_image = wandb.Image(new_image,
-                                        caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
-            wandb.log({"inference": loading_image})
-
-
+                                        caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal}")
+            wandb.log({train_data : loading_image})
 
 def main(args) :
 
@@ -200,37 +194,57 @@ def main(args) :
                     noise = torch.rand_like(x_0).float().to(device)
                 # --------------------------------------------------------------------------------
                 # 2) make noisy latent
-                x_t = diffusion.sample_q(x_0, t, noise)
-
-
-                # 3) model prediction
+                x_t = diffusion.sample_q(x_0, t, noise)                # 3) model prediction
                 noise_pred = model(x_t, t)
                 target = noise
                 # ------------------------------------------------------------------------------------------------------
-                if args.masked_loss:
-                    noise_pred = noise_pred * mask_info.to(device)
-                    target = target * mask_info.to(device)
                 loss = torch.nn.functional.mse_loss(noise_pred.float(),
                                                     target.float(),
                                                     reduction="none").mean(dim=(1, 2, 3))
+                if args.masked_loss:
+                    noise_pred = noise_pred * mask_info.to(device)
+                    target = target * mask_info.to(device)
+                    loss = torch.nn.functional.mse_loss(noise_pred.float(),
+                                                        target.float(),
+                                                        reduction="none").mean(dim=(1, 2, 3))
 
                 if args.use_vlb_loss :
                     # batch wise loss
-                    kl_loss = diffusion._vb_terms_bpd(model=model,
-                                                      x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
+                    kl_loss = diffusion._vb_terms_bpd(model=model, x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
                     loss = loss + args.kl_loss_weight * kl_loss
 
                 if args.pos_neg_loss:
-                    print(f'mask_info : {mask_info.shape}')
                     pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
                                                             (target * mask_info.to(device)).float(),
-                                                            reduction="none")
+                                                            reduction="none").sum(dim=(1, 2, 3))
+                    pos_pixel_num = mask_info.sum([1, 2, 3])
+                    pos_pixel_num = torch.where(pos_pixel_num == 0, 1, pos_pixel_num)
+                    pos_loss = pos_loss / pos_pixel_num
                     neg_loss = torch.nn.functional.mse_loss((noise_pred * (1 - mask_info).to(device)).float(),
                                                             (target * (1 - mask_info).to(device)).float(),
-                                                            reduction="none")
+                                                            reduction="none").sum(dim=(1, 2, 3))
+                    neg_pixel_num = (1-mask_info).sum([1, 2, 3])
+                    neg_pixel_num = torch.where(neg_pixel_num == 0, 1, neg_pixel_num)
+                    neg_loss = neg_loss / neg_pixel_num
                     loss = pos_loss + args.pos_neg_loss_scale * (pos_loss - neg_loss)
 
+                if args.infonce_loss:
+                    pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
+                                                            (target * mask_info.to(device)).float(),
+                                                            reduction="none").sum(dim=(1, 2, 3))
+                    pos_pixel_num = mask_info.sum([1, 2, 3])
+                    pos_pixel_num = torch.where(pos_pixel_num == 0, 1, pos_pixel_num)
+                    pos_loss = pos_loss / pos_pixel_num
+                    neg_loss = torch.nn.functional.mse_loss((noise_pred * (1 - mask_info).to(device)).float(),
+                                                            (target * (1 - mask_info).to(device)).float(),
+                                                            reduction="none").sum(dim=(1, 2, 3))
+                    neg_pixel_num = (1-mask_info).sum([1, 2, 3])
+                    neg_pixel_num = torch.where(neg_pixel_num == 0, 1, neg_pixel_num)
+                    neg_loss = neg_loss / neg_pixel_num
+                    loss = pos_loss / (pos_loss + neg_loss)
+
                 loss = loss.mean()
+
                 wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
@@ -308,7 +322,7 @@ def main(args) :
                         wandb.log({"abnormal portion of *ab*normal sample kl" : ab_portion_ab_whole_vb.mean().cpu().item()})
                     # --------------------------------------------------------------------------------------------------
                     # collecting total vlb in deque collections
-        if epoch % args.model_save_freq == 0 and epoch >= 0:
+        if epoch % args.model_save_freq == 0 and epoch > 0 :
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
 
@@ -347,27 +361,23 @@ if __name__ == '__main__':
     # (3) diffusion
     parser.add_argument('--loss_weight', type=str, default = "none")
     parser.add_argument('--loss_type', type=str, default='l2')
-    parser.add_argument('--use_vlb_loss', action='store_true')
-    parser.add_argument('--kl_loss_weight', type=float, default = 1.0)
-
     # step 5. optimizer
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--weight_decay', type=float, default=0.0)
-
     # step 6. training
     parser.add_argument('--start_epoch', type=int, default=0)
     parser.add_argument('--train_epochs', type=int, default=3000)
     parser.add_argument('--train_start', action = 'store_true')
     parser.add_argument('--use_simplex_noise', action='store_true')
     parser.add_argument('--sample_distance', type=int, default = 800)
-    parser.add_argument('--only_normal_training', action='store_true')
-    parser.add_argument('--masked_loss', action='store_true')
-    parser.add_argument('--inverse_loss', action='store_true')
-    parser.add_argument('--pos_neg_loss', action='store_true')
-    parser.add_argument('--pos_neg_loss_scale', type=float, default = 1.0)
 
-    parser.add_argument('--roll_intense', type=int, default = 8)
-    parser.add_argument('--inverse_loss_weight', type=float, default=1.0)
+    parser.add_argument('--only_normal_training', action='store_true')
+    parser.add_argument('--use_vlb_loss', action='store_true')
+    parser.add_argument('--kl_loss_weight', type=float, default=1.0)
+    parser.add_argument('--masked_loss', action='store_true')
+    parser.add_argument('--pos_neg_loss', action='store_true')
+    parser.add_argument('--pos_neg_loss_scale', type=float, default=1.0)
+    parser.add_argument('--infonce_loss', action='store_true')
 
     # step 7. inference
     parser.add_argument('--inference_num', type=int, default=4)
@@ -378,4 +388,3 @@ if __name__ == '__main__':
     parser.add_argument('--save_vids', action='store_true')
     args = parser.parse_args()
     main(args)
-
