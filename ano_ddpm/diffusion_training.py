@@ -69,12 +69,13 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             noise = torch.rand_like(x_0.float().to(x_0.device))
         x_t = diffusion.sample_q(x_0, t, noise)
         normal_scores, abnormal_scores = [], []
-        if x_0.shape[0] != normal_info.sum():
+        if x_0.shape[0] != normal_info.sum() and x_0.dim() == 4 :
             with torch.no_grad():
                 for t in range(args.sample_distance, -1, -1):
                     if t > 0 :
                         noise_pred = ema(x_t,torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
-                        out = diffusion.calc_vlb_xt(ema,x_0,x_t,torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                        out = diffusion.calc_vlb_xt(ema,x_0,x_t,
+                                                    torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
                                                     estimate_noise = noise_pred)
                         x_t = out['sample']
                         kl_div = out["whole_kl"] # batch, 1, W, H
@@ -86,9 +87,11 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 
                         # abnormal portaion kl divergence
                         abnormal_sample_kl = kl_div[normal_info != 1]
-                        if abnormal_sample_kl.shape[0] > 0 :
+
+                        if abnormal_sample_kl.shape[0] > 0 and abnormal_sample_kl.dim() == 4 :
                             abnormal_mask = mask_info[normal_info != 1]
-                            abnormal_mask_abnormal_portion = 1-abnormal_mask
+
+                            abnormal_mask_abnormal_portion = 1- abnormal_mask
                             abnormal_sample_kl = (abnormal_sample_kl * abnormal_mask_abnormal_portion).sum([1,2,3])
                             abnormal_pixel_num = abnormal_mask_abnormal_portion.sum([1,2,3])
                             abnormal_pixel_num = torch.where(abnormal_pixel_num == 0, 1,abnormal_pixel_num)
@@ -98,10 +101,11 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                             abnormal_kl_score = abnormal_kl_score.mean()
                             normal_scores.append(normal_kl_score)
                             abnormal_scores.append(abnormal_kl_score)
-            normal_score = torch.stack(normal_scores).mean()
-            abnormal_score = torch.stack(abnormal_scores).mean()
-            wandb.log({f"[{train_data}] normal kl" : normal_score,
-                       f"[{train_data}] abnormal kl": abnormal_score,})
+
+                            normal_score = torch.stack(normal_scores).mean()
+                            abnormal_score = torch.stack(abnormal_scores).mean()
+                            wandb.log({f"[{train_data}] normal kl" : normal_score,
+                                       f"[{train_data}] abnormal kl": abnormal_score,})
             real_images = x_0[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
             sample_images = x_t[:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
             mask_images = mask_info[:num_images, ...].cpu()
@@ -215,8 +219,7 @@ def main(args) :
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
 
-
-            if x_0.shape[0] != 0 :
+            if x_0.shape[0] != 0 and x_0.dim() == 4 :
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device =device)
                 if args.use_simplex_noise:
                     noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
