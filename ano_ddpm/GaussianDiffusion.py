@@ -528,10 +528,7 @@ class GaussianDiffusionModel:
         return {"output": nll,
                 "sample": sample,
                 "pred_x_0": output["pred_x_0"],
-                #"whole_kl" : whole_kl,
                 "whole_kl": patch_nll}
-
-    calc_vlb_xt['whole_kl']
     def _vb_terms_bpd(self, model, x_start, x_t, t, clip_denoised=True, model_kwargs=None):
         """
         Get a term for the variational lower-bound.
