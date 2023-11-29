@@ -236,11 +236,10 @@ def main(args) :
                     mask_info = data['mask'].unsqueeze(dim=1)[normal_info == 1]
                     t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=device)
                     noise = torch.rand_like(x_0).float().to(device)
-                    
-                    x_t = diffusion.sample_q(x_0, t, noise)  # 3) model prediction
-                    kl_loss = diffusion._vb_terms_bpd(model=model,x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
-
-                    loss = loss + args.kl_loss_weight * kl_loss
+                    if x_0.shape[0] != 0:
+                        x_t = diffusion.sample_q(x_0, t, noise)  # 3) model prediction
+                        kl_loss = diffusion._vb_terms_bpd(model=model,x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
+                        loss = loss + args.kl_loss_weight * kl_loss
 
                 if args.pos_neg_loss:
                     pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
