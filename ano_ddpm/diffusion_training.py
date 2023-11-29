@@ -302,6 +302,7 @@ if __name__ == '__main__':
     parser.add_argument('--beta_schedule', type=str, default='linear')
     # (3) diffusion
     parser.add_argument('--loss_weight', type=str, default = "none")
+    parser.add_argument('--loss_type', type=str, default="l2")
     # step 5. optimizer
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--weight_decay', type=float, default=0.0)
