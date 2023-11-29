@@ -4,15 +4,13 @@ import copy
 import time
 from random import seed
 from torch import optim
-from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule
 from helpers import *
 from tqdm import tqdm
 from torchvision import transforms
-import numpy  as np
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from data_module import SYDataLoader, SYDataset
-from monai.utils import first
+from diffuser_module.schedulers import DDPMScheduler
 from UNet import UNetModel, update_ema_params
 import torch.multiprocessing
 import torchvision.transforms as torch_transforms
@@ -101,6 +99,7 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
                 loading_image = wandb.Image(new_image,
                                             caption=f"(real-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
                 wandb.log({"inference": loading_image})
+
 def main(args) :
 
     print(f'\n step 1. setting')
@@ -153,21 +152,15 @@ def main(args) :
     model.to(device)
     ema.to(device)
     # (2) scaheduler
-    from diffuser_module.schedulers import DDPMScheduler
-    scheduler = DDPMScheduler(num_train_timesteps = 1000,
-                              beta_start = 0.0001,
-                              beta_end = 0.02,
-                              beta_schedule = "linear",
-                              #variance_type = 'fixed_small_log',
-                              steps_offset = 1,)
+
+    scheduler = DDPMScheduler(num_train_timesteps = 1000, beta_start = 0.0001, beta_end = 0.02,
+                              beta_schedule = "linear", steps_offset = 1,)
 
     print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
 
     print(f'\n step 6. training')
     tqdm_epoch = range(args.start_epoch, args.train_epochs + 1)
-    start_time = time.time()
-    vlb = collections.deque([], maxlen=10)
     for epoch in tqdm_epoch:
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=200)
         progress_bar.set_description(f"Epoch {epoch}")
@@ -181,15 +174,11 @@ def main(args) :
             if args.only_normal_training :
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
-            # ----------------------------------------------------------------------------------------------------------
-            # 1) check random t
-            if x_0.shape[0] != 0 :
-                t = torch.randint(0, args.sample_distance,
-                                  (x_0.shape[0],), device =device)
-                noise = torch.rand_like(x_0).float().to(device)
-                # 2) make noisy latent
-                x_t = scheduler.add_noise(x_0, noise, t)
 
+            if x_0.shape[0] != 0 :
+                t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device =device)
+                noise = torch.rand_like(x_0).float().to(device)
+                x_t = scheduler.add_noise(x_0, noise, t)
                 # 3) model prediction
                 noise_pred = model(x_t, t)
                 target = noise
@@ -199,14 +188,15 @@ def main(args) :
                     target = target * mask_info.to(device)
                 loss = torch.nn.functional.mse_loss(noise_pred.float(),
                                                     target.float(),
-                                                    reduction="none")
+                                                    reduction="none").mean([1, 2, 3])
                 if args.pos_neg_loss:
                     pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
                                                             (target * mask_info.to(device)).float(),
-                                                            reduction="none")
+                                                            reduction="none").mean([1, 2, 3])
+                    pos_pixel_num = mask_info.sum([1, 2, 3])
                     neg_loss = torch.nn.functional.mse_loss((noise_pred * (1 - mask_info).to(device)).float(),
                                                             (target * (1 - mask_info).to(device)).float(),
-                                                            reduction="none")
+                                                            reduction="none").mean([1, 2, 3])
                     loss = pos_loss + args.pos_neg_loss_scale * (pos_loss - neg_loss)
 
                 loss = loss.mean()

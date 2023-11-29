@@ -212,17 +212,16 @@ def main(args) :
                     target = target * mask_info.to(device)
                 loss = torch.nn.functional.mse_loss(noise_pred.float(),
                                                     target.float(),
-                                                    reduction="none")
+                                                    reduction="none").mean(dim=(1, 2, 3))
 
                 if args.use_vlb_loss :
+                    # batch wise loss
                     kl_loss = diffusion._vb_terms_bpd(model=model,
                                                       x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
-                    print(f'kl_loss : {kl_loss}')
-
-
-
+                    loss = loss + args.kl_loss_weight * kl_loss
 
                 if args.pos_neg_loss:
+                    print(f'mask_info : {mask_info.shape}')
                     pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
                                                             (target * mask_info.to(device)).float(),
                                                             reduction="none")
@@ -349,6 +348,7 @@ if __name__ == '__main__':
     parser.add_argument('--loss_weight', type=str, default = "none")
     parser.add_argument('--loss_type', type=str, default='l2')
     parser.add_argument('--use_vlb_loss', action='store_true')
+    parser.add_argument('--kl_loss_weight', type=float, default = 1.0)
 
     # step 5. optimizer
     parser.add_argument('--lr', type=float, default=1e-4)

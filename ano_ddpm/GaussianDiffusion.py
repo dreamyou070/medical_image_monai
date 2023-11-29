@@ -553,11 +553,7 @@ class GaussianDiffusionModel:
         # At the first timestep return the decoder NLL,
         # otherwise return KL(q(x_{t-1}|x_t,x_0) || p(x_{t-1}|x_t))
         output = torch.where((t == 0), decoder_nll, kl)
-        print("output", output)
-        import time
-        time.sleep(10)
-        return {"output": output,
-                "pred_xstart": out["pred_xstart"]}
+        return {"output": output}
 
     def calc_total_vlb_in_sample_distance(self, x_0, model, args):
         sample_distance = args.sample_distance
