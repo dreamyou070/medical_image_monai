@@ -74,7 +74,9 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             for t in range(args.sample_distance, -1, -1):
                 #print(f'time = {t} : get noisy sample and stepping ... ')
                 if t > 0 :
-                    x_t = diffusion.sample_p(ema, x_t, t)["sample"]
+                    x_t = diffusion.sample_p(ema,
+                                             x_t,
+                                             torch.Tensor([t]).repeat(x.shape[0], ).long().to(x.device))["sample"]
         real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
         sample_images = x_t["sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
         mask_images = mask_info[:num_images, ...].cpu()
