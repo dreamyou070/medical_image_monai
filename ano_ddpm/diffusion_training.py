@@ -60,6 +60,8 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         # 1) make random noise
         x_0 = test_data["image_info"].to(device)
         normal_info = test_data['normal']
+        mask_info = test_data['mask'].to(device)
+        print(f'mask_info.shape: {mask_info.shape}')
         mask_info = test_data['mask'].to(device).unsqueeze(1)
         t = torch.Tensor([args.sample_distance]).repeat(x_0.shape[0], ).long().to(x_0.device)
         if args.use_simplex_noise:
