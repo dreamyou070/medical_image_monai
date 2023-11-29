@@ -225,7 +225,8 @@ def main(args) :
                     noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
                 else:
                     noise = torch.rand_like(x_0).float().to(device)
-                x_t = diffusion.sample_q(x_0, t, noise)                # 3) model prediction
+                with torch.no_grad():
+                    x_t = diffusion.sample_q(x_0, t, noise)                # 3) model prediction
                 noise_pred = model(x_t, t)
                 target = noise
                 if args.masked_loss:
