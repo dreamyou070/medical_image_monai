@@ -71,7 +71,7 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
                 if t > 0 :
                     noise_pred = ema(x_t,
                                      torch.Tensor([t]).repeat(x.shape[0],).long().to(x.device))
-                    x_t = scheduler.prev_sample(model_output=noise_pred,
+                    x_t = scheduler.prev_step(model_output=noise_pred,
                                          timestep=int(t),
                                          sample=x_t)
             # 4) what is sample_p do ?
