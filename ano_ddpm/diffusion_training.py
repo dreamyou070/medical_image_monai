@@ -102,7 +102,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             wandb.log({f"[{train_data}] normal kl" : normal_score,
                        f"[{train_data}] abnormal kl": abnormal_score,})
             real_images = x_0[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
-            sample_images = x_t["sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
+            sample_images = x_t[:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
             mask_images = mask_info[:num_images, ...].cpu()
             for img_index in range(num_images):
                 normal_info_ = normal_info[img_index]
