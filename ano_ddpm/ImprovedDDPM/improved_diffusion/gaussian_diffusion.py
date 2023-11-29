@@ -652,6 +652,13 @@ class GaussianDiffusion:
                                                                                  x_t=x_t,
                                                                                  t=t)
         out = self.p_mean_variance(model, x_t, t, clip_denoised=clip_denoised, model_kwargs=model_kwargs)
+        noise = th.randn_like(x_t)
+        nonzero_mask = (
+            (t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1)))
+        )  # no noise when t == 0
+        sample = out["mean"] + nonzero_mask * th.exp(0.5 * out["log_variance"]) * noise
+
+
         kl = normal_kl(true_mean, true_log_variance_clipped, out["mean"], out["log_variance"])
         whole_kl = kl
         kl = mean_flat(kl) / np.log(2.0)
@@ -663,8 +670,12 @@ class GaussianDiffusion:
         # At the first timestep return the decoder NLL,
         # otherwise return KL(q(x_{t-1}|x_t,x_0) || p(x_{t-1}|x_t))
         output = th.where((t == 0), decoder_nll, kl)
+        """
+        
+        """
         return {"output": output,
                 "pred_xstart": out["pred_xstart"],
+                "prev_sample" : sample,
                 "whole_kl" : whole_kl}
 
     def training_losses(self, model, x_start, t, model_kwargs=None, noise=None):

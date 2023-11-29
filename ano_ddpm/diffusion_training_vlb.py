@@ -79,7 +79,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                         noise_pred = ema(x_t, torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
                         out = diffusion._vb_terms_bpd(ema, x_0, x_t,
                                                     torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
-                        x_t = out['pred_xstart']
+                        x_t = out["prev_sample"]
                         kl_div = out["whole_kl"]  # batch, 1, W, H
                         # normal portion kl divergence
                         normal_kl_div = (kl_div * mask_info).sum([1, 2, 3])
