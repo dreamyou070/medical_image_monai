@@ -141,6 +141,7 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         timestep_spacing: str = "leading",
         steps_offset: int = 0,
     ):
+        print("DDPMScheduler Start ")
         if trained_betas is not None:
             self.betas = torch.tensor(trained_betas, dtype=torch.float32)
         elif beta_schedule == "linear":
