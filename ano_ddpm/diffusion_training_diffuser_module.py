@@ -67,15 +67,13 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
                                   torch.Tensor([args.sample_distance]).repeat(x.shape[0], ).long().to(x.device))
         with torch.no_grad():
             for t in range(args.sample_distance, -1, -1):
-                print(f'time = {t} : get noisy sample and stepping ... ')
+                #print(f'time = {t} : get noisy sample and stepping ... ')
                 if t > 0 :
                     noise_pred = ema(x_t,
                                      torch.Tensor([t]).repeat(x.shape[0],).long().to(x.device))
-                    x_t = scheduler.step(model_output=noise_pred,
+                    x_t = scheduler.prev_sample(model_output=noise_pred,
                                          timestep=int(t),
-                                         sample=x_t,
-                                         return_dict=True)["prev_sample"]
-
+                                         sample=x_t)
             # 4) what is sample_p do ?
             real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
             #sample_images = temp["prev_sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
@@ -160,7 +158,7 @@ def main(args) :
                               beta_start = 0.0001,
                               beta_end = 0.02,
                               beta_schedule = "linear",
-                              variance_type = 'fixed_small_log',
+                              #variance_type = 'fixed_small_log',
                               steps_offset = 1,)
 
     print(f'\n step 5. optimizer')
