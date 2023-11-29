@@ -79,6 +79,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                         kl_div = out["whole_kl"] # batch, 1, W, H
                         # normal portion kl divergence
                         normal_kl_div = (kl_div * mask_info).sum([1,2,3])
+                        print(f'mask_info : {mask_info.shape}')
                         normal_pixel_num = mask_info.sum([1,2,3])
                         normal_pixel_num = torch.where(normal_pixel_num == 0, 1, normal_pixel_num)
                         normal_kl_score = normal_kl_div / normal_pixel_num
