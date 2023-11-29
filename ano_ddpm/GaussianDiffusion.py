@@ -350,7 +350,6 @@ class GaussianDiffusionModel:
         model_mean, _, _ = self.q_posterior_mean_variance(pred_x_0, x_t, t)
         return {"mean":model_mean, "variance":model_var, "log_variance": model_logvar,"pred_x_0":pred_x_0,}
 
-
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
         """ equation (1) """
         out = self.p_mean_variance(model, x_t, t)
@@ -371,17 +370,10 @@ class GaussianDiffusionModel:
         sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
         return {"sample": sample,
                 "pred_x_0": out["pred_x_0"]}
-
     def step(self, model, noise_pred, x_t, t, denoise_fn="gauss"):
         out = self.sample_p(model, x_t, t)
         return out['sample']#pred_prev_sample
-
-    def dental_forward_backward(self,
-                                model,
-                                x,
-                                args,
-                                device,
-                                t_distance=None, ):
+    def dental_forward_backward(self,model,x,args,device,t_distance=None, ):
 
         # -------------------------------------------------------------------------------------------------------------
         # 0) set t
@@ -404,7 +396,6 @@ class GaussianDiffusionModel:
         # -------------------------------------------------------------------------------------------------------------
         # 3) generating
         for t in range(int(t_distance) - 1, -1, -1):
-            print('t : ', t)
             t_batch = torch.tensor([t], device=x.device).repeat(x.shape[0])
             with torch.no_grad():
                 model_output = model(x,t_tensor)
@@ -416,11 +407,7 @@ class GaussianDiffusionModel:
                 import torchvision.transforms as torch_transforms
                 torch_transforms.ToPILImage()(first_sample.squeeze()).save(f'intermediate_{t}.png')
         return x.detach()
-
-    # -----------------------------------------------------------------------------------------------------------------
-    def forward_backward(self,
-                         model,
-                         x, see_whole_sequence="half", t_distance=None, denoise_fn="gauss",):
+    def forward_backward(self,model, x, see_whole_sequence="half", t_distance=None, denoise_fn="gauss",):
         assert see_whole_sequence == "whole" or see_whole_sequence == "half" or see_whole_sequence == None
 
         if t_distance == 0:
@@ -459,7 +446,6 @@ class GaussianDiffusionModel:
                 seq.append(x.cpu().detach())
 
         return x.detach() if not see_whole_sequence else seq
-
     def sample_q_gradual(self, x_t, t, noise):
         """
         q (x_t | x_{t-1})
@@ -470,7 +456,6 @@ class GaussianDiffusionModel:
         """
         return (extract(self.sqrt_alphas, t, x_t.shape, x_t.device) * x_t +
                 extract(self.sqrt_betas, t, x_t.shape, x_t.device) * noise)
-
     def prior_vlb(self, x_0, args):
 
         # --------------------------------------------------------------------------------------------------------------
@@ -483,41 +468,33 @@ class GaussianDiffusionModel:
         kl_prior = normal_kl(mean1=qt_mean,                              logvar1=qt_log_variance,
                              mean2=torch.tensor(0.0, device=x_0.device), logvar2=torch.tensor(0.0, device=x_0.device))
         return mean_flat(kl_prior) / np.log(2.0)
-
     def prior_vlb(self, x_0, args):
         t = torch.tensor([self.num_timesteps - 1] * x_0.shape[0], device=x_0.device)
         qt_mean, _, qt_log_variance = self.q_mean_variance(x_0, t)
         kl_prior = normal_kl(mean1=qt_mean, logvar1=qt_log_variance, mean2=torch.tensor(0.0, device=x_0.device),
                              logvar2=torch.tensor(0.0, device=x_0.device))
         return mean_flat(kl_prior) / np.log(2.0)
-
     def calc_vlb_xt(self, model, x_0, x_t, t, estimate_noise=None):
-        timestep = int(t[0])
-        t_batch_patch = (torch.ones_like(x_t) * timestep).to(x_0.device)
-        # --------------------------------------------------------------------------------------------------------------
         # 1) compare scheduling one step reverse and model one step reverse
         true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
+        # 2) model one step reverse
         output = self.p_mean_variance(model, x_t, t, estimate_noise)
-        nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
-        sample = output["mean"] + nonzero_mask * torch.exp(0.5 * output["log_variance"]) * estimate_noise
-        model_mean = output["mean"]
-        model_log_var = output["log_variance"]
+        model_mean, model_log_var = output["mean"], output["log_variance"]
         whole_kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
-        kl = mean_flat(whole_kl) / np.log(2.0)
+        #kl = mean_flat(whole_kl) / np.log(2.0)
         # if timestep is 0, it compare with x_0
         # independent discrete decoder (log likelihood)
-        decoder_nll_ = -1 * discretised_gaussian_log_likelihood(x_0,output["mean"],
-                                                                log_scales=0.5 * output["log_variance"])
-        decoder_nll = mean_flat(decoder_nll_) / np.log(2.0)
-        # --------------------------------------------------------------------------------------------------------------
-        # 3) if t == 0 : the value is decoder negative log likelihood
-        #    else : kl between schedule value and model value
-        patch_nll = torch.where((t_batch_patch == 0), decoder_nll_, whole_kl)
-        nll = torch.where((t == 0), decoder_nll, kl)
-        return {"output": nll,
+        #decoder_nll_ = -1 * discretised_gaussian_log_likelihood(x_0,output["mean"],log_scales=0.5 * output["log_variance"])
+        #decoder_nll = mean_flat(decoder_nll_) / np.log(2.0)
+        #t_batch_patch = (torch.ones_like(x_t) * int(t[0])).to(x_0.device)
+        #patch_nll = torch.where((t_batch_patch == 0), decoder_nll_, whole_kl)
+        #nll = torch.where((t == 0), decoder_nll, kl)
+        nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
+        sample = output["mean"] + nonzero_mask * torch.exp(0.5 * output["log_variance"]) * estimate_noise
+        return {#"output": nll,
                 "sample": sample,
                 "pred_x_0": output["pred_x_0"],
-                "whole_kl": patch_nll}
+                "whole_kl": whole_kl}
     def _vb_terms_bpd(self, model, x_start, x_t, t, clip_denoised=True, model_kwargs=None):
         """
         Get a term for the variational lower-bound.
