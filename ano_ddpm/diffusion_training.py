@@ -59,6 +59,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 
         # 1) make random noise
         x_0 = test_data["image_info"].to(device)
+        weight_dtype = x_0.dtype
         normal_info = test_data['normal']
         mask_info = test_data['mask'].to(device).unsqueeze(1)
         t = torch.Tensor([args.sample_distance]).repeat(x_0.shape[0], ).long().to(x_0.device)
@@ -120,8 +121,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                 sample = torch_transforms.ToPILImage()(sample)
 
                 mask = mask_images[img_index,...].squeeze()
-                mask = mask.unsqueeze(0)
-                print(f'mask : {type(mask)} | {mask.shape}')
+                mask = mask.unsqueeze(0).to(weight_dtype)
                 mask = torch_transforms.ToPILImage()(mask)
                 
 
