@@ -539,7 +539,7 @@ class GaussianDiffusionModel:
         true_mean, _, true_log_variance_clipped = self.q_posterior_mean_variance(x_start,x_t,t)
 
         # (2)
-        out = self.p_mean_variance(model, x_t, t, clip_denoised=clip_denoised, model_kwargs=model_kwargs)
+        out = self.p_mean_variance(model, x_t, t)
 
         # (3) kl divergence
         kl = normal_kl(true_mean, true_log_variance_clipped,
