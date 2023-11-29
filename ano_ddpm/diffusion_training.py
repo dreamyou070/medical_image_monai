@@ -208,16 +208,14 @@ def main(args) :
         progress_bar.set_description(f"Epoch {epoch}")
         for step, data in progress_bar:
             model.train()
-            # -----------------------------------------------------------------------------------------
-            # 0) data check
             x_0 = data["image_info"].to(device)  # batch, channel, w, h
             normal_info = data['normal'] # if 1 = normal, 0 = abnormal
             mask_info = data['mask'].unsqueeze(dim=1)    # if 1 = normal, 0 = abnormal
             if args.only_normal_training :
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
-            # ----------------------------------------------------------------------------------------------------------
-            # 1) check random t
+
+
             if x_0.shape[0] != 0 :
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device =device)
                 if args.use_simplex_noise:
@@ -230,16 +228,18 @@ def main(args) :
                 if args.masked_loss:
                     noise_pred = noise_pred * mask_info.to(device)
                     target = target * mask_info.to(device)
-                loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(),
-                                                    reduction="none").mean(dim=(1, 2, 3))
+                loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(),reduction="none").mean(dim=(1, 2, 3))
 
                 if args.use_vlb_loss :
+                    normal_info = data['normal']
                     x_0 = data["image_info"].to(device)[normal_info == 1]
                     mask_info = data['mask'].unsqueeze(dim=1)[normal_info == 1]
                     t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=device)
                     noise = torch.rand_like(x_0).float().to(device)
+                    
                     x_t = diffusion.sample_q(x_0, t, noise)  # 3) model prediction
                     kl_loss = diffusion._vb_terms_bpd(model=model,x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
+
                     loss = loss + args.kl_loss_weight * kl_loss
 
                 if args.pos_neg_loss:
