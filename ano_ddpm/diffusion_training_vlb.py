@@ -70,17 +70,17 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
         else:
             noise = torch.rand_like(x_0.float().to(x_0.device))
-        x_t = diffusion.sample_q(x_0, t, noise)
+        x_t = diffusion.q_sample(x_0, t, noise)
         normal_scores, abnormal_scores = [], []
         if x_0.shape[0] != normal_info.sum() and x_0.dim() == 4:
             with torch.no_grad():
                 for t in range(args.sample_distance, -1, -1):
                     if t > 0:
                         noise_pred = ema(x_t, torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
-                        out = diffusion.calc_vlb_xt(ema, x_0, x_t,
+                        out = diffusion._vb_terms_bpd(ema, x_0, x_t,
                                                     torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
                                                     estimate_noise=noise_pred)
-                        x_t = out['sample']
+                        x_t = out['prev_xstart']
                         kl_div = out["whole_kl"]  # batch, 1, W, H
                         # normal portion kl divergence
                         normal_kl_div = (kl_div * mask_info).sum([1, 2, 3])
@@ -145,6 +145,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 
 
 def main(args):
+
     print(f'\n step 1. setting')
     if args.process_title:
         setproctitle(args.process_title)
@@ -206,12 +207,6 @@ def main(args):
                                            rescale_timesteps=False,
                                            rescale_learned_sigmas=False,
                                            timestep_respacing="",)
-    """
-
-
-
-
-
     print(f'\n step 5. optimizer')
     optimiser = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, betas=(0.9, 0.999))
 
@@ -228,15 +223,11 @@ def main(args):
             if args.only_normal_training:
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
-
             if x_0.shape[0] != 0 and x_0.dim() == 4:
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=device)
-                if args.use_simplex_noise:
-                    noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
-                else:
-                    noise = torch.rand_like(x_0).float().to(device)
+                noise = torch.rand_like(x_0).float().to(device)
                 with torch.no_grad():
-                    x_t = diffusion.sample_q(x_0, t, noise)  # 3) model prediction
+                    x_t = diffusion.q_sample(x_0, t, noise)  # 3) model prediction
                 noise_pred = model(x_t, t)
                 target = noise
                 if args.masked_loss:
@@ -246,16 +237,12 @@ def main(args):
                     dim=(1, 2, 3))
 
                 if args.use_vlb_loss:
-                    normal_info = data['normal']
-                    x_0 = data["image_info"].to(device)[normal_info == 1]
-                    mask_info = data['mask'].unsqueeze(dim=1)[normal_info == 1]
-                    t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=device)
-                    noise = torch.rand_like(x_0).float().to(device)
-                    if x_0.shape[0] != 0 and x_0.dim() == 4:
-                        x_t = diffusion.sample_q(x_0, t, noise)  # 3) model prediction
-                        kl_loss = diffusion._vb_terms_bpd(model=model,
-                                                          x_start=x_0, x_t=x_t, t=t, clip_denoised=False, )["output"]
-                        loss = loss + args.kl_loss_weight * kl_loss
+                    kl_loss = diffusion._vb_terms_bpd(model=model,
+                                                       x_start=x_0,  # unnoisy latent
+                                                       x_t=x_t,  # noisy latent
+                                                       t=t,
+                                                       clip_denoised=False,)["output"]
+                    loss = loss + args.kl_loss_weight * kl_loss
 
                 if args.pos_neg_loss:
                     pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
@@ -288,7 +275,6 @@ def main(args):
                     loss = pos_loss / (pos_loss + neg_loss)
 
                 loss = loss.mean()
-
                 wandb.log({"training loss": loss.item()})
                 optimiser.zero_grad()
                 loss.backward()
@@ -311,7 +297,6 @@ def main(args):
         if epoch % args.model_save_freq == 0 and epoch > 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
-    """
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
