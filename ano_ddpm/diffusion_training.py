@@ -302,7 +302,6 @@ if __name__ == '__main__':
     parser.add_argument('--beta_schedule', type=str, default='linear')
     # (3) diffusion
     parser.add_argument('--loss_weight', type=str, default = "none")
-    parser.add_argument('--loss_type', type=str, default='l2')
     # step 5. optimizer
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--weight_decay', type=float, default=0.0)
@@ -324,7 +323,6 @@ if __name__ == '__main__':
     # step 7. inference
     parser.add_argument('--inference_num', type=int, default=4)
     parser.add_argument('--inference_freq', type=int, default=50)
-    parser.add_argument('--vlb_freq', type=int, default=200)
     parser.add_argument('--model_save_freq', type=int, default=1000)
     parser.add_argument('--save_imgs', action='store_true')
     parser.add_argument('--save_vids', action='store_true')
