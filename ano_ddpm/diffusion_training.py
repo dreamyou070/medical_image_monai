@@ -214,8 +214,9 @@ def main(args) :
                                                     target.float(),
                                                     reduction="none")
 
-                kl_loss = diffusion._vb_terms_bpd(model=model,x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
-                print(f'kl_loss : {kl_loss}')
+                if args.use_vlb_loss:
+                    kl_loss = diffusion._vb_terms_bpd(model=model,x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
+                    print(f'kl_loss : {kl_loss}')
 
 
 
@@ -345,7 +346,7 @@ if __name__ == '__main__':
     # (3) diffusion
     parser.add_argument('--loss_weight', type=str, default = "none")
     parser.add_argument('--loss_type', type=str, default='l2')
-    #parser.add_argument('--noise_fn', type=str, default='simplex')
+    parser.add_argument('--use_vlb_loss', action='store_true')
 
     # step 5. optimizer
     parser.add_argument('--lr', type=float, default=1e-4)
