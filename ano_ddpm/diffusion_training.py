@@ -215,8 +215,10 @@ def main(args) :
                                                     reduction="none")
 
                 if args.use_vlb_loss :
-                    kl_loss = diffusion._vb_terms_bpd(model=model,x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
+                    kl_loss = diffusion._vb_terms_bpd(model=model,
+                                                      x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
                     print(f'kl_loss : {kl_loss}')
+
 
 
 

@@ -536,7 +536,7 @@ class GaussianDiffusionModel:
                  - 'pred_xstart': the x_0 predictions.
         """
         # (1)
-        true_mean, _, true_log_variance_clipped = self.q_posterior_mean_variance(x_start=x_start,x_t=x_t,t=t)
+        true_mean, _, true_log_variance_clipped = self.q_posterior_mean_variance(x_start,x_t,t)
 
         # (2)
         out = self.p_mean_variance(model, x_t, t, clip_denoised=clip_denoised, model_kwargs=model_kwargs)
