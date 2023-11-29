@@ -71,7 +71,8 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         with torch.no_grad():
             for t in range(args.sample_distance, -1, -1):
                 if t > 0 :
-                    noise_pred = ema(x_t, t)
+                    noise_pred = ema(x_t,
+                                     torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
                     out = diffusion.calc_vlb_xt(ema,
                                                 x_0,
                                                 x_t,
