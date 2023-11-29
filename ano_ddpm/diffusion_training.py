@@ -102,10 +102,10 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                             normal_scores.append(normal_kl_score)
                             abnormal_scores.append(abnormal_kl_score)
 
-                            normal_score = torch.stack(normal_scores).mean()
-                            abnormal_score = torch.stack(abnormal_scores).mean()
-                            wandb.log({f"[{train_data}] normal kl" : normal_score,
-                                       f"[{train_data}] abnormal kl": abnormal_score,})
+            normal_score = torch.stack(normal_scores).mean()
+            abnormal_score = torch.stack(abnormal_scores).mean()
+            wandb.log({f"[{train_data}] normal kl" : normal_score,
+                       f"[{train_data}] abnormal kl": abnormal_score,})
             real_images = x_0[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
             sample_images = x_t[:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
             mask_images = mask_info[:num_images, ...].cpu()
