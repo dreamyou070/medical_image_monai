@@ -374,16 +374,6 @@ class GaussianDiffusionModel:
 
     def step(self, model, noise_pred, x_t, t, denoise_fn="gauss"):
         out = self.sample_p(model, x_t, t)
-        #pred_original_sample = self.sample_p(model, x_t, t)['sample']
-        #pred_original_sample_coeff = extract(self.posterior_mean_coef1, t, x_t.shape, x_t.device)
-        #current_sample_coeff = extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device)
-        #pred_prev_sample = pred_original_sample_coeff * pred_original_sample + current_sample_coeff * x_t
-        #posterior_log_var_clipped = 0
-        #pred_prev_sample = out['mean']
-        #if t > 0:
-        #    nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
-        #    pred_prev_sample += nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise_pred
-            #posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
         return out['sample']#pred_prev_sample
 
     def dental_forward_backward(self,
@@ -510,7 +500,6 @@ class GaussianDiffusionModel:
         output = self.p_mean_variance(model, x_t, t, estimate_noise)
         nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
         sample = output["mean"] + nonzero_mask * torch.exp(0.5 * output["log_variance"]) * estimate_noise
-
         model_mean = output["mean"]
         model_log_var = output["log_variance"]
         whole_kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
