@@ -110,15 +110,21 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                     is_normal = 'normal'
                 else :
                     is_normal = 'abnormal'
+
                 real = real_images[img_index,...].squeeze()
                 real= real.unsqueeze(0)
                 real = torch_transforms.ToPILImage()(real)
+
                 sample = sample_images[img_index,...].squeeze()
                 sample = sample.unsqueeze(0)
                 sample = torch_transforms.ToPILImage()(sample)
+
                 mask = mask_images[img_index,...].squeeze()
                 mask = mask.unsqueeze(0)
+                print(f'mask : {type(mask)} | {mask.shape}')
                 mask = torch_transforms.ToPILImage()(mask)
+                
+
                 recon_mask = PIL.Image.blend(sample, mask, 0.5)
 
                 new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
