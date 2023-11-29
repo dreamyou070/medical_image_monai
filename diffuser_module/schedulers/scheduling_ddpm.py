@@ -348,7 +348,6 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         alpha_prod_t_prev = self.scheduler.alphas_cumprod[prev_timestep] if prev_timestep >= 0 else self.scheduler.final_alpha_cumprod
         beta_prod_t = 1 - alpha_prod_t
         pred_original_sample = (sample - beta_prod_t ** 0.5 * model_output) / alpha_prod_t ** 0.5
-
         pred_sample_direction = (1 - alpha_prod_t_prev) ** 0.5 * model_output
 
         prev_sample = alpha_prod_t_prev ** 0.5 * pred_original_sample + pred_sample_direction
