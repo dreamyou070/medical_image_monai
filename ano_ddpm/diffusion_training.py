@@ -58,26 +58,27 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
     if save_imgs:
 
         # 1) make random noise
-        x = test_data["image_info"].to(device)  # batch, channel, w, h
-        normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
-        mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
-        #t = torch.randint(args.sample_distance - 1, args.sample_distance, (x.shape[0],), device=x.device)
-        t = torch.Tensor([args.sample_distance]).repeat(x.shape[0], ).long().to(x.device)
-        time_step = t[0].item()
+        x_0 = test_data["image_info"].to(device)
+        normal_info = test_data['normal']
+        mask_info = test_data['mask']
+        t = torch.Tensor([args.sample_distance]).repeat(x_0.shape[0], ).long().to(x_0.device)
         if args.use_simplex_noise:
-            noise = diffusion.noise_fn(x=x, t=t, octave=6, frequency=64).float()
+            noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
         else:
-            noise = torch.rand_like(x).float().to(x.device)
-        # 2) select random int
-        x_t = diffusion.sample_q(x, t, noise)
+            noise = torch.rand_like(x_0.float().to(x_0.device))
+        x_t = diffusion.sample_q(x_0, t, noise)
+        kl_divergences = []
         with torch.no_grad():
             for t in range(args.sample_distance, -1, -1):
-                #print(f'time = {t} : get noisy sample and stepping ... ')
                 if t > 0 :
-                    x_t = diffusion.sample_p(ema,
-                                             x_t,
-                                             torch.Tensor([t]).repeat(x.shape[0], ).long().to(x.device))["sample"]
-        real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
+                    out = diffusion.calc_vlb_xt(ema,
+                                                x_0, x_t, torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
+                    x_t = out['sample']
+                    kl_div = out["whole_kl"]
+                    print(f'kl_divergence : {kl_div.shape}')
+                    kl_divergences.append(kl_div)
+
+        real_images = x_0[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
         sample_images = x_t["sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
         mask_images = mask_info[:num_images, ...].cpu()
         for img_index in range(num_images):
@@ -95,10 +96,12 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
             mask = mask_images[img_index,...].squeeze()
             mask = mask.unsqueeze(0)
             mask = torch_transforms.ToPILImage()(mask)
+            recon_mask = PIL.Image.blend(sample, mask, 0.5)
+
             new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
-            new_image.paste(real, (0, 0))
+            new_image.paste(real,   (0, 0))
             new_image.paste(sample, (real.size[0], 0))
-            new_image.paste(mask, (real.size[0]+sample.size[0], 0))
+            new_image.paste(recon_mask, (real.size[0]+sample.size[0], 0))
             new_image.save(os.path.join(image_save_dir, f'real_recon_mask_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
             loading_image = wandb.Image(new_image,
                                         caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal}")
@@ -171,8 +174,6 @@ def main(args) :
 
     print(f'\n step 6. training')
     tqdm_epoch = range(args.start_epoch, args.train_epochs + 1)
-    start_time = time.time()
-    vlb = collections.deque([], maxlen=10)
     for epoch in tqdm_epoch:
         progress_bar = tqdm(enumerate(training_dataset_loader), total=len(training_dataset_loader), ncols=200)
         progress_bar.set_description(f"Epoch {epoch}")
@@ -194,25 +195,22 @@ def main(args) :
                     noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
                 else:
                     noise = torch.rand_like(x_0).float().to(device)
-                # --------------------------------------------------------------------------------
-                # 2) make noisy latent
                 x_t = diffusion.sample_q(x_0, t, noise)                # 3) model prediction
                 noise_pred = model(x_t, t)
                 target = noise
-                # ------------------------------------------------------------------------------------------------------
-                loss = torch.nn.functional.mse_loss(noise_pred.float(),
-                                                    target.float(),
-                                                    reduction="none").mean(dim=(1, 2, 3))
                 if args.masked_loss:
                     noise_pred = noise_pred * mask_info.to(device)
                     target = target * mask_info.to(device)
-                    loss = torch.nn.functional.mse_loss(noise_pred.float(),
-                                                        target.float(),
-                                                        reduction="none").mean(dim=(1, 2, 3))
+                loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(),
+                                                    reduction="none").mean(dim=(1, 2, 3))
 
                 if args.use_vlb_loss :
-                    # batch wise loss
-                    kl_loss = diffusion._vb_terms_bpd(model=model, x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
+                    x_0 = data["image_info"].to(device)[normal_info == 1]
+                    mask_info = data['mask'].unsqueeze(dim=1)[normal_info == 1]
+                    t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=device)
+                    noise = torch.rand_like(x_0).float().to(device)
+                    x_t = diffusion.sample_q(x_0, t, noise)  # 3) model prediction
+                    kl_loss = diffusion._vb_terms_bpd(model=model,x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
                     loss = loss + args.kl_loss_weight * kl_loss
 
                 if args.pos_neg_loss:
@@ -257,73 +255,15 @@ def main(args) :
                 update_ema_params(ema, model)
                 # ----------------------------------------------------------------------------------------- #
                 # Inference
-                if epoch % args.inference_freq == 0 and step == 0:
-                    for i, test_data in enumerate(test_dataset_loader):
-                        if i == 0:
-                            ema.eval()
-                            model.eval()
-                            inference_num = min(args.inference_num, args.batch_size)
-                            training_outputs(diffusion, test_data, epoch, inference_num, save_imgs=args.save_imgs,
-                                             ema=ema, args=args, is_train_data = False, device = device)
-                            training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
-                                             ema=ema, args=args, is_train_data=True, device = device)
-        # ----------------------------------------------------------------------------------------- #
-        # vlb loss calculating
-        print(f'vlb loss calculating ... ')
-        if epoch % args.vlb_freq == 0:
-            for i, test_data in enumerate(test_dataset_loader) :
-                if i == 0 :
-                    x = test_data["image_info"].to(device)
-                    normal_info_ = test_data['normal']  # if 1 = normal, 0 = abnormal
-                    mask_info_ = test_data['mask']  # if 1 = normal, 0 = abnormal
-                    normal_x_ = x[normal_info_ == 1]
-                    abnormal_x_ = x[normal_info_ != 1]
-                    # ----------------------------------------------------------------------------------------- #
-                    # [mask] 1 = normal, 0 = abnormal
-                    # abnormal_mask = [Batch, W, H]
-                    abnormal_mask = mask_info_[normal_info_ != 1].to(device)
-                    # --------------------------------------------------------------------------------------------------
-                    # calculate vlb loss
-                    # x = [Batch, Channel, 128, 128]
-                    if normal_x_.shape[0] != 0 :
-                        # ---------------------------------------------------------------------------------------------
-                        # should i calculate whole timestep ???
-                        # normal and abnormal ...
-                        vlb_terms = diffusion.calc_total_vlb_in_sample_distance(normal_x_, model, args)
-                        vlb = vlb_terms["whole_vb"]          # [batch, 1000, 1, W, H]
-                        # ---------------------------------------------------------------------------
-                        # timewise averaging ...
-                        whole_vb = vlb.squeeze(dim=2).mean(dim=1) # batch, W, H
-                        efficient_pixel_num = whole_vb.shape[-2] * whole_vb.shape[-1]
-                        whole_vb = whole_vb.flatten(start_dim=1)  # batch, W*H
-                        batch_vb = whole_vb.sum(dim=-1)           # batch
-                        whole_vb = batch_vb / efficient_pixel_num # shape = [batch]
-                        wandb.log({"total_vlb (test data normal sample)": whole_vb.mean().cpu().item()})
-                    # --------------------------------------------------------------------------------------------------
-                    if abnormal_x_.shape[0] != 0 :
-                        ab_vlb_terms = diffusion.calc_total_vlb_in_sample_distance(abnormal_x_, model, args)
-                        ab_whole_vb = ab_vlb_terms["whole_vb"].squeeze(dim=2).mean(dim=1)  # [Batch, W, H]
-                        # ----------------------------------------------------------------------------------------------
-                        normal_efficient_pixel_num = abnormal_mask.sum(dim=-1).sum(dim=-1).to(device)
-                        # abnormal_mask = [batch, w, h]
-                        # ab_whole_vb =   [batch, w, h]
-                        normal_portion_ab_whole_vb = abnormal_mask * ab_whole_vb
-
-                        normal_portion_ab_whole_vb = normal_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
-                        normal_portion_ab_whole_vb = normal_portion_ab_whole_vb / normal_efficient_pixel_num
-                        wandb.log({"normal portion of *ab*normal sample kl":  normal_portion_ab_whole_vb.mean().cpu().item()})
-
-                        # --------------------------------------------------------------------------------------------------
-                        inverse_abnormal_mask = 1 - abnormal_mask
-                        efficient_pixel_num = (inverse_abnormal_mask).sum(dim=-1).sum(dim=-1).to(device)
-                        ab_portion_ab_whole_vb = inverse_abnormal_mask * ab_whole_vb
-
-                        ab_portion_ab_whole_vb = ab_portion_ab_whole_vb.sum(dim=-1).sum(dim=-1)
-
-                        ab_portion_ab_whole_vb = ab_portion_ab_whole_vb / efficient_pixel_num
-                        wandb.log({"abnormal portion of *ab*normal sample kl" : ab_portion_ab_whole_vb.mean().cpu().item()})
-                    # --------------------------------------------------------------------------------------------------
-                    # collecting total vlb in deque collections
+                for i, test_data in enumerate(test_dataset_loader):
+                    if i == step :
+                        ema.eval()
+                        model.eval()
+                        inference_num = min(args.inference_num, args.batch_size)
+                        training_outputs(diffusion, test_data, epoch, inference_num, save_imgs=args.save_imgs,
+                                         ema=ema, args=args, is_train_data = False, device = device)
+                        training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
+                                         ema=ema, args=args, is_train_data=True, device = device)
         if epoch % args.model_save_freq == 0 and epoch > 0 :
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)

@@ -369,7 +369,8 @@ class GaussianDiffusionModel:
             noise = denoise_fn(x_t, t)
         nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
         sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
-        return {"sample": sample, "pred_x_0": out["pred_x_0"]}
+        return {"sample": sample,
+                "pred_x_0": out["pred_x_0"]}
 
     def step(self, model, noise_pred, x_t, t, denoise_fn="gauss"):
         out = self.sample_p(model, x_t, t)
@@ -502,12 +503,14 @@ class GaussianDiffusionModel:
 
     def calc_vlb_xt(self, model, x_0, x_t, t, estimate_noise=None):
         timestep = int(t[0])
-        t_batch_patch = (torch.ones_like(x_0) * timestep).to(x_0.device)
-
+        t_batch_patch = (torch.ones_like(x_t) * timestep).to(x_0.device)
         # --------------------------------------------------------------------------------------------------------------
         # 1) compare scheduling one step reverse and model one step reverse
         true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
         output = self.p_mean_variance(model, x_t, t, estimate_noise)
+        nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
+        sample = output["mean"] + nonzero_mask * torch.exp(0.5 * output["log_variance"]) * estimate_noise
+
         model_mean = output["mean"]
         model_log_var = output["log_variance"]
         whole_kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
@@ -523,9 +526,12 @@ class GaussianDiffusionModel:
         patch_nll = torch.where((t_batch_patch == 0), decoder_nll_, whole_kl)
         nll = torch.where((t == 0), decoder_nll, kl)
         return {"output": nll,
+                "sample": sample,
                 "pred_x_0": output["pred_x_0"],
                 #"whole_kl" : whole_kl,
                 "whole_kl": patch_nll}
+
+    calc_vlb_xt['whole_kl']
     def _vb_terms_bpd(self, model, x_start, x_t, t, clip_denoised=True, model_kwargs=None):
         """
         Get a term for the variational lower-bound.
