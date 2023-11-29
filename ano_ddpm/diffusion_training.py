@@ -213,6 +213,12 @@ def main(args) :
                 loss = torch.nn.functional.mse_loss(noise_pred.float(),
                                                     target.float(),
                                                     reduction="none")
+
+                kl_loss = diffusion._vb_terms_bpd(model=model,x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
+                print(f'kl_loss : {kl_loss}')
+
+
+
                 if args.pos_neg_loss:
                     pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
                                                             (target * mask_info.to(device)).float(),

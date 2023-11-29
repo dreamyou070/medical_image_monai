@@ -507,30 +507,16 @@ class GaussianDiffusionModel:
         # --------------------------------------------------------------------------------------------------------------
         # 1) compare scheduling one step reverse and model one step reverse
         true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
-
-
         output = self.p_mean_variance(model, x_t, t, estimate_noise)
         model_mean = output["mean"]
         model_log_var = output["log_variance"]
-
         whole_kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
         kl = mean_flat(whole_kl) / np.log(2.0)
-
-
-
-
-
-
-
-        # --------------------------------------------------------------------------------------------------------------
         # if timestep is 0, it compare with x_0
         # independent discrete decoder (log likelihood)
         decoder_nll_ = -1 * discretised_gaussian_log_likelihood(x_0,output["mean"],
                                                                 log_scales=0.5 * output["log_variance"])
         decoder_nll = mean_flat(decoder_nll_) / np.log(2.0)
-
-
-
         # --------------------------------------------------------------------------------------------------------------
         # 3) if t == 0 : the value is decoder negative log likelihood
         #    else : kl between schedule value and model value
@@ -539,8 +525,36 @@ class GaussianDiffusionModel:
         return {"output": nll,
                 "pred_x_0": output["pred_x_0"],
                 #"whole_kl" : whole_kl,
-                "whole_kl": patch_nll
-                }
+                "whole_kl": patch_nll}
+    def _vb_terms_bpd(self, model, x_start, x_t, t, clip_denoised=True, model_kwargs=None):
+        """
+        Get a term for the variational lower-bound.
+        The resulting units are bits (rather than nats, as one might expect).
+        This allows for comparison to other papers.
+        :return: a dict with the following keys:
+                 - 'output': a shape [N] tensor of NLLs or KLs.
+                 - 'pred_xstart': the x_0 predictions.
+        """
+        # (1)
+        true_mean, _, true_log_variance_clipped = self.q_posterior_mean_variance(x_start=x_start,x_t=x_t,t=t)
+
+        # (2)
+        out = self.p_mean_variance(model, x_t, t, clip_denoised=clip_denoised, model_kwargs=model_kwargs)
+
+        # (3) kl divergence
+        kl = normal_kl(true_mean, true_log_variance_clipped,
+                       out["mean"], out["log_variance"])
+        kl = mean_flat(kl) / np.log(2.0)
+        decoder_nll = -discretised_gaussian_log_likelihood(x_start,
+                                                           means=out["mean"], log_scales=0.5 * out["log_variance"])
+        assert decoder_nll.shape == x_start.shape
+        decoder_nll = mean_flat(decoder_nll) / np.log(2.0)
+
+        # At the first timestep return the decoder NLL,
+        # otherwise return KL(q(x_{t-1}|x_t,x_0) || p(x_{t-1}|x_t))
+        output = torch.where((t == 0), decoder_nll, kl)
+        return {"output": output,
+                "pred_xstart": out["pred_xstart"]}
 
     def calc_total_vlb_in_sample_distance(self, x_0, model, args):
         sample_distance = args.sample_distance
