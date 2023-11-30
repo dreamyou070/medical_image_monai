@@ -308,7 +308,7 @@ class GaussianDiffusionModel:
                  - 'pred_xstart': the x_0 predictions.
         """
         true_mean, _, true_log_variance_clipped = self.q_posterior_mean_variance(x_start,x_t,t)
-        out = self.p_mean_variance(model, x_t, t, clip_denoised=clip_denoised, model_kwargs=model_kwargs)
+        out = self.p_mean_variance(model, x_t, t)
         kl = normal_kl(true_mean, true_log_variance_clipped, out["mean"], out["log_variance"])
         kl = mean_flat(kl) / np.log(2.0)
         decoder_nll = -discretised_gaussian_log_likelihood(x_start, means=out["mean"], log_scales=0.5 * out["log_variance"])
