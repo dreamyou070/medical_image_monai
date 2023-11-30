@@ -262,9 +262,8 @@ class GaussianDiffusionModel:
         pred_x_0 = self.predict_x_0_from_eps(x_t, t, estimate_noise).clamp(-1, 1)
         model_mean, _, model_logvar_ = self.q_posterior_mean_variance(pred_x_0, x_t, t)
         return {"mean": model_mean,
-            "variance": model_var,
-            #"log_variance": model_logvar,
-                "log_variance": model_logvar_,
+               "variance": model_var,
+               "log_variance": model_logvar,
             "pred_x_0": pred_x_0,
         }
 
@@ -356,6 +355,7 @@ class GaussianDiffusionModel:
 
     def step(self, model, x_t, t, denoise_fn):
         out = self.p_mean_variance(model, x_t, t)
+
         # noise = torch.randn_like(x_t)
         if type(denoise_fn) == str:
             if denoise_fn == "gauss":
