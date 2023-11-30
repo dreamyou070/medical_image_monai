@@ -234,6 +234,8 @@ def main(args) :
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
 
+
+
             if x_0.shape[0] != 0 and x_0.dim() == 4 :
                 t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device =device)
                 if args.use_simplex_noise:
