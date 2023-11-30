@@ -317,7 +317,7 @@ class GaussianDiffusionModel:
 
         output = torch.where((t == 0), decoder_nll, kl)
         return {"output": output,
-                "pred_xstart": out["pred_xstart"],}
+                "pred_x_0": out["pred_x_0"],}
 
 
 
