@@ -365,6 +365,7 @@ class GaussianDiffusionModel:
 
 
 
+
     def q_posterior_mean_variance(self, x_0, x_t, t):
         """
         Compute the mean and variance of the diffusion posterior:
