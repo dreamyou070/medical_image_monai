@@ -381,14 +381,7 @@ class GaussianDiffusion:
         sample = out["mean"] + nonzero_mask * th.exp(0.5 * out["log_variance"]) * noise
         return {"sample": sample, "pred_xstart": out["pred_xstart"]}
 
-    def kl_loss(self, model, x_0, t, model_kwargs=None):
-        # 1) prior sample
-        noise = th.randn_like(x_0)
-        x_t = self.sample_q(x_0, t, noise)
-        prior_sample = self.p_sample(model, x_t, t, clip_denoised=True, denoised_fn=None, model_kwargs=None)["sample"]
-        # 2) posterior
-        posterir_sample = self.q_sample(x_0, t, noise=None)
-        return prior_sample, posterir_sample
+
 
 
     def p_sample_loop(
