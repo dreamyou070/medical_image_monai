@@ -56,7 +56,6 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
     os.makedirs(image_save_dir, exist_ok=True)
 
     if save_imgs:
-
         # 1) make random noise
         x_0 = test_data["image_info"].to(device)
         weight_dtype = x_0.dtype
@@ -70,44 +69,58 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         x_t = diffusion.sample_q(x_0, t, noise)
         normal_scores, abnormal_scores = [], []
         if x_0.shape[0] != normal_info.sum() and x_0.dim() == 4 :
-            with torch.no_grad():
-                for t in range(args.sample_distance, -1, -1):
-                    if t > 0 :
-                        noise_pred = ema(x_t,torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
-                        out = diffusion.calc_vlb_xt(ema,x_0,x_t,
-                                                    torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                    estimate_noise = noise_pred)
-                        x_t = out['sample']
-                        kl_div = out["whole_kl"] # batch, 1, W, H
-                        # normal portion kl divergence
-                        normal_kl_div = (kl_div * mask_info).sum([1,2,3])
-                        normal_pixel_num = mask_info.sum([1,2,3])
-                        normal_pixel_num = torch.where(normal_pixel_num == 0, 1, normal_pixel_num)
-                        normal_kl_score = normal_kl_div / normal_pixel_num
+            if args.onestep_inference :
+                output = diffusion.sample_p(ema, x_0, x_t, t, denoise_fn="gauss")
+                recon = output["pred_x_0"]
+            else :
+                with torch.no_grad():
+                    for t in range(args.sample_distance, -1, -1):
+                        if t > 0:
+                            if args.recon_with_standard_gaussian:
+                                out = diffusion.sample_p(ema, x_0, x_t,
+                                                         torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                                                         denoise_fn="gauss")
+                            else :
+                                noise_pred = ema(x_t, torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
+                                out = diffusion.calc_vlb_xt(ema, x_0, x_t,
+                                                            torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                                                            estimate_noise=noise_pred)
+                            x_t = out['sample']
+                            """
+                            kl_div = out["whole_kl"]  # batch, 1, W, H
+                            # normal portion kl divergence
+                            normal_kl_div = (kl_div * mask_info).sum([1, 2, 3])
+                            normal_pixel_num = mask_info.sum([1, 2, 3])
+                            normal_pixel_num = torch.where(normal_pixel_num == 0, 1, normal_pixel_num)
+                            normal_kl_score = normal_kl_div / normal_pixel_num
 
-                        # abnormal portaion kl divergence
-                        abnormal_sample_kl = kl_div[normal_info != 1]
+                            # abnormal portaion kl divergence
+                            abnormal_sample_kl = kl_div[normal_info != 1]
 
-                        if abnormal_sample_kl.shape[0] > 0 and abnormal_sample_kl.dim() == 4 :
-                            abnormal_mask = mask_info[normal_info != 1]
+                            if abnormal_sample_kl.shape[0] > 0 and abnormal_sample_kl.dim() == 4:
+                                abnormal_mask = mask_info[normal_info != 1]
 
-                            abnormal_mask_abnormal_portion = 1- abnormal_mask
-                            abnormal_sample_kl = (abnormal_sample_kl * abnormal_mask_abnormal_portion).sum([1,2,3])
-                            abnormal_pixel_num = abnormal_mask_abnormal_portion.sum([1,2,3])
-                            abnormal_pixel_num = torch.where(abnormal_pixel_num == 0, 1,abnormal_pixel_num)
-                            abnormal_kl_score = abnormal_sample_kl / abnormal_pixel_num
+                                abnormal_mask_abnormal_portion = 1 - abnormal_mask
+                                abnormal_sample_kl = (abnormal_sample_kl * abnormal_mask_abnormal_portion).sum(
+                                    [1, 2, 3])
+                                abnormal_pixel_num = abnormal_mask_abnormal_portion.sum([1, 2, 3])
+                                abnormal_pixel_num = torch.where(abnormal_pixel_num == 0, 1, abnormal_pixel_num)
+                                abnormal_kl_score = abnormal_sample_kl / abnormal_pixel_num
 
-                            normal_kl_score = normal_kl_score.mean()
-                            abnormal_kl_score = abnormal_kl_score.mean()
-                            normal_scores.append(normal_kl_score)
-                            abnormal_scores.append(abnormal_kl_score)
-
-            normal_score = torch.stack(normal_scores).mean()
-            abnormal_score = torch.stack(abnormal_scores).mean()
-            wandb.log({f"[{train_data}] normal kl" : normal_score,
-                       f"[{train_data}] abnormal kl": abnormal_score,})
+                                normal_kl_score = normal_kl_score.mean()
+                                abnormal_kl_score = abnormal_kl_score.mean()
+                                normal_scores.append(normal_kl_score)
+                                abnormal_scores.append(abnormal_kl_score)
+                            """
+                    """
+                    normal_score = torch.stack(normal_scores).mean()
+                    abnormal_score = torch.stack(abnormal_scores).mean()
+                    wandb.log({f"[{train_data}] normal kl": normal_score, f"[{train_data}] abnormal kl": abnormal_score, })
+                    """
+                    recon = x_t
             real_images = x_0[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
-            sample_images = x_t[:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
+            #sample_images = x_t[:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
+            recon_images = recon[:num_images, ...].cpu()
             mask_images = mask_info[:num_images, ...].cpu()
             for img_index in range(num_images):
                 normal_info_ = normal_info[img_index]
@@ -120,14 +133,14 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                 real= real.unsqueeze(0)
                 real = torch_transforms.ToPILImage()(real)
 
-                sample = sample_images[img_index,...].squeeze()
+                #sample = sample_images[img_index,...].squeeze()
+                sample = recon_images[img_index,...].squeeze()
                 sample = sample.unsqueeze(0)
                 sample = torch_transforms.ToPILImage()(sample)
 
                 mask = mask_images[img_index,...].squeeze()
                 mask = mask.unsqueeze(0).to(weight_dtype)
                 mask = torch_transforms.ToPILImage()(mask)
-                
 
                 recon_mask = PIL.Image.blend(sample, mask, 0.5)
 
