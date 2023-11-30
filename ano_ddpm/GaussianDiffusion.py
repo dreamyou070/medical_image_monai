@@ -354,22 +354,25 @@ class GaussianDiffusionModel:
         return (extract(self.sqrt_alphas_cumprod, t, x_0.shape, x_0.device) * x_0 +
                 extract(self.sqrt_one_minus_alphas_cumprod, t, x_0.shape, x_0.device) * noise)
 
-    def step(self, model, x_t, t, noise):
+    def step(self, model, x_t, t, denoise_fn):
         out = self.p_mean_variance(model, x_t, t)
         # noise = torch.randn_like(x_t)
-        if type(noise) == str:
-            if noise == "gauss":
+        if type(denoise_fn) == str:
+            if denoise_fn == "gauss":
                 noise = torch.randn_like(x_t)
-            elif noise == "noise_fn":
+            elif denoise_fn == "noise_fn":
                 noise = self.noise_fn(x_t, t).float()
-            elif noise == "random":
+            elif denoise_fn == "random":
                 # noise = random_noise(self.simplex, x_t, t).float()
                 noise = torch.randn_like(x_t)
             else:
                 noise = generate_simplex_noise(self.simplex, x_t, t, False, in_channels=self.img_channels).float()
-        elif type(noise) == torch.Tensor:
-            noise = noise
-        nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
+        else:
+            noise = denoise_fn(x_t, t)
+
+        nonzero_mask = (
+            (t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1)))
+        )
         sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
         return sample
 
