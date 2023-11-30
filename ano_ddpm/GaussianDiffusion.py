@@ -363,6 +363,8 @@ class GaussianDiffusionModel:
         sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
         return sample
 
+
+
     def q_posterior_mean_variance(self, x_0, x_t, t):
         """
         Compute the mean and variance of the diffusion posterior:
