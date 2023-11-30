@@ -374,7 +374,7 @@ class GaussianDiffusionModel:
             (t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1)))
         )
         sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
-        return {"sample": sample, "pred_x_0": out["pred_x_0"]}
+        return sample
 
 
 

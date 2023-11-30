@@ -79,9 +79,9 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                         if t > 0:
                             if args.recon_with_standard_gaussian:
                                 out = diffusion.step(ema,
-                                                         x_0,
-                                                         torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                         denoise_fn="gauss")
+                                                     x_t,
+                                                     torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                                                     denoise_fn="gauss")
                                 #noise_pred = torch.randn_like(x_t)
                                 #x_t = diffusion.step(ema,
                                 #                     x_t,
