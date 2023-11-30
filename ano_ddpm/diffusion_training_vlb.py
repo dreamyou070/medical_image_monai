@@ -235,28 +235,25 @@ def main(args):
             if args.only_normal_training:
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
-
                 if x_0.shape[0] != 0 and x_0.dim() == 4:
                     # 1) epsiolong predictino loss
                     t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=device)
                     noise = torch.rand_like(x_0).float().to(device)
                     with torch.no_grad():
                         x_t = diffusion.sample_q(x_0, t, noise)  # 3) model prediction
+
+
                     noise_pred = model(x_t, t)
                     target = noise
                     simple_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean(dim=(1, 2, 3))
-                    #simple_loss = simple_loss.mean()
-                    # 2) KL divergence loss
-                    #kl_loss = diffusion._vb_terms_bpd(model=model, x_start=x_0, x_t=x_t, t=t, clip_denoised=True, )["output"] # batch size
-                    prior_sample, posterir_sample = diffusion.kl_loss(model, x_0, t)
-                    kl_loss = torch.nn.functional.mse_loss(prior_sample.float(),
-                                                           prior_sample.float(), reduction="none").mean(dim=(1, 2, 3))
 
+                    # 2) KL divergence loss
+                    kl_loss = diffusion.kl_loss(model, x_0, x_t, t)
                     hybrid_loss = simple_loss + args.kl_loss_weight * kl_loss
                     hybrid_loss = hybrid_loss.mean()
                     wandb.log({"task loss" : simple_loss.mean().item(),
                                "kl loss" : kl_loss.mean().item(),
-                              "training loss": hybrid_loss.item()})
+                               "training loss": hybrid_loss.item()})
                     optimiser.zero_grad()
                     hybrid_loss.backward()
                     torch.nn.utils.clip_grad_norm_(model.parameters(), 1)

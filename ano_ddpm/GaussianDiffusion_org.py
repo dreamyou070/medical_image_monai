@@ -122,12 +122,18 @@ def generate_simplex_noise(
                     )
                 ).to(x.device), 0
             ).repeat(x.shape[0], 1, 1, 1)
-        # ------------------------------------------------------------------------------------
-        simplex_noise = Simplex_instance.rand_3d_fixed_T_octaves(
-            x.shape[-2:], t.detach().cpu().numpy(), octave,
-            persistence, frequency)
-        noise[:, i, ...] = torch.unsqueeze(torch.from_numpy(simplex_noise).to(x.device), 0).\
-             repeat(x.shape[0], 1, 1, 1)
+        noise[:, i, ...] = torch.unsqueeze(
+            torch.from_numpy(
+                # Simplex_instance.rand_2d_octaves(
+                #         x.shape[-2:], octave,
+                #         persistence, frequency
+                #         )
+                Simplex_instance.rand_3d_fixed_T_octaves(
+                    x.shape[-2:], t.detach().cpu().numpy(), octave,
+                    persistence, frequency
+                )
+            ).to(x.device), 0
+        ).repeat(x.shape[0], 1, 1, 1)
     return noise
 
 
@@ -142,7 +148,6 @@ def random_noise(Simplex_instance, x, t):
 
 
 class GaussianDiffusionModel:
-
     def __init__(
             self,
             img_size,
@@ -209,6 +214,7 @@ class GaussianDiffusionModel:
                 * np.sqrt(alphas)
                 / (1.0 - self.alphas_cumprod)
         )
+
     def sample_t_with_weights(self, b_size, device):
         p = self.weights / np.sum(self.weights)
         indices_np = np.random.choice(len(p), size=b_size, p=p)
@@ -241,6 +247,22 @@ class GaussianDiffusionModel:
             self.log_one_minus_alphas_cumprod, t, x_0.shape, x_0.device
         )
         return mean, variance, log_variance
+
+    def q_posterior_mean_variance(self, x_0, x_t, t):
+        """
+        Compute the mean and variance of the diffusion posterior:
+            q(x_{t-1} | x_t, x_0)
+        """
+
+        # mu (x_t,x_0) = \frac{\sqrt{alphacumprod prev} betas}{1-alphacumprod} *x_0
+        # + \frac{\sqrt{alphas}(1-alphacumprod prev)}{ 1- alphacumprod} * x_t
+        posterior_mean = (extract(self.posterior_mean_coef1, t, x_t.shape, x_t.device) * x_0
+                          + extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device) * x_t)
+
+        # var = \frac{1-alphacumprod prev}{1-alphacumprod} * betas
+        posterior_var = extract(self.posterior_variance, t, x_t.shape, x_t.device)
+        posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
+        return posterior_mean, posterior_var, posterior_log_var_clipped
 
     def p_mean_variance(self, model, x_t, t, estimate_noise=None):
         """
@@ -293,21 +315,9 @@ class GaussianDiffusionModel:
         sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
         return {"sample": sample, "pred_x_0": out["pred_x_0"]}
 
-    def kl_loss(self, model, x_0, x_t, t, model_kwargs=None):
-
-        # 1) posterior (scheduling)
-        posterior_mean, _, posterior_log_var_clipped = self.q_posterior_mean_variance(x_0, x_t, t)
-
-        # 2) prior (model)
-        model_predict = self.p_mean_variance(model, x_t, t, estimate_noise=None)
-        model_x_t_1_mean, model_x_t_1_log_var = model_predict['mean'], model_predict['log_variance']
-
-        kl = normal_kl(posterior_mean, posterior_log_var_clipped,
-                       model_x_t_1_mean, model_x_t_1_log_var)
-        kl = mean_flat(kl) / np.log(2.0)
-        return kl
-
-    def forward_backward(self, model, x, see_whole_sequence="half", t_distance=None, denoise_fn="gauss",):
+    def forward_backward(
+            self, model, x, see_whole_sequence="half", t_distance=None, denoise_fn="gauss",
+    ):
         assert see_whole_sequence == "whole" or see_whole_sequence == "half" or see_whole_sequence == None
 
         if t_distance == 0:
@@ -345,6 +355,7 @@ class GaussianDiffusionModel:
                 seq.append(x.cpu().detach())
 
         return x.detach() if not see_whole_sequence else seq
+
     def sample_q(self, x_0, t, noise):
         """
             q (x_t | x_0 )
@@ -357,21 +368,6 @@ class GaussianDiffusionModel:
         return (extract(self.sqrt_alphas_cumprod, t, x_0.shape, x_0.device) * x_0 +
                 extract(self.sqrt_one_minus_alphas_cumprod, t, x_0.shape, x_0.device) * noise)
 
-    def q_posterior_mean_variance(self, x_0, x_t, t):
-        """
-        Compute the mean and variance of the diffusion posterior:
-            q(x_{t-1} | x_t, x_0)
-        """
-
-        # mu (x_t,x_0) = \frac{\sqrt{alphacumprod prev} betas}{1-alphacumprod} *x_0
-        # + \frac{\sqrt{alphas}(1-alphacumprod prev)}{ 1- alphacumprod} * x_t
-        posterior_mean = (extract(self.posterior_mean_coef1, t, x_t.shape, x_t.device) * x_0
-                          + extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device) * x_t)
-
-        # var = \frac{1-alphacumprod prev}{1-alphacumprod} * betas
-        posterior_var = extract(self.posterior_variance, t, x_t.shape, x_t.device)
-        posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
-        return posterior_mean, posterior_var, posterior_log_var_clipped
     def sample_q_gradual(self, x_t, t, noise):
         """
         q (x_t | x_{t-1})
@@ -382,6 +378,7 @@ class GaussianDiffusionModel:
         """
         return (extract(self.sqrt_alphas, t, x_t.shape, x_t.device) * x_t +
                 extract(self.sqrt_betas, t, x_t.shape, x_t.device) * noise)
+
     def calc_vlb_xt(self, model, x_0, x_t, t, estimate_noise=None):
         # find KL divergence at t
         true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
@@ -396,6 +393,7 @@ class GaussianDiffusionModel:
 
         nll = torch.where((t == 0), decoder_nll, kl)
         return {"output": nll, "pred_x_0": output["pred_x_0"]}
+
     def calc_loss(self, model, x_0, t):
         # noise = torch.randn_like(x)
 
@@ -432,6 +430,7 @@ class GaussianDiffusionModel:
         loss, x_t, eps_t = self.calc_loss(model, x_0, t)
         loss = ((loss["loss"] * weights).mean(), (loss, x_t, eps_t))
         return loss
+
     def prior_vlb(self, x_0, args):
         t = torch.tensor([self.num_timesteps - 1] * args["Batch_Size"], device=x_0.device)
         qt_mean, _, qt_log_variance = self.q_mean_variance(x_0, t)
@@ -620,3 +619,25 @@ class GaussianDiffusionModel:
             output[(i - 1) * 6:i * 6, ...] = torch.cat((x_0, x_noised, x, mse, mse_threshold, mask))
 
         return output
+
+
+x = """
+Two methods of detection:
+
+A - using varying simplex frequencies
+B - using octave based simplex noise
+C - gaussian based (same as B but gaussian)
+
+
+A: for i in range(6,0,-1):
+    2**i == frequency
+   Frequency = 64: Sample 10 times at t=50, denoise and average
+   Repeat at t = range (50, ARGS["sample distance"], 50)
+
+   Note simplex noise is fixed frequency ie no octave mixure
+
+B: Using some initial "good" simplex octave parameters such as 64 freq, oct = 6, persistence= 0.9   
+   Sample 10 times at t=50, denoise and average
+   Repeat at t = range (50, ARGS["sample distance"], 50)
+
+"""
