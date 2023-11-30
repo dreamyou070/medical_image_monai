@@ -249,7 +249,7 @@ def main(args):
                     #simple_loss = simple_loss.mean()
                     # 2) KL divergence loss
                     kl_loss = diffusion._vb_terms_bpd(model=model, x_start=x_0, x_t=x_t, t=t, clip_denoised=False, )["output"] # batch size
-                    #kl_loss = kl_loss.mean()
+                    
 
                     hybrid_loss = simple_loss + args.kl_loss_weight * kl_loss
                     hybrid_loss = hybrid_loss.mean()
