@@ -247,9 +247,10 @@ def main(args):
                     simple_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean(dim=(1, 2, 3))
                     #simple_loss = simple_loss.mean()
                     # 2) KL divergence loss
-                    kl_loss = diffusion._vb_terms_bpd(model=model, x_start=x_0, x_t=x_t, t=t, clip_denoised=True, )["output"] # batch size
-
-
+                    #kl_loss = diffusion._vb_terms_bpd(model=model, x_start=x_0, x_t=x_t, t=t, clip_denoised=True, )["output"] # batch size
+                    prior_sample, posterir_sample = diffusion.kl_loss(model, x_0, t)
+                    kl_loss = torch.nn.functional.mse_loss(prior_sample.float(),
+                                                           prior_sample.float(), reduction="none").mean(dim=(1, 2, 3))
 
                     hybrid_loss = simple_loss + args.kl_loss_weight * kl_loss
                     hybrid_loss = hybrid_loss.mean()
