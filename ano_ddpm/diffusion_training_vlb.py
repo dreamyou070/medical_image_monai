@@ -83,11 +83,10 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                                 #               t=torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
                                 #               noise=torch.randn_like(x_t))
                                 #noise_pred = torch.randn_like(x_t)
-                                noise_pred = torch.randn_like(x_t)
                                 out = diffusion.sample_p(ema,
                                                          x_0,
                                                          torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                         denoise_fn=noise_pred)
+                                                         denoise_fn='gauss',)
 
                             else:
                                 noise_pred = ema(x_t, torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
