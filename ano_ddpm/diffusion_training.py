@@ -70,21 +70,23 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         normal_scores, abnormal_scores = [], []
         if x_0.shape[0] != normal_info.sum() and x_0.dim() == 4 :
             if args.onestep_inference :
-                output = diffusion.sample_p(ema, x_0, x_t, t, denoise_fn="gauss")
+                output = diffusion.sample_p(ema, x_0, t, denoise_fn="gauss")
                 recon = output["pred_x_0"]
             else :
                 with torch.no_grad():
                     for t in range(args.sample_distance, -1, -1):
                         if t > 0:
                             if args.recon_with_standard_gaussian:
-                                out = diffusion.sample_p(ema, x_0, x_t,
+                                out = diffusion.sample_p(ema,
+                                                         x_0,
                                                          torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
                                                          denoise_fn="gauss")
                             else :
                                 noise_pred = ema(x_t, torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
-                                out = diffusion.calc_vlb_xt(ema, x_0, x_t,
-                                                            torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                            estimate_noise=noise_pred)
+                                out = diffusion.sample_p(ema,
+                                                         x_0,
+                                                         torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                                                         denoise_fn=noise_pred)
                             x_t = out['sample']
                             """
                             kl_div = out["whole_kl"]  # batch, 1, W, H
