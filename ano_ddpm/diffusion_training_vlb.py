@@ -78,17 +78,14 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                     for t in range(args.sample_distance, -1, -1):
                         if t > 0:
                             if args.recon_with_standard_gaussian:
-                                out = diffusion.sample_p(ema,
-                                                         x_0,
-                                                         torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                         denoise_fn="gauss")
+                                x_t = diffusion.step(model=ema,
+                                               x_t=x_t,
+                                               t=torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                                               noise=torch.randn_like(x_t))
                             else:
-                                noise_pred = ema(x_t, torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
-                                out = diffusion.sample_p(ema,
-                                                         x_0,
-                                                         torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                         denoise_fn=noise_pred)
-                            x_t = out['sample']
+                                x_t = diffusion.step(model=ema,
+                                                     x_t=x_t,
+                                                     t=torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),)
                             """
                             kl_div = out["whole_kl"]  # batch, 1, W, H
                             # normal portion kl divergence
@@ -241,19 +238,22 @@ def main(args):
                     noise = torch.rand_like(x_0).float().to(device)
                     with torch.no_grad():
                         x_t = diffusion.sample_q(x_0, t, noise)  # 3) model prediction
-
-
                     noise_pred = model(x_t, t)
                     target = noise
                     simple_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean(dim=(1, 2, 3))
 
-                    # 2) KL divergence loss
-                    kl_loss = diffusion.kl_loss(model, x_0, x_t, t)
-                    hybrid_loss = simple_loss + args.kl_loss_weight * kl_loss
-                    hybrid_loss = hybrid_loss.mean()
-                    wandb.log({"task loss" : simple_loss.mean().item(),
-                               "kl loss" : kl_loss.mean().item(),
-                               "training loss": hybrid_loss.item()})
+                    if args.use_kl_divergence_loss :
+                        # 2) KL divergence loss
+                        kl_loss = diffusion.kl_loss(model, x_0, x_t, t)
+                        hybrid_loss = simple_loss + args.kl_loss_weight * kl_loss
+                        hybrid_loss = hybrid_loss.mean()
+                        wandb.log({"task loss" : simple_loss.mean().item(),
+                                   "kl loss" : kl_loss.mean().item(),
+                                   "training loss": hybrid_loss.item()})
+                    else :
+                        hybrid_loss = simple_loss.mean()
+                        wandb.log({"task loss" : simple_loss.mean().item(),
+                                   "training loss": hybrid_loss.item()})
                     optimiser.zero_grad()
                     hybrid_loss.backward()
                     torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
@@ -327,7 +327,7 @@ if __name__ == '__main__':
     parser.add_argument('--masked_loss', action='store_true')
     parser.add_argument('--pos_neg_loss', action='store_true')
     parser.add_argument('--pos_neg_loss_scale', type=float, default=1.0)
-    parser.add_argument('--infonce_loss', action='store_true')
+    parser.add_argument('--use_kl_divergence_loss', action='store_true')
 
     # step 7. inference
     parser.add_argument('--inference_num', type=int, default=4)

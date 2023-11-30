@@ -245,7 +245,6 @@ class GaussianDiffusionModel:
     def p_mean_variance(self, model, x_t, t, estimate_noise=None):
         """
         Finds the mean & variance from N(x_{t-1}; mu_theta(x_t,t), sigma_theta (x_t,t))
-
         :param model:
         :param x_t:
         :param t:
@@ -354,6 +353,15 @@ class GaussianDiffusionModel:
         """
         return (extract(self.sqrt_alphas_cumprod, t, x_0.shape, x_0.device) * x_0 +
                 extract(self.sqrt_one_minus_alphas_cumprod, t, x_0.shape, x_0.device) * noise)
+
+    def step(self, model, x_t, t, noise):
+        """ like ddim, ddpm make stepping function """
+        out = self.p_mean_variance(model, x_t, t)
+        if noise is None:
+            noise = model(x_t, t)
+        nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
+        sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
+        return sample
 
     def q_posterior_mean_variance(self, x_0, x_t, t):
         """
