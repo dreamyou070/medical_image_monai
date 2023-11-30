@@ -132,7 +132,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                     abnormal_score = torch.stack(abnormal_scores).mean()
                     wandb.log({f"[{train_data}] normal kl": normal_score, f"[{train_data}] abnormal kl": abnormal_score, })
                     """
-                    #recon = x_t
+                    recon = x_t
             real_images = x_0[:num_images, ...].cpu()  # .permute(0,1,3,2) # [Batch, 1, W, H]
             # sample_images = x_t[:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
             recon_images = recon[:num_images, ...].cpu()
