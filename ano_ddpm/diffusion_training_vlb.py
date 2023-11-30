@@ -246,13 +246,13 @@ def main(args):
                     noise_pred = model(x_t, t)
                     target = noise
                     simple_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean(dim=(1, 2, 3))
-                    simple_loss = simple_loss.mean()
+                    #simple_loss = simple_loss.mean()
                     # 2) KL divergence loss
-                    kl_loss = diffusion._vb_terms_bpd(model=model, x_start=x_0, x_t=x_t, t=t, clip_denoised=False, )["output"]
-                    print(f'kl_loss: {kl_loss.shape}')
-                    kl_loss = kl_loss.mean()
+                    kl_loss = diffusion._vb_terms_bpd(model=model, x_start=x_0, x_t=x_t, t=t, clip_denoised=False, )["output"] # batch size
+                    #kl_loss = kl_loss.mean()
 
                     hybrid_loss = simple_loss + args.kl_loss_weight * kl_loss
+                    hybrid_loss = hybrid_loss.mean()
 
                     wandb.log({"training loss": kl_loss.item()})
                     optimiser.zero_grad()
