@@ -80,7 +80,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                             if args.recon_with_standard_gaussian:
                                 x_t = diffusion.sample_p(ema, x_t,
                                                          torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                         'gauss')
+                                                         'gauss')['sample']
                                 #noise_pred = torch.randn_like(x_t)
                                 #x_t = diffusion.step(ema,
                                 #                     x_t,
@@ -130,7 +130,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                     abnormal_score = torch.stack(abnormal_scores).mean()
                     wandb.log({f"[{train_data}] normal kl": normal_score, f"[{train_data}] abnormal kl": abnormal_score, })
                     """
-                    recon = x_t
+                    recon = x_t 
             real_images = x_0[:num_images, ...].cpu()  # .permute(0,1,3,2) # [Batch, 1, W, H]
             # sample_images = x_t[:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
             recon_images = recon[:num_images, ...].cpu()
