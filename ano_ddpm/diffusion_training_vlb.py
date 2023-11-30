@@ -78,7 +78,8 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                     for t in range(args.sample_distance, -1, -1):
                         if t > 0:
                             if args.recon_with_standard_gaussian:
-                                noise_pred = torch.randn_like(x_t)
+                                x_t = diffusion.step(ema, x_t, t, 'gauss')
+                                #noise_pred = torch.randn_like(x_t)
                                 #x_t = diffusion.step(ema,
                                 #                     x_t,
                                 #                     torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
@@ -91,10 +92,10 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
 
                             else:
                                 noise_pred = ema(x_t, torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
-                            x_t = diffusion.step(ema,
-                                                 x_t,
-                                                 torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                 noise_pred)
+                            #x_t = diffusion.step(ema,
+                            #                     x_t,
+                            #                     torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                            #                     noise_pred)
                             #x_t = out['sample']
                             """
                             kl_div = out["whole_kl"]  # batch, 1, W, H
