@@ -249,12 +249,12 @@ def main(args):
                     #simple_loss = simple_loss.mean()
                     # 2) KL divergence loss
                     kl_loss = diffusion._vb_terms_bpd(model=model, x_start=x_0, x_t=x_t, t=t, clip_denoised=False, )["output"] # batch size
-                    
+
 
                     hybrid_loss = simple_loss + args.kl_loss_weight * kl_loss
                     hybrid_loss = hybrid_loss.mean()
 
-                    wandb.log({"training loss": kl_loss.item()})
+                    wandb.log({"training loss": hybrid_loss.item()})
                     optimiser.zero_grad()
                     hybrid_loss.backward()
                     torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
