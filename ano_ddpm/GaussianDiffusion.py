@@ -287,8 +287,9 @@ class GaussianDiffusionModel:
         nonzero_mask = (
             (t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1)))
         )
-        sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
-        return {"sample": sample, "pred_x_0": out["pred_x_0"]}
+        #return {"sample": out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise,
+        #        "pred_x_0": out["pred_x_0"]}
+        return sample
 
     def kl_loss(self, model, x_0, x_t, t, model_kwargs=None):
 
