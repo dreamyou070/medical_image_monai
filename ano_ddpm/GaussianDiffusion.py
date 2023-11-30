@@ -307,7 +307,10 @@ class GaussianDiffusionModel:
                  - 'output': a shape [N] tensor of NLLs or KLs.
                  - 'pred_xstart': the x_0 predictions.
         """
-        true_mean, _, true_log_variance_clipped = self.q_posterior_mean_variance(x_start,x_t,t)
+        out = self.p_mean_variance(model, x_t, t)
+        #true_mean, _, true_log_variance_clipped = self.q_posterior_mean_variance(x_start,x_t,t)
+        true_mean, _, true_log_variance_clipped = self.q_posterior_mean_variance(out['pred_x_0'], x_t, t)
+
         out = self.p_mean_variance(model, x_t, t)
         kl = normal_kl(true_mean, true_log_variance_clipped, out["mean"], out["log_variance"])
         kl = mean_flat(kl) / np.log(2.0)
@@ -320,11 +323,7 @@ class GaussianDiffusionModel:
                 "pred_x_0": out["pred_x_0"],}
 
 
-
-
-    def forward_backward(
-            self, model, x, see_whole_sequence="half", t_distance=None, denoise_fn="gauss",
-    ):
+    def forward_backward(self, model, x, see_whole_sequence="half", t_distance=None, denoise_fn="gauss",):
         assert see_whole_sequence == "whole" or see_whole_sequence == "half" or see_whole_sequence == None
 
         if t_distance == 0:

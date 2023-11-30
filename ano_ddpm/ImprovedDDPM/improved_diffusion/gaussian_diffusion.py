@@ -486,17 +486,12 @@ class GaussianDiffusion:
     ):
         """
         Sample x_{t-1} from the model using DDIM.
-
         Same usage as p_sample().
         """
-        out = self.p_mean_variance(
-            model,
-            x,
-            t,
+        out = self.p_mean_variance(model,x,t,
             clip_denoised=clip_denoised,
             denoised_fn=denoised_fn,
-            model_kwargs=model_kwargs,
-        )
+            model_kwargs=model_kwargs,)
         # Usually our model outputs epsilon, but we re-derive it
         # in case we used x_start or x_prev prediction.
         eps = self._predict_eps_from_xstart(x, t, out["pred_xstart"])
@@ -725,8 +720,6 @@ class GaussianDiffusion:
             model_kwargs = {}
         if noise is None:
             noise = th.randn_like(x_start)
-
-        print(f'get noise latent ...')
         x_t = self.q_sample(x_start, t, noise=noise)
         terms = {}
 

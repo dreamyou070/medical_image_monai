@@ -10,7 +10,6 @@ from tqdm import tqdm
 from torchvision import transforms
 import numpy as np
 import sys
-
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from data_module import SYDataLoader, SYDataset
 from monai.utils import first
@@ -248,7 +247,9 @@ def main(args):
                     simple_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean(dim=(1, 2, 3))
                     #simple_loss = simple_loss.mean()
                     # 2) KL divergence loss
-                    kl_loss = diffusion._vb_terms_bpd(model=model, x_start=x_0, x_t=x_t, t=t, clip_denoised=False, )["output"] # batch size
+                    kl_loss = diffusion._vb_terms_bpd(model=model, x_start=x_0, x_t=x_t, t=t, clip_denoised=True, )["output"] # batch size
+
+
 
                     hybrid_loss = simple_loss + args.kl_loss_weight * kl_loss
                     hybrid_loss = hybrid_loss.mean()
