@@ -107,6 +107,7 @@ def main(args) :
                                              x_t,
                                              t,
                                              noise_pred)
+
                 final_pred = x_t
             num_images = pred_images.shape[0]
             for img_index in range(num_images):

@@ -468,7 +468,7 @@ class GaussianDiffusionModel:
         nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x.shape) - 1))))  # no noise when t == 0
         sample = mean_pred + nonzero_mask * sigma * noise
         return {"sample": sample, "pred_xstart": out["pred_xstart"]}
-
+    """
     def step2(self, model, x_t, t):
 
         estimate_noise = model(x_t, t)
@@ -485,7 +485,7 @@ class GaussianDiffusionModel:
         #sample = (posterior_mean_coef1 *sqrt_recip_alphas_cumprod * x_t - posterior_mean_coef1 *sqrt_recipm1_alphas_cumprod * estimate_noise + posterior_mean_coef2 * x_t +  torch.exp(0.5 * posterior_log_var_clipped) * estimate_noise
         sample = a + b
         return sample
-
+    """
 
 
 
