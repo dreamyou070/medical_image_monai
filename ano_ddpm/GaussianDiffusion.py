@@ -366,7 +366,7 @@ class GaussianDiffusionModel:
         out = self.p_mean_variance(model, x_t, t)
         pred_x_0 = out['pred_x_0']
 
-        a = extract(self.self.alphas_cumprod_prev, t - 1, x_t.shape, x_t.device) * pred_x_0
+        a = extract(self.alphas_cumprod_prev, t - 1, x_t.shape, x_t.device) * pred_x_0
         b = extract(self.sqrt_one_minus_alphas_cumprod, t - 1, x_t.shape, x_t.device) * noise
         c = extract(self.sqrt_betas, t, x_t.shape, x_t.device) * noise
         sample = a + b + c
@@ -447,12 +447,13 @@ class GaussianDiffusionModel:
 
         return DDPMSchedulerOutput(prev_sample=pred_prev_sample,
                                    pred_original_sample=pred_original_sample)
-        """
+    """
+    """
     def ddim_sample(self,model,x,t,eta=0.0,):
-        """
-        Sample x_{t-1} from the model using DDIM.
-        Same usage as p_sample().
-        """
+        
+        #Sample x_{t-1} from the model using DDIM.
+        #Same usage as p_sample().
+        
         out = self.p_mean_variance(model, x_t, t)
         # Usually our model outputs epsilon, but we re-derive it
         # in case we used x_start or x_prev prediction.
@@ -468,6 +469,7 @@ class GaussianDiffusionModel:
         nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x.shape) - 1))))  # no noise when t == 0
         sample = mean_pred + nonzero_mask * sigma * noise
         return {"sample": sample, "pred_xstart": out["pred_xstart"]}
+    """
     """
     def step2(self, model, x_t, t):
 
