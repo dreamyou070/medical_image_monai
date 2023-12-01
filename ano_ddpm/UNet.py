@@ -219,13 +219,12 @@ class ResBlock(TimestepBlock):
 
 class UNetModel(nn.Module):
     # UNet model
-    def __init__(
-            self,
-            img_size,
-            base_channels,
-            conv_resample=True,
-            n_heads=1,
-            n_head_channels=-1,
+    def __init__(self,
+                 img_size,
+                 base_channels,
+                 conv_resample=True,
+                 n_heads=1,
+                 n_head_channels=-1,
             channel_mults="",
             num_res_blocks=2,
             dropout=0,

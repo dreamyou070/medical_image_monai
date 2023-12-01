@@ -211,6 +211,8 @@ class GaussianDiffusionModel:
         weights = torch.from_numpy(weights_np).float().to(device)
         return indices, weights
 
+
+
     def predict_x_0_from_eps(self, x_t, t, eps):
         return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t
                 - extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape, x_t.device) * eps)
@@ -357,6 +359,27 @@ class GaussianDiffusionModel:
         #sample = posterior_mean + torch.exp(0.5 * posterior_log_var_clipped) * noise
         sample = posterior_mean + torch.exp(0.5 * posterior_log_var_clipped) * torch.randn_like(x_t)
         return sample
+
+    def ddim_sample(self,model,x,t,eta=0.0,):
+        """
+        Sample x_{t-1} from the model using DDIM.
+        Same usage as p_sample().
+        """
+        out = self.p_mean_variance(model, x_t, t)
+        # Usually our model outputs epsilon, but we re-derive it
+        # in case we used x_start or x_prev prediction.
+        eps = self.predict_eps_from_x_0(x, t, out["pred_x_0"])
+
+        alpha_bar = extract(self.alphas_cumprod, t, x_t.shape, x_t.device)
+        alpha_bar_prev = extract(self.alphas_cumprod_prev, t, x_t.shape, x_t.device)
+
+        sigma = (eta * th.sqrt((1 - alpha_bar_prev) / (1 - alpha_bar)) * th.sqrt(1 - alpha_bar / alpha_bar_prev))
+        # Equation 12.
+        noise = th.randn_like(x)
+        mean_pred = (out["pred_xstart"] * th.sqrt(alpha_bar_prev)) + (th.sqrt(1 - alpha_bar_prev - sigma ** 2) * eps)
+        nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x.shape) - 1))))  # no noise when t == 0
+        sample = mean_pred + nonzero_mask * sigma * noise
+        return {"sample": sample, "pred_xstart": out["pred_xstart"]}
 
     def step2(self, model, x_t, t):
 

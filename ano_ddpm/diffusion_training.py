@@ -203,6 +203,10 @@ def main(args) :
                       n_heads=args.num_heads,
                       n_head_channels=args.num_head_channels,
                       in_channels=in_channels)
+
+
+
+
     ema = copy.deepcopy(model)
     model.to(device)
     ema.to(device)
