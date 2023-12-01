@@ -133,12 +133,12 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                                 is_normal = 'abnormal'
 
                             real = real_images[img_index, ...].squeeze()
-                            real = real.unsqueeze(0)
+                            #real = real.unsqueeze(0)
                             real = torch_transforms.ToPILImage()(real)
 
                             # sample = sample_images[img_index,...].squeeze()
                             sample = recon_images[img_index, ...].squeeze()
-                            sample = sample.unsqueeze(0)
+                            #sample = sample.unsqueeze(0)
                             sample = torch_transforms.ToPILImage()(sample)
 
                             mask = mask_images[img_index, ...].squeeze()
