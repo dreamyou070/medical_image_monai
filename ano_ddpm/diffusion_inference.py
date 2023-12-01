@@ -113,11 +113,29 @@ def main(args) :
                                             f'inference_{i}.png'))
                     if i > 0 :
                         noise_pred = model(x_t,
-                                           torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device))
+                                           torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device))#.sample
                         x_t = scheduler.step(noise_pred,
                                              i,
-                                             x_t,
-                                             return_dict=True)['prev_sample']
+                                             x_t,).prev_sample
+                        """
+
+                        @torch.no_grad()
+                        def prev_step(self,
+                                      model_output: Union[torch.FloatTensor, np.ndarray],
+                                      timestep: int,
+                                      sample: Union[torch.FloatTensor, np.ndarray]):
+                            prev_sample = self.scheduler.step(model_output, timestep, sample=sample).prev_sample
+                            return prev_sample
+
+                        @torch.no_grad()
+                        def gen_loop(self, latent, timestep):
+                            all_latents = [latent]
+                            for t in range(timestep - 1, -1, -1):
+                                noise_pred = self.unet(latent, t).sample
+                                latent = self.prev_step(noise_pred, t, latent)
+                                all_latents.append(latent)
+                            return all_latents
+                        """
 
                 final_pred = x_t
             num_images = pred_images.shape[0]

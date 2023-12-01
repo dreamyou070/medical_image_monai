@@ -350,7 +350,6 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
 
         return sample
 
-
     def step(self,
              model_output: torch.FloatTensor,
              timestep: int,
@@ -413,9 +412,7 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         if self.config.thresholding:
             pred_original_sample = self._threshold_sample(pred_original_sample)
         elif self.config.clip_sample:
-            pred_original_sample = pred_original_sample.clamp(
-                -self.config.clip_sample_range, self.config.clip_sample_range
-            )
+            pred_original_sample = pred_original_sample.clamp(-self.config.clip_sample_range, self.config.clip_sample_range)
 
         # 4. Compute coefficients for pred_original_sample x_0 and current sample x_t
         # See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
@@ -432,13 +429,13 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         if t > 0:
             device = model_output.device
             variance_noise = randn_tensor(model_output.shape, generator=generator, device=device, dtype=model_output.dtype)
-            #if self.variance_type == "fixed_small_log":
-                #variance = self._get_variance(t, predicted_variance=predicted_variance) * variance_noise
-            #elif self.variance_type == "learned_range":
-            variance = self._get_variance(t, predicted_variance=predicted_variance)
-            variance = torch.exp(0.5 * variance) * variance_noise
-            #else:
-            #    variance = (self._get_variance(t, predicted_variance=predicted_variance) ** 0.5) * variance_noise
+            if self.variance_type == "fixed_small_log":
+                variance = self._get_variance(t, predicted_variance=predicted_variance) * variance_noise
+            elif self.variance_type == "learned_range":
+                variance = self._get_variance(t, predicted_variance=predicted_variance)
+                variance = torch.exp(0.5 * variance) * variance_noise
+            else:
+                variance = (self._get_variance(t, predicted_variance=predicted_variance) ** 0.5) * variance_noise
 
         pred_prev_sample = pred_prev_sample + variance
 
@@ -447,8 +444,6 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
 
         return DDPMSchedulerOutput(prev_sample=pred_prev_sample,
                                    pred_original_sample=pred_original_sample)
-
-
 
     def add_noise(
         self,
@@ -473,9 +468,7 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         noisy_samples = sqrt_alpha_prod * original_samples + sqrt_one_minus_alpha_prod * noise
         return noisy_samples
 
-    def get_velocity(
-        self, sample: torch.FloatTensor, noise: torch.FloatTensor, timesteps: torch.IntTensor
-    ) -> torch.FloatTensor:
+    def get_velocity(self, sample: torch.FloatTensor, noise: torch.FloatTensor, timesteps: torch.IntTensor) -> torch.FloatTensor:
         # Make sure alphas_cumprod and timestep have same device and dtype as sample
         alphas_cumprod = self.alphas_cumprod.to(device=sample.device, dtype=sample.dtype)
         timesteps = timesteps.to(sample.device)
