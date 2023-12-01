@@ -14,7 +14,8 @@ def main(args):
 
     print(f' step 2. creating model and diffusion...')
     # diffusion  = Space
-    arg_dict = args_to_dict(args)
+    arg_dict = vars(args)
+    print(f' arg_dict: {arg_dict}')
     model, diffusion = create_model_and_diffusion(arg_dict)
     """
     model.to(dist_util.dev())
