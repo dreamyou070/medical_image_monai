@@ -724,7 +724,7 @@ class GaussianDiffusion:
         terms = {}
 
         if self.loss_type == LossType.KL or self.loss_type == LossType.RESCALED_KL:
-            print(f' get vlb loss')
+
             terms["loss"] = self._vb_terms_bpd(model=model,
                                                x_start=x_start, # unnoisy latent
                                                x_t=x_t,         # noisy latent
@@ -735,7 +735,8 @@ class GaussianDiffusion:
                 terms["loss"] *= self.num_timesteps
 
         elif self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
-            model_output = model(x_t, self._scale_timesteps(t), **model_kwargs)
+            model_output = model(x_t.to(model.device),
+                                 self._scale_timesteps(t), **model_kwargs)
             if self.model_var_type in [ModelVarType.LEARNED,
                                        ModelVarType.LEARNED_RANGE,]:
                 B, C = x_t.shape[:2]
