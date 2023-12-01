@@ -201,14 +201,8 @@ class GaussianDiffusionModel:
         self.posterior_log_variance_clipped = np.log(
             np.append(self.posterior_variance[1], self.posterior_variance[1:])
         )
-        self.posterior_mean_coef1 = (
-                betas * np.sqrt(self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod)
-        )
-        self.posterior_mean_coef2 = (
-                (1.0 - self.alphas_cumprod_prev)
-                * np.sqrt(alphas)
-                / (1.0 - self.alphas_cumprod)
-        )
+        self.posterior_mean_coef1 = ( betas * np.sqrt(self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod))
+        self.posterior_mean_coef2 = ((1.0 - self.alphas_cumprod_prev)* np.sqrt(alphas) / (1.0 - self.alphas_cumprod))
     def sample_t_with_weights(self, b_size, device):
         p = self.weights / np.sum(self.weights)
         indices_np = np.random.choice(len(p), size=b_size, p=p)
@@ -264,8 +258,7 @@ class GaussianDiffusionModel:
         return {"mean": model_mean,
                "variance": model_var,
                "log_variance": model_logvar,
-            "pred_x_0": pred_x_0,
-        }
+            "pred_x_0": pred_x_0,}
 
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
         out = self.p_mean_variance(model, x_t, t)
@@ -355,29 +348,14 @@ class GaussianDiffusionModel:
 
     def step(self, model, x_t, t, denoise_fn):
         out = self.p_mean_variance(model, x_t, t)
-
-        # noise = torch.randn_like(x_t)
-        if type(denoise_fn) == str:
-            if denoise_fn == "gauss":
-                noise = torch.randn_like(x_t)
-            elif denoise_fn == "noise_fn":
-                noise = self.noise_fn(x_t, t).float()
-            elif denoise_fn == "random":
-                # noise = random_noise(self.simplex, x_t, t).float()
-                noise = torch.randn_like(x_t)
-            else:
-                noise = generate_simplex_noise(self.simplex, x_t, t, False, in_channels=self.img_channels).float()
-        else:
-            noise = denoise_fn(x_t, t)
-
-        nonzero_mask = (
-            (t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1)))
-        )
-        sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
+        pred_x_0 = out['pred_x_0']
+        posterior_mean = (extract(self.posterior_mean_coef1, t, x_t.shape, x_t.device) * pred_x_0
+                          + extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device) * x_t)
+        posterior_var = extract(self.posterior_variance, t, x_t.shape, x_t.device)
+        posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
+        noise = model(x_t, t)
+        sample = posterior_mean + torch.exp(0.5 * posterior_log_var_clipped) * noise
         return sample
-
-
-
 
     def q_posterior_mean_variance(self, x_0, x_t, t):
         """
@@ -389,7 +367,6 @@ class GaussianDiffusionModel:
         # + \frac{\sqrt{alphas}(1-alphacumprod prev)}{ 1- alphacumprod} * x_t
         posterior_mean = (extract(self.posterior_mean_coef1, t, x_t.shape, x_t.device) * x_0
                           + extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device) * x_t)
-
         # var = \frac{1-alphacumprod prev}{1-alphacumprod} * betas
         posterior_var = extract(self.posterior_variance, t, x_t.shape, x_t.device)
         posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)

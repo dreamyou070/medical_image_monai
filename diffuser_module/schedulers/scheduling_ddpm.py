@@ -360,7 +360,8 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
              return_dict: bool = True,
              ) -> Union[DDPMSchedulerOutput, Tuple]:
         """
-        Predict the sample from the previous timestep by reversing the SDE. This function propagates the diffusion
+        Predict the sample from the previous timestep by reversing the SDE.
+        This function propagates the diffusion
         process from the learned model outputs (most often the predicted noise).
 
         Args:
@@ -420,7 +421,7 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         # 4. Compute coefficients for pred_original_sample x_0 and current sample x_t
         # See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
         pred_original_sample_coeff = (alpha_prod_t_prev ** (0.5) * current_beta_t) / beta_prod_t
-        current_sample_coeff = current_alpha_t ** (0.5) * beta_prod_t_prev / beta_prod_t
+        current_sample_coeff =          current_alpha_t ** (0.5) * beta_prod_t_prev / beta_prod_t
 
         # 5. Compute predicted previous sample µ_t
         # See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
