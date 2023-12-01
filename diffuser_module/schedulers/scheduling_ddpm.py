@@ -445,6 +445,7 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         return DDPMSchedulerOutput(prev_sample=pred_prev_sample,
                                    pred_original_sample=pred_original_sample)
 
+
     def add_noise(
         self,
         original_samples: torch.FloatTensor,

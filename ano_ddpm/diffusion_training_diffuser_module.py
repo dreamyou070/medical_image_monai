@@ -40,13 +40,14 @@ def save(final, unet, optimiser, args, ema, loss=0, epoch=0):
                     "ema":                  ema.state_dict(),
                     'loss':                 loss,},save_dir)
 
-def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
+
+def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                      save_imgs=False, is_train_data=True, device='cuda'):
 
     if is_train_data :
-        train_data = 'training_data'
+        train_data = 'training inference'
     else :
-        train_data = 'test_data'
+        train_data = 'test inference'
 
     video_save_dir = os.path.join(args.experiment_dir, 'diffusion-videos')
     image_save_dir = os.path.join(args.experiment_dir, 'diffusion-training-images')
@@ -54,51 +55,104 @@ def training_outputs(scheduler, test_data, epoch, num_images, ema, args,
     os.makedirs(image_save_dir, exist_ok=True)
 
     if save_imgs:
-
         # 1) make random noise
-        x = test_data["image_info"].to(device)  # batch, channel, w, h
-        normal_info = test_data['normal']  # if 1 = normal, 0 = abnormal
-        mask_info = test_data['mask']  # if 1 = normal, 0 = abnormal
-        noise = torch.rand_like(x).float().to(x.device)
-        # 2) select random int
-        x_t = scheduler.add_noise(x, noise,
-                                  torch.Tensor([args.sample_distance]).repeat(x.shape[0], ).long().to(x.device))
-        with torch.no_grad():
-            for t in range(args.sample_distance, -1, -1):
-                #print(f'time = {t} : get noisy sample and stepping ... ')
-                if t > 0 :
-                    noise_pred = ema(x_t,
-                                     torch.Tensor([t]).repeat(x.shape[0],).long().to(x.device))
-                    x_t = scheduler.prev_step(model_output=noise_pred,
-                                         timestep=int(t),
-                                         sample=x_t)
-            # 4) what is sample_p do ?
-            real_images = x[:num_images, ...].cpu()#.permute(0,1,3,2) # [Batch, 1, W, H]
-            #sample_images = temp["prev_sample"][:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
-            pred_images = x_t[:num_images, ...].cpu()#.permute(0,1,3,2)
+        x_0 = test_data["image_info"].to(device)
+        weight_dtype = x_0.dtype
+        normal_info = test_data['normal']
+        mask_info = test_data['mask'].to(device).unsqueeze(1)
+        t = torch.Tensor([args.sample_distance]).repeat(x_0.shape[0], ).long().to(x_0.device)
+        if args.use_simplex_noise:
+            noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
+        else:
+            noise = torch.rand_like(x_0.float().to(x_0.device))
+
+        x_t = diffusion.add_noise(original_samples=x_0,noise=noise,timesteps=t)
+        normal_scores, abnormal_scores = [], []
+        if x_0.shape[0] != normal_info.sum() and x_0.dim() == 4 :
+            if args.onestep_inference :
+                model_output = ema(x_t, t)
+                recon = diffusion.step(model_output,
+                                        int(t[0].item()),
+                                        x_t,
+                                        return_dict=True,)['pred_original_sample']
+            else :
+                with torch.no_grad():
+                    for t in range(args.sample_distance, -1, -1):
+                        if t > 0:
+                            model_output = ema(x_t,
+                                               torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
+                            x_t = diffusion.step(model_output,
+                                                   int(t),
+                                                   x_t,
+                                                   return_dict=True, )['sample']
+                            """
+                            kl_div = out["whole_kl"]  # batch, 1, W, H
+                            # normal portion kl divergence
+                            normal_kl_div = (kl_div * mask_info).sum([1, 2, 3])
+                            normal_pixel_num = mask_info.sum([1, 2, 3])
+                            normal_pixel_num = torch.where(normal_pixel_num == 0, 1, normal_pixel_num)
+                            normal_kl_score = normal_kl_div / normal_pixel_num
+
+                            # abnormal portaion kl divergence
+                            abnormal_sample_kl = kl_div[normal_info != 1]
+
+                            if abnormal_sample_kl.shape[0] > 0 and abnormal_sample_kl.dim() == 4:
+                                abnormal_mask = mask_info[normal_info != 1]
+
+                                abnormal_mask_abnormal_portion = 1 - abnormal_mask
+                                abnormal_sample_kl = (abnormal_sample_kl * abnormal_mask_abnormal_portion).sum(
+                                    [1, 2, 3])
+                                abnormal_pixel_num = abnormal_mask_abnormal_portion.sum([1, 2, 3])
+                                abnormal_pixel_num = torch.where(abnormal_pixel_num == 0, 1, abnormal_pixel_num)
+                                abnormal_kl_score = abnormal_sample_kl / abnormal_pixel_num
+
+                                normal_kl_score = normal_kl_score.mean()
+                                abnormal_kl_score = abnormal_kl_score.mean()
+                                normal_scores.append(normal_kl_score)
+                                abnormal_scores.append(abnormal_kl_score)
+                            """
+                    """
+                    normal_score = torch.stack(normal_scores).mean()
+                    abnormal_score = torch.stack(abnormal_scores).mean()
+                    wandb.log({f"[{train_data}] normal kl": normal_score, f"[{train_data}] abnormal kl": abnormal_score, })
+                    """
+                recon = x_t
+            real_images = x_0[:num_images, ...].cpu()  # .permute(0,1,3,2) # [Batch, 1, W, H]
+            # sample_images = x_t[:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
+            recon_images = recon[:num_images, ...].cpu()
+            mask_images = mask_info[:num_images, ...].cpu()
             for img_index in range(num_images):
                 normal_info_ = normal_info[img_index]
                 if normal_info_ == 1:
                     is_normal = 'normal'
-                else :
+                else:
                     is_normal = 'abnormal'
-                real = real_images[img_index,...].squeeze()
-                real= real.unsqueeze(0)
+
+                real = real_images[img_index, ...].squeeze()
+                real = real.unsqueeze(0)
                 real = torch_transforms.ToPILImage()(real)
-                #sample = sample_images[img_index,...].squeeze()
-                #sample = sample.unsqueeze(0)
-                #sample = torch_transforms.ToPILImage()(sample)
-                pred = pred_images[img_index,...].squeeze()
-                pred = pred.unsqueeze(0)
-                pred = torch_transforms.ToPILImage()(pred)
-                new_image = PIL.Image.new('L', (2 * real.size[0], real.size[1]),250)
+
+                # sample = sample_images[img_index,...].squeeze()
+                sample = recon_images[img_index, ...].squeeze()
+                sample = sample.unsqueeze(0)
+                sample = torch_transforms.ToPILImage()(sample)
+
+                mask = mask_images[img_index, ...].squeeze()
+                mask = mask.unsqueeze(0).to(weight_dtype)
+                mask = torch_transforms.ToPILImage()(mask)
+
+                recon_mask = PIL.Image.blend(sample, mask, 0.5)
+
+                new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]), 250)
                 new_image.paste(real, (0, 0))
-                #new_image.paste(sample, (real.size[0], 0))
-                new_image.paste(pred, (real.size[0], 0))
-                new_image.save(os.path.join(image_save_dir, f'real_recon_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
+                new_image.paste(sample, (real.size[0], 0))
+                new_image.paste(recon_mask, (real.size[0] + sample.size[0], 0))
+                new_image.save(os.path.join(image_save_dir,
+                                            f'real_recon_mask_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
                 loading_image = wandb.Image(new_image,
-                                            caption=f"(real-recon) epoch {epoch + 1} | {is_normal} | {train_data}")
-                wandb.log({"inference": loading_image})
+                                            caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal}")
+                wandb.log({train_data: loading_image})
+
 
 def main(args) :
 
@@ -152,7 +206,6 @@ def main(args) :
     model.to(device)
     ema.to(device)
     # (2) scaheduler
-
     scheduler = DDPMScheduler(num_train_timesteps = 1000, beta_start = 0.0001, beta_end = 0.02,
                               beta_schedule = "linear", steps_offset = 1,)
 
