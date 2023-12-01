@@ -11,6 +11,7 @@ import torch.multiprocessing
 from setproctitle import *
 import torchvision.transforms as torch_transforms
 import PIL
+from diffuser_module import AutoencoderKL, UNet2DModel, DDPMScheduler,StableDiffusionPipeline
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
@@ -70,10 +71,18 @@ def main(args) :
     model.eval()
 
     # (2) scaheduler
-    betas = get_beta_schedule(args.timestep, args.beta_schedule)
+    #betas = get_beta_schedule(args.timestep, args.beta_schedule)
+    print(f'\n step 5. scheduler')
+    scheduler = DDPMScheduler(num_train_timesteps=1000,
+                              beta_start=0.0001,
+                              beta_end=0.02,
+                              beta_schedule="linear",
+                              variance_type="fixed_small",
+                              steps_offset=1,
+                              clip_sample=False)
     # (3) scaheduler
-    diffusion = GaussianDiffusionModel([w, h],betas, img_channels=in_channels,
-                                       loss_type=args.loss_type,loss_weight=args.loss_weight, noise='simplex' )  # 1
+    #diffusion = GaussianDiffusionModel([w, h],betas, img_channels=in_channels,
+    #                                   loss_type=args.loss_type,loss_weight=args.loss_weight, noise='simplex' )  # 1
 
     print(f'\n step 4. inference')
     train_data = 'train_data'
@@ -84,15 +93,17 @@ def main(args) :
             mask_info = data['mask'].unsqueeze(dim=1)  # if 1 = normal, 0 = abnormal
             #t = torch.randint(args.sample_distance - 1, args.sample_distance, (x_0.shape[0],), device=device)
             t = torch.Tensor([args.sample_distance]).repeat(x_0.shape[0], ).long().to(x_0.device)
-            if args.use_simplex_noise:
-                noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
-            else:
-                noise = torch.rand_like(x_0).float().to(device)
+            #if args.use_simplex_noise:
+            #    noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
+            #else:
+            noise = torch.rand_like(x_0).float().to(device)
             # 2) select random int
-            x_t = diffusion.sample_q(x_0, t, noise)
+            #x_t = diffusion.sample_q(x_0, t, noise)
+            x_t = scheduler.add_noise(x_t, t)
+            """
             with torch.no_grad():
-                temp = diffusion.sample_p(model, x_t, t)
-                pred_images = temp["pred_x_0"]
+                #temp = diffusion.sample_p(model, x_t, t)
+                #pred_images = temp["pred_x_0"]
                 for i in range(args.sample_distance-1, -1, -1):
                     # sample = sample.unsqueeze(0)
                     sample = torch_transforms.ToPILImage()(x_t.squeeze())
@@ -134,6 +145,7 @@ def main(args) :
                 loading_image = wandb.Image(new_image,
                                             caption=f"once_stepping_{train_data}_{is_normal}_{img_index}")
                 wandb.log({"inference": loading_image})
+            """
 
 
 
