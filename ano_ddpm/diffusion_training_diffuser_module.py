@@ -399,5 +399,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_save_freq', type=int, default=1000)
     parser.add_argument('--save_imgs', action='store_true')
     parser.add_argument('--save_vids', action='store_true')
+    parser.add_argument('--onestep_inference', action='store_true')
+    parser.add_argument('--recon_with_standard_gaussian', action='store_true')
     args = parser.parse_args()
     main(args)
