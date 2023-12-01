@@ -135,17 +135,17 @@ class TrainLoop:
 
         while (not self.lr_anneal_steps or self.step + self.resume_step < self.lr_anneal_steps):
             # 1) get data
-            batch, cond = next(self.data)
-            # 2) run step
-            self.run_step(batch, cond)
-            if self.step % self.log_interval == 0:
-                logger.dumpkvs()
-            if self.step % self.save_interval == 0:
-                self.save()
-                # Run for a finite amount of time in integration tests.
-                if os.environ.get("DIFFUSION_TRAINING_TEST", "") and self.step > 0:
-                    return
-            self.step += 1
+            for batch, cond in self.data :
+                # 2) run step
+                self.run_step(batch, cond)
+                if self.step % self.log_interval == 0:
+                    logger.dumpkvs()
+                if self.step % self.save_interval == 0:
+                    self.save()
+                    # Run for a finite amount of time in integration tests.
+                    if os.environ.get("DIFFUSION_TRAINING_TEST", "") and self.step > 0:
+                        return
+                self.step += 1
 
         if (self.step - 1) % self.save_interval != 0:
             self.save()
