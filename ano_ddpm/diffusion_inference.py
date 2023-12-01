@@ -143,7 +143,7 @@ def main(args) :
                 loading_image = wandb.Image(new_image,
                                             caption=f"once_stepping_{train_data}_{is_normal}_{img_index}")
                 wandb.log({"inference": loading_image})
-            """
+            
 
 
 
