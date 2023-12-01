@@ -98,11 +98,11 @@ def main(args) :
                 final_pred = x_t
             num_images = pred_images.shape[0]
             for img_index in range(num_images):
-                normal_info_ = normal_info[img_index]
-                if normal_info_ == 1:
-                    is_normal = 'normal'
-                else:
-                    is_normal = 'abnormal'
+                #normal_info_ = normal_info[img_index]
+                #if normal_info_ == 1:
+                is_normal = 'normal'
+                #else:
+                #    is_normal = 'abnormal'
                 # 1) one step inference
                 real = pred_images[img_index, ...].squeeze()
                 real = real.unsqueeze(0)
