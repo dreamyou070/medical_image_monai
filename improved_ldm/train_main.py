@@ -2,10 +2,25 @@ import argparse, os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from improved_diffusion import dist_util, logger
 from improved_diffusion.image_datasets import load_data
-from improved_diffusion.resample import create_named_schedule_sampler
+from improved_diffusion.resample import UniformSampler,LossSecondMomentResampler
 from improved_diffusion.script_util import (model_and_diffusion_defaults,create_model_and_diffusion,args_to_dict,add_dict_to_argparser,
                                             create_model, create_gaussian_diffusion, )
+from improved_diffusion.image_datasets import ImageDataset, DataLoader
 from improved_diffusion.train_util import TrainLoop
+import blobfile as bf
+from mpi4py import MPI
+
+
+def _list_image_files_recursively(data_dir):
+    results = []
+    for entry in sorted(bf.listdir(data_dir)):
+        full_path = bf.join(data_dir, entry)
+        ext = entry.split(".")[-1]
+        if "." in entry and ext.lower() in ["jpg", "jpeg", "png", "gif"]:
+            results.append(full_path)
+        elif bf.isdir(full_path):
+            results.extend(_list_image_files_recursively(full_path))
+    return results
 
 def main(args):
 
@@ -14,9 +29,6 @@ def main(args):
     logger.configure()
 
     print(f' step 2. creating model and diffusion...')
-    # diffusion  = Space
-    arg_dict = vars(args)
-    print(f' arg_dict: {arg_dict}')
     model = create_model(args.image_size,
                          args.num_channels,
                          args.num_res_blocks,
@@ -37,20 +49,37 @@ def main(args):
                                           rescale_timesteps=args.rescale_timesteps,
                                           rescale_learned_sigmas=args.rescale_learned_sigmas,
                                           timestep_respacing=args.timestep_respacing,)
-    """
-    model.to(dist_util.dev())
+    model.to(args.device)
 
     print(f' step 3. scheduler')
     # schedule_sampler = uniform
     # diffusion = diffusion model
-    schedule_sampler = create_named_schedule_sampler(args.schedule_sampler,
-                                                     diffusion)
+    if args.schedule_sampler == 'uniform':
+        schedule_sampler = UniformSampler(diffusion)
+    else :
+        schedule_sampler = LossSecondMomentResampler(diffusion)
 
     print(f' step 4. creating data loader...')
-    data = load_data(data_dir=args.data_dir,
-                     batch_size=args.batch_size,
-                     image_size=args.image_size,
-                     class_cond=args.class_cond,)
+    all_files = _list_image_files_recursively(args.data_dir)
+    classes = None
+    if args.class_cond:
+        class_names = [bf.basename(path).split("_")[0] for path in all_files]
+        sorted_classes = {x: i for i, x in enumerate(sorted(set(class_names)))}
+        classes = [sorted_classes[x] for x in class_names]
+    dataset = ImageDataset(args.image_size,
+                           all_files,
+                           classes=classes,
+                           shard=MPI.COMM_WORLD.Get_rank(),
+                           num_shards=MPI.COMM_WORLD.Get_size(), )
+    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=1, drop_last=True)
+
+
+    """
+    
+
+    
+
+    
 
     print(f' step 5. training...')
     TrainLoop(model=model,
@@ -105,5 +134,6 @@ if __name__ == "__main__":
     parser.add_argument('--rescale_learned_sigmas', action='store_true')
     parser.add_argument('--use_checkpoint', action='store_true')
     parser.add_argument('--use_scale_shift_norm', action='store_true')
+    parser.add_argument('--device', default = 'cuda:6')
     args = parser.parse_args()
     main(args)
