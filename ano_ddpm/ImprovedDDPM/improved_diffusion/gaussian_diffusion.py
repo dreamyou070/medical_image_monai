@@ -720,11 +720,10 @@ class GaussianDiffusion:
             model_kwargs = {}
         if noise is None:
             noise = th.randn_like(x_start)
-        x_t = self.q_sample(x_start, t, noise=noise)
+        x_t = self.q_sample(x_start, t, noise=noise).to(model.device)
         terms = {}
 
         if self.loss_type == LossType.KL or self.loss_type == LossType.RESCALED_KL:
-            print(f' get vlb loss')
             terms["loss"] = self._vb_terms_bpd(model=model,
                                                x_start=x_start, # unnoisy latent
                                                x_t=x_t,         # noisy latent
