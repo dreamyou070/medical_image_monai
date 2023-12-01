@@ -3,7 +3,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from improved_diffusion import dist_util, logger
 from improved_diffusion.image_datasets import load_data
 from improved_diffusion.resample import create_named_schedule_sampler
-from improved_diffusion.script_util import (model_and_diffusion_defaults,create_model_and_diffusion,args_to_dict,add_dict_to_argparser,)
+from improved_diffusion.script_util import (model_and_diffusion_defaults,create_model_and_diffusion,args_to_dict,add_dict_to_argparser,
+                                            create_model, create_gaussian_diffusion,
 from improved_diffusion.train_util import TrainLoop
 
 def main(args):
@@ -16,7 +17,26 @@ def main(args):
     # diffusion  = Space
     arg_dict = vars(args)
     print(f' arg_dict: {arg_dict}')
-    model, diffusion = create_model_and_diffusion(arg_dict)
+    model = create_model(args.image_size,
+                         args.num_channels,
+                         args.num_res_blocks,
+                         learn_sigma=args.learn_sigma,
+                         class_cond=args.class_cond,
+                         use_checkpoint=args.use_checkpoint,
+                         attention_resolutions=args.attention_resolutions,
+                         num_heads=args.num_heads,
+                         num_heads_upsample=args.num_heads_upsample,
+                         use_scale_shift_norm=args.use_scale_shift_norm,
+                         dropout=args.dropout,)
+    diffusion = create_gaussian_diffusion(steps=args.diffusion_steps,
+                                          learn_sigma=args.learn_sigma,
+                                          sigma_small=args.sigma_small,
+                                          noise_schedule=args.noise_schedule,
+                                          use_kl=args.use_kl,
+                                          predict_xstart=args.predict_xstart,
+                                          rescale_timesteps=args.rescale_timesteps,
+                                          rescale_learned_sigmas=args.rescale_learned_sigmas,
+                                          timestep_respacing=args.timestep_respacing,)
     """
     model.to(dist_util.dev())
 
