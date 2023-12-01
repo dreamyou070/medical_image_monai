@@ -91,17 +91,16 @@ def main(args) :
             # 2) select random int
             x_t = diffusion.sample_q(x_0, t, noise)
             with torch.no_grad():
-                print(f'x_t.shape : {x_t.shape}, t : {t.shape}')
                 temp = diffusion.sample_p(model, x_t, t)
                 pred_images = temp["pred_x_0"]
-
-
-
-
-
                 for i in range(args.sample_distance-1, -1, -1):
-                    noise_pred = model(x_t, t)
-                    x_t = diffusion.step(model, noise_pred, x_t, t)
+                    if i > 0 :
+                        t = torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device)
+                        noise_pred = model(x_t, t)
+                        x_t = diffusion.step(model,
+                                             x_t,
+                                             t,
+                                             noise_pred)
                 final_pred = x_t
             num_images = pred_images.shape[0]
             for img_index in range(num_images):
@@ -112,18 +111,17 @@ def main(args) :
                 #    is_normal = 'abnormal'
                 # 1) one step inference
                 real = pred_images[img_index, ...].squeeze()
-                real = real.unsqueeze(0)
+                #real = real.unsqueeze(0)
                 real = torch_transforms.ToPILImage()(real)
 
                 # 2) one step inference
                 sample = final_pred[img_index, ...].squeeze()
-                sample = sample.unsqueeze(0)
+                #sample = sample.unsqueeze(0)
                 sample = torch_transforms.ToPILImage()(sample)
 
-                new_image = PIL.Image.new('L', (2 * real.size[0], real.size[1]), 250)
+                new_image = PIL.Image.new('RGB', (2 * real.size[0], real.size[1]), 250)
                 new_image.paste(real, (0, 0))
                 new_image.paste(sample, (real.size[0], 0))
-
                 new_image.save(os.path.join(image_save_dir,
                                             f'once_stepping_{train_data}_{is_normal}_{img_index}.png'))
                 loading_image = wandb.Image(new_image,
