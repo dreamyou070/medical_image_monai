@@ -86,7 +86,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                                 x_t = diffusion.step(ema, x_t, torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device), noise)
                             else :
                                 x_t = diffusion.step2(ema, x_t,
-                                                 torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device),)
+                                                      torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device),)
 
                             """
                             kl_div = out["whole_kl"]  # batch, 1, W, H
