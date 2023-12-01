@@ -142,7 +142,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                             sample = torch_transforms.ToPILImage()(sample)
 
                             mask = mask_images[img_index, ...].squeeze()
-                            mask = mask.unsqueeze(0).to(weight_dtype)
+                            #mask = mask.unsqueeze(0).to(weight_dtype)
                             mask = torch_transforms.ToPILImage()(mask)
 
                             recon_mask = PIL.Image.blend(sample, mask, 0.5)
