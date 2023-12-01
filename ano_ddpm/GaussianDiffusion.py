@@ -368,8 +368,10 @@ class GaussianDiffusionModel:
         posterior_mean_coef2 = extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device)
         #sample = posterior_mean_coef1 * ((sqrt_recip_alphas_cumprod * x_t - sqrt_recipm1_alphas_cumprod * estimate_noise).clamp(-1, 1)) + posterior_mean_coef2 * x_t + \
         #         torch.exp(0.5 * posterior_log_var_clipped) * estimate_noise
-        sample = (posterior_mean_coef1 * sqrt_recip_alphas_cumprod + posterior_mean_coef2) * x_t + \
-                 (- posterior_mean_coef1 * sqrt_recipm1_alphas_cumprod + torch.exp(0.5 * posterior_log_var_clipped) * estimate_noise
+        a = (posterior_mean_coef1 * sqrt_recip_alphas_cumprod + posterior_mean_coef2 ) * x_t
+        b = (- posterior_mean_coef1 * sqrt_recipm1_alphas_cumprod + torch.exp(0.5 * posterior_log_var_clipped)) * estimate_noise
+        #sample = (posterior_mean_coef1 *sqrt_recip_alphas_cumprod * x_t - posterior_mean_coef1 *sqrt_recipm1_alphas_cumprod * estimate_noise + posterior_mean_coef2 * x_t +  torch.exp(0.5 * posterior_log_var_clipped) * estimate_noise
+        sample = a + b
         return sample
 
 
