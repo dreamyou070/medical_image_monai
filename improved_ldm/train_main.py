@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", type=str, required=True)
-    parser.add_argument('--scheduler_sampler', type=str, default='uniform')
+    parser.add_argument('--schedule_sampler', type=str, default='uniform')
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--weight_decay', type=float, default=0.0)
     parser.add_argument('--lr_anneal_steps', type=int, default=0)
