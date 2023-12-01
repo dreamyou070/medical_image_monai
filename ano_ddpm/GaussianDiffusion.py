@@ -365,14 +365,12 @@ class GaussianDiffusionModel:
     def step2(self, model, x_t, t, noise):
         out = self.p_mean_variance(model, x_t, t)
         pred_x_0 = out['pred_x_0']
-
-        a = extract(self.alphas_cumprod_prev, t - 1, x_t.shape, x_t.device) * pred_x_0
-
-        b = extract(self.sqrt_one_minus_alphas_cumprod, t - 1, x_t.shape, x_t.device) * noise
+        a = extract(self.alphas_cumprod_prev, t, x_t.shape, x_t.device) * pred_x_0
+        b = extract(self.sqrt_one_minus_alphas_cumprod, t , x_t.shape, x_t.device) * noise
 
         posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
         c = torch.exp(0.5 * posterior_log_var_clipped) * torch.randn_like(x_t)
-        
+
         sample = a + b + c
         return sample
 
