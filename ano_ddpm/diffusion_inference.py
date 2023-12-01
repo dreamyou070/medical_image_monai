@@ -114,8 +114,8 @@ def main(args) :
                         t = torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device)
                         noise_pred = model(x_t, t)
                         x_t = scheduler.step(noise_pred,
-                                                     args.sample_distance,
-                                                     x_t, return_dict=True)['prev_sample']
+                                             i,
+                                             x_t, return_dict=True)['prev_sample']
 
                 final_pred = x_t
             num_images = pred_images.shape[0]
@@ -143,7 +143,7 @@ def main(args) :
                 loading_image = wandb.Image(new_image,
                                             caption=f"once_stepping_{train_data}_{is_normal}_{img_index}")
                 wandb.log({"inference": loading_image})
-            
+
 
 
 
