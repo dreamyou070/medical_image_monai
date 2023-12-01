@@ -235,47 +235,47 @@ def main(args):
             if args.only_normal_training:
                 x_0 = x_0[normal_info == 1]
                 mask_info = mask_info[normal_info == 1]
-                if x_0.shape[0] != 0 and x_0.dim() == 4:
-                    # 1) epsiolong predictino loss
-                    t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=device)
-                    noise = torch.rand_like(x_0).float().to(device)
-                    with torch.no_grad():
-                        x_t = diffusion.sample_q(x_0, t, noise)  # 3) model prediction
-                    noise_pred = model(x_t, t)
-                    target = noise
-                    simple_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean(dim=(1, 2, 3))
+            if x_0.shape[0] != 0 and x_0.dim() == 4:
+                # 1) epsiolong predictino loss
+                t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=device)
+                noise = torch.rand_like(x_0).float().to(device)
+                with torch.no_grad():
+                    x_t = diffusion.sample_q(x_0, t, noise)  # 3) model prediction
+                noise_pred = model(x_t, t)
+                target = noise
+                simple_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean(dim=(1, 2, 3))
 
-                    # 2) KL divergence loss
-                    if args.use_vlb_loss :
-                        kl_loss = diffusion.kl_loss(model, x_0, x_t, t)
-                        hybrid_loss = simple_loss + args.kl_loss_weight * kl_loss
-                        hybrid_loss = hybrid_loss.mean()
-                        wandb.log({"task loss" : simple_loss.mean().item(),
-                                   "kl loss" : kl_loss.mean().item(),
-                                   "training loss": hybrid_loss.item()})
-                    else :
-                        hybrid_loss = simple_loss
-                        hybrid_loss = hybrid_loss.mean()
-                        wandb.log({"task loss": simple_loss.mean().item(),
-                                   "training loss": hybrid_loss.item()})
-                    optimiser.zero_grad()
-                    hybrid_loss.backward()
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
-                    optimiser.step()
-                    # ----------------------------------------------------------------------------------------- #
-                    # EMA model updating
-                    update_ema_params(ema, model)
+                # 2) KL divergence loss
+                if args.use_vlb_loss :
+                    kl_loss = diffusion.kl_loss(model, x_0, x_t, t)
+                    hybrid_loss = simple_loss + args.kl_loss_weight * kl_loss
+                    hybrid_loss = hybrid_loss.mean()
+                    wandb.log({"task loss" : simple_loss.mean().item(),
+                               "kl loss" : kl_loss.mean().item(),
+                               "training loss": hybrid_loss.item()})
+                else :
+                    hybrid_loss = simple_loss
+                    hybrid_loss = hybrid_loss.mean()
+                    wandb.log({"task loss": simple_loss.mean().item(),
+                               "training loss": hybrid_loss.item()})
+                optimiser.zero_grad()
+                hybrid_loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
+                optimiser.step()
                 # ----------------------------------------------------------------------------------------- #
-                # Inference
-                for i, test_data in enumerate(test_dataset_loader):
-                    if i == step == 0 :
-                        ema.eval()
-                        model.eval()
-                        inference_num = min(args.inference_num, args.batch_size)
-                        training_outputs(diffusion, test_data, epoch, inference_num, save_imgs=args.save_imgs,
-                                         ema=ema, args=args, is_train_data=False, device=device)
-                        training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
-                                         ema=ema, args=args, is_train_data=True, device=device)
+                # EMA model updating
+                update_ema_params(ema, model)
+            # ----------------------------------------------------------------------------------------- #
+            # Inference
+            for i, test_data in enumerate(test_dataset_loader):
+                if i == step == 0 :
+                    ema.eval()
+                    model.eval()
+                    inference_num = min(args.inference_num, args.batch_size)
+                    training_outputs(diffusion, test_data, epoch, inference_num, save_imgs=args.save_imgs,
+                                     ema=ema, args=args, is_train_data=False, device=device)
+                    training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
+                                     ema=ema, args=args, is_train_data=True, device=device)
         if epoch % args.model_save_freq == 0 and epoch > 0:
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
