@@ -428,12 +428,10 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
 
         # 6. Add noise
         variance = 0
-        """
+        print(f'self.variance_type: {self.variance_type}')
         if t > 0:
             device = model_output.device
-            variance_noise = randn_tensor(
-                model_output.shape, generator=generator, device=device, dtype=model_output.dtype
-            )
+            variance_noise = randn_tensor(model_output.shape, generator=generator, device=device, dtype=model_output.dtype)
             if self.variance_type == "fixed_small_log":
                 variance = self._get_variance(t, predicted_variance=predicted_variance) * variance_noise
             elif self.variance_type == "learned_range":
@@ -443,7 +441,7 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
                 variance = (self._get_variance(t, predicted_variance=predicted_variance) ** 0.5) * variance_noise
 
         pred_prev_sample = pred_prev_sample + variance
-        """
+
         if not return_dict:
             return (pred_prev_sample,)
 
