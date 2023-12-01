@@ -72,35 +72,18 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
         if x_0.shape[0] != normal_info.sum() and x_0.dim() == 4:
             if args.onestep_inference:
                 output = diffusion.sample_p(ema, x_0, t, denoise_fn="gauss")
-                #recon = output["pred_x_0"]
+                recon = output["pred_x_0"]
             else:
                 with torch.no_grad():
-                    for t in range(args.sample_distance, -1, -1):
-                        if t > 0:
+                    for time_step in range(args.sample_distance, -1, -1):
+                        if time_step > 0:
                             if args.recon_with_standard_gaussian:
-                                x_t = diffusion.step(ema,
-                                                     x_t,
-                                                     torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                     denoise_fn="gauss")
+                                noise = torch.randn_like(x_t)
+                            else :
+                                t = torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device)
+                                noise = ema(x_t,t)
+                            x_t = diffusion.step(ema, x_t, torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device), noise)
 
-                                #noise_pred = torch.randn_like(x_t)
-                                #x_t = diffusion.step(ema,
-                                #                     x_t,
-                                #                     torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                #                     noise_pred)
-
-                                #out = diffusion.sample_p(ema,
-                                #                         x_0,
-                                #                         torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                #                         denoise_fn='gauss',)
-
-                            else:
-                                noise_pred = ema(x_t, torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
-                            #x_t = diffusion.step(ema,
-                            #                     x_t,
-                            #                     torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                            #                     noise_pred)
-                            #x_t = out['sample']
                             """
                             kl_div = out["whole_kl"]  # batch, 1, W, H
                             # normal portion kl divergence
@@ -132,43 +115,43 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                             abnormal_score = torch.stack(abnormal_scores).mean()
                             wandb.log({f"[{train_data}] normal kl": normal_score, f"[{train_data}] abnormal kl": abnormal_score, })
                             """
-                            recon = x_t
-                            real_images = x_0[:num_images, ...].cpu()  # .permute(0,1,3,2) # [Batch, 1, W, H]
-                            # sample_images = x_t[:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
-                            recon_images = recon[:num_images, ...].cpu()
-                            mask_images = mask_info[:num_images, ...].cpu()
-                            for img_index in range(num_images):
-                                if img_index == 0:
-                                    normal_info_ = normal_info[img_index]
-                                    if normal_info_ == 1:
-                                        is_normal = 'normal'
-                                    else:
-                                        is_normal = 'abnormal'
+                    recon = x_t
+                    real_images = x_0[:num_images, ...].cpu()  # .permute(0,1,3,2) # [Batch, 1, W, H]
+                    # sample_images = x_t[:num_images, ...].cpu()#.permute(0, 1, 3, 2)  # [Batch, 1, W, H]
+                    recon_images = recon[:num_images, ...].cpu()
+                    mask_images = mask_info[:num_images, ...].cpu()
+                    for img_index in range(num_images):
+                        if img_index == 0:
+                            normal_info_ = normal_info[img_index]
+                            if normal_info_ == 1:
+                                is_normal = 'normal'
+                            else:
+                                is_normal = 'abnormal'
 
-                                    real = real_images[img_index, ...].squeeze()
-                                    real = real.unsqueeze(0)
-                                    real = torch_transforms.ToPILImage()(real)
+                            real = real_images[img_index, ...].squeeze()
+                            real = real.unsqueeze(0)
+                            real = torch_transforms.ToPILImage()(real)
 
-                                    # sample = sample_images[img_index,...].squeeze()
-                                    sample = recon_images[img_index, ...].squeeze()
-                                    sample = sample.unsqueeze(0)
-                                    sample = torch_transforms.ToPILImage()(sample)
+                            # sample = sample_images[img_index,...].squeeze()
+                            sample = recon_images[img_index, ...].squeeze()
+                            sample = sample.unsqueeze(0)
+                            sample = torch_transforms.ToPILImage()(sample)
 
-                                    mask = mask_images[img_index, ...].squeeze()
-                                    mask = mask.unsqueeze(0).to(weight_dtype)
-                                    mask = torch_transforms.ToPILImage()(mask)
+                            mask = mask_images[img_index, ...].squeeze()
+                            mask = mask.unsqueeze(0).to(weight_dtype)
+                            mask = torch_transforms.ToPILImage()(mask)
 
-                                    recon_mask = PIL.Image.blend(sample, mask, 0.5)
+                            recon_mask = PIL.Image.blend(sample, mask, 0.5)
 
-                                    new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]), 250 )
-                                    new_image.paste(real, (0, 0))
-                                    new_image.paste(sample, (real.size[0], 0))
-                                    new_image.paste(recon_mask, (real.size[0] + sample.size[0], 0))
-                                    new_image.save(os.path.join(image_save_dir,
-                                                                f'real_recon_mask_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
-                                    loading_image = wandb.Image(new_image,
-                                                                caption=f"(real-noisy-recon) epoch {epoch + 1} | time {t} | {is_normal}")
-                                    wandb.log({train_data: loading_image})
+                            new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]), 250 )
+                            new_image.paste(real, (0, 0))
+                            new_image.paste(sample, (real.size[0], 0))
+                            new_image.paste(recon_mask, (real.size[0] + sample.size[0], 0))
+                            new_image.save(os.path.join(image_save_dir,
+                                                        f'real_recon_mask_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
+                            loading_image = wandb.Image(new_image,
+                                                        caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal}")
+                            wandb.log({train_data: loading_image})
 
 
 def main(args):
@@ -254,19 +237,23 @@ def main(args):
                     noise = torch.rand_like(x_0).float().to(device)
                     with torch.no_grad():
                         x_t = diffusion.sample_q(x_0, t, noise)  # 3) model prediction
-
-
                     noise_pred = model(x_t, t)
                     target = noise
                     simple_loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean(dim=(1, 2, 3))
 
                     # 2) KL divergence loss
-                    kl_loss = diffusion.kl_loss(model, x_0, x_t, t)
-                    hybrid_loss = simple_loss + args.kl_loss_weight * kl_loss
-                    hybrid_loss = hybrid_loss.mean()
-                    wandb.log({"task loss" : simple_loss.mean().item(),
-                               "kl loss" : kl_loss.mean().item(),
-                               "training loss": hybrid_loss.item()})
+                    if args.use_vlb_loss :
+                        kl_loss = diffusion.kl_loss(model, x_0, x_t, t)
+                        hybrid_loss = simple_loss + args.kl_loss_weight * kl_loss
+                        hybrid_loss = hybrid_loss.mean()
+                        wandb.log({"task loss" : simple_loss.mean().item(),
+                                   "kl loss" : kl_loss.mean().item(),
+                                   "training loss": hybrid_loss.item()})
+                    else :
+                        hybrid_loss = simple_loss
+                        hybrid_loss = hybrid_loss.mean()
+                        wandb.log({"task loss": simple_loss.mean().item(),
+                                   "training loss": hybrid_loss.item()})
                     optimiser.zero_grad()
                     hybrid_loss.backward()
                     torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
@@ -340,7 +327,6 @@ if __name__ == '__main__':
     parser.add_argument('--masked_loss', action='store_true')
     parser.add_argument('--pos_neg_loss', action='store_true')
     parser.add_argument('--pos_neg_loss_scale', type=float, default=1.0)
-    parser.add_argument('--infonce_loss', action='store_true')
 
     # step 7. inference
     parser.add_argument('--inference_num', type=int, default=4)

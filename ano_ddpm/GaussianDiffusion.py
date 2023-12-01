@@ -346,14 +346,12 @@ class GaussianDiffusionModel:
         return (extract(self.sqrt_alphas_cumprod, t, x_0.shape, x_0.device) * x_0 +
                 extract(self.sqrt_one_minus_alphas_cumprod, t, x_0.shape, x_0.device) * noise)
 
-    def step(self, model, x_t, t, denoise_fn):
+    def step(self, model, x_t, t, noise):
         out = self.p_mean_variance(model, x_t, t)
         pred_x_0 = out['pred_x_0']
         posterior_mean = (extract(self.posterior_mean_coef1, t, x_t.shape, x_t.device) * pred_x_0
                           + extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device) * x_t)
-        posterior_var = extract(self.posterior_variance, t, x_t.shape, x_t.device)
         posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
-        noise = model(x_t, t)
         sample = posterior_mean + torch.exp(0.5 * posterior_log_var_clipped) * noise
         return sample
 
