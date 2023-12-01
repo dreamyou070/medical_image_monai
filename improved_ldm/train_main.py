@@ -341,6 +341,7 @@ def main(args):
                            shard=MPI.COMM_WORLD.Get_rank(),
                            num_shards=MPI.COMM_WORLD.Get_size(), )
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=1, drop_last=True)
+    yield from loader
 
     print(f' step 5. training...')
     trainer = TrainLoop(model=model,
