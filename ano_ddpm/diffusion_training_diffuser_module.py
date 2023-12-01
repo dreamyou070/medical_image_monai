@@ -84,7 +84,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                             x_t = diffusion.step(model_output,
                                                    int(t),
                                                    x_t,
-                                                   return_dict=True, )['sample']
+                                                   return_dict=True, )['prev_sample']
                             """
                             kl_div = out["whole_kl"]  # batch, 1, W, H
                             # normal portion kl divergence
