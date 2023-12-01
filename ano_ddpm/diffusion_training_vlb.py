@@ -268,7 +268,7 @@ def main(args):
                 # ----------------------------------------------------------------------------------------- #
                 # Inference
                 for i, test_data in enumerate(test_dataset_loader):
-                    if i == step:
+                    if i == step == 0 :
                         ema.eval()
                         model.eval()
                         inference_num = min(args.inference_num, args.batch_size)
