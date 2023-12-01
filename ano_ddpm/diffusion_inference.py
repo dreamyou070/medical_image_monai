@@ -94,6 +94,12 @@ def main(args) :
                 temp = diffusion.sample_p(model, x_t, t)
                 pred_images = temp["pred_x_0"]
                 for i in range(args.sample_distance-1, -1, -1):
+                    # sample = sample.unsqueeze(0)
+                    sample = torch_transforms.ToPILImage()(x_t.squeeze())
+                    sample.save(os.path.join(image_save_dir,
+                                            f'inference_{i}.png'))
+
+
                     if i > 0 :
                         t = torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device)
                         noise_pred = model(x_t, t)
