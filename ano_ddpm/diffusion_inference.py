@@ -105,17 +105,19 @@ def main(args) :
                 pred_images = scheduler.step(noise_pred,
                                args.sample_distance,
                                x_t, return_dict=True)['pred_original_sample']
+
                 for i in range(args.sample_distance-1, -1, -1):
                     # sample = sample.unsqueeze(0)
                     sample = torch_transforms.ToPILImage()(x_t.squeeze())
                     sample.save(os.path.join(image_save_dir,
                                             f'inference_{i}.png'))
                     if i > 0 :
-                        t = torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device)
-                        noise_pred = model(x_t, t)
+                        noise_pred = model(x_t,
+                                           torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device))
                         x_t = scheduler.step(noise_pred,
                                              i,
-                                             x_t, return_dict=True)['prev_sample']
+                                             x_t,
+                                             return_dict=True)['prev_sample']
 
                 final_pred = x_t
             num_images = pred_images.shape[0]

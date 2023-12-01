@@ -351,7 +351,6 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         return sample
 
 
-
     def step(self,
              model_output: torch.FloatTensor,
              timestep: int,
@@ -421,7 +420,7 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         # 4. Compute coefficients for pred_original_sample x_0 and current sample x_t
         # See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
         pred_original_sample_coeff = (alpha_prod_t_prev ** (0.5) * current_beta_t) / beta_prod_t
-        current_sample_coeff =          current_alpha_t ** (0.5) * beta_prod_t_prev / beta_prod_t
+        current_sample_coeff = current_alpha_t ** (0.5) * beta_prod_t_prev / beta_prod_t
 
         # 5. Compute predicted previous sample µ_t
         # See formula (7) from https://arxiv.org/pdf/2006.11239.pdf
@@ -429,6 +428,7 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
 
         # 6. Add noise
         variance = 0
+        """
         if t > 0:
             device = model_output.device
             variance_noise = randn_tensor(
@@ -443,7 +443,7 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
                 variance = (self._get_variance(t, predicted_variance=predicted_variance) ** 0.5) * variance_noise
 
         pred_prev_sample = pred_prev_sample + variance
-
+        """
         if not return_dict:
             return (pred_prev_sample,)
 
