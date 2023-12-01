@@ -254,6 +254,8 @@ class GaussianDiffusionModel:
         model_logvar = extract(model_logvar, t, x_t.shape, x_t.device)
 
         pred_x_0 = self.predict_x_0_from_eps(x_t, t, estimate_noise).clamp(-1, 1)
+
+
         model_mean, _, model_logvar_ = self.q_posterior_mean_variance(pred_x_0, x_t, t)
         return {"mean": model_mean,
                "variance": model_var,
@@ -354,6 +356,24 @@ class GaussianDiffusionModel:
         posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
         sample = posterior_mean + torch.exp(0.5 * posterior_log_var_clipped) * noise
         return sample
+
+    def step2(self, model, x_t, t):
+
+        estimate_noise = model(x_t, t)
+        #model_var = np.append(self.posterior_variance[1], self.betas[1:])
+        posterior_mean_coef1 = extract(self.posterior_mean_coef1, t, x_t.shape, x_t.device)
+        sqrt_recip_alphas_cumprod = extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device)
+        sqrt_recipm1_alphas_cumprod = extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape, x_t.device)
+        posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
+        posterior_mean_coef2 = extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device)
+        #sample = posterior_mean_coef1 * ((sqrt_recip_alphas_cumprod * x_t - sqrt_recipm1_alphas_cumprod * estimate_noise).clamp(-1, 1)) + posterior_mean_coef2 * x_t + \
+        #         torch.exp(0.5 * posterior_log_var_clipped) * estimate_noise
+        sample = (posterior_mean_coef1 * sqrt_recip_alphas_cumprod + posterior_mean_coef2) * x_t + \
+                 (- posterior_mean_coef1 * sqrt_recipm1_alphas_cumprod + torch.exp(0.5 * posterior_log_var_clipped) * estimate_noise
+        return sample
+
+
+
 
     def q_posterior_mean_variance(self, x_0, x_t, t):
         """

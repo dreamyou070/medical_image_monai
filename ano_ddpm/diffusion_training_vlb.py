@@ -82,7 +82,11 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                             else :
                                 t = torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device)
                                 noise = ema(x_t,t)
-                            x_t = diffusion.step(ema, x_t, torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device), noise)
+                            if args.use_step1 :
+                                x_t = diffusion.step(ema, x_t, torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device), noise)
+                            else :
+                                x_t = diffusion.step2(ema, x_t,
+                                                 torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device),)
 
                             """
                             kl_div = out["whole_kl"]  # batch, 1, W, H
@@ -334,7 +338,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_save_freq', type=int, default=1000)
     parser.add_argument('--save_imgs', action='store_true')
     parser.add_argument('--save_vids', action='store_true')
-
+    parser.add_argument('--use_step1', action='store_true')
     parser.add_argument('--onestep_inference', action='store_true')
     parser.add_argument('--recon_with_standard_gaussian', action='store_true')
 
