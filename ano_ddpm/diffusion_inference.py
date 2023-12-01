@@ -82,7 +82,8 @@ def main(args) :
             x_0 = data["image_info"].to(device)  # batch, channel, w, h
             normal_info = data['normal']  # if 1 = normal, 0 = abnormal
             mask_info = data['mask'].unsqueeze(dim=1)  # if 1 = normal, 0 = abnormal
-            t = torch.randint(args.sample_distance - 1, args.sample_distance, (x_0.shape[0],), device=device)
+            #t = torch.randint(args.sample_distance - 1, args.sample_distance, (x_0.shape[0],), device=device)
+            t = torch.Tensor([args.sample_distance]).repeat(x_0.shape[0], ).long().to(x_0.device)
             if args.use_simplex_noise:
                 noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
             else:
@@ -90,8 +91,14 @@ def main(args) :
             # 2) select random int
             x_t = diffusion.sample_q(x_0, t, noise)
             with torch.no_grad():
+                print(f'x_t.shape : {x_t.shape}, t : {t.shape}')
                 temp = diffusion.sample_p(model, x_t, t)
                 pred_images = temp["pred_x_0"]
+
+
+
+
+
                 for i in range(args.sample_distance-1, -1, -1):
                     noise_pred = model(x_t, t)
                     x_t = diffusion.step(model, noise_pred, x_t, t)
