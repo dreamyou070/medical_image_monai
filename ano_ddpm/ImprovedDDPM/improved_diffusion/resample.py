@@ -40,7 +40,6 @@ class ScheduleSampler(ABC):
     def sample(self, batch_size, device):
         """
         Importance-sample timesteps for a batch.
-
         :param batch_size: the number of timesteps.
         :param device: the torch device to save to.
         :return: a tuple (timesteps, weights):

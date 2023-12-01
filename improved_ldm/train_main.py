@@ -136,7 +136,6 @@ class TrainLoop:
         while (not self.lr_anneal_steps or self.step + self.resume_step < self.lr_anneal_steps):
             # 1) get data
             for batch, cond in self.data :
-                # 2) run step
                 self.run_step(batch, cond)
                 if self.step % self.log_interval == 0:
                     logger.dumpkvs()
@@ -160,7 +159,6 @@ class TrainLoop:
 
     def forward_backward(self, batch, cond):
         zero_grad(self.model_params)
-
         for i in range(0, batch.shape[0], self.microbatch):
             # (1) batch sample
             #micro = batch[i : i + self.microbatch].to(dist_util.dev())
@@ -169,13 +167,25 @@ class TrainLoop:
             micro_cond = {k: v[i: i + self.microbatch].to(args.device) for k, v in cond.items()}
             last_batch = (i + self.microbatch) >= batch.shape[0]
             #t, weights = self.schedule_sampler.sample(micro.shape[0],dist_util.dev())
-            t, weights = self.schedule_sampler.sample(micro.shape[0], args.device)
             # ----------------------------------------------------------------------------------------------------------
-            # (2) compute losses
-            # self.diffusion = SpacedDiffusion
-            # loss = <bound method SpacedDiffusion.training_losses of <improved_diffusion.respace.SpacedDiffusion object at 0x7f98b4088fd0>
-            loss = self.diffusion.training_losses
-            compute_losses = functools.partial(self.diffusion.training_losses,self.ddp_model,micro,t,model_kwargs=micro_cond,)
+            # important timestep sampling
+            t, weights = self.schedule_sampler.sample(micro.shape[0], args.device)
+
+            # ----------------------------------------------------------------------------------------------------------
+            # (2) compute losses : self.diffusion = SpacedDiffusion
+            loss_fn = self.diffusion.training_losses
+            compute_losses = functools.partial(loss_fn,
+                                               self.ddp_model,
+                                               micro,
+                                               t,
+                                               model_kwargs=micro_cond,)
+
+
+
+
+
+
+
             if last_batch or not self.use_ddp:
                 losses = compute_losses()
             else:

@@ -734,7 +734,7 @@ class GaussianDiffusion:
                 terms["loss"] *= self.num_timesteps
 
         elif self.loss_type == LossType.MSE or self.loss_type == LossType.RESCALED_MSE:
-            model_output = model(x_t,
+            model_output = model(x_t.to(model.device),
                                  self._scale_timesteps(t).to(model.device),
                                  **model_kwargs)
             if self.model_var_type in [ModelVarType.LEARNED,
