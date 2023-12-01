@@ -103,7 +103,7 @@ def main(args) :
                     if i > 0 :
                         t = torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device)
                         noise_pred = model(x_t, t)
-                        x_t = diffusion.step(model,
+                        x_t = diffusion.step2(model,
                                              x_t,
                                              t,
                                              noise_pred)
