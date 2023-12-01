@@ -106,7 +106,6 @@ class SpacedDiffusion(GaussianDiffusion):
         # Scaling is done by the wrapped model.
         return t
 
-
 class _WrappedModel:
     def __init__(self, model, timestep_map, rescale_timesteps, original_num_steps):
         self.model = model
@@ -120,5 +119,4 @@ class _WrappedModel:
         new_ts = map_tensor[ts].to(self.model.device)
         if self.rescale_timesteps:
             new_ts = new_ts.float() * (1000.0 / self.original_num_steps)
-
         return self.model(x, new_ts, **kwargs)
