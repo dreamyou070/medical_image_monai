@@ -354,7 +354,8 @@ class GaussianDiffusionModel:
         posterior_mean = (extract(self.posterior_mean_coef1, t, x_t.shape, x_t.device) * pred_x_0
                         + extract(self.posterior_mean_coef2, t, x_t.shape, x_t.device) * x_t)
         posterior_log_var_clipped = extract(self.posterior_log_variance_clipped, t, x_t.shape, x_t.device)
-        sample = posterior_mean + torch.exp(0.5 * posterior_log_var_clipped) * noise
+        #sample = posterior_mean + torch.exp(0.5 * posterior_log_var_clipped) * noise
+        sample = posterior_mean + torch.exp(0.5 * posterior_log_var_clipped) * torch.randn_like(x_t)
         return sample
 
     def step2(self, model, x_t, t):
