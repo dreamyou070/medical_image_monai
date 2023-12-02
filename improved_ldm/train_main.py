@@ -425,6 +425,5 @@ if __name__ == "__main__":
     parser.add_argument('--use_checkpoint', action='store_true')
     parser.add_argument('--use_scale_shift_norm', action='store_true')
     parser.add_argument('--device', default = 'cuda:6')
-
     args = parser.parse_args()
     main(args)
