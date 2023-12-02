@@ -1,1 +1,2 @@
-python train_main.py --data_dir '/data7/sooyeon/medical_image/experiment_data/MV/bagel/train/good/rgb'
+python train_main.py --data_dir '/data7/sooyeon/medical_image/experiment_data/MV/bagel/train/good/rgb' \
+                     --experiment_dir r'/data7/sooyeon/medical_image/improved_ddpm_result/20231202_experiment_1'

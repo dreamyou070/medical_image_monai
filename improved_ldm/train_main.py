@@ -154,24 +154,7 @@ class TrainLoop:
             final_sample = data
             pil_data = torch_transforms.ToPILImage()(final_sample.cpu().squeeze())
             pil_data.save(f"sample_{0}.png")
-            print('Finish')
-            import time
-            time.sleep(100)
 
-
-        """
-        
-        def ddim_sample(
-        self,
-        model,
-        x,
-        t,
-        clip_denoised=True,
-        denoised_fn=None,
-        model_kwargs=None,
-        eta=0.0,
-    )
-        """
     def run_loop(self):
 
         while (not self.lr_anneal_steps or self.step + self.resume_step < self.lr_anneal_steps):
@@ -183,14 +166,11 @@ class TrainLoop:
                     logger.dumpkvs()
                 if self.step % self.save_interval == 0:
                     self.save()
-                    # Run for a finite amount of time in integration tests.
                     if os.environ.get("DIFFUSION_TRAINING_TEST", "") and self.step > 0:
                         return
-                if self.step & self.inference_interval == 0:
+                if self.step % self.inference_interval == 0 :
                     self.inference(batch)
-
                 self.step += 1
-
         if (self.step - 1) % self.save_interval != 0:
             self.save()
 
@@ -338,7 +318,7 @@ def main(args):
 
     print(f' step 1. args: {args}')
     dist_util.setup_dist()
-    logger.configure()
+    logger.configure(dir = args.experiment_dir)
 
     print(f' step 2. creating model and diffusion...')
     model = create_model(args.image_size,
@@ -408,6 +388,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir", type=str, required=True)
     parser.add_argument('--schedule_sampler', type=str, default='uniform')
+    parser.add_argument('--experiment_dir', type=str,)
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--weight_decay', type=float, default=0.0)
     parser.add_argument('--lr_anneal_steps', type=int, default=0)
