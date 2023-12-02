@@ -83,11 +83,12 @@ class TrainLoop:
 
         if th.cuda.is_available():
             self.use_ddp = True
-            self.ddp_model = DDP(self.model,
-                                 device_ids=[dist_util.dev()], output_device=dist_util.dev(),
-                                 broadcast_buffers=False,
-                                 bucket_cap_mb=128,
-                                 find_unused_parameters=False,)
+            #self.ddp_model = DDP(self.model,
+                                 #device_ids=[dist_util.dev()], output_device=dist_util.dev(),
+            #                     broadcast_buffers=False,
+            #                     bucket_cap_mb=128,
+            #                     find_unused_parameters=False,)
+            self.ddp_model = self.model
         else:
             if dist.get_world_size() > 1:
                 logger.warn(
@@ -173,6 +174,8 @@ class TrainLoop:
 
             # ----------------------------------------------------------------------------------------------------------
             # (2) compute losses : self.diffusion = SpacedDiffusion
+            # model = self.ddp_model
+            #
             loss_fn = self.diffusion.training_losses
             compute_losses = functools.partial(loss_fn,
                                                self.ddp_model,

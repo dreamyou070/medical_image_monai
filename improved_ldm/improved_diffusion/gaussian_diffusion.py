@@ -704,17 +704,7 @@ class GaussianDiffusion:
                 "whole_kl" : whole_kl}
 
     def training_losses(self, model, x_start, t, model_kwargs=None, noise=None):
-        """
-        Compute training losses for a single timestep.
-        :param model: the model to evaluate loss on.
-        :param x_start: the [N x C x ...] tensor of inputs.
-        :param t: a batch of timestep indices.
-        :param model_kwargs: if not None, a dict of extra keyword arguments to
-            pass to the model. This can be used for conditioning.
-        :param noise: if specified, the specific Gaussian noise to try to remove.
-        :return: a dict with the key "loss" containing a tensor of shape [N].
-                 Some mean or variance settings may also have other keys.
-        """
+        # what is model ... ?
 
         if model_kwargs is None:
             model_kwargs = {}
@@ -724,7 +714,6 @@ class GaussianDiffusion:
         terms = {}
 
         if self.loss_type == LossType.KL or self.loss_type == LossType.RESCALED_KL:
-
             terms["loss"] = self._vb_terms_bpd(model=model,
                                                x_start=x_start, # unnoisy latent
                                                x_t=x_t,         # noisy latent
