@@ -135,11 +135,13 @@ class TrainLoop:
         self.model.convert_to_fp16()
 
     def inference(self, data):
-        # UniformSampler
-        random_timestep = th.randint(0, self.diffusion.num_timesteps, (1,)).item()
-        x_t = self.diffusion.q_sample(x_start = data,
-                                             t=random_timestep,
-                                             noise=None)
+
+        # (1) make random noisy sample
+        random_int = th.randint(0, 1000, (1,)).item()
+        t = th.Tensor([random_int]).repeat(data.shape[0], ).long().to(self.model.device)
+        noise = th.randn_like(data)
+        x_t = self.q_sample(data, t, noise=noise)
+
 
         """
         
