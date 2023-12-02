@@ -139,9 +139,9 @@ class TrainLoop:
         # (1) make random noisy sample
         random_int = th.randint(0, 1000, (1,)).item()
         for i in range(random_int, 0, -1):
-            t = th.Tensor([i]).repeat(2, ).float().to(args.device)
+            t = th.Tensor([i]).repeat(2, ).long().to(args.device)
             output = self.diffusion.ddim_sample(model=self.ddp_model,
-                                                x=data,
+                                                x=data.to(args.device),
                                                 t=t)
             data = output['sample']
             pred_x_0 = output["pred_xstart"]
