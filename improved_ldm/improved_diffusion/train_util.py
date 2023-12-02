@@ -293,9 +293,12 @@ def parse_resume_step_from_filename(filename):
         return 0
 
 
-def get_blob_logdir():
-    return os.environ.get("DIFFUSION_BLOB_LOGDIR", logger.get_dir())
+#def get_blob_logdir():
+#    return os.environ.get("DIFFUSION_BLOB_LOGDIR", logger.get_dir())
 
+def get_blob_logdir():
+    base_dir = r'/data7/sooyeon/medical_image/improved_ddpm_result/'
+    return os.path.join(base_dir, logger.get_dir())
 
 def find_resume_checkpoint():
     # On your infrastructure, you may want to override this to automatically
