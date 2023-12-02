@@ -162,7 +162,7 @@ class TrainLoop:
     def forward_backward(self, batch, cond):
         zero_grad(self.model_params)
         batch_s = batch.shape[0]
-        print(f'batch_s : {batch_s}')
+        print(f'self.microbatch : {self.microbatch}')
         for i in range(0, batch.shape[0], self.microbatch):
             print(f'importance sampling, i : {i}')
             # (1) batch sample
@@ -263,18 +263,14 @@ class TrainLoop:
                     filename = f"model{(self.step+self.resume_step):06d}.pt"
                 else:
                     filename = f"ema_{rate}_{(self.step+self.resume_step):06d}.pt"
-                save_dir = bf.join(f'/data7/sooyeon/medical_image/improved_ddpm_result', filename)
-                print(f'save_dir : {save_dir}')
+                save_dir = bf.join(args.experiment_dir, filename)
                 with bf.BlobFile(save_dir, "wb") as f:
                     th.save(state_dict, f)
         save_checkpoint(0, self.master_params)
         for rate, params in zip(self.ema_rate, self.ema_params):
             save_checkpoint(rate, params)
         if dist.get_rank() == 0:
-            with bf.BlobFile(
-                bf.join(get_blob_logdir(), f"opt{(self.step+self.resume_step):06d}.pt"),
-                "wb",
-            ) as f:
+            with bf.BlobFile(bf.join(get_blob_logdir(), f"opt{(self.step+self.resume_step):06d}.pt"),"wb",) as f:
                 th.save(self.opt.state_dict(), f)
 
         dist.barrier()
@@ -352,11 +348,8 @@ def main(args):
         class_names = [bf.basename(path).split("_")[0] for path in all_files]
         sorted_classes = {x: i for i, x in enumerate(sorted(set(class_names)))}
         classes = [sorted_classes[x] for x in class_names]
-    dataset = ImageDataset(args.image_size,
-                           all_files,
-                           classes=classes,
-                           shard=MPI.COMM_WORLD.Get_rank(),
-                           num_shards=MPI.COMM_WORLD.Get_size(), )
+    dataset = ImageDataset(args.image_size,all_files,classes=classes,
+                           shard=MPI.COMM_WORLD.Get_rank(),num_shards=MPI.COMM_WORLD.Get_size(), )
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=1, drop_last=True)
     #loader = yield from loader
 
@@ -417,5 +410,8 @@ if __name__ == "__main__":
     parser.add_argument('--use_checkpoint', action='store_true')
     parser.add_argument('--use_scale_shift_norm', action='store_true')
     parser.add_argument('--device', default = 'cuda:6')
+    parser.add_argument('--experiment_dir', type=str,
+                        default=f'/data7/sooyeon/medical_image/improved_ddpm_result')
+
     args = parser.parse_args()
     main(args)
