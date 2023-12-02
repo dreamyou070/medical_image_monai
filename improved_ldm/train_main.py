@@ -162,19 +162,24 @@ class TrainLoop:
     def forward_backward(self, batch, cond):
         zero_grad(self.model_params)
         batch_s = batch.shape[0]
-        print(f'self.microbatch : {self.microbatch}')
         for i in range(0, batch.shape[0], self.microbatch):
-            print(f'importance sampling, i : {i}')
             # (1) batch sample
-            #micro = batch[i : i + self.microbatch].to(dist_util.dev())
             micro = batch[i: i + self.microbatch].to(args.device)
+            # (2) condition sample
             #micro_cond = {k: v[i : i + self.microbatch].to(dist_util.dev())for k, v in cond.items()}
             micro_cond = {k: v[i: i + self.microbatch].to(args.device) for k, v in cond.items()}
-            last_batch = (i + self.microbatch) >= batch.shape[0]
+            print(micro_cond)
+            last_batch = (i + self.microbatch) >= batch.shape[0] # last_batch = True
+            print(f'last_batch : {last_batch}')
+
             #t, weights = self.schedule_sampler.sample(micro.shape[0],dist_util.dev())
             # ----------------------------------------------------------------------------------------------------------
             # important timestep sampling
+            # (1) sampling timestep
             t, weights = self.schedule_sampler.sample(micro.shape[0], args.device)
+            print(f'sampled timestep : {t} | weights : {weights}')
+            # sampling batch number of timesteps
+            # sample (2, device)
 
             # ----------------------------------------------------------------------------------------------------------
             # (2) compute losses : self.diffusion = SpacedDiffusion
