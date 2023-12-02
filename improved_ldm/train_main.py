@@ -137,6 +137,7 @@ class TrainLoop:
         while (not self.lr_anneal_steps or self.step + self.resume_step < self.lr_anneal_steps):
             # 1) get data
             for batch, cond in self.data :
+                # batch = np image, cond = dict type local class information
                 self.run_step(batch, cond)
                 if self.step % self.log_interval == 0:
                     logger.dumpkvs()
@@ -160,7 +161,9 @@ class TrainLoop:
 
     def forward_backward(self, batch, cond):
         zero_grad(self.model_params)
+        batch_s = batch.shape[0]
         for i in range(0, batch.shape[0], self.microbatch):
+            print(f'importance sampling, i : {i}')
             # (1) batch sample
             #micro = batch[i : i + self.microbatch].to(dist_util.dev())
             micro = batch[i: i + self.microbatch].to(args.device)
@@ -356,20 +359,20 @@ def main(args):
 
     print(f' step 5. training...')
     trainer = TrainLoop(model=model,
-              diffusion=diffusion,
-              data=loader,
-              batch_size=args.batch_size,
-              microbatch=args.microbatch,
-              lr=args.lr,
-              ema_rate=args.ema_rate,
-              log_interval=args.log_interval,
-              save_interval=args.save_interval,
-              resume_checkpoint=args.resume_checkpoint,
-              use_fp16=args.use_fp16,
-              fp16_scale_growth=args.fp16_scale_growth,
-              schedule_sampler=schedule_sampler,
-              weight_decay=args.weight_decay,
-              lr_anneal_steps=args.lr_anneal_steps,)
+                      diffusion=diffusion,
+                      data=loader,
+                      batch_size=args.batch_size,
+                      microbatch=args.microbatch,
+                      lr=args.lr,
+                      ema_rate=args.ema_rate,
+                      log_interval=args.log_interval,
+                      save_interval=args.save_interval,
+                      resume_checkpoint=args.resume_checkpoint,
+                      use_fp16=args.use_fp16,
+                      fp16_scale_growth=args.fp16_scale_growth,
+                      schedule_sampler=schedule_sampler,
+                      weight_decay=args.weight_decay,
+                      lr_anneal_steps=args.lr_anneal_steps,)
     trainer.run_loop()
 
 if __name__ == "__main__":
@@ -380,8 +383,11 @@ if __name__ == "__main__":
     parser.add_argument('--lr', type=float, default=1e-4)
     parser.add_argument('--weight_decay', type=float, default=0.0)
     parser.add_argument('--lr_anneal_steps', type=int, default=0)
+
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--microbatch', type=int, default=-1)
+
+
     parser.add_argument('--ema_rate', type=str, default='0.9999')
     parser.add_argument('--log_interval', type=int, default=10)
     parser.add_argument('--save_interval', type=int, default=10000)
