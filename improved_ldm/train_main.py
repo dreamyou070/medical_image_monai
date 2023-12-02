@@ -134,6 +134,7 @@ class TrainLoop:
         self.master_params = make_master_params(self.model_params)
         self.model.convert_to_fp16()
 
+    @ th.no_grad()
     def inference(self, data):
 
         # (1) make random noisy sample
