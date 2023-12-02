@@ -139,8 +139,8 @@ class TrainLoop:
         # (1) make random noisy sample
         random_int = th.randint(0, 1000, (1,)).item()
         for i in range(random_int, 0, -1):
-            t = th.Tensor([i]).repeat(2, ).long().to(args.device)
-            output = self.diffusion.ddim_sample(model=self.model,
+            t = th.Tensor([i]).repeat(2, ).float().to(args.device)
+            output = self.diffusion.ddim_sample(model=self.ddp_model,
                                                 x=data,
                                                 t=t)
             data = output['sample']
@@ -210,7 +210,7 @@ class TrainLoop:
             # (2) compute losses : self.diffusion = SpacedDiffusion
             loss_fn = self.diffusion.training_losses
             compute_losses = functools.partial(loss_fn,                   # loss function
-                                                self.ddp_model,           # model
+                                               self.ddp_model,           # model
                                                micro,                     # batch data
                                                t,                         # batch timestep
                                                model_kwargs=micro_cond,)  # {}
