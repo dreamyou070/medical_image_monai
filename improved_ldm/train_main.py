@@ -392,8 +392,8 @@ if __name__ == "__main__":
 
     parser.add_argument('--ema_rate', type=str, default='0.9999')
     parser.add_argument('--log_interval', type=int, default=10)
-    parser.add_argument('--save_interval', type=int, default=10000)
-    parser.add_argument('--inference_interval', type=int, default=10000)
+    parser.add_argument('--save_interval', type=int, default=10)
+    parser.add_argument('--inference_interval', type=int, default=10)
 
     parser.add_argument('--resume_checkpoint', type=str, default='')
     parser.add_argument('--use_fp16', action='store_true')
