@@ -37,6 +37,7 @@ class TrainLoop:
         ema_rate,
         log_interval,
         save_interval,
+        inference_interval,
         resume_checkpoint,
         use_fp16=False,
         fp16_scale_growth=1e-3,
@@ -55,6 +56,7 @@ class TrainLoop:
         self.ema_rate = ([ema_rate] if isinstance(ema_rate, float) else [float(x) for x in ema_rate.split(",")])
         self.log_interval = log_interval
         self.save_interval = save_interval
+        self.inference_interval = inference_interval
         self.resume_checkpoint = resume_checkpoint
         self.use_fp16 = use_fp16
         self.fp16_scale_growth = fp16_scale_growth
@@ -132,6 +134,18 @@ class TrainLoop:
         self.master_params = make_master_params(self.model_params)
         self.model.convert_to_fp16()
 
+    def inference(self, data):
+        random_timestep = th.randint(0, self.diffusion.num_timesteps, (1,)).item()
+        x_t = self.schedule_sampler.q_sample(x_start = data,
+                                             t=random_timestep,
+                                             noise=None)
+
+        """
+        
+        self.schedule_sampler.p_sample(model=self.model,
+                                       x=,
+                                       t=)
+        """
     def run_loop(self):
 
         while (not self.lr_anneal_steps or self.step + self.resume_step < self.lr_anneal_steps):
@@ -146,6 +160,9 @@ class TrainLoop:
                     # Run for a finite amount of time in integration tests.
                     if os.environ.get("DIFFUSION_TRAINING_TEST", "") and self.step > 0:
                         return
+                if self.step & self.inference_interval == 0:
+                    self.inference(batch)
+
                 self.step += 1
 
         if (self.step - 1) % self.save_interval != 0:
@@ -168,45 +185,27 @@ class TrainLoop:
             # (2) condition sample
             #micro_cond = {k: v[i : i + self.microbatch].to(dist_util.dev())for k, v in cond.items()}
             micro_cond = {k: v[i: i + self.microbatch].to(args.device) for k, v in cond.items()}
-            print(micro_cond)
             last_batch = (i + self.microbatch) >= batch.shape[0] # last_batch = True
-            print(f'last_batch : {last_batch}')
-
             #t, weights = self.schedule_sampler.sample(micro.shape[0],dist_util.dev())
             # ----------------------------------------------------------------------------------------------------------
             # important timestep sampling
-            # (1) sampling timestep
+            # (1) sampling timestep (weights = just 1)
             t, weights = self.schedule_sampler.sample(micro.shape[0], args.device)
-            print(f'sampled timestep : {t} | weights : {weights}')
-            # sampling batch number of timesteps
-            # sample (2, device)
-
             # ----------------------------------------------------------------------------------------------------------
             # (2) compute losses : self.diffusion = SpacedDiffusion
-            # model = self.ddp_model
-            #
             loss_fn = self.diffusion.training_losses
-            compute_losses = functools.partial(loss_fn,
-                                               self.ddp_model,
-                                               micro,
-                                               t,
-                                               model_kwargs=micro_cond,)
-
-
-
-
-
-
-
+            compute_losses = functools.partial(loss_fn,                   # loss function
+                                                self.ddp_model,           # model
+                                               micro,                     # batch data
+                                               t,                         # batch timestep
+                                               model_kwargs=micro_cond,)  # {}
             if last_batch or not self.use_ddp:
                 losses = compute_losses()
             else:
                 with self.ddp_model.no_sync():
                     losses = compute_losses()
-            # ----------------------------------------------------------------------------------------------------------
             if isinstance(self.schedule_sampler, LossAwareSampler):
-                self.schedule_sampler.update_with_local_losses(
-                    t, losses["loss"].detach())
+                self.schedule_sampler.update_with_local_losses(t, losses["loss"].detach())
 
             loss = (losses["loss"] * weights).mean()
             log_loss_dict(self.diffusion, t, {k: v * weights for k, v in losses.items()})
@@ -331,11 +330,12 @@ def main(args):
                                           learn_sigma=args.learn_sigma,
                                           sigma_small=args.sigma_small,
                                           noise_schedule=args.noise_schedule,
-                                          use_kl=args.use_kl,
+                                          use_kl=args.use_kl, #######################################
                                           predict_xstart=args.predict_xstart,
                                           rescale_timesteps=args.rescale_timesteps,
-                                          rescale_learned_sigmas=args.rescale_learned_sigmas,
-                                          timestep_respacing=args.timestep_respacing,)
+                                          rescale_learned_sigmas=args.rescale_learned_sigmas, #######################################
+                                          timestep_respacing=args.timestep_respacing,
+                                          loss_type=args.loss_type,)
     model.to(args.device)
 
     print(f' step 3. scheduler')
@@ -360,20 +360,21 @@ def main(args):
 
     print(f' step 5. training...')
     trainer = TrainLoop(model=model,
-                      diffusion=diffusion,
-                      data=loader,
-                      batch_size=args.batch_size,
-                      microbatch=args.microbatch,
-                      lr=args.lr,
-                      ema_rate=args.ema_rate,
-                      log_interval=args.log_interval,
-                      save_interval=args.save_interval,
-                      resume_checkpoint=args.resume_checkpoint,
-                      use_fp16=args.use_fp16,
-                      fp16_scale_growth=args.fp16_scale_growth,
-                      schedule_sampler=schedule_sampler,
-                      weight_decay=args.weight_decay,
-                      lr_anneal_steps=args.lr_anneal_steps,)
+                        diffusion=diffusion,
+                        data=loader,
+                        batch_size=args.batch_size,
+                        microbatch=args.microbatch,
+                        lr=args.lr,
+                        ema_rate=args.ema_rate,
+                        log_interval=args.log_interval,
+                        save_interval=args.save_interval,
+                        inference_interval=args.inference_interval,
+                        resume_checkpoint=args.resume_checkpoint,
+                        use_fp16=args.use_fp16,
+                        fp16_scale_growth=args.fp16_scale_growth,
+                        schedule_sampler=schedule_sampler,
+                        weight_decay=args.weight_decay,
+                        lr_anneal_steps=args.lr_anneal_steps,)
     trainer.run_loop()
 
 if __name__ == "__main__":
@@ -392,6 +393,8 @@ if __name__ == "__main__":
     parser.add_argument('--ema_rate', type=str, default='0.9999')
     parser.add_argument('--log_interval', type=int, default=10)
     parser.add_argument('--save_interval', type=int, default=10000)
+    parser.add_argument('--inference_interval', type=int, default=10000)
+
     parser.add_argument('--resume_checkpoint', type=str, default='')
     parser.add_argument('--use_fp16', action='store_true')
     parser.add_argument('--fp16_scale_growth', type=float, default=1e-3)
