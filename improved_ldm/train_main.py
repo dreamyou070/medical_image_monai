@@ -138,16 +138,28 @@ class TrainLoop:
 
         # (1) make random noisy sample
         random_int = th.randint(0, 1000, (1,)).item()
-        t = th.Tensor([random_int]).repeat(data.shape[0], ).long().to(self.model.device)
-        noise = th.randn_like(data)
-        x_t = self.q_sample(data, t, noise=noise)
+        for i in range(random_int, 0, -1):
+            t = th.Tensor([i]).repeat(2, ).long().to(args.device)
+            output = self.diffusion.ddim_sample(model=self.model,
+                                                x=data,
+                                                t=t)
+            data = output['sample']
+            pred_x_0 = output["pred_xstart"]
+        final_sample = data
 
 
         """
         
-        self.schedule_sampler.p_sample(model=self.model,
-                                       x=,
-                                       t=)
+        def ddim_sample(
+        self,
+        model,
+        x,
+        t,
+        clip_denoised=True,
+        denoised_fn=None,
+        model_kwargs=None,
+        eta=0.0,
+    )
         """
     def run_loop(self):
 
