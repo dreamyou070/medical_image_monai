@@ -12,13 +12,14 @@ import os
 import blobfile as bf
 import numpy as np
 import torch as th
+from setproctitle import *
 import torch.distributed as dist
 from torch.nn.parallel.distributed import DistributedDataParallel as DDP
 from torch.optim import AdamW
 from improved_diffusion import dist_util, logger
 from improved_diffusion.fp16_util import (make_master_params,master_params_to_model_params,model_grads_to_master_grads,
                                           unflatten_master_params,zero_grad,)
-from improved_diffusion.nn import update_ema
+import wandb
 from improved_diffusion.resample import LossAwareSampler, UniformSampler
 from improved_diffusion.train_util import (find_resume_checkpoint, find_ema_checkpoint, log_loss_dict, make_master_params,
                                            master_params_to_model_params, model_grads_to_master_grads, update_ema,
@@ -316,7 +317,17 @@ def _list_image_files_recursively(data_dir):
 
 def main(args):
 
-    print(f' step 1. args: {args}')
+    print(f'\n step 1. setting')
+    if args.process_title:
+        setproctitle(args.process_title)
+    else:
+        setproctitle('parksooyeon')
+
+    print(f' (1.1) wandb')
+    wandb.login(key=args.wandb_api_key)
+    wandb.init(project=args.wandb_project_name, name=args.wandb_run_name)
+
+    print(f' (1.2) argument')
     dist_util.setup_dist()
     logger.configure(dir = args.experiment_dir)
 
@@ -386,6 +397,13 @@ def main(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
+
+    # step 1. wandb login
+    parser.add_argument("--process_title", type=str, default='parksooyeon')
+    parser.add_argument("--wandb_api_key", type=str, default='3a3bc2f629692fa154b9274a5bbe5881d47245dc')
+    parser.add_argument("--wandb_project_name", type=str, default='dental_experiment')
+    parser.add_argument("--wandb_run_name", type=str, default='hand_1000_64res')
+
     parser.add_argument("--data_dir", type=str, required=True)
     parser.add_argument('--schedule_sampler', type=str, default='uniform')
     parser.add_argument('--experiment_dir', type=str,)

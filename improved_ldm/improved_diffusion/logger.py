@@ -452,7 +452,6 @@ def configure(dir=None, format_strs=None, comm=None, log_suffix=""):
 
     # make absolute dir
     dir = os.path.expanduser(dir)
-    print(f'expand user dir : {os.path.expanduser(dir)}')
     os.makedirs(os.path.expanduser(dir), exist_ok=True)
 
     rank = get_rank_without_mpi_import()
