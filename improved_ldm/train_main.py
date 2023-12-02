@@ -154,6 +154,9 @@ class TrainLoop:
             final_sample = data
             pil_data = torch_transforms.ToPILImage()(final_sample.cpu().squeeze())
             pil_data.save(f"sample_{0}.png")
+            print('Finish')
+            import time
+            time.sleep(100)
 
 
         """
