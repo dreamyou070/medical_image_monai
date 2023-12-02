@@ -472,7 +472,7 @@ def configure(dir=None, format_strs=None, comm=None, log_suffix=""):
 
 
 def _configure_default_logger():
-    configure()
+    configure(dir =  r'/data7/sooyeon/medical_image/improved_ddpm_result/')
     Logger.DEFAULT = Logger.CURRENT
 
 

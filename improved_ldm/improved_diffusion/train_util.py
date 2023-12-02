@@ -8,31 +8,16 @@ import torch.distributed as dist
 from torch.nn.parallel.distributed import DistributedDataParallel as DDP
 from torch.optim import AdamW
 from . import dist_util, logger
-from .fp16_util import (make_master_params,
-    master_params_to_model_params,
-    model_grads_to_master_grads,
-    unflatten_master_params,
-    zero_grad,
-)
+from .fp16_util import (make_master_params,master_params_to_model_params,model_grads_to_master_grads,unflatten_master_params,
+                        zero_grad,)
 from .nn import update_ema
 from .resample import LossAwareSampler, UniformSampler
 
-# For ImageNet experiments, this was a good default value.
-# We found that the lg_loss_scale quickly climbed to
-# 20-21 within the first ~1K steps of training.
 INITIAL_LOG_LOSS_SCALE = 20.0
 
-
 class TrainLoop:
-    def __init__(self,
-        *,
-        model,
-        diffusion,
-        data,
-        batch_size,
-        microbatch,
-        lr,
-        ema_rate,
+    def __init__(self,*,model,diffusion,data,batch_size,microbatch,
+                 lr,ema_rate,
         log_interval,
         save_interval,
         resume_checkpoint,
@@ -293,12 +278,12 @@ def parse_resume_step_from_filename(filename):
         return 0
 
 
-#def get_blob_logdir():
-#    return os.environ.get("DIFFUSION_BLOB_LOGDIR", logger.get_dir())
-
 def get_blob_logdir():
-    base_dir = r'/data7/sooyeon/medical_image/improved_ddpm_result/'
-    return os.path.join(base_dir, logger.get_dir())
+    return os.environ.get("DIFFUSION_BLOB_LOGDIR", logger.get_dir())
+
+#def get_blob_logdir():
+#    base_dir = r'/data7/sooyeon/medical_image/improved_ddpm_result/'
+#    return os.path.join(base_dir, logger.get_dir())
 
 def find_resume_checkpoint():
     # On your infrastructure, you may want to override this to automatically
