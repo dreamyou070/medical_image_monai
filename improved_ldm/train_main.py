@@ -135,8 +135,9 @@ class TrainLoop:
         self.model.convert_to_fp16()
 
     def inference(self, data):
+        # UniformSampler
         random_timestep = th.randint(0, self.diffusion.num_timesteps, (1,)).item()
-        x_t = self.schedule_sampler.q_sample(x_start = data,
+        x_t = self.diffusion.q_sample(x_start = data,
                                              t=random_timestep,
                                              noise=None)
 
