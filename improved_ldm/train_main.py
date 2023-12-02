@@ -140,7 +140,7 @@ class TrainLoop:
         random_int = th.randint(0, 1000, (1,)).item()
         for i in range(random_int, 0, -1):
             b_size = data.shape[0]
-            t = th.Tensor([i]).repeat(b_size, ).float().to(args.device)
+            t = th.Tensor([i]).repeat(b_size, ).long().to(args.device)
             output = self.diffusion.ddim_sample(model=self.ddp_model,
                                                 x=data.to(args.device),
                                                 t=t)
