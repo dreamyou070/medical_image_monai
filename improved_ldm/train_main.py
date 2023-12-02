@@ -334,8 +334,8 @@ def main(args):
                                           predict_xstart=args.predict_xstart,
                                           rescale_timesteps=args.rescale_timesteps,
                                           rescale_learned_sigmas=args.rescale_learned_sigmas, #######################################
-                                          timestep_respacing=args.timestep_respacing,
-                                          loss_type=args.loss_type,)
+                                          timestep_respacing=args.timestep_respacing,)
+                                          #loss_type=args.loss_type,)
     model.to(args.device)
 
     print(f' step 3. scheduler')
