@@ -320,7 +320,7 @@ def main(args):
     dist_util.setup_dist()
     logger.configure(dir = args.experiment_dir)
 
-    print(f' step 2. creating model and diffusion...')
+    print(f' step 2. creating model and diffusion')
     model = create_model(args.image_size,
                          args.num_channels,
                          args.num_res_blocks,
