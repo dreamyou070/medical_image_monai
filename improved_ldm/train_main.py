@@ -148,6 +148,7 @@ class TrainLoop:
                                                     t=t)
                 data = output['sample']
                 pred_x_0 = output["pred_xstart"]
+                print(f"data : {data.shape}")
             final_sample = data
 
 
