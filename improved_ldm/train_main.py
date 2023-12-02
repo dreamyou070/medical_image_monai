@@ -263,9 +263,9 @@ class TrainLoop:
                     filename = f"model{(self.step+self.resume_step):06d}.pt"
                 else:
                     filename = f"ema_{rate}_{(self.step+self.resume_step):06d}.pt"
-                save_dir = bf.join(get_blob_logdir(), filename)
+                save_dir = bf.join(f'/data7/sooyeon/medical_image/improved_ddpm_result', filename)
                 print(f'save_dir : {save_dir}')
-                with bf.BlobFile(bf.join(get_blob_logdir(), filename), "wb") as f:
+                with bf.BlobFile(save_dir, "wb") as f:
                     th.save(state_dict, f)
         save_checkpoint(0, self.master_params)
         for rate, params in zip(self.ema_rate, self.ema_params):
