@@ -162,6 +162,7 @@ class TrainLoop:
     def forward_backward(self, batch, cond):
         zero_grad(self.model_params)
         batch_s = batch.shape[0]
+        print(f'batch_s : {batch_s}')
         for i in range(0, batch.shape[0], self.microbatch):
             print(f'importance sampling, i : {i}')
             # (1) batch sample
