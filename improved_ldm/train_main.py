@@ -5,6 +5,7 @@ from improved_diffusion.script_util import (create_model, create_gaussian_diffus
 from improved_diffusion.image_datasets import ImageDataset, DataLoader
 from improved_diffusion.train_util import TrainLoop
 from mpi4py import MPI
+import torchvision.transforms as torch_transforms
 import copy
 import functools
 import os
@@ -148,7 +149,10 @@ class TrainLoop:
                                                     t=t)
                 data = output['sample']
                 pred_x_0 = output["pred_xstart"]
-                print(f"data : {data.shape}")
+                pil_data = torch_transforms.ToPILImage()(data.cpu().squeeze())
+
+
+
             final_sample = data
 
 
