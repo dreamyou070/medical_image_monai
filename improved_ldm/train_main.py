@@ -150,10 +150,10 @@ class TrainLoop:
                 data = output['sample']
                 pred_x_0 = output["pred_xstart"]
                 pil_data = torch_transforms.ToPILImage()(data.cpu().squeeze())
-
-
-
+                pil_data.save(f"sample_{i}.png")
             final_sample = data
+            pil_data = torch_transforms.ToPILImage()(final_sample.cpu().squeeze())
+            pil_data.save(f"sample_{0}.png")
 
 
         """
