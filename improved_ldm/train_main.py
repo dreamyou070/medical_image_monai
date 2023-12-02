@@ -425,8 +425,6 @@ if __name__ == "__main__":
     parser.add_argument('--use_checkpoint', action='store_true')
     parser.add_argument('--use_scale_shift_norm', action='store_true')
     parser.add_argument('--device', default = 'cuda:6')
-    parser.add_argument('--experiment_dir', type=str,
-                        default=f'/data7/sooyeon/medical_image/improved_ddpm_result')
 
     args = parser.parse_args()
     main(args)
