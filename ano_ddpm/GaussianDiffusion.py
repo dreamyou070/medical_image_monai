@@ -191,7 +191,7 @@ class GaussianDiffusionModel:
         self.log_one_minus_alphas_cumprod = np.log(1.0 - self.alphas_cumprod)
         self.sqrt_recip_alphas_cumprod = np.sqrt(1.0 / self.alphas_cumprod)
         self.sqrt_recipm1_alphas_cumprod = np.sqrt(1.0 / self.alphas_cumprod - 1)
-
+        self.sqrt_recipm2_alphas_cumprod = np.sqrt((betas*betas)/(self.sqrt_alphas*self.log_one_minus_alphas_cumprod))
         # calculations for posterior q(x_{t-1} | x_t, x_0)
         self.posterior_variance = (betas * (1.0 - self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod))
         # log calculation clipped because the posterior variance is 0 at the
@@ -220,6 +220,11 @@ class GaussianDiffusionModel:
     def predict_x_0_from_eps(self, x_t, t, eps):
         return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t
                 - extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape, x_t.device) * eps)
+
+    def predict_model_mean_from_eps(self, x_t, t, eps):
+
+        return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t
+                - extract(self.sqrt_recipm2_alphas_cumprod, t, x_t.shape, x_t.device) * eps)
 
     def predict_eps_from_x_0(self, x_t, t, pred_x_0):
         return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t
@@ -286,8 +291,18 @@ class GaussianDiffusionModel:
                 #"log_variance": model_logvar,
                 "log_variance": posterior_log_var,
                 "pred_x_0":     pred_x_0,}
+    def sample_p2(self, model, x_t, t, denoise_fn="gauss"):
+        eps = model(x_t, t)
+        model_mean = self.predict_model_mean_from_eps(self, x_t, t, eps)
+        model_logvar = extract(self.sqrt_betas, t, x_t.shape, x_t.device)
+        sample = model_mean + torch.exp(0.5 * model_logvar) * torch.randn_like(model_logvar)
+        return {"sample" : sample,}
 
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
+
+
+
+
         out = self.p_mean_variance(model, x_t, t)
         # noise = torch.randn_like(x_t)
         if type(denoise_fn) == str:
