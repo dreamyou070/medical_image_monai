@@ -35,7 +35,7 @@ def main(args) :
     print(f' (1.3) saving configuration')
     experiment_dir = args.experiment_dir
     os.makedirs(experiment_dir, exist_ok=True)
-    image_save_dir = os.path.join(experiment_dir, 'inference_images')
+    image_save_dir = os.path.join(experiment_dir, 'scheduling_images')
     print(f'  - image_save_dir : {image_save_dir}')
     os.makedirs(image_save_dir, exist_ok=True)
 
