@@ -104,9 +104,9 @@ def main(args) :
 
             with torch.no_grad():
                 noise_pred = model(x_t, t)
-                pred_images = scheduler.step(noise_pred,
-                               args.sample_distance,
-                               x_t, return_dict=True)['pred_original_sample']
+                #pred_images = scheduler.step(noise_pred,
+                #               args.sample_distance,
+                #               x_t, return_dict=True)['pred_original_sample']
 
                 for i in range(args.sample_distance-1, -1, -1):
                     # sample = sample.unsqueeze(0)
