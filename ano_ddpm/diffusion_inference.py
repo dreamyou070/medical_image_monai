@@ -105,7 +105,9 @@ def main(args) :
                                                      torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device),
                                                      noise,denoise_fn='gauss')['sample']
                         else :
-                            x_t = scheduler.sample_p2(model, x_t, i,denoise_fn="gauss")['sample']
+                            x_t = scheduler.sample_p2(model, x_t,
+                                                      torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                                                      denoise_fn="gauss")['sample']
 
 if __name__ == '__main__':
 
