@@ -104,7 +104,7 @@ def main(args) :
                         x_t = scheduler.q_sample(x_0,
                                                  torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device),
                                                  noise,
-                                                 denoise_fn='gauss')
+                                                 denoise_fn='gauss')['sample']
                         #sample = x_t.squeeze()
                         # sample = sample.unsqueeze(0)
                         #sample = torch_transforms.ToPILImage()(sample)
