@@ -1,4 +1,4 @@
-python diffusion_inference.py --device 'cuda:3' --process_title 'parksooyeon' \
+python diffusion_inference.py --device 'cuda:0' --process_title 'parksooyeon' \
    --wandb_project_name 'inference_test' --wandb_run_name 'dental_inference_step_check' \
    --experiment_dir /data7/sooyeon/medical_image/MVTec_result/1_no_kl_loss_step_infer_diffuser_module \
    --train_data_folder '/data7/sooyeon/medical_image/experiment_data/MV/bagel/train/good/rgb' \

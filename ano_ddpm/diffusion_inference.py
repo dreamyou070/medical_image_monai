@@ -96,16 +96,15 @@ def main(args) :
                 for i in range(args.sample_distance-1, -1, -1):
                     # sample = sample.unsqueeze(0)
                     sample = torch_transforms.ToPILImage()(x_t.squeeze())
-                    sample.save(os.path.join(image_save_dir, f'inference_{i}.png'))
+                    sample.save(os.path.join(image_save_dir, f'scheduling_{i}.png'))
                     if i > 0 :
-                        model_output = model(x_t,
-                                           torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device))#.sample
-                        pred_x_0 = scheduler.predict_x_0_from_eps(x_t,
-                                                                  torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                                  model_output)
-                        x_t = scheduler.q_posterior_mean_variance(pred_x_0, x_t,
-                                                                  torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device), )[0]
-
+                        # Check Posterior
+                        #x_t = scheduler.sample_p(model, x_t,
+                        #                         torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),)['sample']
+                        x_t = scheduler.q_sample(x_0,
+                                                 torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                                                 noise,
+                                                 denoise_fn='gauss')
                         #sample = x_t.squeeze()
                         # sample = sample.unsqueeze(0)
                         #sample = torch_transforms.ToPILImage()(sample)
