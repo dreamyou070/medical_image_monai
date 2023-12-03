@@ -110,7 +110,6 @@ def main(args) :
                         #sample = torch_transforms.ToPILImage()(sample)
                         #sample.save(os.path.join(image_save_dir,
                         #                        f'inference_time_{i}_after.png'))
-
                         """
                         is_normal = 'normal'
                         #else:
