@@ -295,7 +295,7 @@ class GaussianDiffusionModel:
         eps = model(x_t, t)
         model_mean = self.predict_model_mean_from_eps(x_t, t, eps)
         std = extract(self.sqrt_betas, t, x_t.shape, x_t.device)
-        sample = model_mean + std * torch.randn_like(model_logvar)
+        sample = model_mean + std * torch.randn_like(x_t)
         return {"sample" : sample,}
 
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
