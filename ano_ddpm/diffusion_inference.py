@@ -105,7 +105,7 @@ def main(args) :
                                                      torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device),
                                                      noise,denoise_fn='gauss')['sample']
                         else :
-                            x_t = scheduler.sample_p2(model, x_t,
+                            x_t = scheduler.sample_p(model, x_t,
                                                       torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device),
                                                       denoise_fn="gauss")['sample']
 
