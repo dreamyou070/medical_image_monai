@@ -79,12 +79,10 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                 with torch.no_grad():
                     for t in range(args.sample_distance, -1, -1):
                         if t > 0:
-                            model_output = ema(x_t,
-                                               torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
-                            x_t = diffusion.step(model_output,
-                                                   int(t),
-                                                   x_t,
-                                                   return_dict=True, )['prev_sample']
+                            model_output = ema(x_t,torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
+                            pred_x_0 = diffusion.predict_x_0_from_eps(x_t, t, model_output)
+                            x_t, _, _ = diffusion.q_posterior_mean_variance(pred_x_0,x_t,t)
+
                             """
                             kl_div = out["whole_kl"]  # batch, 1, W, H
                             # normal portion kl divergence

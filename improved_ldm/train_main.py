@@ -21,8 +21,10 @@ from improved_diffusion.fp16_util import (make_master_params,master_params_to_mo
                                           unflatten_master_params,zero_grad,)
 import wandb
 from improved_diffusion.resample import LossAwareSampler, UniformSampler
-from improved_diffusion.train_util import (find_resume_checkpoint, find_ema_checkpoint, log_loss_dict, make_master_params,
-                                           master_params_to_model_params, model_grads_to_master_grads, update_ema,
+from improved_diffusion.train_util import (find_resume_checkpoint, find_ema_checkpoint, log_loss_dict,
+                                           make_master_params,
+                                           master_params_to_model_params, model_grads_to_master_grads,
+                                           update_ema,
                                            parse_resume_step_from_filename, get_blob_logdir)
 
 INITIAL_LOG_LOSS_SCALE = 20.0
@@ -148,8 +150,17 @@ class TrainLoop:
                 output = self.diffusion.ddim_sample(model=self.ddp_model,
                                                     x=data.to(args.device),
                                                     t=t)
-                data = output['sample']
                 pred_x_0 = output["pred_xstart"]
+                x_t = output["pred_xstart"]
+                self.q_posterior_mean_variance(x_start=pred_x_0,
+                                               x_t=x_t,
+                                               t=t)[0]
+
+
+
+
+                data = output['sample']
+
                 pil_data = torch_transforms.ToPILImage()(data.cpu().squeeze())
                 pil_data.save(f"sample_{i}.png")
             final_sample = data
@@ -161,7 +172,6 @@ class TrainLoop:
         while (not self.lr_anneal_steps or self.step + self.resume_step < self.lr_anneal_steps):
             # 1) get data
             for batch, cond in self.data :
-                # batch = np image, cond = dict type local class information
                 self.run_step(batch, cond)
                 if self.step % self.log_interval == 0:
                     logger.dumpkvs()
@@ -200,22 +210,32 @@ class TrainLoop:
             t, weights = self.schedule_sampler.sample(micro.shape[0], args.device)
             # ----------------------------------------------------------------------------------------------------------
             # (2) compute losses : self.diffusion = SpacedDiffusion
-            loss_fn = self.diffusion.training_losses
-            compute_losses = functools.partial(loss_fn,                   # loss function
-                                               self.ddp_model,           # model
-                                               micro,                     # batch data
-                                               t,                         # batch timestep
-                                               model_kwargs=micro_cond,)  # {}
+            compute_losses = functools.partial(self.diffusion.training_losses,
+                                               model=self.ddp_model,
+                                               x_start=micro,
+                                               t=t,
+                                               model_kwargs=micro_cond,)
             if last_batch or not self.use_ddp:
-                losses = compute_losses()
+                loss_dict = compute_losses()
             else:
                 with self.ddp_model.no_sync():
-                    losses = compute_losses()
-            if isinstance(self.schedule_sampler, LossAwareSampler):
-                self.schedule_sampler.update_with_local_losses(t, losses["loss"].detach())
+                    # get loss dictionary
+                    loss_dict = compute_losses()
+            # ----------------------------------------------------------------------------------------------------------
+            # check loss_dict
 
-            loss = (losses["loss"] * weights).mean()
-            log_loss_dict(self.diffusion, t, {k: v * weights for k, v in losses.items()})
+
+
+            if isinstance(self.schedule_sampler, LossAwareSampler):
+                self.schedule_sampler.update_with_local_losses(t,
+                                                               loss_dict["loss"].detach())
+
+
+
+            loss = (loss_dict["loss"] * weights).mean()
+
+
+            log_loss_dict(self.diffusion, t, {k: v * weights for k, v in loss_dict.items()})
             if self.use_fp16:
                 loss_scale = 2 ** self.lg_loss_scale
                 (loss * loss_scale).backward()
@@ -343,6 +363,7 @@ def main(args):
                          num_heads_upsample=args.num_heads_upsample,
                          use_scale_shift_norm=args.use_scale_shift_norm,
                          dropout=args.dropout,)
+
     diffusion = create_gaussian_diffusion(steps=args.diffusion_steps,
                                           learn_sigma=args.learn_sigma,
                                           sigma_small=args.sigma_small,
@@ -352,7 +373,6 @@ def main(args):
                                           rescale_timesteps=args.rescale_timesteps,
                                           rescale_learned_sigmas=args.rescale_learned_sigmas, #######################################
                                           timestep_respacing=args.timestep_respacing,)
-                                          #loss_type=args.loss_type,)
     model.to(args.device)
 
     print(f' step 3. scheduler')
@@ -363,16 +383,21 @@ def main(args):
     else :
         schedule_sampler = LossSecondMomentResampler(diffusion)
 
-    print(f' step 4. creating data loader...')
+    print(f' step 4. creating data loader')
     all_files = _list_image_files_recursively(args.data_dir)
     classes = None
     if args.class_cond:
         class_names = [bf.basename(path).split("_")[0] for path in all_files]
         sorted_classes = {x: i for i, x in enumerate(sorted(set(class_names)))}
         classes = [sorted_classes[x] for x in class_names]
-    dataset = ImageDataset(args.image_size,all_files,classes=classes,
-                           shard=MPI.COMM_WORLD.Get_rank(),num_shards=MPI.COMM_WORLD.Get_size(), )
-    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=1, drop_last=True)
+    dataset = ImageDataset(args.image_size,
+                           all_files,
+                           classes=classes,
+                           shard=MPI.COMM_WORLD.Get_rank(),
+                           num_shards=MPI.COMM_WORLD.Get_size(), )
+    loader = DataLoader(dataset,
+                        batch_size=args.batch_size,
+                        shuffle=False, num_workers=1, drop_last=True)
     #loader = yield from loader
 
     print(f' step 5. training...')
