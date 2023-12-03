@@ -89,6 +89,10 @@ def main(args) :
             noise = torch.rand_like(x_0).float().to(device)
             # 2) select random int
             x_t = scheduler.sample_q(x_0, t, noise)
+            direct = scheduler.sample_p(model, x_t, t, denoise_fn="gauss")['pred_x_0']
+            sample = torch_transforms.ToPILImage()(direct.squeeze())
+            sample.save(os.path.join(image_save_dir, f'direct_x_0.png'))
+
             with torch.no_grad():
                 for time_step in range(args.sample_distance, -1, -1):
                     # sample = sample.unsqueeze(0)
