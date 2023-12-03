@@ -239,54 +239,16 @@ def main(args) :
                     noise = torch.rand_like(x_0).float().to(device)
                 with torch.no_grad():
                     x_t = diffusion.sample_q(x_0, t, noise)                # 3) model prediction
-                noise_pred = model(x_t, t)
-                target = noise
-                if args.masked_loss:
-                    noise_pred = noise_pred * mask_info.to(device)
-                    target = target * mask_info.to(device)
-                loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(),reduction="none").mean(dim=(1, 2, 3))
 
-                if args.use_vlb_loss :
-                    normal_info = data['normal']
-                    x_0 = data["image_info"].to(device)[normal_info == 1]
-                    mask_info = data['mask'].unsqueeze(dim=1)[normal_info == 1]
-                    t = torch.randint(0, args.sample_distance, (x_0.shape[0],), device=device)
-                    noise = torch.rand_like(x_0).float().to(device)
-                    if x_0.shape[0] != 0 and x_0.dim() == 4 :
-                        x_t = diffusion.sample_q(x_0, t, noise)  # 3) model prediction
-                        kl_loss = diffusion._vb_terms_bpd(model=model,
-                                                          x_start=x_0,x_t=x_t,t=t, clip_denoised=False,)["output"]
-                        loss = loss + args.kl_loss_weight * kl_loss
+                if args.simple_loss :
+                    noise_pred = model(x_t, t)
+                    target = noise
+                    loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean(dim=(1, 2, 3))
+                elif args.kl_loss :
+                    negative_log_likelihood = diffusion.calc_vlb_xt(model, x_0, x_t, t)['output']
+                    print(f'negative_log_likelihood : {negative_log_likelihood.shape}')
+                    loss = negative_log_likelihood.mean(dim=(1, 2, 3))
 
-                if args.pos_neg_loss:
-                    pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
-                                                            (target * mask_info.to(device)).float(),
-                                                            reduction="none").sum(dim=(1, 2, 3))
-                    pos_pixel_num = mask_info.sum([1, 2, 3])
-                    pos_pixel_num = torch.where(pos_pixel_num == 0, 1, pos_pixel_num)
-                    pos_loss = pos_loss / pos_pixel_num
-                    neg_loss = torch.nn.functional.mse_loss((noise_pred * (1 - mask_info).to(device)).float(),
-                                                            (target * (1 - mask_info).to(device)).float(),
-                                                            reduction="none").sum(dim=(1, 2, 3))
-                    neg_pixel_num = (1-mask_info).sum([1, 2, 3])
-                    neg_pixel_num = torch.where(neg_pixel_num == 0, 1, neg_pixel_num)
-                    neg_loss = neg_loss / neg_pixel_num
-                    loss = pos_loss + args.pos_neg_loss_scale * (pos_loss - neg_loss)
-
-                if args.infonce_loss:
-                    pos_loss = torch.nn.functional.mse_loss((noise_pred * mask_info.to(device)).float(),
-                                                            (target * mask_info.to(device)).float(),
-                                                            reduction="none").sum(dim=(1, 2, 3))
-                    pos_pixel_num = mask_info.sum([1, 2, 3])
-                    pos_pixel_num = torch.where(pos_pixel_num == 0, 1, pos_pixel_num)
-                    pos_loss = pos_loss / pos_pixel_num
-                    neg_loss = torch.nn.functional.mse_loss((noise_pred * (1 - mask_info).to(device)).float(),
-                                                            (target * (1 - mask_info).to(device)).float(),
-                                                            reduction="none").sum(dim=(1, 2, 3))
-                    neg_pixel_num = (1-mask_info).sum([1, 2, 3])
-                    neg_pixel_num = torch.where(neg_pixel_num == 0, 1, neg_pixel_num)
-                    neg_loss = neg_loss / neg_pixel_num
-                    loss = pos_loss / (pos_loss + neg_loss)
 
                 loss = loss.mean()
 
@@ -362,10 +324,8 @@ if __name__ == '__main__':
     parser.add_argument('--only_normal_training', action='store_true')
     parser.add_argument('--use_vlb_loss', action='store_true')
     parser.add_argument('--kl_loss_weight', type=float, default=1.0)
-    parser.add_argument('--masked_loss', action='store_true')
-    parser.add_argument('--pos_neg_loss', action='store_true')
-    parser.add_argument('--pos_neg_loss_scale', type=float, default=1.0)
-    parser.add_argument('--infonce_loss', action='store_true')
+    parser.add_argument('--simple_loss', action='store_true')
+    parser.add_argument('--kl_loss', action='store_true')
 
     # step 7. inference
     parser.add_argument('--inference_num', type=int, default=4)

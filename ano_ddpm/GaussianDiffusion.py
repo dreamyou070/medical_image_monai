@@ -290,12 +290,6 @@ class GaussianDiffusionModel:
                 #"log_variance": model_logvar,
                 "log_variance": posterior_log_var,
                 "pred_x_0":     pred_x_0,}
-    def sample_p2(self, model, x_t, t, denoise_fn="gauss"):
-        eps = model(x_t, t)
-        model_mean = self.predict_model_mean_from_eps(x_t, t, eps)
-        std = extract(self.sqrt_betas, t, x_t.shape, x_t.device)
-        sample = model_mean + std * torch.randn_like(x_t)
-        return {"sample" : sample,}
 
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
         out = self.p_mean_variance(model, x_t, t)
@@ -413,17 +407,9 @@ class GaussianDiffusionModel:
         # find KL divergence at t
         true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
         output = self.p_mean_variance(model, x_t, t, estimate_noise) # 여기서 output['log_variacne'] 와 true_log_var 이 같음
+        model_mean, model_log_var = output["mean"], output["log_variance"]
 
-
-
-
-
-
-
-
-
-
-        kl = normal_kl(true_mean, true_log_var, output["mean"], output["log_variance"])
+        kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
         kl = mean_flat(kl) / np.log(2.0)
         decoder_nll = -discretised_gaussian_log_likelihood(
                 x_0, output["mean"], log_scales=0.5 * output["log_variance"]
@@ -431,7 +417,8 @@ class GaussianDiffusionModel:
         decoder_nll = mean_flat(decoder_nll) / np.log(2.0)
 
         nll = torch.where((t == 0), decoder_nll, kl)
-        return {"output": nll, "pred_x_0": output["pred_x_0"]}
+        return {"output": nll,
+                "pred_x_0": output["pred_x_0"]}
 
     def calc_loss(self, model, x_0, t):
         # noise = torch.randn_like(x)
