@@ -88,12 +88,12 @@ def main(args) :
             # 2) select random int
             x_t = scheduler.sample_q(x_0, t, noise)
             #x_t = scheduler.add_noise(x_0, noise, t)
-            one_step_recon = scheduler.sample_p(model, x_t, t, denoise_fn="gauss")['pred_x_0']
-            torch_transforms.ToPILImage()(one_step_recon.squeeze()).save(os.path.join(image_save_dir, f'one_step_inference.png'))
+            #one_step_recon = scheduler.sample_p(model, x_t, t, denoise_fn="gauss")['pred_x_0']
+            #torch_transforms.ToPILImage()(one_step_recon.squeeze()).save(os.path.join(image_save_dir, f'one_step_inference.png'))
             with torch.no_grad():
-                noise_pred = model(x_t, t)
+                #noise_pred = model(x_t, t)
                 #pred_images = scheduler.step(noise_pred,args.sample_distance,x_t, return_dict=True)['pred_original_sample']
-                for i in range(args.sample_distance-1, -1, -1):
+                for i in range(args.sample_distance, -1, -1):
                     # sample = sample.unsqueeze(0)
                     sample = torch_transforms.ToPILImage()(x_t.squeeze())
                     sample.save(os.path.join(image_save_dir, f'scheduling_{i}.png'))
