@@ -99,7 +99,7 @@ def main(args) :
             #else:
             noise = torch.rand_like(x_0).float().to(device)
             # 2) select random int
-            x_t = diffusion.sample_q(x_0, t, noise)
+            x_t = scheduler.sample_q(x_0, t, noise)
             #x_t = scheduler.add_noise(x_0, noise, t)
 
             with torch.no_grad():
