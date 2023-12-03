@@ -189,6 +189,7 @@ class GaussianDiffusionModel:
         self.sqrt_alphas_cumprod = np.sqrt(self.alphas_cumprod)
         self.sqrt_one_minus_alphas_cumprod = np.sqrt(1.0 - self.alphas_cumprod)
         self.log_one_minus_alphas_cumprod = np.log(1.0 - self.alphas_cumprod)
+        self.sqrt_recip_alphas = np.sqrt(1.0 / alphas)
         self.sqrt_recip_alphas_cumprod = np.sqrt(1.0 / self.alphas_cumprod)
         self.sqrt_recipm1_alphas_cumprod = np.sqrt(1.0 / self.alphas_cumprod - 1)
         self.sqrt_recipm3_alphas_cumprod = np.sqrt(1.0 / (1.0 - self.alphas_cumprod))
@@ -224,10 +225,10 @@ class GaussianDiffusionModel:
 
     def predict_model_mean_from_eps(self, x_t, t, eps):
         coeff1 = extract(self.betas, t, x_t.shape, x_t.device)
-        coeff2 = extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device)
+        coeff2 = extract(self.sqrt_recip_alphas, t, x_t.shape, x_t.device)
         coeff3 = extract(self.sqrt_recipm3_alphas_cumprod, t, x_t.shape, x_t.device)
-        
-        return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t - coeff1*coeff2*coeff3 * eps)
+
+        return (coeff2 * x_t - coeff1*coeff2*coeff3 * eps)
 
     def predict_eps_from_x_0(self, x_t, t, pred_x_0):
         return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t
