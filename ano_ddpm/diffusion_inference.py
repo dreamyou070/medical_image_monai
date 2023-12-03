@@ -89,12 +89,7 @@ def main(args) :
             noise = torch.rand_like(x_0).float().to(device)
             # 2) select random int
             x_t = scheduler.sample_q(x_0, t, noise)
-            #x_t = scheduler.add_noise(x_0, noise, t)
-            #one_step_recon = scheduler.sample_p(model, x_t, t, denoise_fn="gauss")['pred_x_0']
-            #torch_transforms.ToPILImage()(one_step_recon.squeeze()).save(os.path.join(image_save_dir, f'one_step_inference.png'))
             with torch.no_grad():
-                #noise_pred = model(x_t, t)
-                #pred_images = scheduler.step(noise_pred,args.sample_distance,x_t, return_dict=True)['pred_original_sample']
                 for i in range(args.sample_distance, -1, -1):
                     # sample = sample.unsqueeze(0)
                     sample = torch_transforms.ToPILImage()(x_t.squeeze())
@@ -112,29 +107,6 @@ def main(args) :
                         else :
                             x_t = scheduler.sample_p(model, x_t, t,
                                                      denoise_fn="gauss")['sample']
-                        """
-                        is_normal = 'normal'
-                        #else:
-                        #    is_normal = 'abnormal'
-                        # 1) one step inference
-                        real = pred_images[img_index, ...].squeeze()
-                        #real = real.unsqueeze(0)
-                        real = torch_transforms.ToPILImage()(real)
-        
-                        # 2) one step inference
-                        sample = final_pred[img_index, ...].squeeze()
-                        #sample = sample.unsqueeze(0)
-                        sample = torch_transforms.ToPILImage()(sample)
-        
-                        new_image = PIL.Image.new('RGB', (2 * real.size[0], real.size[1]), 250)
-                        new_image.paste(real, (0, 0))
-                        new_image.paste(sample, (real.size[0], 0))
-                        new_image.save(os.path.join(image_save_dir,
-                                                    f'once_stepping_{train_data}_{is_normal}_{img_index}.png'))
-                        loading_image = wandb.Image(new_image,
-                                                    caption=f"once_stepping_{train_data}_{is_normal}_{img_index}")
-                        wandb.log({"inference": loading_image})
-                        """
 
 if __name__ == '__main__':
 
@@ -174,6 +146,7 @@ if __name__ == '__main__':
     # step 4. inference
     parser.add_argument('--sample_distance', type=int, default=150)
     parser.add_argument('--use_simplex_noise', action='store_true')
+    parser.add_argument('--scheduling_sample', action='store_true')
     args = parser.parse_args()
     main(args)
 
