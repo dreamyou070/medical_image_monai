@@ -200,10 +200,6 @@ def main(args) :
                       n_heads=args.num_heads,
                       n_head_channels=args.num_head_channels,
                       in_channels=in_channels)
-
-
-
-
     ema = copy.deepcopy(model)
     model.to(device)
     ema.to(device)
@@ -304,15 +300,16 @@ def main(args) :
                 update_ema_params(ema, model)
                 # ----------------------------------------------------------------------------------------- #
                 # Inference
-                for i, test_data in enumerate(test_dataset_loader):
-                    if i == step :
-                        ema.eval()
-                        model.eval()
-                        inference_num = min(args.inference_num, args.batch_size)
-                        training_outputs(diffusion, test_data, epoch, inference_num, save_imgs=args.save_imgs,
-                                         ema=ema, args=args, is_train_data = False, device = device)
-                        training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
-                                         ema=ema, args=args, is_train_data=True, device = device)
+                if epoch % args.inference_freq == 0 and epoch > 0:
+                    for i, test_data in enumerate(test_dataset_loader):
+                        if i == step :
+                            ema.eval()
+                            model.eval()
+                            inference_num = min(args.inference_num, args.batch_size)
+                            training_outputs(diffusion, test_data, epoch, inference_num, save_imgs=args.save_imgs,
+                                             ema=ema, args=args, is_train_data = False, device = device)
+                            training_outputs(diffusion, data, epoch, inference_num, save_imgs=args.save_imgs,
+                                             ema=ema, args=args, is_train_data=True, device = device)
         if epoch % args.model_save_freq == 0 and epoch > 0 :
             save(unet=model, args=args, optimiser=optimiser, final=False, ema=ema, epoch=epoch)
     save(unet=model, args=args, optimiser=optimiser, final=True, ema=ema)
@@ -372,7 +369,7 @@ if __name__ == '__main__':
 
     # step 7. inference
     parser.add_argument('--inference_num', type=int, default=4)
-    parser.add_argument('--inference_freq', type=int, default=50)
+    parser.add_argument('--inference_freq', type=int, default=10)
     parser.add_argument('--model_save_freq', type=int, default=1000)
     parser.add_argument('--save_imgs', action='store_true')
     parser.add_argument('--save_vids', action='store_true')
