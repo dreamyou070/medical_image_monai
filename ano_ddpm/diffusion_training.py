@@ -129,24 +129,24 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                     is_normal = 'abnormal'
 
                 real = real_images[img_index,...].squeeze()
-                real= real.unsqueeze(0)
+                #real= real.unsqueeze(0)
                 real = torch_transforms.ToPILImage()(real)
 
                 #sample = sample_images[img_index,...].squeeze()
                 sample = recon_images[img_index,...].squeeze()
-                sample = sample.unsqueeze(0)
+                #sample = sample.unsqueeze(0)
                 sample = torch_transforms.ToPILImage()(sample)
 
-                mask = mask_images[img_index,...].squeeze()
-                mask = mask.unsqueeze(0).to(weight_dtype)
-                mask = torch_transforms.ToPILImage()(mask)
+                #mask = mask_images[img_index,...].squeeze()
+                #mask = mask.unsqueeze(0).to(weight_dtype)
+                #mask = torch_transforms.ToPILImage()(mask)
 
-                recon_mask = PIL.Image.blend(sample, mask, 0.5)
+                #recon_mask = PIL.Image.blend(sample, mask, 0.5)
 
-                new_image = PIL.Image.new('L', (3 * real.size[0], real.size[1]),250)
+                new_image = PIL.Image.new('RGB', (2 * real.size[0], real.size[1]),(250,250,250))
                 new_image.paste(real,   (0, 0))
                 new_image.paste(sample, (real.size[0], 0))
-                new_image.paste(recon_mask, (real.size[0]+sample.size[0], 0))
+                #new_image.paste(recon_mask, (real.size[0]+sample.size[0], 0))
                 new_image.save(os.path.join(image_save_dir, f'real_recon_mask_epoch_{epoch}_{train_data}_{is_normal}_{img_index}.png'))
                 loading_image = wandb.Image(new_image,
                                             caption=f"(real-noisy-recon) epoch {epoch + 1} | {is_normal}")
