@@ -90,23 +90,23 @@ def main(args) :
             # 2) select random int
             x_t = scheduler.sample_q(x_0, t, noise)
             with torch.no_grad():
-                for i in range(args.sample_distance, -1, -1):
+                for time_step in range(args.sample_distance, -1, -1):
                     # sample = sample.unsqueeze(0)
                     sample = torch_transforms.ToPILImage()(x_t.squeeze())
                     if args.scheduling_sample :
-                        if i > 0:
-                            sample.save(os.path.join(image_save_dir, f'scheduling_{i}.png'))
+                        if time_step > 0:
+                            sample.save(os.path.join(image_save_dir, f'scheduling_{time_step}.png'))
                     else :
-                        sample.save(os.path.join(image_save_dir, f'model_sampling_{i}.png'))
+                        sample.save(os.path.join(image_save_dir, f'model_sampling_{time_step}.png'))
 
-                    if i > 0 :
+                    if time_step > 0 :
                         if args.scheduling_sample :
                             x_t = scheduler.q_sample(x_0,
-                                                     torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                                                     torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device),
                                                      noise,denoise_fn='gauss')['sample']
                         else :
                             x_t = scheduler.sample_p2(model, x_t,
-                                                      torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                                                      torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device),
                                                       denoise_fn="gauss")['sample']
 
 if __name__ == '__main__':
