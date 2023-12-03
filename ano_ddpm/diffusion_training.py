@@ -246,10 +246,7 @@ def main(args) :
                     loss = torch.nn.functional.mse_loss(noise_pred.float(), target.float(), reduction="none").mean(dim=(1, 2, 3))
                 elif args.kl_loss :
                     negative_log_likelihood = diffusion.calc_vlb_xt(model, x_0, x_t, t)['output']
-                    print(f'negative_log_likelihood : {negative_log_likelihood.shape}')
-                    loss = negative_log_likelihood.mean(dim=(1, 2, 3))
-
-
+                    loss = negative_log_likelihood.mean
                 loss = loss.mean()
 
                 wandb.log({"training loss": loss.item()})
