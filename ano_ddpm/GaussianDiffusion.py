@@ -270,23 +270,22 @@ class GaussianDiffusionModel:
         """
         if estimate_noise == None:
             estimate_noise = model(x_t, t)
-
         # fixed model variance defined as \hat{\beta}_t - could add learned parameter
-        model_var = np.append(self.posterior_variance[1], self.betas[1:])
-        model_logvar = np.log(model_var)
-        model_var = extract(model_var, t, x_t.shape, x_t.device)
-        model_logvar = extract(model_logvar, t, x_t.shape, x_t.device)
-
+        #model_var = np.append(self.posterior_variance[1], self.betas[1:])
+        #model_logvar = np.log(model_var)
+        #model_var = extract(model_var, t, x_t.shape, x_t.device)
+        #model_logvar = extract(model_logvar, t, x_t.shape, x_t.device)
+        model_var = extract(self.betas, t, x_t.shape, x_t.device)
+        model_logvar = extract(self.sqrt_betas, t, x_t.shape, x_t.device)
         pred_x_0 = self.predict_x_0_from_eps(x_t, t, estimate_noise).clamp(-1, 1)
-        model_mean, _, _ = self.q_posterior_mean_variance(
-                pred_x_0, x_t, t
-                )
-        return {
-            "mean":         model_mean,
-            "variance":     model_var,
-            "log_variance": model_logvar,
-            "pred_x_0":     pred_x_0,
-            }
+        model_mean, _, _ = self.q_posterior_mean_variance(pred_x_0, x_t, t)
+        posterior_mean, posterior_var, posterior_log_var = self.q_posterior_mean_variance(pred_x_0, x_t, t)
+        return {"mean":         model_mean,
+                #"variance":     model_var,
+                "variance": posterior_var,
+                #"log_variance": model_logvar,
+                "log_variance": posterior_log_var,
+                "pred_x_0":     pred_x_0,}
 
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
         out = self.p_mean_variance(model, x_t, t)
@@ -305,7 +304,8 @@ class GaussianDiffusionModel:
             noise = denoise_fn(x_t, t)
         nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
         sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
-        return {"sample": sample, "pred_x_0": out["pred_x_0"]}
+        return {"sample": sample,
+                "pred_x_0": out["pred_x_0"]}
 
     def forward_backward(
             self, model, x, see_whole_sequence="half", t_distance=None, denoise_fn="gauss",
