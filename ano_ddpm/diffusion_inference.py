@@ -73,13 +73,14 @@ def main(args) :
     # (2) scaheduler
     #betas = get_beta_schedule(args.timestep, args.beta_schedule)
     print(f'\n step 5. scheduler')
-    scheduler = DDPMScheduler(num_train_timesteps=1000,
-                              beta_start=0.0001,
-                              beta_end=0.02,
-                              beta_schedule="linear",
-                              variance_type="fixed_small",
-                              steps_offset=1,
-                              clip_sample=False)
+    betas = get_beta_schedule(args.timestep,
+                              args.beta_schedule)
+    scheduler = GaussianDiffusionModel([w, h],  # [128, 128]
+                                       betas,  # 1
+                                       img_channels=in_channels,
+                                       loss_type=args.loss_type,  # l2
+                                       loss_weight=args.loss_weight,  # none
+                                       noise='simplex' )  # 1
     # (3) scaheduler
     #diffusion = GaussianDiffusionModel([w, h],betas, img_channels=in_channels,
     #                                   loss_type=args.loss_type,loss_weight=args.loss_weight, noise='simplex' )  # 1
