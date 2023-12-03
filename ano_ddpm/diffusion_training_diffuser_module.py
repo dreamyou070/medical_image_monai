@@ -80,7 +80,7 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                     for t in range(args.sample_distance, -1, -1):
                         if t > 0:
                             model_output = ema(x_t,torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
-                            pred_x_0 = diffusion._predict_xstart_from_eps(x_t, t, model_output)
+                            pred_x_0 = diffusion.step(model_output,t,x_t,)['pred_original_sample']
                             x_t = diffusion.q_posterior_mean_variance(x_start=pred_x_0, x_t=x_t, t=t)[0]
 
                             """

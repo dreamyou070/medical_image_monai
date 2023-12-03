@@ -77,17 +77,11 @@ def training_outputs(diffusion, test_data, epoch, num_images, ema, args,
                     for t in range(args.sample_distance, -1, -1):
                         if t > 0:
                             if args.recon_with_standard_gaussian:
-                                out = diffusion.sample_p(ema,
-                                                         x_0,
-                                                         torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                         denoise_fn="gauss")
+                                model_output = torch.rand_like(x_0.float().to(x_0.device))
                             else :
-                                noise_pred = ema(x_t, torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
-                                out = diffusion.sample_p(ema,
-                                                         x_0,
-                                                         torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                         denoise_fn=noise_pred)
-                            x_t = out['sample']
+                                model_output = ema(x_t, torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device))
+                            pred_x_0 = diffusion.predict_x_0_from_eps(x_t, t, model_output)
+                            x_t = diffusion.q_posterior_mean_variance(x_start=pred_x_0, x_t=x_t, t=t)[0]
                             """
                             kl_div = out["whole_kl"]  # batch, 1, W, H
                             # normal portion kl divergence
