@@ -112,57 +112,44 @@ def main(args) :
                     sample.save(os.path.join(image_save_dir,
                                             f'inference_{i}.png'))
                     if i > 0 :
-                        noise_pred = model(x_t,
+                        model_output = model(x_t,
                                            torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device))#.sample
-                        x_t = scheduler.step(noise_pred,
-                                             i,
-                                             x_t,).prev_sample
+
+                        pred_x_0 = scheduler.predict_x_0_from_eps(x_t,
+                                                                  torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                                                                  model_output)
+                        x_t = scheduler.q_posterior_mean_variance(pred_x_0, x_t,
+                                                                  torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device), )[0]
+
+                        #sample = x_t.squeeze()
+                        # sample = sample.unsqueeze(0)
+                        #sample = torch_transforms.ToPILImage()(sample)
+                        #sample.save(os.path.join(image_save_dir,
+                        #                        f'inference_time_{i}_after.png'))
+
                         """
-
-                        @torch.no_grad()
-                        def prev_step(self,
-                                      model_output: Union[torch.FloatTensor, np.ndarray],
-                                      timestep: int,
-                                      sample: Union[torch.FloatTensor, np.ndarray]):
-                            prev_sample = self.scheduler.step(model_output, timestep, sample=sample).prev_sample
-                            return prev_sample
-
-                        @torch.no_grad()
-                        def gen_loop(self, latent, timestep):
-                            all_latents = [latent]
-                            for t in range(timestep - 1, -1, -1):
-                                noise_pred = self.unet(latent, t).sample
-                                latent = self.prev_step(noise_pred, t, latent)
-                                all_latents.append(latent)
-                            return all_latents
+                        is_normal = 'normal'
+                        #else:
+                        #    is_normal = 'abnormal'
+                        # 1) one step inference
+                        real = pred_images[img_index, ...].squeeze()
+                        #real = real.unsqueeze(0)
+                        real = torch_transforms.ToPILImage()(real)
+        
+                        # 2) one step inference
+                        sample = final_pred[img_index, ...].squeeze()
+                        #sample = sample.unsqueeze(0)
+                        sample = torch_transforms.ToPILImage()(sample)
+        
+                        new_image = PIL.Image.new('RGB', (2 * real.size[0], real.size[1]), 250)
+                        new_image.paste(real, (0, 0))
+                        new_image.paste(sample, (real.size[0], 0))
+                        new_image.save(os.path.join(image_save_dir,
+                                                    f'once_stepping_{train_data}_{is_normal}_{img_index}.png'))
+                        loading_image = wandb.Image(new_image,
+                                                    caption=f"once_stepping_{train_data}_{is_normal}_{img_index}")
+                        wandb.log({"inference": loading_image})
                         """
-
-                final_pred = x_t
-            num_images = pred_images.shape[0]
-            for img_index in range(num_images):
-                #normal_info_ = normal_info[img_index]
-                #if normal_info_ == 1:
-                is_normal = 'normal'
-                #else:
-                #    is_normal = 'abnormal'
-                # 1) one step inference
-                real = pred_images[img_index, ...].squeeze()
-                #real = real.unsqueeze(0)
-                real = torch_transforms.ToPILImage()(real)
-
-                # 2) one step inference
-                sample = final_pred[img_index, ...].squeeze()
-                #sample = sample.unsqueeze(0)
-                sample = torch_transforms.ToPILImage()(sample)
-
-                new_image = PIL.Image.new('RGB', (2 * real.size[0], real.size[1]), 250)
-                new_image.paste(real, (0, 0))
-                new_image.paste(sample, (real.size[0], 0))
-                new_image.save(os.path.join(image_save_dir,
-                                            f'once_stepping_{train_data}_{is_normal}_{img_index}.png'))
-                loading_image = wandb.Image(new_image,
-                                            caption=f"once_stepping_{train_data}_{is_normal}_{img_index}")
-                wandb.log({"inference": loading_image})
 
 
 
