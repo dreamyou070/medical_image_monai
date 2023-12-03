@@ -35,8 +35,10 @@ def main(args) :
     print(f' (1.3) saving configuration')
     experiment_dir = args.experiment_dir
     os.makedirs(experiment_dir, exist_ok=True)
-    image_save_dir = os.path.join(experiment_dir, 'scheduling_images')
-    print(f'  - image_save_dir : {image_save_dir}')
+    if args.scheduling_sample:
+        image_save_dir = os.path.join(experiment_dir, 'scheduling_images')
+    else :
+        image_save_dir = os.path.join(experiment_dir, 'model_sampling')
     os.makedirs(image_save_dir, exist_ok=True)
 
     print(f'\n step 2. dataset and dataloatder')
@@ -96,20 +98,20 @@ def main(args) :
                 for i in range(args.sample_distance, -1, -1):
                     # sample = sample.unsqueeze(0)
                     sample = torch_transforms.ToPILImage()(x_t.squeeze())
-                    sample.save(os.path.join(image_save_dir, f'scheduling_{i}.png'))
+                    if args.scheduling_sample :
+                        if i > 0:
+                            sample.save(os.path.join(image_save_dir, f'scheduling_{i}.png'))
+                    else :
+                        sample.save(os.path.join(image_save_dir, f'model_sampling_{i}.png'))
+
                     if i > 0 :
-                        # Check Posterior
-                        #x_t = scheduler.sample_p(model, x_t,
-                        #                         torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),)['sample']
-                        x_t = scheduler.q_sample(x_0,
-                                                 torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                 noise,
-                                                 denoise_fn='gauss')['sample']
-                        #sample = x_t.squeeze()
-                        # sample = sample.unsqueeze(0)
-                        #sample = torch_transforms.ToPILImage()(sample)
-                        #sample.save(os.path.join(image_save_dir,
-                        #                        f'inference_time_{i}_after.png'))
+                        if args.scheduling_sample :
+                            x_t = scheduler.q_sample(x_0,
+                                                     torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                                                     noise,denoise_fn='gauss')['sample']
+                        else :
+                            x_t = scheduler.sample_p(model, x_t, t,
+                                                     denoise_fn="gauss")['sample']
                         """
                         is_normal = 'normal'
                         #else:

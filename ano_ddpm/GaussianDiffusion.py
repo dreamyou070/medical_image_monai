@@ -193,9 +193,7 @@ class GaussianDiffusionModel:
         self.sqrt_recipm1_alphas_cumprod = np.sqrt(1.0 / self.alphas_cumprod - 1)
 
         # calculations for posterior q(x_{t-1} | x_t, x_0)
-        self.posterior_variance = (
-                betas * (1.0 - self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod)
-        )
+        self.posterior_variance = (betas * (1.0 - self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod))
         # log calculation clipped because the posterior variance is 0 at the
         # beginning of the diffusion chain.
         self.posterior_log_variance_clipped = np.log(
@@ -305,10 +303,7 @@ class GaussianDiffusionModel:
                 noise = generate_simplex_noise(self.simplex, x_t, t, False, in_channels=self.img_channels).float()
         else:
             noise = denoise_fn(x_t, t)
-
-        nonzero_mask = (
-            (t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1)))
-        )
+        nonzero_mask = ((t != 0).float().view(-1, *([1] * (len(x_t.shape) - 1))))
         sample = out["mean"] + nonzero_mask * torch.exp(0.5 * out["log_variance"]) * noise
         return {"sample": sample, "pred_x_0": out["pred_x_0"]}
 
