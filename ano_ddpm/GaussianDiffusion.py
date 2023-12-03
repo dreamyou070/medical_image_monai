@@ -211,8 +211,6 @@ class GaussianDiffusionModel:
         weights = torch.from_numpy(weights_np).float().to(device)
         return indices, weights
 
-
-
     def predict_x_0_from_eps(self, x_t, t, eps):
         return (extract(self.sqrt_recip_alphas_cumprod, t, x_t.shape, x_t.device) * x_t
                 - extract(self.sqrt_recipm1_alphas_cumprod, t, x_t.shape, x_t.device) * eps)

@@ -4,6 +4,7 @@ from GaussianDiffusion import GaussianDiffusionModel, get_beta_schedule
 from helpers import *
 from torchvision import transforms
 import sys
+
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from data_module import SYDataLoader, SYDataset
 from UNet import UNetModel, update_ema_params
@@ -11,13 +12,13 @@ import torch.multiprocessing
 from setproctitle import *
 import torchvision.transforms as torch_transforms
 import PIL
-from diffuser_module import AutoencoderKL, UNet2DModel, DDPMScheduler,StableDiffusionPipeline
+from diffuser_module import AutoencoderKL, UNet2DModel, DDPMScheduler, StableDiffusionPipeline
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 torch.cuda.empty_cache()
 
-def main(args) :
 
+def main(args):
     print(f'\n step 1. setting')
     if args.process_title:
         setproctitle(args.process_title)
@@ -63,11 +64,16 @@ def main(args) :
                       n_heads=args.num_heads,
                       n_head_channels=args.num_head_channels,
                       in_channels=in_channels)
-    model.load_state_dict(torch.load(args.unet_pretrained_dir, map_location='cpu')['model_state_dict'])
+    unet_pretrained_dir = args.unet_pretrained_dir
+    unet_state = torch.load(unet_pretrained_dir, map_location='cpu')['model_state_dict']
+    print('loading on cpu')
+    model.load_state_dict(unet_state)
     model.to(device)
     model.eval()
 
-    print(f'\n step 4. scheduler')
+    # (2) scaheduler
+    # betas = get_beta_schedule(args.timestep, args.beta_schedule)
+    print(f'\n step 5. scheduler')
     betas = get_beta_schedule(args.timestep,
                               args.beta_schedule)
     scheduler = GaussianDiffusionModel([w, h],  # [128, 128]
@@ -75,41 +81,55 @@ def main(args) :
                                        img_channels=in_channels,
                                        loss_type=args.loss_type,  # l2
                                        loss_weight=args.loss_weight,  # none
-                                       noise='simplex' )  # 1
-    print(f'\n step 5. inference')
+                                       noise='simplex')  # 1
+    # (3) scaheduler
+    # diffusion = GaussianDiffusionModel([w, h],betas, img_channels=in_channels,
+    #                                   loss_type=args.loss_type,loss_weight=args.loss_weight, noise='simplex' )  # 1
+
+    print(f'\n step 4. inference')
     train_data = 'train_data'
     for i, data in enumerate(training_dataset_loader):
         if i == 0:
             x_0 = data["image_info"].to(device)  # batch, channel, w, h
             normal_info = data['normal']  # if 1 = normal, 0 = abnormal
             mask_info = data['mask'].unsqueeze(dim=1)  # if 1 = normal, 0 = abnormal
+            # t = torch.randint(args.sample_distance - 1, args.sample_distance, (x_0.shape[0],), device=device)
             t = torch.Tensor([args.sample_distance]).repeat(x_0.shape[0], ).long().to(x_0.device)
+            # if args.use_simplex_noise:
+            #    noise = diffusion.noise_fn(x=x_0, t=t, octave=6, frequency=64).float()
+            # else:
             noise = torch.rand_like(x_0).float().to(device)
             # 2) select random int
             x_t = scheduler.sample_q(x_0, t, noise)
-            #x_t = scheduler.add_noise(x_0, noise, t)
-            one_step_recon = scheduler.sample_p(model, x_t, t, denoise_fn="gauss")['pred_x_0']
-            torch_transforms.ToPILImage()(one_step_recon.squeeze()).save(os.path.join(image_save_dir, f'one_step_inference.png'))
+            # x_t = scheduler.add_noise(x_0, noise, t)
+
             with torch.no_grad():
                 noise_pred = model(x_t, t)
-                #pred_images = scheduler.step(noise_pred,args.sample_distance,x_t, return_dict=True)['pred_original_sample']
-                for i in range(args.sample_distance-1, -1, -1):
+                # pred_images = scheduler.step(noise_pred,
+                #               args.sample_distance,
+                #               x_t, return_dict=True)['pred_original_sample']
+
+                for i in range(args.sample_distance - 1, -1, -1):
                     # sample = sample.unsqueeze(0)
                     sample = torch_transforms.ToPILImage()(x_t.squeeze())
-                    sample.save(os.path.join(image_save_dir, f'inference_{i}.png'))
-                    if i > 0 :
+                    sample.save(os.path.join(image_save_dir,
+                                             f'inference_{i}.png'))
+                    if i > 0:
                         model_output = model(x_t,
-                                           torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device))#.sample
+                                             torch.Tensor([i]).repeat(x_0.shape[0], ).long().to(x_0.device))  # .sample
+
                         pred_x_0 = scheduler.predict_x_0_from_eps(x_t,
-                                                                  torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                                                                  torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(
+                                                                      x_0.device),
                                                                   model_output)
                         x_t = scheduler.q_posterior_mean_variance(pred_x_0, x_t,
-                                                                  torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(x_0.device), )[0]
+                                                                  torch.Tensor([t]).repeat(x_0.shape[0], ).long().to(
+                                                                      x_0.device), )[0]
 
-                        #sample = x_t.squeeze()
+                        # sample = x_t.squeeze()
                         # sample = sample.unsqueeze(0)
-                        #sample = torch_transforms.ToPILImage()(sample)
-                        #sample.save(os.path.join(image_save_dir,
+                        # sample = torch_transforms.ToPILImage()(sample)
+                        # sample.save(os.path.join(image_save_dir,
                         #                        f'inference_time_{i}_after.png'))
 
                         """
@@ -120,12 +140,12 @@ def main(args) :
                         real = pred_images[img_index, ...].squeeze()
                         #real = real.unsqueeze(0)
                         real = torch_transforms.ToPILImage()(real)
-        
+
                         # 2) one step inference
                         sample = final_pred[img_index, ...].squeeze()
                         #sample = sample.unsqueeze(0)
                         sample = torch_transforms.ToPILImage()(sample)
-        
+
                         new_image = PIL.Image.new('RGB', (2 * real.size[0], real.size[1]), 250)
                         new_image.paste(real, (0, 0))
                         new_image.paste(sample, (real.size[0], 0))
@@ -136,8 +156,8 @@ def main(args) :
                         wandb.log({"inference": loading_image})
                         """
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # step 1. wandb login
     parser.add_argument("--process_title", type=str, default='parksooyeon')
@@ -160,15 +180,15 @@ if __name__ == '__main__':
     # step 3. model
     parser.add_argument('--unet_pretrained_dir', type=str,
                         default='/data7/sooyeon/medical_image/anoddpm_result_ddpm/2_compare_allsample_nonmasked_loss/diffusion-models/unet_epoch_200.pt')
-    parser.add_argument('--in_channels', type=int, default = 1)
-    parser.add_argument('--base_channels', type=int, default = 256)
-    parser.add_argument('--channel_mults', type=str, default = '1,2,3,4')
-    parser.add_argument('--dropout', type=float, default = 0.0)
-    parser.add_argument('--num_heads', type=int, default = 2)
-    parser.add_argument('--num_head_channels', type=int, default = -1)
+    parser.add_argument('--in_channels', type=int, default=1)
+    parser.add_argument('--base_channels', type=int, default=256)
+    parser.add_argument('--channel_mults', type=str, default='1,2,3,4')
+    parser.add_argument('--dropout', type=float, default=0.0)
+    parser.add_argument('--num_heads', type=int, default=2)
+    parser.add_argument('--num_head_channels', type=int, default=-1)
     parser.add_argument('--timestep', type=int, default=1000)
     parser.add_argument('--beta_schedule', type=str, default='linear')
-    parser.add_argument('--loss_weight', type=str, default = "none")
+    parser.add_argument('--loss_weight', type=str, default="none")
     parser.add_argument('--loss_type', type=str, default='l2')
 
     # step 4. inference
