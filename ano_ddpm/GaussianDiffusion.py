@@ -204,11 +204,7 @@ class GaussianDiffusionModel:
         self.posterior_mean_coef1 = (
                 betas * np.sqrt(self.alphas_cumprod_prev) / (1.0 - self.alphas_cumprod)
         )
-        self.posterior_mean_coef2 = (
-                (1.0 - self.alphas_cumprod_prev)
-                * np.sqrt(alphas)
-                / (1.0 - self.alphas_cumprod)
-        )
+        self.posterior_mean_coef2 = ((1.0 - self.alphas_cumprod_prev)* np.sqrt(alphas)/ (1.0 - self.alphas_cumprod))
 
 
     def sample_t_with_weights(self, b_size, device):
@@ -303,10 +299,6 @@ class GaussianDiffusionModel:
         return {"sample" : sample,}
 
     def sample_p(self, model, x_t, t, denoise_fn="gauss"):
-
-
-
-
         out = self.p_mean_variance(model, x_t, t)
         # noise = torch.randn_like(x_t)
         if type(denoise_fn) == str:
