@@ -105,9 +105,13 @@ def main(args) :
                                                      torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device),
                                                      noise,denoise_fn='gauss')['sample']
                         else :
-                            x_t = scheduler.sample_p(model, x_t,
-                                                      torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device),
-                                                      denoise_fn="gauss")['sample']
+                            model_output = model(x_t,
+                                                 torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device))
+                            pred_x_0 = scheduler.predict_x_0_from_eps(x_t,
+                                                                      torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device),
+                                                                      model_output)
+                            x_t = scheduler.q_posterior_mean_variance(pred_x_0, x_t,
+                                                                      torch.Tensor([time_step]).repeat(x_0.shape[0], ).long().to(x_0.device), )[0]
 
 if __name__ == '__main__':
 
