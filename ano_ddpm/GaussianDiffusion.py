@@ -287,7 +287,14 @@ class GaussianDiffusionModel:
         model_var = extract(self.betas, t, x_t.shape, x_t.device)
         model_logvar = extract(self.sqrt_betas, t, x_t.shape, x_t.device)
         pred_x_0 = self.predict_x_0_from_eps(x_t, t, estimate_noise).clamp(-1, 1)
-        model_mean, _, _ = self.q_posterior_mean_variance(pred_x_0, x_t, t)
+        #model_mean, _, _ = self.q_posterior_mean_variance(pred_x_0, x_t, t)
+
+
+        coeff1 = extract(self.sqrt_recip_alphas, t, x_t.shape, x_t.device)
+        coeff2 = extract(self.sqrt_recipm3_alphas_cumprod, t, x_t.shape, x_t.device)
+        beta = extract(self.betas, t, x_t.shape, x_t.device)
+        model_mean = coeff1 * (x_t - coeff2 * beta * estimate_noise)
+
         posterior_mean, posterior_var, posterior_log_var = self.q_posterior_mean_variance(pred_x_0, x_t, t)
         return {"mean":         model_mean,
                 #"variance":     model_var,
