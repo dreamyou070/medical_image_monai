@@ -41,18 +41,23 @@ def mean_flat(tensor):
 
 
 def normal_kl(mean1, logvar1, mean2, logvar2):
-    """
-    Compute the KL Divergence between two gaussians
-
+    """ Compute the KL Divergence between two gaussians
     :param mean1:
     :param logvar1:
     :param mean2:
     :param logvar2:
-    :return: KL Divergence between N(mean1,logvar1^2) & N(mean2,logvar2^2))
-    """
+    :return: KL Divergence between N(mean1,logvar1^2) & N(mean2,logvar2^2)) """
     return 0.5 * (-1 + logvar2 - logvar1 + torch.exp(logvar1 - logvar2) + ((mean1 - mean2) ** 2) * torch.exp(-logvar2))
 
 
+def new_normal_kl(mean1, logvar1, mean2, logvar2):
+    """ Compute the KL Divergence between two gaussians
+    :param mean1:
+    :param logvar1:
+    :param mean2:
+    :param logvar2:
+    :return: KL Divergence between N(mean1,logvar1^2) & N(mean2,logvar2^2)) """
+    return 0.5 * (-1 + logvar2 - logvar1 + torch.exp(logvar1 - logvar2) + 0.5 * ((mean1 - mean2) ** 2) * torch.exp(-logvar2))
 def approx_standard_normal_cdf(x):
     """
     A fast approximation of the cumulative distribution function of the
@@ -403,17 +408,17 @@ class GaussianDiffusionModel:
         return (extract(self.sqrt_alphas, t, x_t.shape, x_t.device) * x_t +
                 extract(self.sqrt_betas, t, x_t.shape, x_t.device) * noise)
 
-    def calc_vlb_xt(self, model, x_0, x_t, t, estimate_noise=None):
+    def calc_vlb_xt(self, model, x_0, x_t, t, args, estimate_noise=None, ):
         # find KL divergence at t
         true_mean, _, true_log_var = self.q_posterior_mean_variance(x_0, x_t, t)
         output = self.p_mean_variance(model, x_t, t, estimate_noise) # 여기서 output['log_variacne'] 와 true_log_var 이 같음
         model_mean, model_log_var = output["mean"], output["log_variance"]
-
-        kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
+        if args.use_original_kl :
+            kl = normal_kl(true_mean, true_log_var, model_mean, model_log_var)
+        else :
+            kl = new_normal_kl(true_mean, true_log_var, model_mean, model_log_var)
         kl = mean_flat(kl) / np.log(2.0)
-        decoder_nll = -discretised_gaussian_log_likelihood(
-                x_0, output["mean"], log_scales=0.5 * output["log_variance"]
-                )
+        decoder_nll = -discretised_gaussian_log_likelihood(x_0, output["mean"], log_scales=0.5 * output["log_variance"])
         decoder_nll = mean_flat(decoder_nll) / np.log(2.0)
 
         nll = torch.where((t == 0), decoder_nll, kl)
